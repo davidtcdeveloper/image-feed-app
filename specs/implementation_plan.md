@@ -199,4 +199,8 @@ image-feed-app/
 1. Evaluate impact and requirements to upgrade Gradle to latest stable version, aligning with modern JVM guidelines.
 2. Upgrade language and packaging tools (Kotlin 2.4.0 and AGP 9.1.1) for optimal cross-platform compilation and type-safety.
 
+### Phase 9: Ecosystem Dependency Upgrade Plan
+1. Centralize and prepare plan to upgrade all core ecosystem dependencies (Coroutines, Serialization, Ktor 3.x, Koin 4.x, Compose BOM, and Coil 3.x) to their latest 2026 stable releases.
+
+
 

@@ -5,8 +5,8 @@ agp = "9.1.1"          # Android Gradle Plugin
 buildkonfig = "0.15.2"
 
 # Core KMP Libraries
-coroutines = "1.8.1"
-serialization = "1.7.1"
+coroutines = "1.10.1"
+serialization = "1.8.0"
 koin = "3.5.6"
 
 # Networking & Logging (Ktor)

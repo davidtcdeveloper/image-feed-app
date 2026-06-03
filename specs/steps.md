@@ -100,4 +100,9 @@ This document outlines the detailed steps to execute the project implementation,
 3. Update standard Kotlin and AGP dependency definitions in `gradle/libs.versions.toml`.
 4. Adjust Kotlin DSL build logic inside module-level scripts to ensure full compatibility.
 
+### Step 9: Ecosystem Dependency Upgrade
+1. Review all other core platform dependencies for new stable versions.
+2. Formulate comprehensive coordinate migration plans for breaking library releases (Ktor 3.x, Koin 4.x, and Coil 3.x).
+
+
 
