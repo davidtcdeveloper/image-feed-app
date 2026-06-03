@@ -3,6 +3,7 @@ import shared
 import Kingfisher
 
 struct SearchView: View {
+    @Environment(\.horizontalSizeClass) var sizeClass
     @State private var viewModel = SearchViewModel()
     @State private var showFilters = false
     @State private var searchText = ""
@@ -11,12 +12,8 @@ struct SearchView: View {
     let onPhotoSelect: (String) -> Void
     let onUserSelect: (String) -> Void
 
-    var leftColumnPhotos: [Photo] {
-        viewModel.photos.enumerated().filter { $0.offset % 2 == 0 }.map { $0.element }
-    }
-    
-    var rightColumnPhotos: [Photo] {
-        viewModel.photos.enumerated().filter { $0.offset % 2 != 0 }.map { $0.element }
+    private var columnCount: Int {
+        AdaptiveLayoutHelper.getColumnCount(sizeClass: sizeClass)
     }
 
     var body: some View {
@@ -80,28 +77,18 @@ struct SearchView: View {
                                     NoSearchResultsView()
                                 } else {
                                     HStack(alignment: .top, spacing: 8) {
-                                        LazyVStack(spacing: 8) {
-                                            ForEach(leftColumnPhotos, id: \.id) { photo in
-                                                KFImage(URL(string: photo.urls.small))
-                                                    .resizable()
-                                                    .aspectRatio(CGFloat(photo.width) / CGFloat(photo.height), contentMode: .fit)
-                                                    .cornerRadius(12)
-                                                    .contentShape(Rectangle())
-                                                    .onTapGesture {
-                                                        onPhotoSelect(photo.id)
-                                                    }
-                                            }
-                                        }
-                                        LazyVStack(spacing: 8) {
-                                            ForEach(rightColumnPhotos, id: \.id) { photo in
-                                                KFImage(URL(string: photo.urls.small))
-                                                    .resizable()
-                                                    .aspectRatio(CGFloat(photo.width) / CGFloat(photo.height), contentMode: .fit)
-                                                    .cornerRadius(12)
-                                                    .contentShape(Rectangle())
-                                                    .onTapGesture {
-                                                        onPhotoSelect(photo.id)
-                                                    }
+                                        ForEach(0..<columnCount, id: \.self) { colIndex in
+                                            LazyVStack(spacing: 8) {
+                                                ForEach(AdaptiveLayoutHelper.photosForColumn(index: colIndex, totalColumns: columnCount, from: viewModel.photos), id: \.id) { photo in
+                                                    KFImage(URL(string: photo.urls.small))
+                                                        .resizable()
+                                                        .aspectRatio(CGFloat(photo.width) / CGFloat(photo.height), contentMode: .fit)
+                                                        .cornerRadius(12)
+                                                        .contentShape(Rectangle())
+                                                        .onTapGesture {
+                                                            onPhotoSelect(photo.id)
+                                                        }
+                                                }
                                             }
                                         }
                                     }

@@ -456,7 +456,7 @@ fun PortfolioTabContent(
             }
         } else {
             LazyVerticalStaggeredGrid(
-                columns = StaggeredGridCells.Fixed(2),
+                columns = calculateGridColumns(),
                 state = listState,
                 modifier = Modifier
                     .fillMaxWidth()

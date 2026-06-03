@@ -65,7 +65,7 @@ struct PhotoDetailsView: View {
                                     )
                                 )
                         }
-                        .frame(aspectRatio: CGFloat(photo.width) / CGFloat(photo.height))
+                        .aspectRatio(CGFloat(photo.width) / CGFloat(photo.height), contentMode: .fit)
                         .clipped()
 
                         VStack(alignment: .leading, spacing: 20) {
@@ -195,7 +195,9 @@ struct PhotoDetailsView: View {
                                                     .foregroundColor(.white)
                                             }
 
-                                            if let lat = location.position?.latitude, let lon = location.position?.longitude {
+                                            if let latValue = location.position?.latitude, let lonValue = location.position?.longitude {
+                                                let lat = Double(truncating: latValue)
+                                                let lon = Double(truncating: lonValue)
                                                 MapCardView(latitude: lat, longitude: lon, name: location.name)
                                                     .onTapGesture {
                                                         let urlString = "maps://?q=\(location.name?.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")&ll=\(lat),\(lon)"

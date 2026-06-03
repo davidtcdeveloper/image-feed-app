@@ -6,6 +6,7 @@ struct CollectionDetailView: View {
     let collectionId: String
     @State private var viewModel: CollectionDetailViewModel
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.horizontalSizeClass) var sizeClass
 
     let onPhotoSelect: (String) -> Void
     let onCollectionSelect: (String) -> Void
@@ -17,12 +18,8 @@ struct CollectionDetailView: View {
         self.onCollectionSelect = onCollectionSelect
     }
 
-    var leftColumnPhotos: [Photo] {
-        viewModel.photos.enumerated().filter { $0.offset % 2 == 0 }.map { $0.element }
-    }
-    
-    var rightColumnPhotos: [Photo] {
-        viewModel.photos.enumerated().filter { $0.offset % 2 != 0 }.map { $0.element }
+    private var columnCount: Int {
+        AdaptiveLayoutHelper.getColumnCount(sizeClass: sizeClass)
     }
 
     var body: some View {
@@ -106,7 +103,7 @@ struct CollectionDetailView: View {
                                             .font(.subheadline)
                                             .foregroundColor(.gray)
 
-                                        if let desc = collection.description, !desc.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                                        if let desc = collection.description_, !desc.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                                             Text(desc)
                                                 .font(.system(size: 13))
                                                 .foregroundColor(.white.opacity(0.8))
@@ -155,20 +152,12 @@ struct CollectionDetailView: View {
                                     .padding(.top, 24)
 
                                 HStack(alignment: .top, spacing: 8) {
-                                    // Left Column
-                                    LazyVStack(spacing: 8) {
-                                        ForEach(leftColumnPhotos, id: \.id) { photo in
-                                            CollectionPhotoGridCard(photo: photo, viewModel: viewModel) {
-                                                onPhotoSelect(photo.id)
-                                            }
-                                        }
-                                    }
-
-                                    // Right Column
-                                    LazyVStack(spacing: 8) {
-                                        ForEach(rightColumnPhotos, id: \.id) { photo in
-                                            CollectionPhotoGridCard(photo: photo, viewModel: viewModel) {
-                                                onPhotoSelect(photo.id)
+                                    ForEach(0..<columnCount, id: \.self) { colIndex in
+                                        LazyVStack(spacing: 8) {
+                                            ForEach(AdaptiveLayoutHelper.photosForColumn(index: colIndex, totalColumns: columnCount, from: viewModel.photos), id: \.id) { photo in
+                                                CollectionPhotoGridCard(photo: photo, viewModel: viewModel) {
+                                                    onPhotoSelect(photo.id)
+                                                }
                                             }
                                         }
                                     }

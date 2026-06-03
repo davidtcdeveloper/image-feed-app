@@ -22,7 +22,7 @@ class FeedViewModel {
         
         // Start watching the StateFlow and update state on main thread
         self.closeable = presenter.iosState.watch { [weak self] state in
-            guard let self = self else { return }
+            guard let self = self, let state = state else { return }
             self.photos = state.photos
             self.topics = state.topics
             self.selectedTopicSlug = state.selectedTopicSlug
@@ -54,10 +54,10 @@ class FeedViewModel {
         let presenter = KoinHelper.shared.getRandomPhotoPresenter()
         var closeable: Closeable? = nil
         closeable = presenter.iosState.watch { state in
-            if let photo = state.photo {
+            if let photo = state?.photo {
                 completion(photo.id)
                 closeable?.close()
-            } else if let error = state.error {
+            } else if let error = state?.error {
                 print("Failed to load random photo on shake: \(error)")
                 closeable?.close()
             }

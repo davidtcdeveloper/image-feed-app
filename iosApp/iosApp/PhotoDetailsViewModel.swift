@@ -16,7 +16,7 @@ class PhotoDetailsViewModel {
         self.presenter = presenter
 
         self.closeable = presenter.iosState.watch { [weak self] state in
-            guard let self = self else { return }
+            guard let self = self, let state = state else { return }
             self.photo = state.photo
             self.stats = state.stats
             self.isLoading = state.isLoading

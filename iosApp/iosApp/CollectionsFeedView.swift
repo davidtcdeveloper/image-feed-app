@@ -142,7 +142,7 @@ struct CollectionMosaicCard: View {
                     .foregroundColor(.white)
                     .lineLimit(1)
 
-                if let desc = collection.description, !desc.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                if let desc = collection.description_, !desc.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                     Text(desc)
                         .font(.subheadline)
                         .foregroundColor(.gray)

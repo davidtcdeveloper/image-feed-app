@@ -19,7 +19,7 @@ class CollectionDetailViewModel {
         self.presenter = presenter
 
         self.closeable = presenter.iosState.watch { [weak self] state in
-            guard let self = self else { return }
+            guard let self = self, let state = state else { return }
             self.collection = state.collection
             self.photos = state.photos
             self.related = state.related

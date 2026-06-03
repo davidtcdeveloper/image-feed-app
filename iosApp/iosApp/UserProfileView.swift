@@ -158,10 +158,10 @@ struct ProfileHeaderView: View {
                 HStack(spacing: 4) {
                     Image(systemName: "mappin.and.ellipse")
                         .font(.system(size: 12))
-                        .foregroundColor(.lightGray)
+                        .foregroundColor(.gray)
                     Text(location)
                         .font(.system(size: 12))
-                        .foregroundColor(.lightGray)
+                        .foregroundColor(.gray)
                 }
             }
 
@@ -233,7 +233,7 @@ struct ProfileTabPicker: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            ForEach(ProfileTab.values(), id: \.self) { tab in
+            ForEach([ProfileTab.portfolio, ProfileTab.likes, ProfileTab.collections, ProfileTab.insights], id: \.self) { tab in
                 let isSelected = activeTab == tab
                 Button(action: { onSelect(tab) }) {
                     VStack(spacing: 6) {
@@ -270,17 +270,14 @@ struct ProfileTabPicker: View {
 }
 
 struct GridPhotosList: View {
+    @Environment(\.horizontalSizeClass) var sizeClass
     let photos: [Photo]
     let isLoading: Bool
     let onLoadMore: () -> Void
     let onSelect: (String) -> Void
 
-    var leftColumn: [Photo] {
-        photos.enumerated().filter { $0.offset % 2 == 0 }.map { $0.element }
-    }
-
-    var rightColumn: [Photo] {
-        photos.enumerated().filter { $0.offset % 2 != 0 }.map { $0.element }
+    private var columnCount: Int {
+        AdaptiveLayoutHelper.getColumnCount(sizeClass: sizeClass)
     }
 
     var body: some View {
@@ -296,9 +293,10 @@ struct GridPhotosList: View {
                     .padding(.top, 40)
             } else {
                 HStack(alignment: .top, spacing: 8) {
-                    LazyVStack(spacing: 8) {
-                        ForEach(leftColumn, id: \.id) { photo in
-                            KFImage(URL(string: photo.urls.small))
+                    ForEach(0..<columnCount, id: \.self) { colIndex in
+                        LazyVStack(spacing: 8) {
+                            ForEach(AdaptiveLayoutHelper.photosForColumn(index: colIndex, totalColumns: columnCount, from: photos), id: \.id) { photo in
+                                KFImage(URL(string: photo.urls.small))
                                 .placeholder {
                                     RoundedRectangle(cornerRadius: 12)
                                         .fill(Color(hex: photo.color ?? "1E1E24"))
@@ -315,28 +313,7 @@ struct GridPhotosList: View {
                                         onLoadMore()
                                     }
                                 }
-                        }
-                    }
-
-                    LazyVStack(spacing: 8) {
-                        ForEach(rightColumn, id: \.id) { photo in
-                            KFImage(URL(string: photo.urls.small))
-                                .placeholder {
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .fill(Color(hex: photo.color ?? "1E1E24"))
-                                        .aspectRatio(CGFloat(photo.width)/CGFloat(photo.height), contentMode: .fit)
-                                }
-                                .resizable()
-                                .aspectRatio(CGFloat(photo.width)/CGFloat(photo.height), contentMode: .fit)
-                                .clipShape(RoundedRectangle(cornerRadius: 12))
-                                .onTapGesture {
-                                    onSelect(photo.id)
-                                }
-                                .onAppear {
-                                    if photo.id == photos.last?.id {
-                                        onLoadMore()
-                                    }
-                                }
+                            }
                         }
                     }
                 }
@@ -372,7 +349,7 @@ struct GridCollectionsList: View {
             } else {
                 LazyVStack(spacing: 16) {
                     ForEach(collections, id: \.id) { col in
-                        ZStack(alignment: .bottomStart) {
+                        ZStack(alignment: .bottomLeading) {
                             if let coverPhoto = col.coverPhoto {
                                 KFImage(URL(string: coverPhoto.urls.regular))
                                     .resizable()
@@ -395,7 +372,7 @@ struct GridCollectionsList: View {
 
                                 Text("\(col.totalPhotos) Photos · Curated by \(col.user.name)")
                                     .font(.system(size: 11))
-                                    .foregroundColor(.lightGray)
+                                    .foregroundColor(.gray)
                             }
                             .padding(16)
                         }

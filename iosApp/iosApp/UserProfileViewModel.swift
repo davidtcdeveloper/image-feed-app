@@ -22,7 +22,7 @@ class UserProfileViewModel {
         self.presenter = presenter
 
         self.closeable = presenter.iosState.watch { [weak self] state in
-            guard let self = self else { return }
+            guard let self = self, let state = state else { return }
             self.user = state.user
             self.activeTab = state.activeTab
             self.portfolioPhotos = state.portfolioPhotos

@@ -18,7 +18,9 @@ data class SearchFilters(
     val color: String? = null,
     val orientation: String? = null,
     val contentFilter: String = "low"
-)
+) {
+    constructor() : this("relevant", null, null, "low")
+}
 
 data class SearchState(
     val query: String = "",

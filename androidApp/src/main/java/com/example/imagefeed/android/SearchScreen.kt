@@ -326,7 +326,7 @@ fun PhotosResultGrid(
     }
 
     LazyVerticalStaggeredGrid(
-        columns = StaggeredGridCells.Fixed(2),
+        columns = calculateGridColumns(),
         state = listState,
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(8.dp),

@@ -23,7 +23,7 @@ class SearchViewModel {
         self.presenter = presenter
 
         self.closeable = presenter.iosState.watch { [weak self] state in
-            guard let self = self else { return }
+            guard let self = self, let state = state else { return }
             self.query = state.query
             self.activeTab = state.activeTab
             self.filters = state.filters

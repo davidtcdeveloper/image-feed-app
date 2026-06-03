@@ -1,0 +1,32 @@
+name: iosApp
+options:
+  bundleIdPrefix: com.example.imagefeed
+packages:
+  Kingfisher:
+    url: https://github.com/onevcat/Kingfisher.git
+    from: 7.12.0
+targets:
+  iosApp:
+    type: application
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - iosApp
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_UILaunchScreen_Generation: "YES"
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: "UIInterfaceOrientationPortrait"
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.imagefeed.iosApp
+        DEVELOPMENT_TEAM: ""
+    dependencies:
+      - package: Kingfisher
+    preBuildScripts:
+      - name: Compile Kotlin Shared Framework
+        script: |
+          if [ -z "$KOTLIN_BUILD_INVOKED" ]; then
+            export KOTLIN_BUILD_INVOKED=1
+            "$SRCROOT/../gradlew" -p "$SRCROOT/.." :shared:embedAndSignAppleFrameworkForXcode
+          fi
+        shell: /bin/sh

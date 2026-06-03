@@ -111,17 +111,14 @@ struct FeedPathItem: Hashable {
 }
 
 struct PhotosFeedTabView: View {
+    @Environment(\.horizontalSizeClass) var sizeClass
     @State private var viewModel = FeedViewModel()
     @State private var path = NavigationPath()
     @State private var isShaking = false
     @Namespace private var categoryNamespace
 
-    var leftColumnPhotos: [Photo] {
-        viewModel.photos.enumerated().filter { $0.offset % 2 == 0 }.map { $0.element }
-    }
-    
-    var rightColumnPhotos: [Photo] {
-        viewModel.photos.enumerated().filter { $0.offset % 2 != 0 }.map { $0.element }
+    private var columnCount: Int {
+        AdaptiveLayoutHelper.getColumnCount(sizeClass: sizeClass)
     }
 
     var body: some View {
@@ -190,35 +187,20 @@ struct PhotosFeedTabView: View {
                         ScrollView {
                             LazyVStack(spacing: 8) {
                                 HStack(alignment: .top, spacing: 8) {
-                                    // Left Column
-                                    LazyVStack(spacing: 8) {
-                                        ForEach(leftColumnPhotos, id: \.id) { photo in
-                                            PhotoCard(
-                                                photo: photo,
-                                                viewModel: viewModel,
-                                                onSelect: { photoId in
-                                                    path.append(FeedPathItem(id: photoId, type: .photo))
-                                                },
-                                                onUserSelect: { username in
-                                                    path.append(FeedPathItem(id: username, type: .user))
-                                                }
-                                            )
-                                        }
-                                    }
-                                    
-                                    // Right Column
-                                    LazyVStack(spacing: 8) {
-                                        ForEach(rightColumnPhotos, id: \.id) { photo in
-                                            PhotoCard(
-                                                photo: photo,
-                                                viewModel: viewModel,
-                                                onSelect: { photoId in
-                                                    path.append(FeedPathItem(id: photoId, type: .photo))
-                                                },
-                                                onUserSelect: { username in
-                                                    path.append(FeedPathItem(id: username, type: .user))
-                                                }
-                                            )
+                                    ForEach(0..<columnCount, id: \.self) { colIndex in
+                                        LazyVStack(spacing: 8) {
+                                            ForEach(AdaptiveLayoutHelper.photosForColumn(index: colIndex, totalColumns: columnCount, from: viewModel.photos), id: \.id) { photo in
+                                                PhotoCard(
+                                                    photo: photo,
+                                                    viewModel: viewModel,
+                                                    onSelect: { photoId in
+                                                        path.append(FeedPathItem(id: photoId, type: .photo))
+                                                    },
+                                                    onUserSelect: { username in
+                                                        path.append(FeedPathItem(id: username, type: .user))
+                                                    }
+                                                )
+                                            }
                                         }
                                     }
                                 }
@@ -384,7 +366,7 @@ struct PhotoCard: View {
                 }
                 .fade(duration: 0.25)
                 .resizable()
-                .aspectRatio(contentRatio(photoWidth: photo.width, photoHeight: photo.height), contentMode: .fit)
+                .aspectRatio(contentRatio(photoWidth: Int(photo.width), photoHeight: Int(photo.height)), contentMode: .fit)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 .contentShape(Rectangle())
                 .onTapGesture {
