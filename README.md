@@ -1,3 +1,6 @@
+> This project is a proof of concept written entirely with Google's Gemini 3.5 Flash model. The only line written manually was this one. 
+> The main goal was to evaluate the model and different ways to work with it (Antigravity, Gemini CLI and GitHub Copilot).
+
 # Unsplash Image Feed App (Kotlin Multiplatform)
 
 A modern, fluid, and high-performance Kotlin Multiplatform (KMP) mobile application utilizing the public Unsplash API to deliver a rich, responsive photo discovery experience on both Android and iOS.
