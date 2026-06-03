@@ -45,13 +45,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
-import androidx.navigation.NavHostController
-import androidx.navigation.NavType
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
-import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.navArgument
+import androidx.navigation3.runtime.NavKey
+import androidx.navigation3.runtime.rememberNavBackStack
+import androidx.navigation3.runtime.NavEntry
+import androidx.navigation3.runtime.NavBackStack
+import androidx.navigation3.ui.NavDisplay
+import kotlinx.serialization.Serializable
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import com.example.imagefeed.android.util.BlurHashDecoder
@@ -65,6 +64,27 @@ import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
 import kotlin.math.sqrt
 
+@Serializable
+sealed class Screen : NavKey {
+    @Serializable
+    data object Feed : Screen()
+
+    @Serializable
+    data object Collections : Screen()
+
+    @Serializable
+    data class CollectionDetails(val collectionId: String) : Screen()
+
+    @Serializable
+    data object Search : Screen()
+
+    @Serializable
+    data class PhotoDetails(val photoId: String) : Screen()
+
+    @Serializable
+    data class UserProfile(val username: String) : Screen()
+}
+
 class MainActivity : ComponentActivity() {
     private val presenter: FeedPresenter by inject()
     private val collectionsPresenter: CollectionsFeedPresenter by inject()
@@ -72,7 +92,7 @@ class MainActivity : ComponentActivity() {
     
     private var sensorManager: SensorManager? = null
     private var shakeDetector: ShakeDetector? = null
-    private var navController: NavHostController? = null
+    private var backStack: NavBackStack<NavKey>? = null
     private var isFetchingRandom = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -96,13 +116,11 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    val controller = rememberNavController()
-                    navController = controller
+                    val backStackState = rememberNavBackStack(Screen.Feed)
+                    backStack = backStackState
 
-                    val navBackStackEntry by controller.currentBackStackEntryAsState()
-                    val currentRoute = navBackStackEntry?.destination?.route
-
-                    val showBottomBar = currentRoute in listOf("feed", "collections", "search")
+                    val currentScreen = backStackState.lastOrNull() as? Screen ?: Screen.Feed
+                    val showBottomBar = currentScreen in listOf(Screen.Feed, Screen.Collections, Screen.Search)
 
                     Scaffold(
                         bottomBar = {
@@ -112,13 +130,11 @@ class MainActivity : ComponentActivity() {
                                     contentColor = Color.White
                                 ) {
                                     NavigationBarItem(
-                                        selected = currentRoute == "feed",
+                                        selected = currentScreen is Screen.Feed,
                                         onClick = {
-                                            if (currentRoute != "feed") {
-                                                controller.navigate("feed") {
-                                                    popUpTo("feed") { inclusive = false }
-                                                    launchSingleTop = true
-                                                }
+                                            if (currentScreen !is Screen.Feed) {
+                                                backStackState.clear()
+                                                backStackState.add(Screen.Feed)
                                             }
                                         },
                                         icon = {
@@ -138,14 +154,11 @@ class MainActivity : ComponentActivity() {
                                     )
 
                                     NavigationBarItem(
-                                        selected = currentRoute == "collections",
+                                        selected = currentScreen is Screen.Collections,
                                         onClick = {
-                                            if (currentRoute != "collections") {
-                                                controller.navigate("collections") {
-                                                    popUpTo("feed") { saveState = true }
-                                                    launchSingleTop = true
-                                                    restoreState = true
-                                                }
+                                            if (currentScreen !is Screen.Collections) {
+                                                backStackState.removeIf { it !is Screen.Feed }
+                                                backStackState.add(Screen.Collections)
                                             }
                                         },
                                         icon = {
@@ -165,14 +178,11 @@ class MainActivity : ComponentActivity() {
                                     )
 
                                     NavigationBarItem(
-                                        selected = currentRoute == "search",
+                                        selected = currentScreen is Screen.Search,
                                         onClick = {
-                                            if (currentRoute != "search") {
-                                                controller.navigate("search") {
-                                                    popUpTo("feed") { saveState = true }
-                                                    launchSingleTop = true
-                                                    restoreState = true
-                                                }
+                                            if (currentScreen !is Screen.Search) {
+                                                backStackState.removeIf { it !is Screen.Feed }
+                                                backStackState.add(Screen.Search)
                                             }
                                         },
                                         icon = {
@@ -194,96 +204,110 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                     ) { innerPadding ->
-                        NavHost(
-                            navController = controller,
-                            startDestination = "feed",
-                            modifier = Modifier.padding(innerPadding)
-                        ) {
-                            composable("feed") {
-                                FeedScreen(
-                                    presenter = presenter,
-                                    onPhotoClick = { photo ->
-                                        controller.navigate("photo_details/${photo.id}")
-                                    },
-                                    onUserClick = { user ->
-                                        controller.navigate("user_profile/${user.username}")
-                                    },
-                                    onSearchClick = {
-                                        controller.navigate("search")
-                                    },
-                                    onRandomClick = {
-                                        handleShake() // reuse same fetch random logic
+                        NavDisplay(
+                            backStack = backStackState,
+                            onBack = {
+                                if (backStackState.size > 1) {
+                                    backStackState.removeLast()
+                                } else {
+                                    finish()
+                                }
+                            },
+                            modifier = Modifier.padding(innerPadding),
+                            entryProvider = { navKey ->
+                                val key = navKey as Screen
+                                when (key) {
+                                    is Screen.Feed -> NavEntry(key) {
+                                        FeedScreen(
+                                            presenter = presenter,
+                                            onPhotoClick = { photo ->
+                                                backStackState.add(Screen.PhotoDetails(photo.id))
+                                            },
+                                            onUserClick = { user ->
+                                                backStackState.add(Screen.UserProfile(user.username))
+                                            },
+                                            onSearchClick = {
+                                                backStackState.add(Screen.Search)
+                                            },
+                                            onRandomClick = {
+                                                handleShake()
+                                            }
+                                        )
                                     }
-                                )
-                            }
-                            composable("collections") {
-                                CollectionsFeedScreen(
-                                    presenter = collectionsPresenter,
-                                    onCollectionClick = { coll ->
-                                        controller.navigate("collection_details/${coll.id}")
-                                    },
-                                    onSearchClick = {
-                                        controller.navigate("search")
+                                    is Screen.Collections -> NavEntry(key) {
+                                        CollectionsFeedScreen(
+                                            presenter = collectionsPresenter,
+                                            onCollectionClick = { coll ->
+                                                backStackState.add(Screen.CollectionDetails(coll.id))
+                                            },
+                                            onSearchClick = {
+                                                backStackState.add(Screen.Search)
+                                            }
+                                        )
                                     }
-                                )
-                            }
-                            composable(
-                                route = "collection_details/{collectionId}",
-                                arguments = listOf(navArgument("collectionId") { type = NavType.StringType })
-                            ) { backStackEntry ->
-                                val collectionId = backStackEntry.arguments?.getString("collectionId") ?: ""
-                                CollectionDetailScreen(
-                                    collectionId = collectionId,
-                                    onBack = { controller.popBackStack() },
-                                    onPhotoClick = { photo ->
-                                        controller.navigate("photo_details/${photo.id}")
-                                    },
-                                    onCollectionClick = { id ->
-                                        controller.navigate("collection_details/$id")
+                                    is Screen.CollectionDetails -> NavEntry(key) {
+                                        CollectionDetailScreen(
+                                            collectionId = key.collectionId,
+                                            onBack = {
+                                                if (backStackState.size > 1) {
+                                                    backStackState.removeLast()
+                                                }
+                                            },
+                                            onPhotoClick = { photo ->
+                                                backStackState.add(Screen.PhotoDetails(photo.id))
+                                            },
+                                            onCollectionClick = { id ->
+                                                backStackState.add(Screen.CollectionDetails(id))
+                                            }
+                                        )
                                     }
-                                )
-                            }
-                            composable("search") {
-                                SearchScreen(
-                                    onBack = { controller.popBackStack() },
-                                    onPhotoClick = { photo ->
-                                        controller.navigate("photo_details/${photo.id}")
-                                    },
-                                    onUserClick = { user ->
-                                        controller.navigate("user_profile/${user.username}")
+                                    is Screen.Search -> NavEntry(key) {
+                                        SearchScreen(
+                                            onBack = {
+                                                if (backStackState.size > 1) {
+                                                    backStackState.removeLast()
+                                                }
+                                            },
+                                            onPhotoClick = { photo ->
+                                                backStackState.add(Screen.PhotoDetails(photo.id))
+                                            },
+                                            onUserClick = { user ->
+                                                backStackState.add(Screen.UserProfile(user.username))
+                                            }
+                                        )
                                     }
-                                )
-                            }
-                            composable(
-                                route = "photo_details/{photoId}",
-                                arguments = listOf(navArgument("photoId") { type = NavType.StringType })
-                            ) { backStackEntry ->
-                                val photoId = backStackEntry.arguments?.getString("photoId") ?: ""
-                                PhotoDetailsScreen(
-                                    photoId = photoId,
-                                    onBack = { controller.popBackStack() },
-                                    onUserClick = { username ->
-                                        controller.navigate("user_profile/$username")
+                                    is Screen.PhotoDetails -> NavEntry(key) {
+                                        PhotoDetailsScreen(
+                                            photoId = key.photoId,
+                                            onBack = {
+                                                if (backStackState.size > 1) {
+                                                    backStackState.removeLast()
+                                                }
+                                            },
+                                            onUserClick = { username ->
+                                                backStackState.add(Screen.UserProfile(username))
+                                            }
+                                        )
                                     }
-                                )
-                            }
-                            composable(
-                                route = "user_profile/{username}",
-                                arguments = listOf(navArgument("username") { type = NavType.StringType })
-                            ) { backStackEntry ->
-                                val username = backStackEntry.arguments?.getString("username") ?: ""
-                                UserProfileScreen(
-                                    username = username,
-                                    onBack = { controller.popBackStack() },
-                                    onPhotoClick = { photo ->
-                                        controller.navigate("photo_details/${photo.id}")
-                                    },
-                                    onCollectionClick = { col ->
-                                        controller.navigate("collection_details/${col.id}")
+                                    is Screen.UserProfile -> NavEntry(key) {
+                                        UserProfileScreen(
+                                            username = key.username,
+                                            onBack = {
+                                                if (backStackState.size > 1) {
+                                                    backStackState.removeLast()
+                                                }
+                                            },
+                                            onPhotoClick = { photo ->
+                                                backStackState.add(Screen.PhotoDetails(photo.id))
+                                            },
+                                            onCollectionClick = { col ->
+                                                backStackState.add(Screen.CollectionDetails(col.id))
+                                            }
+                                        )
                                     }
-                                )
+                                }
                             }
-                        }
+                        )
                     }
                 }
             }
@@ -292,7 +316,7 @@ class MainActivity : ComponentActivity() {
 
     private fun handleShake() {
         if (isFetchingRandom) return
-        val controller = navController ?: return
+        val backStackState = backStack ?: return
         
         isFetchingRandom = true
         Toast.makeText(this, "🎲 Shaking up a random photo...", Toast.LENGTH_SHORT).show()
@@ -302,7 +326,7 @@ class MainActivity : ComponentActivity() {
                 val randomPhotos = repository.getRandomPhotos(count = 1)
                 val randomPhoto = randomPhotos.firstOrNull()
                 if (randomPhoto != null) {
-                    controller.navigate("photo_details/${randomPhoto.id}")
+                    backStackState.add(Screen.PhotoDetails(randomPhoto.id))
                 } else {
                     Toast.makeText(this@MainActivity, "No photos found", Toast.LENGTH_SHORT).show()
                 }

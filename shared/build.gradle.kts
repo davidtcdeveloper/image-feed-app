@@ -78,7 +78,7 @@ kotlin {
 
 android {
     namespace = "com.example.imagefeed"
-    compileSdk = 34
+    compileSdk = 37
     defaultConfig {
         minSdk = 29
     }
