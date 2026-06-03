@@ -22,6 +22,7 @@ targets:
         DEVELOPMENT_TEAM: ""
     dependencies:
       - package: Kingfisher
+        product: Kingfisher
     preBuildScripts:
       - name: Compile Kotlin Shared Framework
         script: |
