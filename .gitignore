@@ -1,0 +1,27 @@
+# Gradle files
+.gradle/
+build/
+shared/build/
+androidApp/build/
+
+# Android Studio and IntelliJ files
+.idea/
+*.iml
+*.iws
+
+# Local configuration
+local.properties
+
+# Xcode and OS X files
+.DS_Store
+iosApp/.lock
+iosApp/iosApp.xcworkspace
+iosApp/iosApp.xcodeproj/project.xcworkspace
+iosApp/iosApp.xcodeproj/xcuserdata/
+iosApp/DerivedData/
+iosApp/build/
+iosApp/Pods/
+iosApp/.symlinks/
+
+# Gradle Wrapper jar (often ignored or committed, let's keep wrapper)
+# gradle-wrapper.jar
