@@ -119,6 +119,30 @@ class MainActivity : ComponentActivity() {
                     val backStackState = rememberNavBackStack(Screen.Feed)
                     backStack = backStackState
 
+                    val navigateToTab = { targetScreen: Screen ->
+                        if (targetScreen is Screen.Feed) {
+                            while (backStackState.size > 1) {
+                                backStackState.removeLast()
+                            }
+                        } else {
+                            val targetIndex = backStackState.indexOf(targetScreen)
+                            if (targetIndex != -1) {
+                                while (backStackState.size > targetIndex + 1) {
+                                    backStackState.removeLast()
+                                }
+                            } else {
+                                while (backStackState.size > 2) {
+                                    backStackState.removeLast()
+                                }
+                                if (backStackState.size > 1) {
+                                    backStackState[1] = targetScreen
+                                } else {
+                                    backStackState.add(targetScreen)
+                                }
+                            }
+                        }
+                    }
+
                     val currentScreen = backStackState.lastOrNull() as? Screen ?: Screen.Feed
                     val showBottomBar = currentScreen in listOf(Screen.Feed, Screen.Collections, Screen.Search)
 
@@ -133,8 +157,7 @@ class MainActivity : ComponentActivity() {
                                         selected = currentScreen is Screen.Feed,
                                         onClick = {
                                             if (currentScreen !is Screen.Feed) {
-                                                backStackState.clear()
-                                                backStackState.add(Screen.Feed)
+                                                navigateToTab(Screen.Feed)
                                             }
                                         },
                                         icon = {
@@ -157,8 +180,7 @@ class MainActivity : ComponentActivity() {
                                         selected = currentScreen is Screen.Collections,
                                         onClick = {
                                             if (currentScreen !is Screen.Collections) {
-                                                backStackState.removeIf { it !is Screen.Feed }
-                                                backStackState.add(Screen.Collections)
+                                                navigateToTab(Screen.Collections)
                                             }
                                         },
                                         icon = {
@@ -181,8 +203,7 @@ class MainActivity : ComponentActivity() {
                                         selected = currentScreen is Screen.Search,
                                         onClick = {
                                             if (currentScreen !is Screen.Search) {
-                                                backStackState.removeIf { it !is Screen.Feed }
-                                                backStackState.add(Screen.Search)
+                                                navigateToTab(Screen.Search)
                                             }
                                         },
                                         icon = {
