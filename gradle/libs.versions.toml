@@ -1,7 +1,7 @@
 [versions]
 # Kotlin & Plugins
 kotlin = "2.4.0"
-agp = "9.1.1"          # Android Gradle Plugin
+agp = "9.2.1"          # Android Gradle Plugin
 buildkonfig = "0.15.2"
 
 # Core KMP Libraries
