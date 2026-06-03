@@ -1,7 +1,6 @@
 import SwiftUI
 import Charts
 import shared
-import Kingfisher
 
 struct UserProfileView: View {
     let username: String

@@ -2,7 +2,6 @@ import SwiftUI
 import MapKit
 import Charts
 import shared
-import Kingfisher
 
 struct PhotoDetailsView: View {
     let photoId: String

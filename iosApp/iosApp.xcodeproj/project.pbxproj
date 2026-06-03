@@ -8,7 +8,6 @@
 
 /* Begin PBXBuildFile section */
 		182025D08B87193AC4AFA3C3 /* SearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7BE4AACAB34743ADF91B179 /* SearchView.swift */; };
-		1C81D6F669B7BB6D2FFCCEB3 /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = F1B03872049470BF84F3E5E2 /* Kingfisher */; };
 		307C2654CD5972A25FB7FD87 /* iOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 668CECA83ACC03A83C85A623 /* iOSApp.swift */; };
 		3F35CDE47A27BAE616C98E9B /* PhotoDetailsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C936ADD93402EB34AACD70F /* PhotoDetailsViewModel.swift */; };
 		48D2067C19A3A08946282DC5 /* FeedViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBF03DE24E6E4B163090C57 /* FeedViewModel.swift */; };
@@ -22,6 +21,7 @@
 		B2D8F8DB7447219BF13F090D /* UserProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4ED0F6995B908ACC1E4D2E55 /* UserProfileView.swift */; };
 		BF1A6987C043125A0E0FA03A /* CollectionDetailViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A45CA5093D791064865721B /* CollectionDetailViewModel.swift */; };
 		C8338E785E10A7C23055A9A5 /* CollectionsFeedViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3172037528BC5F82E8C06F5D /* CollectionsFeedViewModel.swift */; };
+		ECAF30CCE7441589DD2986F7 /* KFImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = A52E766EFBC2CFA8C9E3063F /* KFImage.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -35,23 +35,13 @@
 		86038AE1032E284E79B32AD6 /* iosApp.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = iosApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		8C936ADD93402EB34AACD70F /* PhotoDetailsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoDetailsViewModel.swift; sourceTree = "<group>"; };
 		8E1949CA4CC0721B37ED3C17 /* SearchViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchViewModel.swift; sourceTree = "<group>"; };
+		A52E766EFBC2CFA8C9E3063F /* KFImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KFImage.swift; sourceTree = "<group>"; };
 		BBBF03DE24E6E4B163090C57 /* FeedViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedViewModel.swift; sourceTree = "<group>"; };
 		CE8509E5A49E4A5CAAEB3ADB /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		DF61A3F7036F2537D2F8745F /* AdaptiveLayoutHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdaptiveLayoutHelper.swift; sourceTree = "<group>"; };
 		E7BE4AACAB34743ADF91B179 /* SearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchView.swift; sourceTree = "<group>"; };
 		FBF5C6096F912EC4B7851517 /* PhotoDetailsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoDetailsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
-
-/* Begin PBXFrameworksBuildPhase section */
-		EF8A6E9BFD470986D9D5C9B5 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				1C81D6F669B7BB6D2FFCCEB3 /* Kingfisher in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		1DB4B685CAEE8BEFEBBAEF94 /* iosApp */ = {
@@ -65,6 +55,7 @@
 				CE8509E5A49E4A5CAAEB3ADB /* ContentView.swift */,
 				BBBF03DE24E6E4B163090C57 /* FeedViewModel.swift */,
 				668CECA83ACC03A83C85A623 /* iOSApp.swift */,
+				A52E766EFBC2CFA8C9E3063F /* KFImage.swift */,
 				FBF5C6096F912EC4B7851517 /* PhotoDetailsView.swift */,
 				8C936ADD93402EB34AACD70F /* PhotoDetailsViewModel.swift */,
 				E7BE4AACAB34743ADF91B179 /* SearchView.swift */,
@@ -100,7 +91,6 @@
 			buildPhases = (
 				73FB7F947713B04AB4166518 /* Compile Kotlin Shared Framework */,
 				297B59D9CE634556D6007C40 /* Sources */,
-				EF8A6E9BFD470986D9D5C9B5 /* Frameworks */,
 			);
 			buildRules = (
 			);
@@ -108,7 +98,6 @@
 			);
 			name = iosApp;
 			packageProductDependencies = (
-				F1B03872049470BF84F3E5E2 /* Kingfisher */,
 			);
 			productName = iosApp;
 			productReference = 86038AE1032E284E79B32AD6 /* iosApp.app */;
@@ -137,9 +126,6 @@
 			);
 			mainGroup = 38B69C3F79CD97858CF7B609;
 			minimizedProjectReferenceProxies = 1;
-			packageReferences = (
-				0E63863DB16A26F430A758F7 /* XCRemoteSwiftPackageReference "Kingfisher" */,
-			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 94C98B8B3A2BFC1966447269 /* Products */;
 			projectDirPath = "";
@@ -183,6 +169,7 @@
 				C8338E785E10A7C23055A9A5 /* CollectionsFeedViewModel.swift in Sources */,
 				56B0305B5D3847FC6B326502 /* ContentView.swift in Sources */,
 				48D2067C19A3A08946282DC5 /* FeedViewModel.swift in Sources */,
+				ECAF30CCE7441589DD2986F7 /* KFImage.swift in Sources */,
 				83B0F700070C5C256B69CA4D /* PhotoDetailsView.swift in Sources */,
 				3F35CDE47A27BAE616C98E9B /* PhotoDetailsViewModel.swift in Sources */,
 				182025D08B87193AC4AFA3C3 /* SearchView.swift in Sources */,
@@ -377,25 +364,6 @@
 			defaultConfigurationName = Debug;
 		};
 /* End XCConfigurationList section */
-
-/* Begin XCRemoteSwiftPackageReference section */
-		0E63863DB16A26F430A758F7 /* XCRemoteSwiftPackageReference "Kingfisher" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/onevcat/Kingfisher.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 7.12.0;
-			};
-		};
-/* End XCRemoteSwiftPackageReference section */
-
-/* Begin XCSwiftPackageProductDependency section */
-		F1B03872049470BF84F3E5E2 /* Kingfisher */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 0E63863DB16A26F430A758F7 /* XCRemoteSwiftPackageReference "Kingfisher" */;
-			productName = Kingfisher;
-		};
-/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 242FB5348943441C388468CE /* Project object */;
 }

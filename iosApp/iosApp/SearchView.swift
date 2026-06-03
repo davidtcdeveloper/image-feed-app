@@ -1,6 +1,5 @@
 import SwiftUI
 import shared
-import Kingfisher
 
 struct SearchView: View {
     @Environment(\.horizontalSizeClass) var sizeClass

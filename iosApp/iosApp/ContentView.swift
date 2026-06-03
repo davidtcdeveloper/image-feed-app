@@ -1,6 +1,5 @@
 import SwiftUI
 import shared
-import Kingfisher
 
 struct ContentView: View {
     @State private var selectedTab = 0

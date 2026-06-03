@@ -1,6 +1,5 @@
 import SwiftUI
 import shared
-import Kingfisher
 
 struct CollectionsFeedView: View {
     @State private var viewModel = CollectionsFeedViewModel()

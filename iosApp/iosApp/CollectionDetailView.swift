@@ -1,6 +1,5 @@
 import SwiftUI
 import shared
-import Kingfisher
 
 struct CollectionDetailView: View {
     let collectionId: String
