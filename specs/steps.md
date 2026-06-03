@@ -86,3 +86,18 @@ This document outlines the detailed steps to execute the project implementation,
     *   Design a two-column staggered grid (placing alternating elements in left/right stacks to simulate a waterfall layout).
     *   Integrate Kingfisher to retrieve images dynamically with custom size constraints.
     *   Add native iOS 17 pull-to-refresh mechanics.
+
+### Step 7: Gradle Version Catalog Migration
+1. Create `gradle/libs.versions.toml` to list all plugins, versions, and libraries.
+2. Update the root `build.gradle.kts` file to declare plugins using the `alias` method.
+3. Update `shared/build.gradle.kts` to reference versions and libraries from `libs.versions.toml`.
+4. Update `androidApp/build.gradle.kts` to reference versions and libraries from `libs.versions.toml`.
+5. Run `./gradlew tasks` or equivalent to verify dependencies compile successfully.
+
+### Step 8: Gradle and Tooling Upgrade
+1. Evaluate and prepare requirements for Gradle 9.x / AGP 9.x and Kotlin 2.4.x.
+2. Upgrade the Gradle wrapper distribution URL.
+3. Update standard Kotlin and AGP dependency definitions in `gradle/libs.versions.toml`.
+4. Adjust Kotlin DSL build logic inside module-level scripts to ensure full compatibility.
+
+

@@ -2,10 +2,10 @@ import java.util.Properties
 import com.codingfeline.buildkonfig.compiler.FieldSpec.Type
 
 plugins {
-    kotlin("multiplatform")
-    id("com.android.library")
-    id("com.codingfeline.buildkonfig")
-    kotlin("plugin.serialization")
+    alias(libs.plugins.kotlin.multiplatform)
+    alias(libs.plugins.android.library)
+    alias(libs.plugins.buildkonfig)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 // Read Unsplash API Access Key from local.properties
@@ -40,26 +40,23 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 // Coroutines & Concurrency
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
+                implementation(libs.kotlin.coroutines.core)
                 
-                // Networking (Ktor)
-                implementation("io.ktor:ktor-client-core:2.3.12")
-                implementation("io.ktor:ktor-client-content-negotiation:2.3.12")
-                implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.12")
-                implementation("io.ktor:ktor-client-logging:2.3.12")
+                // Networking (Ktor) - using bundle
+                implementation(libs.bundles.ktor.common)
                 
                 // Serialization
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.1")
+                implementation(libs.kotlin.serialization.json)
                 
                 // Dependency Injection
-                implementation("io.insert-koin:koin-core:3.5.6")
+                implementation(libs.koin.core)
             }
         }
         
         val androidMain by getting {
             dependencies {
                 // Ktor Android Engine
-                implementation("io.ktor:ktor-client-okhttp:2.3.12")
+                implementation(libs.ktor.client.okhttp)
             }
         }
         
@@ -68,7 +65,7 @@ kotlin {
             dependsOn(commonMain)
             dependencies {
                 // Ktor iOS/Darwin Engine
-                implementation("io.ktor:ktor-client-darwin:2.3.12")
+                implementation(libs.ktor.client.darwin)
             }
         }
         

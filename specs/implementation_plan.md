@@ -190,3 +190,13 @@ image-feed-app/
 ### Phase 6: Tablet & iPad Adaptive Multi-Column Layouts
 1. Android App: Replace hardcoded `StaggeredGridCells.Fixed(2)` with adaptive calculations using screen-width Dp, and build side-by-side Row split detail views on screens >600dp.
 2. iOS App: Replace rigid 2-column divisions with size-class based dynamic N-column rendering, and configure iPadOS NavigationSplitView master-detail panels.
+
+### Phase 7: Gradle Version Catalog Migration
+1. Migrate all hardcoded dependency coordinates and versions across the build files into a centralized `libs.versions.toml` file in `gradle/` folder.
+2. Refactor root `build.gradle.kts`, `shared/build.gradle.kts`, and `androidApp/build.gradle.kts` to use type-safe version catalog accessors.
+
+### Phase 8: Gradle and Tooling Upgrade
+1. Evaluate impact and requirements to upgrade Gradle to latest stable version, aligning with modern JVM guidelines.
+2. Upgrade language and packaging tools (Kotlin 2.4.0 and AGP 9.1.1) for optimal cross-platform compilation and type-safety.
+
+
