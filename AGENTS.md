@@ -41,6 +41,7 @@ You MUST follow the Unsplash API developer guidelines when editing the applicati
 *   **Dynamic Resizing:** Do not download original full-sized images. Read the screen or container width, and append query parameters to the raw image URL (`&w=calculatedWidth&q=80&auto=format`).
 *   **BlurHash Placeholders:** Use the `blur_hash` string associated with each image to display a blurred placeholder during load transitions.
 *   **Fluid Scrolling:** Infinite scrolling pagination must trigger pre-fetching of the next page before the user reaches the end of the scroll container to ensure frictionless layout updates.
+*   **Adaptive Layout for Tablets/iPads:** View layouts must adapt dynamically to screen sizes. Grid displays should use auto-calculating adaptive columns (e.g., `StaggeredGridCells.Adaptive` on Compose, or flexible grid layout columns on SwiftUI) to scale column count gracefully on tablets/iPads instead of using hardcoded column counts. Side-by-side split panes should be used for detailed views on large screens.
 
 ---
 

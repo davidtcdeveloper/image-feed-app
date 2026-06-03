@@ -186,3 +186,7 @@ image-feed-app/
 ### Phase 5: Verification & Walkthrough
 1. Build both projects.
 2. Verify image loading, infinite pagination triggers, rate-limit failure recovery, and responsiveness.
+
+### Phase 6: Tablet & iPad Adaptive Multi-Column Layouts
+1. Android App: Replace hardcoded `StaggeredGridCells.Fixed(2)` with adaptive calculations using screen-width Dp, and build side-by-side Row split detail views on screens >600dp.
+2. iOS App: Replace rigid 2-column divisions with size-class based dynamic N-column rendering, and configure iPadOS NavigationSplitView master-detail panels.
