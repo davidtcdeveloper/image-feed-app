@@ -101,8 +101,18 @@ This document outlines the detailed steps to execute the project implementation,
 4. Adjust Kotlin DSL build logic inside module-level scripts to ensure full compatibility.
 
 ### Step 9: Ecosystem Dependency Upgrade
-1. Review all other core platform dependencies for new stable versions.
-2. Formulate comprehensive coordinate migration plans for breaking library releases (Ktor 3.x, Koin 4.x, and Coil 3.x).
+101. 1. Review all other core platform dependencies for new stable versions.
+102. 2. Formulate comprehensive coordinate migration plans for breaking library releases (Ktor 3.x, Koin 4.x, and Coil 3.x).
+103. 
+104. ### Step 10: Launch Icon Implementation
+105. 1. Design a custom launcher icon representing visual discovery and photography (stylized camera aperture over a vibrant abstract landscape).
+106. 2. Implement an Android Adaptive Icon:
+107.    * Define XML vector drawables for foreground and background layers.
+108.    * Update `AndroidManifest.xml` to reference the new adaptive launcher icon.
+109. 3. Implement iOS and macOS Launch Icons:
+110.    * Generate high-resolution icon assets (AppIcon.appiconset).
+111.    * Configure Xcode resource catalog to set the app icon.
+112. 
 
 
 
