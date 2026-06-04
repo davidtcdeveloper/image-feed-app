@@ -39,6 +39,7 @@ The `specs/` folder currently contains the following implementation and design d
 *   `specs/10_navigation_3_upgrade_spec.md`
 *   `specs/11_macos_entry_point_integration.md`
 *   `specs/12_photo_detail_description_fix.md`
+*   `specs/13_macos_back_button_duplication_fix.md`
 *   `specs/implementation_plan.md`
 *   `specs/steps.md`
 
@@ -166,3 +167,13 @@ These are the spec files that the implementation notes and planning references s
     *   Keep the existing `altDescription` fallback for cases where the main caption is blank.
 3.  **Track the fix in its own spec:**
     *   The implementation notes for this change live in `specs/12_photo_detail_description_fix.md`.
+
+### Step 13: macOS Back Button Duplication Fix
+1.  **Document the duplicated return-arrow issue on macOS:**
+    *   The custom toolbar back button is intentionally rendered in the shared iOS/macOS detail screens, but the native system back affordance was still visible on macOS because the hide logic was scoped to iOS only.
+    *   This produced two arrows stacked on top of each other in the top navigation area.
+2.  **Apply the navigation fix in the shared Apple UI path:**
+    *   Update `iosApp/iosApp/PhotoDetailsView.swift`, `iosApp/iosApp/CollectionDetailView.swift`, and `iosApp/iosApp/UserProfileView.swift` so the system back button is hidden on all platforms.
+    *   Keep the custom toolbar button as the single return control.
+3.  **Track the fix in its own spec:**
+    *   The implementation notes for this change live in `specs/13_macos_back_button_duplication_fix.md`.

@@ -153,9 +153,7 @@ struct UserProfileView: View {
                 #endif
             }
         }
-        #if os(iOS)
         .navigationBarBackButtonHidden(true)
-        #endif
     }
 }
 

@@ -181,9 +181,7 @@ struct CollectionDetailView: View {
                 .ignoresSafeArea(edges: .top)
             }
         }
-        #if os(iOS)
         .navigationBarBackButtonHidden(true)
-        #endif
         .toolbar {
             #if os(iOS)
             ToolbarItem(placement: .navigationBarLeading) {
