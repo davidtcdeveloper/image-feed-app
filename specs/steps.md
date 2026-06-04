@@ -23,6 +23,29 @@ This document outlines the detailed steps to execute the project implementation,
 
 ---
 
+## Current Specification Inventory
+
+The `specs/` folder currently contains the following implementation and design documents:
+
+*   `specs/01_photo_details_and_statistics.md`
+*   `specs/02_advanced_unified_search.md`
+*   `specs/03_collections_and_curation.md`
+*   `specs/04_topics_and_categories.md`
+*   `specs/05_photographer_profiles_and_insights.md`
+*   `specs/06_adaptive_layout_tablets.md`
+*   `specs/07_gradle_version_catalog_migration.md`
+*   `specs/08_gradle_and_tooling_upgrade.md`
+*   `specs/09_dependency_updates_plan.md`
+*   `specs/10_navigation_3_upgrade_spec.md`
+*   `specs/11_macos_entry_point_integration.md`
+*   `specs/12_photo_detail_description_fix.md`
+*   `specs/implementation_plan.md`
+*   `specs/steps.md`
+
+These are the spec files that the implementation notes and planning references should align with.
+
+---
+
 ## Detailed Step-by-Step Execution Plan
 
 ### Step 1: KMP Project Setup & Initial Gradle Config
@@ -106,7 +129,7 @@ This document outlines the detailed steps to execute the project implementation,
 
 ### Step 10: Launch Icon Implementation
 1. Design a custom launcher icon representing visual discovery and photography (stylized camera aperture over a vibrant abstract landscape).
-2. Implement an Android Adaptive Icon:
+2. Implement an Android Adaptwive Icon:
    * Define XML vector drawables for foreground and background layers.
    * Update `AndroidManifest.xml` to reference the new adaptive launcher icon.
 3. Implement iOS and macOS Launch Icons:
@@ -134,6 +157,12 @@ This document outlines the detailed steps to execute the project implementation,
     *   Run `xcodegen` and open the generated Xcode project.
     *   Build and run the `macosApp` target to verify KMP framework linking, Koin DI initiation, image downloading, and adaptive grid scaling.
 
-
-
-
+### Step 12: Photo Detail Description Fix
+1.  **Document the Swift/KMP binding mismatch:**
+    *   The shared Kotlin model exposes the Unsplash caption as `description`, but the generated Swift binding exposes it as `description_` to avoid colliding with Swift's `description` API.
+    *   The iOS/macOS view must use `photo.description_ ?? photo.altDescription` instead of `photo.description`.
+2.  **Implement the fix in the shared Apple UI path:**
+    *   Update `iosApp/iosApp/PhotoDetailsView.swift` so the detail screen renders the real Unsplash caption text rather than the Swift object dump.
+    *   Keep the existing `altDescription` fallback for cases where the main caption is blank.
+3.  **Track the fix in its own spec:**
+    *   The implementation notes for this change live in `specs/12_photo_detail_description_fix.md`.

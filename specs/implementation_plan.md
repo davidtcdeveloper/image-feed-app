@@ -138,6 +138,18 @@ image-feed-app/
 ├── local.properties          # Excluded from git. Holds unsplashApiKey
 ├── gradle.properties
 ├── specs/                    # Specifications folder
+│   ├── 01_photo_details_and_statistics.md
+│   ├── 02_advanced_unified_search.md
+│   ├── 03_collections_and_curation.md
+│   ├── 04_topics_and_categories.md
+│   ├── 05_photographer_profiles_and_insights.md
+│   ├── 06_adaptive_layout_tablets.md
+│   ├── 07_gradle_version_catalog_migration.md
+│   ├── 08_gradle_and_tooling_upgrade.md
+│   ├── 09_dependency_updates_plan.md
+│   ├── 10_navigation_3_upgrade_spec.md
+│   ├── 11_macos_entry_point_integration.md
+│   ├── 12_photo_detail_description_fix.md
 │   ├── implementation_plan.md
 │   └── steps.md
 ├── shared/                   # Kotlin Multiplatform core module

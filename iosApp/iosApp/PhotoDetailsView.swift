@@ -109,7 +109,9 @@ struct PhotoDetailsView: View {
 
                             VStack(alignment: .leading, spacing: 16) {
                                 // Title / Description
-                                if let description = photo.description ?? photo.altDescription {
+                                // The generated Kotlin binding exposes the API field as description_,
+                                // while `photo.description` resolves to Swift's NSObject debug text.
+                                if let description = photo.description_ ?? photo.altDescription {
                                     Text(description)
                                         .font(.system(size: 15))
                                         .lineSpacing(4)
