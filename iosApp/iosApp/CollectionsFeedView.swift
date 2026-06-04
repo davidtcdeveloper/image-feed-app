@@ -42,14 +42,25 @@ struct CollectionsFeedView: View {
             }
         }
         .navigationTitle("COLLECTIONS")
+        #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
+        #endif
         .toolbar {
+            #if os(iOS)
             ToolbarItem(placement: .navigationBarLeading) {
                 Button(action: onSearchClick) {
                     Image(systemName: "magnifyingglass")
                         .foregroundColor(.white)
                 }
             }
+            #else
+            ToolbarItem(placement: .navigation) {
+                Button(action: onSearchClick) {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundColor(.white)
+                }
+            }
+            #endif
         }
     }
 }
@@ -60,7 +71,7 @@ struct CollectionMosaicCard: View {
     let onTap: () -> Void
 
     var body: some View {
-        let screenWidth = UIScreen.main.bounds.width
+        let screenWidth = AdaptiveLayoutHelper.getScreenWidth()
         let cardWidth = Int(screenWidth - 24)
         let sideWidth = cardWidth / 3
 
@@ -169,7 +180,7 @@ struct CollectionMosaicCard: View {
                     .onTapGesture {
                         let utmProfile = "\(collection.user.links.html)?utm_source=ImageFeedApp&utm_medium=referral"
                         if let url = URL(string: utmProfile) {
-                            UIApplication.shared.open(url)
+                            URLHelper.open(url)
                         }
                     }
 

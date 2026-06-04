@@ -5,12 +5,14 @@ struct ContentView: View {
     @State private var selectedTab = 0
 
     init() {
+        #if os(iOS)
         // Style the tab bar with dark-mode compliance
         let appearance = UITabBarAppearance()
         appearance.configureWithOpaqueBackground()
         appearance.backgroundColor = UIColor(red: 15/255, green: 15/255, blue: 17/255, alpha: 1.0)
         UITabBar.appearance().standardAppearance = appearance
         UITabBar.appearance().scrollEdgeAppearance = appearance
+        #endif
     }
 
     var body: some View {
@@ -110,14 +112,20 @@ struct FeedPathItem: Hashable {
 }
 
 struct PhotosFeedTabView: View {
+    #if os(iOS)
     @Environment(\.horizontalSizeClass) var sizeClass
+    #endif
     @State private var viewModel = FeedViewModel()
     @State private var path = NavigationPath()
     @State private var isShaking = false
     @Namespace private var categoryNamespace
 
     private var columnCount: Int {
-        AdaptiveLayoutHelper.getColumnCount(sizeClass: sizeClass)
+        #if os(iOS)
+        return AdaptiveLayoutHelper.getColumnCount(sizeClass: sizeClass)
+        #else
+        return AdaptiveLayoutHelper.getColumnCount()
+        #endif
     }
 
     var body: some View {
@@ -131,8 +139,10 @@ struct PhotosFeedTabView: View {
                             isSelected: viewModel.selectedTopicSlug == "editorial",
                             namespace: categoryNamespace
                         ) {
+                            #if os(iOS)
                             let generator = UIImpactFeedbackGenerator(style: .light)
                             generator.impactOccurred()
+                            #endif
                             withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                                 viewModel.selectTopic(slug: "editorial")
                             }
@@ -152,8 +162,10 @@ struct PhotosFeedTabView: View {
                                     isSelected: viewModel.selectedTopicSlug == topic.slug,
                                     namespace: categoryNamespace
                                 ) {
+                                    #if os(iOS)
                                     let generator = UIImpactFeedbackGenerator(style: .light)
                                     generator.impactOccurred()
+                                    #endif
                                     withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                                         viewModel.selectTopic(slug: topic.slug)
                                     }
@@ -235,10 +247,13 @@ struct PhotosFeedTabView: View {
                 }
             }
             .navigationTitle("UNSPLASH FEED")
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(Color(hex: "0F0F11"), for: .navigationBar)
             .toolbarColorScheme(.dark, for: .navigationBar)
+            #endif
             .toolbar {
+                #if os(iOS)
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button(action: {
                         path.append(FeedPathItem(id: "", type: .search))
@@ -246,13 +261,33 @@ struct PhotosFeedTabView: View {
                         Image(systemName: "magnifyingglass")
                             .foregroundColor(.white)
                     }
+                    .keyboardShortcut("f", modifiers: .command)
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: handleShake) {
                         Image(systemName: "shuffle")
                             .foregroundColor(.white)
                     }
+                    .keyboardShortcut("s", modifiers: .command)
                 }
+                #else
+                ToolbarItem(placement: .navigation) {
+                    Button(action: {
+                        path.append(FeedPathItem(id: "", type: .search))
+                    }) {
+                        Image(systemName: "magnifyingglass")
+                            .foregroundColor(.white)
+                    }
+                    .keyboardShortcut("f", modifiers: .command)
+                }
+                ToolbarItem(placement: .primaryAction) {
+                    Button(action: handleShake) {
+                        Image(systemName: "shuffle")
+                            .foregroundColor(.white)
+                    }
+                    .keyboardShortcut("s", modifiers: .command)
+                }
+                #endif
             }
             .navigationDestination(for: FeedPathItem.self) { item in
                 switch item.type {
@@ -344,7 +379,7 @@ struct PhotoCard: View {
     let onUserSelect: (String) -> Void
     
     var body: some View {
-        let screenWidth = UIScreen.main.bounds.width
+        let screenWidth = AdaptiveLayoutHelper.getScreenWidth()
         let itemWidth = Int(screenWidth / 2)
         
         // Dynamically resize image requesting only the resolution required by container
@@ -396,7 +431,7 @@ struct PhotoCard: View {
                     endPoint: .bottom
                 )
             )
-            .clipShape(RoundedCorner(radius: 12, corners: [.bottomLeft, .bottomRight]))
+            .clipShape(UnevenRoundedRectangle(bottomLeadingRadius: 12, bottomTrailingRadius: 12))
             .contentShape(Rectangle())
             .onTapGesture {
                 onUserSelect(photo.user.username)
@@ -473,17 +508,7 @@ extension Color {
     }
 }
 
-// Rounded corner specific directions helper
-struct RoundedCorner: Shape {
-    var radius: CGFloat = .infinity
-    var corners: UIRectCorner = .allCorners
-
-    func path(in rect: CGRect) -> Path {
-        let path = UIBezierPath(roundedRect: rect, byRoundingCorners: corners, cornerRadii: CGSize(width: radius, height: radius))
-        return Path(path.cgPath)
-    }
-}
-
+#if os(iOS)
 // Shake gesture detection support
 extension Notification.Name {
     static let deviceDidShake = Notification.Name("MyDeviceDidShakeNotification")
@@ -514,3 +539,10 @@ extension View {
         self.modifier(DeviceShakeViewModifier(action: action))
     }
 }
+#else
+extension View {
+    func onShake(perform action: @escaping () -> Void) -> some View {
+        self // No-op on macOS
+    }
+}
+#endif

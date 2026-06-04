@@ -142,7 +142,7 @@ struct PhotoDetailsView: View {
                                 Button(action: {
                                     viewModel.trackDownload()
                                     if let url = URL(string: photo.urls.full) {
-                                        UIApplication.shared.open(url)
+                                        URLHelper.open(url)
                                     }
                                 }) {
                                     HStack {
@@ -201,7 +201,7 @@ struct PhotoDetailsView: View {
                                                     .onTapGesture {
                                                         let urlString = "maps://?q=\(location.name?.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")&ll=\(lat),\(lon)"
                                                         if let url = URL(string: urlString) {
-                                                            UIApplication.shared.open(url)
+                                                            URLHelper.open(url)
                                                         }
                                                     }
                                             }
@@ -242,8 +242,11 @@ struct PhotoDetailsView: View {
                 .ignoresSafeArea(edges: .top)
             }
         }
+        #if os(iOS)
         .navigationBarBackButtonHidden(true)
+        #endif
         .toolbar {
+            #if os(iOS)
             ToolbarItem(placement: .navigationBarLeading) {
                 Button(action: { dismiss() }) {
                     Image(systemName: "chevron.left")
@@ -253,6 +256,17 @@ struct PhotoDetailsView: View {
                         .background(Circle().fill(Color.black.opacity(0.4)))
                 }
             }
+            #else
+            ToolbarItem(placement: .navigation) {
+                Button(action: { dismiss() }) {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.white)
+                        .padding(8)
+                        .background(Circle().fill(Color.black.opacity(0.4)))
+                }
+            }
+            #endif
         }
     }
 

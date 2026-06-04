@@ -208,6 +208,22 @@ image-feed-app/
 3. **iOS & macOS**: Generate a unified high-resolution square asset (AppIcon.appiconset) for Xcode Assets.
 4. **Web/Shared**: Export optimized flat PNG/SVG format for branding and shared targets.
 
+### Phase 11: macOS Entry Point Integration
+1. **Objective & Design Philosophy:** Create a native macOS desktop application target by reusing 100% of the existing iOS SwiftUI views, models, and shared KMP presenter state with minimal platform divergence.
+2. **Shared Kotlin Core Configuration:**
+   * Configure native macOS compilation targets in `shared/build.gradle.kts` (such as `macosArm64()` and `macosX64()`).
+   * Introduce a common `appleMain` source set that both `iosMain` and `macosMain` depend on, ensuring Darwin Ktor and serialization configurations are shared without duplication.
+3. **Xcode Target & Project Setup:**
+   * Update XcodeGen configurations in `iosApp/project.yml` to define a new `macosApp` target compiled for macOS 14.0+ using the same source code paths.
+   * Attach the KMP shared framework pre-build script to compile the macOS native library dynamically.
+4. **Isolating Platform Dependencies:**
+   * Replace or wrap iOS UIKit-specific elements (like `UITabBar`, `UIImpactFeedbackGenerator`, or `UIBezierPath`) inside `#if os(iOS)` or `#if os(macOS)` preprocessor directives, or adopt multiplatform SwiftUI equivalents (such as `UnevenRoundedRectangle`).
+   * Refactor screen width calculations (`UIScreen.main.bounds.width` inside `PhotoCard`) to use `GeometryReader` or layout properties for responsive image resolution tuning.
+5. **Responsive Desktop Layout & Sidebar:**
+   * In the macOS entry point, substitute the bottom-aligned `TabView` with a native `NavigationSplitView` sidebar layout.
+   * Configure the adaptive staggered grid layout helper to scale column counts dynamically based on window width.
+   * Provide window-level keyboard shortcuts (e.g. `Cmd + S` / `Cmd + R`), menu items, and a prominent toolbar button as alternatives to physical shake gestures.
+
 
 
 

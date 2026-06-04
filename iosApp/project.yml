@@ -16,6 +16,28 @@ targets:
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
         PRODUCT_BUNDLE_IDENTIFIER: com.example.imagefeed.iosApp
         DEVELOPMENT_TEAM: ""
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    preBuildScripts:
+      - name: Compile Kotlin Shared Framework
+        script: |
+          if [ -z "$KOTLIN_BUILD_INVOKED" ]; then
+            export KOTLIN_BUILD_INVOKED=1
+            "$SRCROOT/../gradlew" -p "$SRCROOT/.." :shared:embedAndSignAppleFrameworkForXcode
+          fi
+        shell: /bin/sh
+
+  macosApp:
+    type: application
+    platform: macOS
+    deploymentTarget: "14.0"
+    sources:
+      - iosApp
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.imagefeed.macosApp
+        DEVELOPMENT_TEAM: ""
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
     preBuildScripts:
       - name: Compile Kotlin Shared Framework
         script: |

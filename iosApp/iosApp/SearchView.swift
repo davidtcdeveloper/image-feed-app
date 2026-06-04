@@ -2,7 +2,9 @@ import SwiftUI
 import shared
 
 struct SearchView: View {
+    #if os(iOS)
     @Environment(\.horizontalSizeClass) var sizeClass
+    #endif
     @State private var viewModel = SearchViewModel()
     @State private var showFilters = false
     @State private var searchText = ""
@@ -12,7 +14,11 @@ struct SearchView: View {
     let onUserSelect: (String) -> Void
 
     private var columnCount: Int {
-        AdaptiveLayoutHelper.getColumnCount(sizeClass: sizeClass)
+        #if os(iOS)
+        return AdaptiveLayoutHelper.getColumnCount(sizeClass: sizeClass)
+        #else
+        return AdaptiveLayoutHelper.getColumnCount()
+        #endif
     }
 
     var body: some View {
@@ -103,7 +109,7 @@ struct SearchView: View {
                                         CollectionCardView(collection: collection)
                                             .onTapGesture {
                                                 if let links = collection.links, let url = URL(string: "\(links.html)?utm_source=ImageFeedApp&utm_medium=referral") {
-                                                    UIApplication.shared.open(url)
+                                                    URLHelper.open(url)
                                                 }
                                             }
                                     }
@@ -143,14 +149,25 @@ struct SearchView: View {
             }
         }
         .navigationTitle("SEARCH")
+        #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
+        #endif
         .toolbar {
+            #if os(iOS)
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button(action: { showFilters = true }) {
                     Image(systemName: "line.3.horizontal.decrease.circle")
                         .foregroundColor(.white)
                 }
             }
+            #else
+            ToolbarItem(placement: .primaryAction) {
+                Button(action: { showFilters = true }) {
+                    Image(systemName: "line.3.horizontal.decrease.circle")
+                        .foregroundColor(.white)
+                }
+            }
+            #endif
         }
         .searchable(text: $searchText, prompt: "Photos, collections, or users")
         .onChange(of: searchText) { _, newValue in

@@ -23,6 +23,7 @@ iosApp/DerivedData/
 iosApp/build/
 iosApp/Pods/
 iosApp/.symlinks/
+/macosApp/.build
 
 # Gradle Wrapper jar (often ignored or committed, let's keep wrapper)
 # gradle-wrapper.jar

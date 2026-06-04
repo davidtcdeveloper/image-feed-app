@@ -28,6 +28,10 @@ kotlin {
     iosArm64()
     iosSimulatorArm64()
     
+    // Register macOS targets directly
+    macosX64()
+    macosArm64()
+    
     // Configure frameworks for iOS targets
     targets.withType<org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget>().configureEach {
         binaries.framework {
@@ -60,19 +64,31 @@ kotlin {
             }
         }
         
-        // Define iosMain manually
-        val iosMain by creating {
+        // Define appleMain for shared Apple platform configurations
+        val appleMain by creating {
             dependsOn(commonMain)
             dependencies {
-                // Ktor iOS/Darwin Engine
+                // Ktor iOS/macOS/Darwin Engine
                 implementation(libs.ktor.client.darwin)
             }
         }
         
-        // Connect native target source sets to iosMain
+        // Define iosMain manually
+        val iosMain by creating {
+            dependsOn(appleMain)
+        }
+        
+        // Define macosMain manually
+        val macosMain by creating {
+            dependsOn(appleMain)
+        }
+        
+        // Connect native target source sets to their respective parent main
         val iosX64Main by getting { dependsOn(iosMain) }
         val iosArm64Main by getting { dependsOn(iosMain) }
         val iosSimulatorArm64Main by getting { dependsOn(iosMain) }
+        val macosX64Main by getting { dependsOn(macosMain) }
+        val macosArm64Main by getting { dependsOn(macosMain) }
     }
 }
 

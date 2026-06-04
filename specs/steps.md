@@ -101,18 +101,39 @@ This document outlines the detailed steps to execute the project implementation,
 4. Adjust Kotlin DSL build logic inside module-level scripts to ensure full compatibility.
 
 ### Step 9: Ecosystem Dependency Upgrade
-101. 1. Review all other core platform dependencies for new stable versions.
-102. 2. Formulate comprehensive coordinate migration plans for breaking library releases (Ktor 3.x, Koin 4.x, and Coil 3.x).
-103. 
-104. ### Step 10: Launch Icon Implementation
-105. 1. Design a custom launcher icon representing visual discovery and photography (stylized camera aperture over a vibrant abstract landscape).
-106. 2. Implement an Android Adaptive Icon:
-107.    * Define XML vector drawables for foreground and background layers.
-108.    * Update `AndroidManifest.xml` to reference the new adaptive launcher icon.
-109. 3. Implement iOS and macOS Launch Icons:
-110.    * Generate high-resolution icon assets (AppIcon.appiconset).
-111.    * Configure Xcode resource catalog to set the app icon.
-112. 
+1. Review all other core platform dependencies for new stable versions.
+2. Formulate comprehensive coordinate migration plans for breaking library releases (Ktor 3.x, Koin 4.x, and Coil 3.x).
+
+### Step 10: Launch Icon Implementation
+1. Design a custom launcher icon representing visual discovery and photography (stylized camera aperture over a vibrant abstract landscape).
+2. Implement an Android Adaptive Icon:
+   * Define XML vector drawables for foreground and background layers.
+   * Update `AndroidManifest.xml` to reference the new adaptive launcher icon.
+3. Implement iOS and macOS Launch Icons:
+   * Generate high-resolution icon assets (AppIcon.appiconset).
+   * Configure Xcode resource catalog to set the app icon.
+
+### Step 11: macOS Entry Point Integration & iOS UI Reuse
+1.  **Configure Multiplatform targets in Gradle:**
+    *   Update `shared/build.gradle.kts` to register native targets: `macosX64()` and `macosArm64()`.
+    *   Introduce an intermediate `appleMain` source set that both `iosMain` and `macosMain` depend on. Move Darwin-specific code (Ktor client engine, Darwin serializers) to `appleMain` to prevent duplication.
+2.  **Define the macOS Target in XcodeGen:**
+    *   Edit `iosApp/project.yml` to define a new target `macosApp` with `type: application`, `platform: macOS`, and `deploymentTarget: "14.0"`.
+    *   Point `sources` to the existing `iosApp` folder so the same codebase is compiled for macOS.
+    *   Verify SPM configuration includes Kingfisher support for the macOS target.
+3.  **Refactor UIKit / iOS dependencies:**
+    *   Replace hardcoded references to `UIScreen.main.bounds` in image loaders with a responsive `GeometryReader` container or frame property injectors.
+    *   Replace iOS-specific `RoundedCorner` drawing logic using `UIBezierPath` and `UIRectCorner` with native SwiftUI `UnevenRoundedRectangle` or simple `.clipShape(RoundedRectangle)`.
+    *   Wrap touch-specific elements (such as `UIImpactFeedbackGenerator` haptics) and iOS-specific shake notification overlays with `#if os(iOS)` / `#if os(macOS)` compiler conditions.
+4.  **Implement Desktop Navigation & Container Shells:**
+    *   Introduce a macOS-appropriate root shell (`MacOSContentView`) using a sidebar navigation schema (`NavigationSplitView`) to select between "Photos" and "Collections".
+    *   Embed the exact same `PhotosFeedTabView` and `CollectionsFeedTabView` views within the master-detail segments.
+5.  **Enable Alternative Shuffle (Shake) Triggers on Desktop:**
+    *   Add key bindings (`.keyboardShortcut("s", modifiers: .command)`) and a visible "Shuffle" toolbar icon as desktop alternatives to the physical device shake gesture.
+6.  **Verify compilation & lifecycle integration:**
+    *   Run `xcodegen` and open the generated Xcode project.
+    *   Build and run the `macosApp` target to verify KMP framework linking, Koin DI initiation, image downloading, and adaptive grid scaling.
+
 
 
 

@@ -5,7 +5,9 @@ struct CollectionDetailView: View {
     let collectionId: String
     @State private var viewModel: CollectionDetailViewModel
     @Environment(\.dismiss) private var dismiss
+    #if os(iOS)
     @Environment(\.horizontalSizeClass) var sizeClass
+    #endif
 
     let onPhotoSelect: (String) -> Void
     let onCollectionSelect: (String) -> Void
@@ -18,7 +20,11 @@ struct CollectionDetailView: View {
     }
 
     private var columnCount: Int {
-        AdaptiveLayoutHelper.getColumnCount(sizeClass: sizeClass)
+        #if os(iOS)
+        return AdaptiveLayoutHelper.getColumnCount(sizeClass: sizeClass)
+        #else
+        return AdaptiveLayoutHelper.getColumnCount()
+        #endif
     }
 
     var body: some View {
@@ -90,7 +96,7 @@ struct CollectionDetailView: View {
                                         .onTapGesture {
                                             let utmProfile = "\(collection.user.links.html)?utm_source=ImageFeedApp&utm_medium=referral"
                                             if let url = URL(string: utmProfile) {
-                                                UIApplication.shared.open(url)
+                                                URLHelper.open(url)
                                             }
                                         }
 
@@ -175,8 +181,11 @@ struct CollectionDetailView: View {
                 .ignoresSafeArea(edges: .top)
             }
         }
+        #if os(iOS)
         .navigationBarBackButtonHidden(true)
+        #endif
         .toolbar {
+            #if os(iOS)
             ToolbarItem(placement: .navigationBarLeading) {
                 Button(action: { dismiss() }) {
                     HStack(spacing: 4) {
@@ -186,6 +195,17 @@ struct CollectionDetailView: View {
                     .foregroundColor(.white)
                 }
             }
+            #else
+            ToolbarItem(placement: .navigation) {
+                Button(action: { dismiss() }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "chevron.left")
+                        Text("Back")
+                    }
+                    .foregroundColor(.white)
+                }
+            }
+            #endif
         }
     }
 }
@@ -238,7 +258,7 @@ struct CollectionPhotoGridCard: View {
     let onSelect: () -> Void
 
     var body: some View {
-        let screenWidth = UIScreen.main.bounds.width
+        let screenWidth = AdaptiveLayoutHelper.getScreenWidth()
         let itemWidth = Int(screenWidth / 2)
         let imageUrl = photo.urls.raw + "&w=\(itemWidth)&q=80&auto=format"
         let aspectRatio = CGFloat(photo.width) / CGFloat(photo.height)
@@ -286,12 +306,12 @@ struct CollectionPhotoGridCard: View {
                     endPoint: .bottom
                 )
             )
-            .clipShape(RoundedCorner(radius: 12, corners: [.bottomLeft, .bottomRight]))
+            .clipShape(UnevenRoundedRectangle(bottomLeadingRadius: 12, bottomTrailingRadius: 12))
             .contentShape(Rectangle())
             .onTapGesture {
                 let utmProfile = "\(photo.user.links.html)?utm_source=ImageFeedApp&utm_medium=referral"
                 if let url = URL(string: utmProfile) {
-                    UIApplication.shared.open(url)
+                    URLHelper.open(url)
                 }
             }
         }

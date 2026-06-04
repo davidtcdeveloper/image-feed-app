@@ -101,10 +101,13 @@ struct UserProfileView: View {
             }
         }
         .navigationTitle(viewModel.user?.name ?? "Profile")
+        #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(Color(hex: "0F0F11"), for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
+        #endif
         .toolbar {
+            #if os(iOS)
             ToolbarItem(placement: .navigationBarLeading) {
                 Button(action: { dismiss() }) {
                     Image(systemName: "chevron.left")
@@ -112,21 +115,47 @@ struct UserProfileView: View {
                         .fontWeight(.semibold)
                 }
             }
+            #else
+            ToolbarItem(placement: .navigation) {
+                Button(action: { dismiss() }) {
+                    Image(systemName: "chevron.left")
+                        .foregroundColor(.white)
+                        .fontWeight(.semibold)
+                }
+            }
+            #endif
+            
             if let user = viewModel.user {
+                #if os(iOS)
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: {
                         let utmProfile = "\(user.links.html)?utm_source=ImageFeedApp&utm_medium=referral"
                         if let url = URL(string: utmProfile) {
-                            UIApplication.shared.open(url)
+                            URLHelper.open(url)
                         }
                     }) {
                         Image(systemName: "safari")
                             .foregroundColor(.white)
                     }
                 }
+                #else
+                ToolbarItem(placement: .primaryAction) {
+                    Button(action: {
+                        let utmProfile = "\(user.links.html)?utm_source=ImageFeedApp&utm_medium=referral"
+                        if let url = URL(string: utmProfile) {
+                            URLHelper.open(url)
+                        }
+                    }) {
+                        Image(systemName: "safari")
+                            .foregroundColor(.white)
+                    }
+                }
+                #endif
             }
         }
+        #if os(iOS)
         .navigationBarBackButtonHidden(true)
+        #endif
     }
 }
 
@@ -178,26 +207,26 @@ struct ProfileHeaderView: View {
                 if let instagram = user.social?.instagramUsername, !instagram.isEmpty {
                     SocialButton(title: "Instagram", handle: instagram) {
                         let schemeUrl = URL(string: "instagram://user?username=\(instagram)")!
-                        if UIApplication.shared.canOpenURL(schemeUrl) {
-                            UIApplication.shared.open(schemeUrl)
+                        if URLHelper.canOpen(schemeUrl) {
+                            URLHelper.open(schemeUrl)
                         } else {
-                            UIApplication.shared.open(URL(string: "https://instagram.com/\(instagram)")!)
+                            URLHelper.open(URL(string: "https://instagram.com/\(instagram)")!)
                         }
                     }
                 }
                 if let twitter = user.social?.twitterUsername, !twitter.isEmpty {
                     SocialButton(title: "Twitter", handle: twitter) {
                         let schemeUrl = URL(string: "twitter://user?screen_name=\(twitter)")!
-                        if UIApplication.shared.canOpenURL(schemeUrl) {
-                            UIApplication.shared.open(schemeUrl)
+                        if URLHelper.canOpen(schemeUrl) {
+                            URLHelper.open(schemeUrl)
                         } else {
-                            UIApplication.shared.open(URL(string: "https://twitter.com/\(twitter)")!)
+                            URLHelper.open(URL(string: "https://twitter.com/\(twitter)")!)
                         }
                     }
                 }
                 if let web = user.social?.portfolioUrl, !web.isEmpty, let webUrl = URL(string: web) {
                     SocialButton(title: "Website", handle: "Link") {
-                        UIApplication.shared.open(webUrl)
+                        URLHelper.open(webUrl)
                     }
                 }
             }
@@ -269,14 +298,20 @@ struct ProfileTabPicker: View {
 }
 
 struct GridPhotosList: View {
+    #if os(iOS)
     @Environment(\.horizontalSizeClass) var sizeClass
+    #endif
     let photos: [Photo]
     let isLoading: Bool
     let onLoadMore: () -> Void
     let onSelect: (String) -> Void
 
     private var columnCount: Int {
-        AdaptiveLayoutHelper.getColumnCount(sizeClass: sizeClass)
+        #if os(iOS)
+        return AdaptiveLayoutHelper.getColumnCount(sizeClass: sizeClass)
+        #else
+        return AdaptiveLayoutHelper.getColumnCount()
+        #endif
     }
 
     var body: some View {

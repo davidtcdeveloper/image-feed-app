@@ -10,7 +10,11 @@ struct iOSApp: App {
 
     var body: some Scene {
         WindowGroup {
+            #if os(iOS)
             ContentView()
+            #else
+            MacOSContentView()
+            #endif
         }
     }
 }
