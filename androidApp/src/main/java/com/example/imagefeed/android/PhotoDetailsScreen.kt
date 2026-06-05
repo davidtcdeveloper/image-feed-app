@@ -36,8 +36,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil.compose.rememberAsyncImagePainter
-import coil.request.ImageRequest
+import coil3.compose.rememberAsyncImagePainter
+import coil3.request.ImageRequest
+import coil3.request.crossfade
+import coil3.compose.LocalPlatformContext
 import com.example.imagefeed.android.util.BlurHashDecoder
 import com.example.imagefeed.di.KoinHelper
 import com.example.imagefeed.model.Photo
@@ -52,7 +54,7 @@ fun PhotoDetailsScreen(
     onBack: () -> Unit,
     onUserClick: (String) -> Unit
 ) {
-    val context = LocalContext.current
+    val context = LocalPlatformContext.current
     val presenter = remember(photoId) { KoinHelper.getPhotoDetailsPresenter(photoId) }
     val state by presenter.state.collectAsStateWithLifecycle(initialValue = PhotoDetailsState())
 
@@ -148,7 +150,7 @@ fun PhotoDetailsContent(
     onTrackDownload: () -> Unit,
     onUserClick: (String) -> Unit
 ) {
-    val context = LocalContext.current
+    val context = LocalPlatformContext.current
     val configuration = LocalConfiguration.current
     val density = LocalDensity.current
     val scrollState = rememberScrollState()

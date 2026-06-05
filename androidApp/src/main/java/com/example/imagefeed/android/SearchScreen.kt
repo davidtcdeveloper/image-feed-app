@@ -36,8 +36,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil.compose.rememberAsyncImagePainter
-import coil.request.ImageRequest
+import coil3.compose.rememberAsyncImagePainter
+import coil3.request.ImageRequest
+import coil3.request.crossfade
+import coil3.compose.LocalPlatformContext
 import com.example.imagefeed.android.util.BlurHashDecoder
 import com.example.imagefeed.di.KoinHelper
 import com.example.imagefeed.model.CollectionSummary
@@ -55,7 +57,7 @@ fun SearchScreen(
     onPhotoClick: (Photo) -> Unit,
     onUserClick: (User) -> Unit
 ) {
-    val context = LocalContext.current
+    val context = LocalPlatformContext.current
     val presenter = remember { KoinHelper.getUnifiedSearchPresenter() }
     val state by presenter.state.collectAsStateWithLifecycle(initialValue = SearchState())
     var showFiltersSheet by remember { mutableStateOf(false) }
@@ -364,7 +366,7 @@ fun CollectionsResultList(
     isLoadingMore: Boolean,
     onLoadMore: () -> Unit
 ) {
-    val context = LocalContext.current
+    val context = LocalPlatformContext.current
     val listState = rememberLazyStaggeredGridState() // staggered grid with 1 column as flexible list
 
     val shouldLoadMore = remember {
@@ -476,7 +478,7 @@ fun UsersResultList(
     onLoadMore: () -> Unit,
     onUserClick: (User) -> Unit
 ) {
-    val context = LocalContext.current
+    val context = LocalPlatformContext.current
     val listState = rememberLazyStaggeredGridState()
 
     val shouldLoadMore = remember {

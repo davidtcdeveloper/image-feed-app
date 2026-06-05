@@ -47,6 +47,8 @@ dependencies {
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
+    implementation(libs.material.icons.core)
+    implementation(libs.material.icons.extended)
     implementation(libs.androidx.activity.compose)
     
     // Compose Navigation & Lifecycle
@@ -58,6 +60,7 @@ dependencies {
     
     // Coil (Image Loading)
     implementation(libs.coil.compose)
+    implementation(libs.coil.network.okhttp)
     
     // Koin for DI
     implementation(libs.koin.android.compose)

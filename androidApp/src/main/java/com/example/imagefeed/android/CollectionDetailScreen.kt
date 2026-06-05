@@ -38,8 +38,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil.compose.rememberAsyncImagePainter
-import coil.request.ImageRequest
+import coil3.compose.rememberAsyncImagePainter
+import coil3.request.ImageRequest
+import coil3.request.crossfade
+import coil3.compose.LocalPlatformContext
 import com.example.imagefeed.android.util.BlurHashDecoder
 import com.example.imagefeed.model.Photo
 import com.example.imagefeed.model.PhotoCollection
@@ -54,7 +56,7 @@ fun CollectionDetailScreen(
     onPhotoClick: (Photo) -> Unit,
     onCollectionClick: (String) -> Unit
 ) {
-    val context = LocalContext.current
+    val context = LocalPlatformContext.current
     val koinHelper = remember { com.example.imagefeed.di.KoinHelper }
     val presenter = remember(collectionId) { koinHelper.getCollectionDetailPresenter(collectionId) }
     val state by presenter.state.collectAsStateWithLifecycle(initialValue = CollectionDetailState())
@@ -216,7 +218,7 @@ fun CollectionDetailHeader(
     collection: PhotoCollection?,
     isHeaderLoading: Boolean
 ) {
-    val context = LocalContext.current
+    val context = LocalPlatformContext.current
     if (collection == null) {
         Box(
             modifier = Modifier
@@ -386,7 +388,7 @@ fun RelatedCollectionCard(
     collection: PhotoCollection,
     onClick: () -> Unit
 ) {
-    val context = LocalContext.current
+    val context = LocalPlatformContext.current
     Card(
         shape = RoundedCornerShape(12.dp),
         modifier = Modifier

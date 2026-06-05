@@ -51,8 +51,10 @@ import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.ui.NavDisplay
 import kotlinx.serialization.Serializable
-import coil.compose.rememberAsyncImagePainter
-import coil.request.ImageRequest
+import coil3.compose.rememberAsyncImagePainter
+import coil3.request.ImageRequest
+import coil3.request.crossfade
+import coil3.compose.LocalPlatformContext
 import com.example.imagefeed.android.util.BlurHashDecoder
 import com.example.imagefeed.model.Photo
 import com.example.imagefeed.model.User
@@ -122,17 +124,17 @@ class MainActivity : ComponentActivity() {
                     val navigateToTab = { targetScreen: Screen ->
                         if (targetScreen is Screen.Feed) {
                             while (backStackState.size > 1) {
-                                backStackState.removeLast()
+                                backStackState.removeAt(backStackState.size - 1)
                             }
                         } else {
                             val targetIndex = backStackState.indexOf(targetScreen)
                             if (targetIndex != -1) {
                                 while (backStackState.size > targetIndex + 1) {
-                                    backStackState.removeLast()
+                                    backStackState.removeAt(backStackState.size - 1)
                                 }
                             } else {
                                 while (backStackState.size > 2) {
-                                    backStackState.removeLast()
+                                    backStackState.removeAt(backStackState.size - 1)
                                 }
                                 if (backStackState.size > 1) {
                                     backStackState[1] = targetScreen
@@ -229,7 +231,7 @@ class MainActivity : ComponentActivity() {
                             backStack = backStackState,
                             onBack = {
                                 if (backStackState.size > 1) {
-                                    backStackState.removeLast()
+                                    backStackState.removeAt(backStackState.size - 1)
                                 } else {
                                     finish()
                                 }
@@ -271,7 +273,7 @@ class MainActivity : ComponentActivity() {
                                             collectionId = key.collectionId,
                                             onBack = {
                                                 if (backStackState.size > 1) {
-                                                    backStackState.removeLast()
+                                                    backStackState.removeAt(backStackState.size - 1)
                                                 }
                                             },
                                             onPhotoClick = { photo ->
@@ -286,7 +288,7 @@ class MainActivity : ComponentActivity() {
                                         SearchScreen(
                                             onBack = {
                                                 if (backStackState.size > 1) {
-                                                    backStackState.removeLast()
+                                                    backStackState.removeAt(backStackState.size - 1)
                                                 }
                                             },
                                             onPhotoClick = { photo ->
@@ -302,7 +304,7 @@ class MainActivity : ComponentActivity() {
                                             photoId = key.photoId,
                                             onBack = {
                                                 if (backStackState.size > 1) {
-                                                    backStackState.removeLast()
+                                                    backStackState.removeAt(backStackState.size - 1)
                                                 }
                                             },
                                             onUserClick = { username ->
@@ -315,7 +317,7 @@ class MainActivity : ComponentActivity() {
                                             username = key.username,
                                             onBack = {
                                                 if (backStackState.size > 1) {
-                                                    backStackState.removeLast()
+                                                    backStackState.removeAt(backStackState.size - 1)
                                                 }
                                             },
                                             onPhotoClick = { photo ->
@@ -415,7 +417,7 @@ fun FeedScreen(
     onRandomClick: () -> Unit
 ) {
     val state by presenter.state.collectAsStateWithLifecycle(initialValue = FeedState())
-    val context = LocalContext.current
+    val context = LocalPlatformContext.current
     val listState = rememberLazyStaggeredGridState()
 
     // Infinite scrolling logic
@@ -567,7 +569,7 @@ fun PhotoCard(
     onClick: () -> Unit,
     onUserClick: () -> Unit
 ) {
-    val context = LocalContext.current
+    val context = LocalPlatformContext.current
     val density = LocalDensity.current
     val configuration = LocalConfiguration.current
     

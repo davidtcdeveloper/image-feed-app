@@ -29,8 +29,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil.compose.rememberAsyncImagePainter
-import coil.request.ImageRequest
+import coil3.compose.rememberAsyncImagePainter
+import coil3.request.ImageRequest
+import coil3.request.crossfade
+import coil3.compose.LocalPlatformContext
 import com.example.imagefeed.android.util.BlurHashDecoder
 import com.example.imagefeed.model.PhotoCollection
 import com.example.imagefeed.presentation.CollectionsFeedPresenter
@@ -137,7 +139,7 @@ fun CollectionMosaicCard(
     collection: PhotoCollection,
     onClick: () -> Unit
 ) {
-    val context = LocalContext.current
+    val context = LocalPlatformContext.current
     val density = LocalDensity.current
     val configuration = LocalConfiguration.current
 

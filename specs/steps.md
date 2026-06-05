@@ -40,6 +40,7 @@ The `specs/` folder currently contains the following implementation and design d
 *   `specs/11_macos_entry_point_integration.md`
 *   `specs/12_photo_detail_description_fix.md`
 *   `specs/13_macos_back_button_duplication_fix.md`
+*   `specs/14_dependency_updates.md`
 *   `specs/implementation_plan.md`
 *   `specs/steps.md`
 
@@ -177,3 +178,15 @@ These are the spec files that the implementation notes and planning references s
     *   Keep the custom toolbar button as the single return control.
 3.  **Track the fix in its own spec:**
     *   The implementation notes for this change live in `specs/13_macos_back_button_duplication_fix.md`.
+
+### Step 14: Dependency Updates & Modernization
+1.  **Update Version Catalog:**
+    *   Modify `gradle/libs.versions.toml` to use the latest versions for Ktor (3.5.0), Koin (4.2.1), Coil (3.4.0), and other core libraries.
+2.  **Ktor 3 Migration:**
+    *   Update network client configuration in `shared/commonMain` to comply with Ktor 3 APIs.
+3.  **Coil 3 Integration:**
+    *   Switch from Coil 2 to Coil 3 in `androidApp` and potentially share image loading logic if moving towards a full KMP Compose approach.
+4.  **iOS/macOS Kingfisher Removal:**
+    *   Remove Kingfisher from SPM in `iosApp/project.yml` and revert `KFImage.swift` to use SwiftUI's native `AsyncImage` for a zero-dependency, SPM-free setup.
+5.  **Verification:**
+    *   Validate the build across all platforms (Android, iOS, macOS) and ensure network requests and image rendering remain functional.
