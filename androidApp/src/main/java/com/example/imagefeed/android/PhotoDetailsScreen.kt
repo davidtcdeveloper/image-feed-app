@@ -243,7 +243,7 @@ fun PhotoDetailsContent(
                         }
                     }
 
-                    // External Unsplash profile link indicator
+                    // External profile link indicator
                     Icon(
                         imageVector = Icons.Default.ArrowForward,
                         contentDescription = "View Profile",

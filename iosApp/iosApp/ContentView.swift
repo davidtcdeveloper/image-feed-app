@@ -246,7 +246,7 @@ struct PhotosFeedTabView: View {
                     }
                 }
             }
-            .navigationTitle("UNSPLASH FEED")
+            .navigationTitle("FEED")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(Color(hex: "0F0F11"), for: .navigationBar)
@@ -389,7 +389,7 @@ struct PhotoCard: View {
         ZStack(alignment: .bottom) {
             KFImage(URL(string: imageUrl))
                 .placeholder {
-                    // Display Unsplash-returned average hex color as placeholder before load
+                    // Display source-provided average hex color as placeholder before load
                     RoundedRectangle(cornerRadius: 12)
                         .fill(Color(hex: photo.color ?? "1E1E24"))
                         .aspectRatio(aspectRatio, contentMode: .fit)

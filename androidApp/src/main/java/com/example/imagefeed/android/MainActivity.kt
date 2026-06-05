@@ -442,7 +442,7 @@ fun FeedScreen(
                 CenterAlignedTopAppBar(
                     title = {
                         Text(
-                            "UNSPLASH FEED",
+                            "FEED",
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 2.sp,
                             fontSize = 18.sp,
@@ -611,7 +611,7 @@ fun PhotoCard(
                 contentScale = ContentScale.Crop
             )
 
-            // Dynamic bottom overlay containing credentials to comply with Unsplash terms
+            // Dynamic bottom overlay containing photographer attribution
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
