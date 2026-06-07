@@ -3,7 +3,7 @@ import com.codingfeline.buildkonfig.compiler.FieldSpec.Type
 
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
-    alias(libs.plugins.android.library)
+    alias(libs.plugins.android.kotlin.multiplatform.library)
     alias(libs.plugins.buildkonfig)
     alias(libs.plugins.kotlin.serialization)
 }
@@ -17,19 +17,18 @@ if (localPropertiesFile.exists()) {
 val unsplashApiKey = localProperties.getProperty("unsplash.api.key") ?: ""
 
 kotlin {
-    androidTarget {
-        compilerOptions {
-            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
-        }
+    jvmToolchain(17)
+    android {
+        namespace = "com.example.imagefeed"
+        compileSdk = 37
+        minSdk = 29
     }
     
     // Register iOS targets directly
-    iosX64()
     iosArm64()
     iosSimulatorArm64()
     
     // Register macOS targets directly
-    macosX64()
     macosArm64()
     
     // Configure frameworks for iOS targets
@@ -41,66 +40,29 @@ kotlin {
     }
 
     sourceSets {
-        val commonMain by getting {
-            dependencies {
-                // Coroutines & Concurrency
-                implementation(libs.kotlin.coroutines.core)
-                
-                // Networking (Ktor) - using bundle
-                implementation(libs.bundles.ktor.common)
-                
-                // Serialization
-                implementation(libs.kotlin.serialization.json)
-                
-                // Dependency Injection
-                implementation(libs.koin.core)
-            }
+        commonMain.dependencies {
+            // Coroutines & Concurrency
+            implementation(libs.kotlin.coroutines.core)
+            
+            // Networking (Ktor) - using bundle
+            implementation(libs.bundles.ktor.common)
+            
+            // Serialization
+            implementation(libs.kotlin.serialization.json)
+            
+            // Dependency Injection
+            implementation(libs.koin.core)
         }
         
-        val androidMain by getting {
-            dependencies {
-                // Ktor Android Engine
-                implementation(libs.ktor.client.okhttp)
-            }
+        androidMain.dependencies {
+            // Ktor Android Engine
+            implementation(libs.ktor.client.okhttp)
         }
         
-        // Define appleMain for shared Apple platform configurations
-        val appleMain by creating {
-            dependsOn(commonMain)
-            dependencies {
-                // Ktor iOS/macOS/Darwin Engine
-                implementation(libs.ktor.client.darwin)
-            }
+        appleMain.dependencies {
+            // Ktor iOS/macOS/Darwin Engine
+            implementation(libs.ktor.client.darwin)
         }
-        
-        // Define iosMain manually
-        val iosMain by creating {
-            dependsOn(appleMain)
-        }
-        
-        // Define macosMain manually
-        val macosMain by creating {
-            dependsOn(appleMain)
-        }
-        
-        // Connect native target source sets to their respective parent main
-        val iosX64Main by getting { dependsOn(iosMain) }
-        val iosArm64Main by getting { dependsOn(iosMain) }
-        val iosSimulatorArm64Main by getting { dependsOn(iosMain) }
-        val macosX64Main by getting { dependsOn(macosMain) }
-        val macosArm64Main by getting { dependsOn(macosMain) }
-    }
-}
-
-android {
-    namespace = "com.example.imagefeed"
-    compileSdk = 37
-    defaultConfig {
-        minSdk = 29
-    }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
     }
 }
 

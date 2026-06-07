@@ -8,6 +8,7 @@ plugins {
     // Android plugins
     alias(libs.plugins.android.application) apply false
     alias(libs.plugins.android.library) apply false
+    alias(libs.plugins.android.kotlin.multiplatform.library) apply false
 
     // BuildKonfig
     alias(libs.plugins.buildkonfig) apply false

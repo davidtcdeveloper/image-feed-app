@@ -41,6 +41,7 @@ The `specs/` folder currently contains the following implementation and design d
 *   `specs/12_photo_detail_description_fix.md`
 *   `specs/13_macos_back_button_duplication_fix.md`
 *   `specs/14_dependency_updates.md`
+*   `specs/15_gradle_dsl_modernization.md`
 *   `specs/implementation_plan.md`
 *   `specs/steps.md`
 
@@ -190,3 +191,16 @@ These are the spec files that the implementation notes and planning references s
     *   Remove Kingfisher from SPM in `iosApp/project.yml` and revert `KFImage.swift` to use SwiftUI's native `AsyncImage` for a zero-dependency, SPM-free setup.
 5.  **Verification:**
     *   Validate the build across all platforms (Android, iOS, macOS) and ensure network requests and image rendering remain functional.
+
+### Step 15: Gradle & KMP Modernization (AGP 9.0+)
+1.  **Fully Activate AGP 9.0+ Features:**
+    *   Set `android.newDsl=true` and `android.builtInKotlin=true` in `gradle.properties`.
+2.  **Migrate Android App:**
+    *   Remove `org.jetbrains.kotlin.android` plugin; rely on AGP's built-in Kotlin support.
+3.  **Migrate Shared Library:**
+    *   Replace `com.android.library` with `com.android.kotlin.multiplatform.library`.
+    *   Migrate from `androidTarget()` to the `android { ... }` block inside `kotlin { ... }`.
+4.  **Target Optimization:**
+    *   Focus exclusively on Apple Silicon (`macosArm64()`, `iosArm64()`, `iosSimulatorArm64()`) and remove Intel-based `x64` targets to eliminate architecture mismatch warnings.
+5.  **Verification:**
+    *   Run `./gradlew clean help` to verify sync and initial build logic.
