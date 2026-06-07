@@ -1,5 +1,4 @@
-> This project is a proof of concept written entirely with Google's Gemini 3.5 Flash model. The only line written manually was this one. 
-> The main goal was to evaluate the model and different ways to work with it (Antigravity, Gemini CLI and GitHub Copilot).
+> This project is a proof of concept written entirely with recent models focused on efficiency like Google's Gemini 3.5 Flash and  MAI-Code-1-Flash. The main goal was to evaluate the models and different ways to work with them (Antigravity, Gemini CLI, GitHub Copilot and so on).
 
 # Unsplash Image Feed App (Kotlin Multiplatform)
 
