@@ -67,6 +67,18 @@ Keep the title concise and make the spec/model lines explicit so each commit is 
 
 ---
 
+## Plan and Specs Requirements
+
+Every change must be accompanied by a planning artifact in the `specs/` folder.
+
+*   If the current work matches an existing implementation/spec document, update that existing plan instead of creating a duplicate.
+*   Any new or updated plan must also be referenced from `specs/steps.md` so the implementation path stays traceable.
+*   When working on a feature, bug fix, or refactor, confirm which spec file applies before starting, then update that spec and the related step notes together.
+
+This keeps implementation, planning, and execution aligned.
+
+---
+
 ## Reference Specs Directory
 Refer to the `specs/` folder for detailed implementation details:
 *   [Implementation Plan](file:///Users/davidtiagoconceicao/Developer/image-feed-app/specs/implementation_plan.md)
