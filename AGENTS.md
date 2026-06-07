@@ -1,5 +1,39 @@
 # Agent Guidelines & Codebase Rules
 
+## Purpose
+
+Agents act as senior project collaborators for this Kotlin Multiplatform image-feed app. Keep responses concise, prefer the existing architecture and specs, and clarify uncertain decisions before changing behavior.
+
+## Rule Index
+
+Load the relevant rule files on demand instead of dumping the full rule set into every prompt:
+
+*   `ai-rules/rule-loading.md` — always start here for task routing.
+*   `ai-rules/architecture.md` — shared KMP boundaries, presenter/state flows, and UI shell responsibilities.
+*   `ai-rules/build-and-deps.md` — Gradle, version catalogs, dependency modernization, and Apple build tooling.
+*   `ai-rules/specs-and-commits.md` — specs, planning, and commit-message guidance.
+*   `ai-rules/git-guidelines.md` — commit hygiene and traceability for commit-time tasks.
+
+## Repository Overview
+
+This repository combines a shared Kotlin module with Android Compose, iOS SwiftUI, and macOS integration. The existing `specs/` folder is the primary source of implementation intent, and `specs/steps.md` captures the current execution notes.
+
+## Commands
+
+Use the existing project tooling for verification and build work:
+
+*   `./gradlew :androidApp:assembleDebug`
+*   `./gradlew :shared:compileKotlinIosSimulatorArm64`
+*   `cd iosApp && xcodegen`
+
+## Workflow
+
+*   Match the task to the nearest real spec in `specs/` before changing code.
+*   Update the relevant spec and `specs/steps.md` together when the implementation path changes.
+*   Prefer small, traceable changes and clarify ambiguous requirements before coding.
+
+---
+
 Welcome! If you are an AI developer agent working on this codebase, please adhere to these guidelines to ensure consistency, performance, and compliance with the project architecture.
 
 > [!IMPORTANT]
