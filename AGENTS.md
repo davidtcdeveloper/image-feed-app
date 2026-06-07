@@ -60,10 +60,10 @@ Use this format:
 
 <quick description>
 
-Spec: specs/implementation_plan.md or specs/steps.md
+Spec: specs/<actual-spec-or-plan-file>.md
 Model: <model name>
 
-Keep the title concise and make the spec/model lines explicit so each commit is traceable.
+Replace `<actual-spec-or-plan-file>.md` with the real file from `specs/` that was updated for this change. Do not use a generic placeholder or `implementation_plan.md` unless that exact file was the one changed.
 
 ---
 
