@@ -45,6 +45,28 @@ You MUST follow the Unsplash API developer guidelines when editing the applicati
 
 ---
 
+## Commit Message Guidelines
+
+Every commit message should follow this structure:
+
+1. A short title summarizing the change.
+2. A quick description of what changed and why.
+3. A pointer to the spec file that generated the change.
+4. The name of the model that performed the commit.
+
+Use this format:
+
+<short title>
+
+<quick description>
+
+Spec: specs/implementation_plan.md or specs/steps.md
+Model: <model name>
+
+Keep the title concise and make the spec/model lines explicit so each commit is traceable.
+
+---
+
 ## Reference Specs Directory
 Refer to the `specs/` folder for detailed implementation details:
 *   [Implementation Plan](file:///Users/davidtiagoconceicao/Developer/image-feed-app/specs/implementation_plan.md)
