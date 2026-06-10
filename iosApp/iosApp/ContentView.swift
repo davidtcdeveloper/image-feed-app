@@ -59,9 +59,15 @@ struct CollectionsFeedTabView: View {
                         }
                     )
                 case .photo:
-                    PhotoDetailsView(photoId: item.id) { username in
-                        path.append(CollectionPathItem(id: username, type: .user))
-                    }
+                    PhotoDetailsView(
+                        photoId: item.id,
+                        onUserSelect: { username in
+                            path.append(CollectionPathItem(id: username, type: .user))
+                        },
+                        onTagSelect: { tag in
+                            path.append(CollectionPathItem(id: tag, type: .search))
+                        }
+                    )
                 case .user:
                     UserProfileView(
                         username: item.id,
@@ -74,6 +80,7 @@ struct CollectionsFeedTabView: View {
                     )
                 case .search:
                     SearchView(
+                        initialQuery: item.id,
                         onPhotoSelect: { photoId in
                             path.append(CollectionPathItem(id: photoId, type: .photo))
                         },
@@ -292,9 +299,15 @@ struct PhotosFeedTabView: View {
             .navigationDestination(for: FeedPathItem.self) { item in
                 switch item.type {
                 case .photo:
-                    PhotoDetailsView(photoId: item.id) { username in
-                        path.append(FeedPathItem(id: username, type: .user))
-                    }
+                    PhotoDetailsView(
+                        photoId: item.id,
+                        onUserSelect: { username in
+                            path.append(FeedPathItem(id: username, type: .user))
+                        },
+                        onTagSelect: { tag in
+                            path.append(FeedPathItem(id: tag, type: .search))
+                        }
+                    )
                 case .user:
                     UserProfileView(
                         username: item.id,
@@ -317,6 +330,7 @@ struct PhotosFeedTabView: View {
                     )
                 case .search:
                     SearchView(
+                        initialQuery: item.id,
                         onPhotoSelect: { photoId in
                             path.append(FeedPathItem(id: photoId, type: .photo))
                         },

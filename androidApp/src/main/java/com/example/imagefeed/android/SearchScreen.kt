@@ -53,6 +53,7 @@ import com.example.imagefeed.presentation.UnifiedSearchPresenter
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchScreen(
+    initialQuery: String = "",
     onBack: () -> Unit,
     onPhotoClick: (Photo) -> Unit,
     onUserClick: (User) -> Unit
@@ -61,6 +62,12 @@ fun SearchScreen(
     val presenter = remember { KoinHelper.getUnifiedSearchPresenter() }
     val state by presenter.state.collectAsStateWithLifecycle(initialValue = SearchState())
     var showFiltersSheet by remember { mutableStateOf(false) }
+
+    LaunchedEffect(initialQuery) {
+        if (initialQuery.isNotEmpty()) {
+            presenter.updateQuery(initialQuery)
+        }
+    }
 
     Scaffold(
         topBar = {

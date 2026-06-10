@@ -78,7 +78,7 @@ sealed class Screen : NavKey {
     data class CollectionDetails(val collectionId: String) : Screen()
 
     @Serializable
-    data object Search : Screen()
+    data class Search(val query: String = "") : Screen()
 
     @Serializable
     data class PhotoDetails(val photoId: String) : Screen()
@@ -127,7 +127,11 @@ class MainActivity : ComponentActivity() {
                                 backStackState.removeAt(backStackState.size - 1)
                             }
                         } else {
-                            val targetIndex = backStackState.indexOf(targetScreen)
+                            val targetIndex = backStackState.indexOfFirst {
+                                (targetScreen is Screen.Search && it is Screen.Search) ||
+                                (targetScreen is Screen.Collections && it is Screen.Collections) ||
+                                (targetScreen is Screen.Feed && it is Screen.Feed)
+                            }
                             if (targetIndex != -1) {
                                 while (backStackState.size > targetIndex + 1) {
                                     backStackState.removeAt(backStackState.size - 1)
@@ -146,7 +150,7 @@ class MainActivity : ComponentActivity() {
                     }
 
                     val currentScreen = backStackState.lastOrNull() as? Screen ?: Screen.Feed
-                    val showBottomBar = currentScreen in listOf(Screen.Feed, Screen.Collections, Screen.Search)
+                    val showBottomBar = currentScreen is Screen.Feed || currentScreen is Screen.Collections || currentScreen is Screen.Search
 
                     Scaffold(
                         bottomBar = {
@@ -205,7 +209,7 @@ class MainActivity : ComponentActivity() {
                                         selected = currentScreen is Screen.Search,
                                         onClick = {
                                             if (currentScreen !is Screen.Search) {
-                                                navigateToTab(Screen.Search)
+                                                navigateToTab(Screen.Search())
                                             }
                                         },
                                         icon = {
@@ -250,7 +254,7 @@ class MainActivity : ComponentActivity() {
                                                 backStackState.add(Screen.UserProfile(user.username))
                                             },
                                             onSearchClick = {
-                                                backStackState.add(Screen.Search)
+                                                backStackState.add(Screen.Search())
                                             },
                                             onRandomClick = {
                                                 handleShake()
@@ -264,7 +268,7 @@ class MainActivity : ComponentActivity() {
                                                 backStackState.add(Screen.CollectionDetails(coll.id))
                                             },
                                             onSearchClick = {
-                                                backStackState.add(Screen.Search)
+                                                backStackState.add(Screen.Search())
                                             }
                                         )
                                     }
@@ -286,6 +290,7 @@ class MainActivity : ComponentActivity() {
                                     }
                                     is Screen.Search -> NavEntry(key) {
                                         SearchScreen(
+                                            initialQuery = key.query,
                                             onBack = {
                                                 if (backStackState.size > 1) {
                                                     backStackState.removeAt(backStackState.size - 1)
@@ -309,6 +314,9 @@ class MainActivity : ComponentActivity() {
                                             },
                                             onUserClick = { username ->
                                                 backStackState.add(Screen.UserProfile(username))
+                                            },
+                                            onTagClick = { tag ->
+                                                backStackState.add(Screen.Search(query = tag))
                                             }
                                         )
                                     }

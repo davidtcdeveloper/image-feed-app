@@ -6,12 +6,14 @@ import shared
 struct PhotoDetailsView: View {
     let photoId: String
     let onUserSelect: (String) -> Void
+    let onTagSelect: (String) -> Void
     @State private var viewModel: PhotoDetailsViewModel
     @Environment(\.dismiss) private var dismiss
 
-    init(photoId: String, onUserSelect: @escaping (String) -> Void) {
+    init(photoId: String, onUserSelect: @escaping (String) -> Void, onTagSelect: @escaping (String) -> Void) {
         self.photoId = photoId
         self.onUserSelect = onUserSelect
+        self.onTagSelect = onTagSelect
         self._viewModel = State(initialValue: PhotoDetailsViewModel(photoId: photoId))
     }
 
@@ -224,13 +226,18 @@ struct PhotoDetailsView: View {
 
                                         FlowLayout(spacing: 8) {
                                             ForEach(tags, id: \.title) { tag in
-                                                Text(tag.title.uppercased())
-                                                    .font(.system(size: 10, weight: .bold))
-                                                    .foregroundColor(.white)
-                                                    .padding(.horizontal, 10)
-                                                    .padding(.vertical, 6)
-                                                    .background(Color.white.opacity(0.12))
-                                                    .cornerRadius(14)
+                                                Button(action: {
+                                                    onTagSelect(tag.title)
+                                                }) {
+                                                    Text(tag.title.uppercased())
+                                                        .font(.system(size: 10, weight: .bold))
+                                                        .foregroundColor(.white)
+                                                        .padding(.horizontal, 10)
+                                                        .padding(.vertical, 6)
+                                                        .background(Color.white.opacity(0.12))
+                                                        .cornerRadius(14)
+                                                }
+                                                .buttonStyle(PlainButtonStyle())
                                             }
                                         }
                                     }

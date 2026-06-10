@@ -18,9 +18,13 @@ class SearchViewModel {
     private let presenter: UnifiedSearchPresenter
     private var closeable: Closeable?
 
-    init() {
+    init(initialQuery: String = "") {
         let presenter = KoinHelper.shared.getUnifiedSearchPresenter()
         self.presenter = presenter
+
+        if !initialQuery.isEmpty {
+            presenter.updateQuery(newQuery: initialQuery)
+        }
 
         self.closeable = presenter.iosState.watch { [weak self] state in
             guard let self = self, let state = state else { return }

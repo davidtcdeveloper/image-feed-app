@@ -5,13 +5,20 @@ struct SearchView: View {
     #if os(iOS)
     @Environment(\.horizontalSizeClass) var sizeClass
     #endif
-    @State private var viewModel = SearchViewModel()
+    @State private var viewModel: SearchViewModel
     @State private var showFilters = false
-    @State private var searchText = ""
+    @State private var searchText: String
     @FocusState private var isSearchFocused: Bool
 
     let onPhotoSelect: (String) -> Void
     let onUserSelect: (String) -> Void
+
+    init(initialQuery: String = "", onPhotoSelect: @escaping (String) -> Void, onUserSelect: @escaping (String) -> Void) {
+        self.onPhotoSelect = onPhotoSelect
+        self.onUserSelect = onUserSelect
+        self._searchText = State(initialValue: initialQuery)
+        self._viewModel = State(initialValue: SearchViewModel(initialQuery: initialQuery))
+    }
 
     private var columnCount: Int {
         #if os(iOS)

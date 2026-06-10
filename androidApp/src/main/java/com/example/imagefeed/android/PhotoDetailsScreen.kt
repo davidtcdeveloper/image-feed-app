@@ -52,7 +52,8 @@ import kotlinx.coroutines.launch
 fun PhotoDetailsScreen(
     photoId: String,
     onBack: () -> Unit,
-    onUserClick: (String) -> Unit
+    onUserClick: (String) -> Unit,
+    onTagClick: (String) -> Unit
 ) {
     val context = LocalPlatformContext.current
     val presenter = remember(photoId) { KoinHelper.getPhotoDetailsPresenter(photoId) }
@@ -134,7 +135,8 @@ fun PhotoDetailsScreen(
                         photo = photo,
                         stats = state.stats,
                         onTrackDownload = { presenter.trackDownload() },
-                        onUserClick = onUserClick
+                        onUserClick = onUserClick,
+                        onTagClick = onTagClick
                     )
                 }
             }
@@ -148,7 +150,8 @@ fun PhotoDetailsContent(
     photo: Photo,
     stats: PhotoStats?,
     onTrackDownload: () -> Unit,
-    onUserClick: (String) -> Unit
+    onUserClick: (String) -> Unit,
+    onTagClick: (String) -> Unit
 ) {
     val context = LocalPlatformContext.current
     val configuration = LocalConfiguration.current
@@ -464,6 +467,7 @@ fun PhotoDetailsContent(
                             Box(
                                 modifier = Modifier
                                     .background(Color(0xFF22222A), RoundedCornerShape(16.dp))
+                                    .clickable { onTagClick(tag.title) }
                                     .padding(horizontal = 12.dp, vertical = 6.dp)
                             ) {
                                 Text(

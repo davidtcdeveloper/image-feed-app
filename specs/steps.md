@@ -204,3 +204,17 @@ These are the spec files that the implementation notes and planning references s
     *   Focus exclusively on Apple Silicon (`macosArm64()`, `iosArm64()`, `iosSimulatorArm64()`) and remove Intel-based `x64` targets to eliminate architecture mismatch warnings.
 5.  **Verification:**
     *   Run `./gradlew clean help` to verify sync and initial build logic.
+
+### Step 16: Clickable Photo Details Labels / Tags Navigation
+1.  **Android: Update `Screen.Search` parameterization:**
+    *   Change `Screen.Search` from a `data object` to a `data class Screen.Search(val query: String = "")`.
+    *   Update references to `Screen.Search` in tab clicks to `Screen.Search()`.
+    *   Add an `onTagClick: (String) -> Unit` callback parameter to `PhotoDetailsScreen` and wire it to add a new `Screen.Search(query = tag)` destination to the backstack.
+    *   Add an `initialQuery: String` parameter to `SearchScreen` and trigger `presenter.updateQuery(initialQuery)` using `LaunchedEffect(initialQuery)`.
+2.  **iOS/macOS: Add query arguments to `SearchViewModel` & `SearchView`:**
+    *   Add `initialQuery` parameter to `SearchViewModel` initializer to immediately perform a search.
+    *   Update `SearchView` to receive `initialQuery` and initialize `searchText` and `viewModel` with it to synchronize the search bar and the presenter states.
+    *   Add `onTagSelect: (String) -> Void` to `PhotoDetailsView` and modify tag labels to be interactive button elements that invoke this callback.
+    *   Update navigation destinations in `ContentView` to map the `.search` path type using `item.id` as the query parameters.
+3.  **Verification:**
+    *   Build and run Android, iOS, and macOS applications. Click tags on various photo details screen and verify automatic query navigation and results display.
