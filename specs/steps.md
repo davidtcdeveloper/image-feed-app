@@ -42,6 +42,7 @@ The `specs/` folder currently contains the following implementation and design d
 *   `specs/13_macos_back_button_duplication_fix.md`
 *   `specs/14_dependency_updates.md`
 *   `specs/15_gradle_dsl_modernization.md`
+*   `specs/17_build_warnings_resolution.md`
 *   `specs/implementation_plan.md`
 *   `specs/steps.md`
 
@@ -218,3 +219,16 @@ These are the spec files that the implementation notes and planning references s
     *   Update navigation destinations in `ContentView` to map the `.search` path type using `item.id` as the query parameters.
 3.  **Verification:**
     *   Build and run Android, iOS, and macOS applications. Click tags on various photo details screen and verify automatic query navigation and results display.
+
+### Step 17: Build Warnings & Deprecations Resolution (Completed)
+1.  **Android deprecation refactoring:**
+    *   Migrate `centerAlignedTopAppBarColors` to `topAppBarColors`.
+    *   Migrate `Icons.Default.List` and `Icons.Default.ArrowForward` to auto-mirrored versions.
+    *   Migrate `ScrollableTabRow` and `TabRow` to `SecondaryScrollableTabRow` and `SecondaryTabRow`, utilizing modern `tabIndicatorOffset` calls.
+    *   Migrate haptic feedback logic to use the modern `VibratorManager` API on S+ and `VibrationEffect` on O+.
+2.  **iOS/macOS target config updates:**
+    *   Exclude `x86_64` targets from Xcode simulator and macOS schemes in `project.yml`.
+    *   Remove unassigned child warning from `AppIcon.appiconset/Contents.json`.
+    *   Silence build script phase warnings by enabling `alwaysRun: true` in `project.yml`.
+3.  **Verification:**
+    *   Run `xcodegen` and clean build Android, iOS, and macOS to verify all warnings have been cleared.

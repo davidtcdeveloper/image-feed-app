@@ -31,6 +31,7 @@ Use the existing project tooling for verification and build work:
 *   Match the task to the nearest real spec in `specs/` before changing code.
 *   Update the relevant spec and `specs/steps.md` together when the implementation path changes.
 *   Prefer small, traceable changes and clarify ambiguous requirements before coding.
+*   **Zero Warning Policy**: Actively monitor and resolve compiler warnings. After every significant change, run `analyze_file` on modified files or execute a full build to identify new warnings or deprecations. Fix them immediately to keep the codebase clean.
 
 ---
 
