@@ -1,12 +1,12 @@
-import SwiftUI
 import shared
+import SwiftUI
 
 @Observable
 class PhotoDetailsViewModel {
-    var photo: Photo? = nil
-    var stats: PhotoStats? = nil
+    var photo: Photo?
+    var stats: PhotoStats?
     var isLoading = false
-    var error: String? = nil
+    var error: String?
 
     private let presenter: PhotoDetailsPresenter
     private var closeable: Closeable?
@@ -16,7 +16,7 @@ class PhotoDetailsViewModel {
         self.presenter = presenter
 
         self.closeable = presenter.iosState.watch { [weak self] state in
-            guard let self = self, let state = state else { return }
+            guard let self, let state else { return }
             self.photo = state.photo
             self.stats = state.stats
             self.isLoading = state.isLoading

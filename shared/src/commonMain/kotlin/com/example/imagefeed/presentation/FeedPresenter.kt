@@ -22,12 +22,12 @@ data class FeedState(
     val isRefreshing: Boolean = false,
     val error: String? = null,
     val page: Int = 1,
-    val hasReachedEnd: Boolean = false
+    val hasReachedEnd: Boolean = false,
 )
 
 class FeedPresenter(
     private val repository: UnsplashRepository,
-    private val presenterScope: CoroutineScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+    private val presenterScope: CoroutineScope = CoroutineScope(Dispatchers.Main + SupervisorJob()),
 ) {
     private val _state = MutableStateFlow(FeedState())
     val state: StateFlow<FeedState> = _state.asStateFlow()
@@ -47,14 +47,14 @@ class FeedPresenter(
                 _state.update {
                     it.copy(
                         topics = list,
-                        isLoadingTopics = false
+                        isLoadingTopics = false,
                     )
                 }
             } catch (e: Exception) {
                 _state.update {
                     it.copy(
                         isLoadingTopics = false,
-                        error = e.message ?: "Failed to load categories"
+                        error = e.message ?: "Failed to load categories",
                     )
                 }
             }
@@ -72,7 +72,7 @@ class FeedPresenter(
                 page = 1,
                 hasReachedEnd = false,
                 isLoading = false,
-                error = null
+                error = null,
             )
         }
 
@@ -81,18 +81,19 @@ class FeedPresenter(
 
     fun refresh() {
         if (_state.value.isRefreshing) return
-        
+
         _state.update { it.copy(isRefreshing = true, error = null) }
-        
+
         presenterScope.launch {
             try {
                 val slug = _state.value.selectedTopicSlug
-                val freshPhotos = if (slug == "editorial") {
-                    repository.getPhotos(page = 1, perPage = 15)
-                } else {
-                    repository.getTopicPhotos(slug, page = 1, perPage = 15)
-                }
-                
+                val freshPhotos =
+                    if (slug == "editorial") {
+                        repository.getPhotos(page = 1, perPage = 15)
+                    } else {
+                        repository.getTopicPhotos(slug, page = 1, perPage = 15)
+                    }
+
                 _state.update {
                     it.copy(
                         photos = freshPhotos,
@@ -100,14 +101,14 @@ class FeedPresenter(
                         isRefreshing = false,
                         page = 1,
                         hasReachedEnd = freshPhotos.size < 15,
-                        error = null
+                        error = null,
                     )
                 }
             } catch (e: Exception) {
                 _state.update {
                     it.copy(
                         isRefreshing = false,
-                        error = e.message ?: "Failed to refresh feed"
+                        error = e.message ?: "Failed to refresh feed",
                     )
                 }
             }
@@ -124,27 +125,28 @@ class FeedPresenter(
             try {
                 val slug = currentState.selectedTopicSlug
                 val nextPage = if (currentState.photos.isEmpty()) 1 else currentState.page + 1
-                
-                val newPhotos = if (slug == "editorial") {
-                    repository.getPhotos(page = nextPage, perPage = 15)
-                } else {
-                    repository.getTopicPhotos(slug, page = nextPage, perPage = 15)
-                }
-                
+
+                val newPhotos =
+                    if (slug == "editorial") {
+                        repository.getPhotos(page = nextPage, perPage = 15)
+                    } else {
+                        repository.getTopicPhotos(slug, page = nextPage, perPage = 15)
+                    }
+
                 _state.update {
                     it.copy(
                         photos = it.photos + newPhotos,
                         isLoading = false,
                         page = nextPage,
                         hasReachedEnd = newPhotos.size < 15,
-                        error = null
+                        error = null,
                     )
                 }
             } catch (e: Exception) {
                 _state.update {
                     it.copy(
                         isLoading = false,
-                        error = e.message ?: "Failed to load photos"
+                        error = e.message ?: "Failed to load photos",
                     )
                 }
             }

@@ -1,5 +1,5 @@
-import SwiftUI
 import shared
+import SwiftUI
 
 @Observable
 class FeedViewModel {
@@ -9,7 +9,7 @@ class FeedViewModel {
     var isLoading = false
     var isLoadingTopics = false
     var isRefreshing = false
-    var error: String? = nil
+    var error: String?
     var hasReachedEnd = false
 
     private let presenter: FeedPresenter
@@ -19,10 +19,10 @@ class FeedViewModel {
         // Resolve FeedPresenter using the KoinHelper from the shared KMP module
         let presenter = KoinHelper.shared.getFeedPresenter()
         self.presenter = presenter
-        
+
         // Start watching the StateFlow and update state on main thread
         self.closeable = presenter.iosState.watch { [weak self] state in
-            guard let self = self, let state = state else { return }
+            guard let self, let state else { return }
             self.photos = state.photos
             self.topics = state.topics
             self.selectedTopicSlug = state.selectedTopicSlug

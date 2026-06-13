@@ -11,16 +11,18 @@ interface Closeable {
     fun close()
 }
 
-class CommonFlow<T>(private val origin: Flow<T>) : Flow<T> by origin {
-    
+class CommonFlow<T>(
+    private val origin: Flow<T>,
+) : Flow<T> by origin {
     fun watch(block: (T) -> Unit): Closeable {
         val job = Job()
         // Run on Main Dispatcher so updates are delivered on the main thread to iOS UI
         val scope = CoroutineScope(Dispatchers.Main + job)
-        
-        origin.onEach { block(it) }
+
+        origin
+            .onEach { block(it) }
             .launchIn(scope)
-            
+
         return object : Closeable {
             override fun close() {
                 job.cancel()

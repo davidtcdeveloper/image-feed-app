@@ -1,5 +1,5 @@
-import SwiftUI
 import shared
+import SwiftUI
 
 struct ContentView: View {
     @State private var selectedTab = 0
@@ -9,7 +9,7 @@ struct ContentView: View {
         // Style the tab bar with dark-mode compliance
         let appearance = UITabBarAppearance()
         appearance.configureWithOpaqueBackground()
-        appearance.backgroundColor = UIColor(red: 15/255, green: 15/255, blue: 17/255, alpha: 1.0)
+        appearance.backgroundColor = UIColor(red: 15 / 255, green: 15 / 255, blue: 17 / 255, alpha: 1.0)
         UITabBar.appearance().standardAppearance = appearance
         UITabBar.appearance().scrollEdgeAppearance = appearance
         #endif
@@ -44,52 +44,47 @@ struct CollectionsFeedTabView: View {
                 },
                 onSearchClick: {
                     path.append(CollectionPathItem(id: "", type: .search))
+                })
+                .navigationDestination(for: CollectionPathItem.self) { item in
+                    switch item.type {
+                    case .collection:
+                        CollectionDetailView(
+                            collectionId: item.id,
+                            onPhotoSelect: { photoId in
+                                path.append(CollectionPathItem(id: photoId, type: .photo))
+                            },
+                            onCollectionSelect: { relId in
+                                path.append(CollectionPathItem(id: relId, type: .collection))
+                            })
+                    case .photo:
+                        PhotoDetailsView(
+                            photoId: item.id,
+                            onUserSelect: { username in
+                                path.append(CollectionPathItem(id: username, type: .user))
+                            },
+                            onTagSelect: { tag in
+                                path.append(CollectionPathItem(id: tag, type: .search))
+                            })
+                    case .user:
+                        UserProfileView(
+                            username: item.id,
+                            onPhotoSelect: { photoId in
+                                path.append(CollectionPathItem(id: photoId, type: .photo))
+                            },
+                            onCollectionSelect: { colId in
+                                path.append(CollectionPathItem(id: colId, type: .collection))
+                            })
+                    case .search:
+                        SearchView(
+                            initialQuery: item.id,
+                            onPhotoSelect: { photoId in
+                                path.append(CollectionPathItem(id: photoId, type: .photo))
+                            },
+                            onUserSelect: { username in
+                                path.append(CollectionPathItem(id: username, type: .user))
+                            })
+                    }
                 }
-            )
-            .navigationDestination(for: CollectionPathItem.self) { item in
-                switch item.type {
-                case .collection:
-                    CollectionDetailView(
-                        collectionId: item.id,
-                        onPhotoSelect: { photoId in
-                            path.append(CollectionPathItem(id: photoId, type: .photo))
-                        },
-                        onCollectionSelect: { relId in
-                            path.append(CollectionPathItem(id: relId, type: .collection))
-                        }
-                    )
-                case .photo:
-                    PhotoDetailsView(
-                        photoId: item.id,
-                        onUserSelect: { username in
-                            path.append(CollectionPathItem(id: username, type: .user))
-                        },
-                        onTagSelect: { tag in
-                            path.append(CollectionPathItem(id: tag, type: .search))
-                        }
-                    )
-                case .user:
-                    UserProfileView(
-                        username: item.id,
-                        onPhotoSelect: { photoId in
-                            path.append(CollectionPathItem(id: photoId, type: .photo))
-                        },
-                        onCollectionSelect: { colId in
-                            path.append(CollectionPathItem(id: colId, type: .collection))
-                        }
-                    )
-                case .search:
-                    SearchView(
-                        initialQuery: item.id,
-                        onPhotoSelect: { photoId in
-                            path.append(CollectionPathItem(id: photoId, type: .photo))
-                        },
-                        onUserSelect: { username in
-                            path.append(CollectionPathItem(id: username, type: .user))
-                        }
-                    )
-                }
-            }
         }
     }
 }
@@ -144,8 +139,8 @@ struct PhotosFeedTabView: View {
                         CategoryTabButton(
                             title: "Editorial",
                             isSelected: viewModel.selectedTopicSlug == "editorial",
-                            namespace: categoryNamespace
-                        ) {
+                            namespace: categoryNamespace)
+                        {
                             #if os(iOS)
                             let generator = UIImpactFeedbackGenerator(style: .light)
                             generator.impactOccurred()
@@ -154,8 +149,8 @@ struct PhotosFeedTabView: View {
                                 viewModel.selectTopic(slug: "editorial")
                             }
                         }
-                        
-                        if viewModel.topics.isEmpty && viewModel.isLoadingTopics {
+
+                        if viewModel.topics.isEmpty, viewModel.isLoadingTopics {
                             ForEach(0..<6, id: \.self) { _ in
                                 Capsule()
                                     .fill(Color.white.opacity(0.08))
@@ -167,8 +162,8 @@ struct PhotosFeedTabView: View {
                                 CategoryTabButton(
                                     title: topic.title,
                                     isSelected: viewModel.selectedTopicSlug == topic.slug,
-                                    namespace: categoryNamespace
-                                ) {
+                                    namespace: categoryNamespace)
+                                {
                                     #if os(iOS)
                                     let generator = UIImpactFeedbackGenerator(style: .light)
                                     generator.impactOccurred()
@@ -189,15 +184,15 @@ struct PhotosFeedTabView: View {
                 ZStack {
                     Color(hex: "0F0F11")
                         .ignoresSafeArea()
-                    
-                    if viewModel.photos.isEmpty && viewModel.isLoading {
+
+                    if viewModel.photos.isEmpty, viewModel.isLoading {
                         VStack {
                             Spacer()
                             ProgressView()
                                 .tint(.white)
                             Spacer()
                         }
-                    } else if viewModel.photos.isEmpty && viewModel.error != nil {
+                    } else if viewModel.photos.isEmpty, viewModel.error != nil {
                         ErrorView(error: viewModel.error ?? "Unknown error", onRetry: {
                             viewModel.refresh()
                         })
@@ -207,7 +202,10 @@ struct PhotosFeedTabView: View {
                                 HStack(alignment: .top, spacing: 8) {
                                     ForEach(0..<columnCount, id: \.self) { colIndex in
                                         LazyVStack(spacing: 8) {
-                                            ForEach(AdaptiveLayoutHelper.photosForColumn(index: colIndex, totalColumns: columnCount, from: viewModel.photos), id: \.id) { photo in
+                                            ForEach(
+                                                AdaptiveLayoutHelper.photosForColumn(index: colIndex, totalColumns: columnCount, from: viewModel.photos),
+                                                id: \.id)
+                                            { photo in
                                                 PhotoCard(
                                                     photo: photo,
                                                     viewModel: viewModel,
@@ -216,14 +214,13 @@ struct PhotosFeedTabView: View {
                                                     },
                                                     onUserSelect: { username in
                                                         path.append(FeedPathItem(id: username, type: .user))
-                                                    }
-                                                )
+                                                    })
                                             }
                                         }
                                     }
                                 }
                                 .padding(.horizontal, 8)
-                                
+
                                 // Bottom Loading Indicator
                                 if viewModel.isLoading {
                                     ProgressView()
@@ -255,94 +252,90 @@ struct PhotosFeedTabView: View {
             }
             .navigationTitle("FEED")
             #if os(iOS)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(Color(hex: "0F0F11"), for: .navigationBar)
-            .toolbarColorScheme(.dark, for: .navigationBar)
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbarBackground(Color(hex: "0F0F11"), for: .navigationBar)
+                .toolbarColorScheme(.dark, for: .navigationBar)
             #endif
-            .toolbar {
-                #if os(iOS)
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button(action: {
-                        path.append(FeedPathItem(id: "", type: .search))
-                    }) {
-                        Image(systemName: "magnifyingglass")
-                            .foregroundColor(.white)
-                    }
-                    .keyboardShortcut("f", modifiers: .command)
-                }
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: handleShake) {
-                        Image(systemName: "shuffle")
-                            .foregroundColor(.white)
-                    }
-                    .keyboardShortcut("s", modifiers: .command)
-                }
-                #else
-                ToolbarItem(placement: .navigation) {
-                    Button(action: {
-                        path.append(FeedPathItem(id: "", type: .search))
-                    }) {
-                        Image(systemName: "magnifyingglass")
-                            .foregroundColor(.white)
-                    }
-                    .keyboardShortcut("f", modifiers: .command)
-                }
-                ToolbarItem(placement: .primaryAction) {
-                    Button(action: handleShake) {
-                        Image(systemName: "shuffle")
-                            .foregroundColor(.white)
-                    }
-                    .keyboardShortcut("s", modifiers: .command)
-                }
-                #endif
-            }
-            .navigationDestination(for: FeedPathItem.self) { item in
-                switch item.type {
-                case .photo:
-                    PhotoDetailsView(
-                        photoId: item.id,
-                        onUserSelect: { username in
-                            path.append(FeedPathItem(id: username, type: .user))
-                        },
-                        onTagSelect: { tag in
-                            path.append(FeedPathItem(id: tag, type: .search))
+                .toolbar {
+                    #if os(iOS)
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        Button(action: {
+                            path.append(FeedPathItem(id: "", type: .search))
+                        }) {
+                            Image(systemName: "magnifyingglass")
+                                .foregroundColor(.white)
                         }
-                    )
-                case .user:
-                    UserProfileView(
-                        username: item.id,
-                        onPhotoSelect: { photoId in
-                            path.append(FeedPathItem(id: photoId, type: .photo))
-                        },
-                        onCollectionSelect: { colId in
-                            path.append(FeedPathItem(id: colId, type: .collection))
+                        .keyboardShortcut("f", modifiers: .command)
+                    }
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button(action: handleShake) {
+                            Image(systemName: "shuffle")
+                                .foregroundColor(.white)
                         }
-                    )
-                case .collection:
-                    CollectionDetailView(
-                        collectionId: item.id,
-                        onPhotoSelect: { photoId in
-                            path.append(FeedPathItem(id: photoId, type: .photo))
-                        },
-                        onCollectionSelect: { colId in
-                            path.append(FeedPathItem(id: colId, type: .collection))
+                        .keyboardShortcut("s", modifiers: .command)
+                    }
+                    #else
+                    ToolbarItem(placement: .navigation) {
+                        Button(action: {
+                            path.append(FeedPathItem(id: "", type: .search))
+                        }) {
+                            Image(systemName: "magnifyingglass")
+                                .foregroundColor(.white)
                         }
-                    )
-                case .search:
-                    SearchView(
-                        initialQuery: item.id,
-                        onPhotoSelect: { photoId in
-                            path.append(FeedPathItem(id: photoId, type: .photo))
-                        },
-                        onUserSelect: { username in
-                            path.append(FeedPathItem(id: username, type: .user))
+                        .keyboardShortcut("f", modifiers: .command)
+                    }
+                    ToolbarItem(placement: .primaryAction) {
+                        Button(action: handleShake) {
+                            Image(systemName: "shuffle")
+                                .foregroundColor(.white)
                         }
-                    )
+                        .keyboardShortcut("s", modifiers: .command)
+                    }
+                    #endif
                 }
-            }
-            .onShake {
-                handleShake()
-            }
+                .navigationDestination(for: FeedPathItem.self) { item in
+                    switch item.type {
+                    case .photo:
+                        PhotoDetailsView(
+                            photoId: item.id,
+                            onUserSelect: { username in
+                                path.append(FeedPathItem(id: username, type: .user))
+                            },
+                            onTagSelect: { tag in
+                                path.append(FeedPathItem(id: tag, type: .search))
+                            })
+                    case .user:
+                        UserProfileView(
+                            username: item.id,
+                            onPhotoSelect: { photoId in
+                                path.append(FeedPathItem(id: photoId, type: .photo))
+                            },
+                            onCollectionSelect: { colId in
+                                path.append(FeedPathItem(id: colId, type: .collection))
+                            })
+                    case .collection:
+                        CollectionDetailView(
+                            collectionId: item.id,
+                            onPhotoSelect: { photoId in
+                                path.append(FeedPathItem(id: photoId, type: .photo))
+                            },
+                            onCollectionSelect: { colId in
+                                path.append(FeedPathItem(id: colId, type: .collection))
+                            })
+                    case .search:
+                        SearchView(
+                            initialQuery: item.id,
+                            onPhotoSelect: { photoId in
+                                path.append(FeedPathItem(id: photoId, type: .photo))
+                            },
+                            onUserSelect: { username in
+                                path.append(FeedPathItem(id: username, type: .user))
+                            })
+                    }
+                }
+                .onShake {
+                    handleShake()
+                }
         }
     }
 
@@ -361,7 +354,7 @@ struct CategoryTabButton: View {
     let isSelected: Bool
     let namespace: Namespace.ID
     let action: () -> Void
-    
+
     var body: some View {
         Button(action: action) {
             Text(title)
@@ -379,8 +372,7 @@ struct CategoryTabButton: View {
                             Capsule()
                                 .fill(Color.white.opacity(0.08))
                         }
-                    }
-                )
+                    })
         }
         .buttonStyle(PlainButtonStyle())
     }
@@ -391,15 +383,15 @@ struct PhotoCard: View {
     let viewModel: FeedViewModel
     let onSelect: (String) -> Void
     let onUserSelect: (String) -> Void
-    
+
     var body: some View {
         let screenWidth = AdaptiveLayoutHelper.getScreenWidth()
         let itemWidth = Int(screenWidth / 2)
-        
+
         // Dynamically resize image requesting only the resolution required by container
         let imageUrl = photo.urls.raw + "&w=\(itemWidth)&q=80&auto=format"
         let aspectRatio = CGFloat(photo.width) / CGFloat(photo.height)
-        
+
         ZStack(alignment: .bottom) {
             KFImage(URL(string: imageUrl))
                 .placeholder {
@@ -420,7 +412,7 @@ struct PhotoCard: View {
                 .onTapGesture {
                     onSelect(photo.id)
                 }
-            
+
             // Translucent Bottom Overlay with photographer credentials to comply with terms
             HStack(spacing: 6) {
                 KFImage(URL(string: photo.user.profileImage.small))
@@ -428,13 +420,13 @@ struct PhotoCard: View {
                     .aspectRatio(contentMode: .fill)
                     .frame(width: 20, height: 20)
                     .clipShape(Circle())
-                
+
                 Text(photo.user.name)
                     .font(.system(size: 10, weight: .medium))
                     .foregroundColor(.white)
                     .lineLimit(1)
                     .truncationMode(.tail)
-                
+
                 Spacer()
             }
             .padding(6)
@@ -442,9 +434,7 @@ struct PhotoCard: View {
                 LinearGradient(
                     colors: [.clear, .black.opacity(0.75)],
                     startPoint: .top,
-                    endPoint: .bottom
-                )
-            )
+                    endPoint: .bottom))
             .clipShape(UnevenRoundedRectangle(bottomLeadingRadius: 12, bottomTrailingRadius: 12))
             .contentShape(Rectangle())
             .onTapGesture {
@@ -458,7 +448,7 @@ struct PhotoCard: View {
             }
         }
     }
-    
+
     private func contentRatio(photoWidth: Int, photoHeight: Int) -> CGFloat {
         if photoWidth <= 0 || photoHeight <= 0 { return 1.0 }
         return CGFloat(photoWidth) / CGFloat(photoHeight)
@@ -468,19 +458,19 @@ struct PhotoCard: View {
 struct ErrorView: View {
     let error: String
     let onRetry: () -> Void
-    
+
     var body: some View {
         VStack(spacing: 12) {
             Text("Error Loading Feed")
                 .font(.headline)
                 .foregroundColor(.white)
-            
+
             Text(error)
                 .font(.subheadline)
                 .foregroundColor(.gray)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 24)
-            
+
             Button(action: onRetry) {
                 Text("Retry")
                     .fontWeight(.medium)
@@ -494,7 +484,7 @@ struct ErrorView: View {
     }
 }
 
-// Color Hex parsing extensions
+/// Color Hex parsing extensions
 extension Color {
     init(hex: String) {
         let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
@@ -517,19 +507,18 @@ extension Color {
             red: Double(r) / 255,
             green: Double(g) / 255,
             blue: Double(b) / 255,
-            opacity: Double(a) / 255
-        )
+            opacity: Double(a) / 255)
     }
 }
 
 #if os(iOS)
-// Shake gesture detection support
+/// Shake gesture detection support
 extension Notification.Name {
     static let deviceDidShake = Notification.Name("MyDeviceDidShakeNotification")
 }
 
 extension UIWindow {
-    open override func motionEnded(_ motion: UIEvent.EventSubtype, with event: UIEvent?) {
+    override open func motionEnded(_ motion: UIEvent.EventSubtype, with event: UIEvent?) {
         if motion == .motionShake {
             NotificationCenter.default.post(name: .deviceDidShake, object: nil)
         }
@@ -550,7 +539,7 @@ struct DeviceShakeViewModifier: ViewModifier {
 
 extension View {
     func onShake(perform action: @escaping () -> Void) -> some View {
-        self.modifier(DeviceShakeViewModifier(action: action))
+        modifier(DeviceShakeViewModifier(action: action))
     }
 }
 #else

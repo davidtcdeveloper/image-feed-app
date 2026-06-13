@@ -20,7 +20,7 @@ configure<com.android.build.api.dsl.ApplicationExtension> {
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                "proguard-rules.pro",
             )
         }
     }
@@ -39,7 +39,7 @@ kotlin {
 
 dependencies {
     implementation(project(":shared"))
-    
+
     // Jetpack Compose
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
@@ -49,21 +49,21 @@ dependencies {
     implementation(libs.material.icons.core)
     implementation(libs.material.icons.extended)
     implementation(libs.androidx.activity.compose)
-    
+
     // Compose Navigation & Lifecycle
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.navigation3.runtime)
     implementation(libs.androidx.navigation3.ui)
     implementation(libs.androidx.lifecycle.viewmodel.navigation3)
     implementation(libs.androidx.lifecycle.runtime.compose)
-    
+
     // Coil (Image Loading)
     implementation(libs.coil.compose)
     implementation(libs.coil.network.okhttp)
-    
+
     // Koin for DI
     implementation(libs.koin.android.compose)
-    
+
     // Tooling/Test
     debugImplementation(libs.androidx.compose.ui.tooling)
     testImplementation(libs.junit)

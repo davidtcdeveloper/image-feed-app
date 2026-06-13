@@ -1,18 +1,18 @@
-import SwiftUI
 import shared
+import SwiftUI
 
 @Observable
 class UserProfileViewModel {
-    var user: User? = nil
+    var user: User?
     var activeTab: ProfileTab = .portfolio
     var portfolioPhotos: [Photo] = []
     var likedPhotos: [Photo] = []
     var collections: [PhotoCollection] = []
-    var stats: UserStats? = nil
+    var stats: UserStats?
     var isLoadingContent = false
     var isHeaderLoading = false
     var isLoadingStats = false
-    var error: String? = nil
+    var error: String?
 
     private let presenter: UserProfilePresenter
     private var closeable: Closeable?
@@ -22,7 +22,7 @@ class UserProfileViewModel {
         self.presenter = presenter
 
         self.closeable = presenter.iosState.watch { [weak self] state in
-            guard let self = self, let state = state else { return }
+            guard let self, let state else { return }
             self.user = state.user
             self.activeTab = state.activeTab
             self.portfolioPhotos = state.portfolioPhotos

@@ -18,12 +18,12 @@ data class CollectionsFeedState(
     val isRefreshing: Boolean = false,
     val error: String? = null,
     val page: Int = 1,
-    val hasReachedEnd: Boolean = false
+    val hasReachedEnd: Boolean = false,
 )
 
 class CollectionsFeedPresenter(
     private val repository: UnsplashRepository,
-    private val presenterScope: CoroutineScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+    private val presenterScope: CoroutineScope = CoroutineScope(Dispatchers.Main + SupervisorJob()),
 ) {
     private val _state = MutableStateFlow(CollectionsFeedState())
     val state: StateFlow<CollectionsFeedState> = _state.asStateFlow()
@@ -48,14 +48,14 @@ class CollectionsFeedPresenter(
                         isRefreshing = false,
                         page = 1,
                         hasReachedEnd = freshCollections.size < 10,
-                        error = null
+                        error = null,
                     )
                 }
             } catch (e: Exception) {
                 _state.update {
                     it.copy(
                         isRefreshing = false,
-                        error = e.message ?: "Failed to refresh collections"
+                        error = e.message ?: "Failed to refresh collections",
                     )
                 }
             }
@@ -79,14 +79,14 @@ class CollectionsFeedPresenter(
                         isLoading = false,
                         page = nextPage,
                         hasReachedEnd = newCollections.size < 10,
-                        error = null
+                        error = null,
                     )
                 }
             } catch (e: Exception) {
                 _state.update {
                     it.copy(
                         isLoading = false,
-                        error = e.message ?: "Failed to load collections"
+                        error = e.message ?: "Failed to load collections",
                     )
                 }
             }

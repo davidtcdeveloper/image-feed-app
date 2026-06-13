@@ -1,12 +1,12 @@
-import SwiftUI
 import shared
+import SwiftUI
 
 @Observable
 class CollectionsFeedViewModel {
     var collections: [PhotoCollection] = []
     var isLoading = false
     var isRefreshing = false
-    var error: String? = nil
+    var error: String?
     var hasReachedEnd = false
 
     private let presenter: CollectionsFeedPresenter
@@ -17,7 +17,7 @@ class CollectionsFeedViewModel {
         self.presenter = presenter
 
         self.closeable = presenter.iosState.watch { [weak self] state in
-            guard let self = self, let state = state else { return }
+            guard let self, let state else { return }
             self.collections = state.collections
             self.isLoading = state.isLoading
             self.isRefreshing = state.isRefreshing

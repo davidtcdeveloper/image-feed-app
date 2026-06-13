@@ -1,5 +1,5 @@
-import SwiftUI
 import shared
+import SwiftUI
 
 struct SearchView: View {
     #if os(iOS)
@@ -37,8 +37,8 @@ struct SearchView: View {
                 // Search Tab Picker
                 Picker("Tab", selection: Binding(
                     get: { viewModel.activeTab },
-                    set: { viewModel.setTab(tab: $0) }
-                )) {
+                    set: { viewModel.setTab(tab: $0) }))
+                {
                     Text("Photos").tag(SearchTab.photos)
                     Text("Collections").tag(SearchTab.collections)
                     Text("Users").tag(SearchTab.users)
@@ -61,8 +61,7 @@ struct SearchView: View {
                         },
                         onClearAll: {
                             viewModel.clearHistory()
-                        }
-                    )
+                        })
                 } else if viewModel.isLoading {
                     Spacer()
                     ProgressView()
@@ -91,7 +90,10 @@ struct SearchView: View {
                                     HStack(alignment: .top, spacing: 8) {
                                         ForEach(0..<columnCount, id: \.self) { colIndex in
                                             LazyVStack(spacing: 8) {
-                                                ForEach(AdaptiveLayoutHelper.photosForColumn(index: colIndex, totalColumns: columnCount, from: viewModel.photos), id: \.id) { photo in
+                                                ForEach(
+                                                    AdaptiveLayoutHelper.photosForColumn(index: colIndex, totalColumns: columnCount, from: viewModel.photos),
+                                                    id: \.id)
+                                                { photo in
                                                     KFImage(URL(string: photo.urls.small))
                                                         .resizable()
                                                         .aspectRatio(CGFloat(photo.width) / CGFloat(photo.height), contentMode: .fit)
@@ -115,7 +117,9 @@ struct SearchView: View {
                                     ForEach(viewModel.collections, id: \.id) { collection in
                                         CollectionCardView(collection: collection)
                                             .onTapGesture {
-                                                if let links = collection.links, let url = URL(string: "\(links.html)?utm_source=ImageFeedApp&utm_medium=referral") {
+                                                if let links = collection.links,
+                                                   let url = URL(string: "\(links.html)?utm_source=ImageFeedApp&utm_medium=referral")
+                                                {
                                                     URLHelper.open(url)
                                                 }
                                             }
@@ -135,6 +139,7 @@ struct SearchView: View {
                                     }
                                     .padding(.horizontal, 16)
                                 }
+
                             default:
                                 EmptyView()
                             }
@@ -143,7 +148,7 @@ struct SearchView: View {
                                 ProgressView()
                                     .tint(.white)
                                     .padding(.vertical, 16)
-                            } else if !viewModel.hasReachedEnd && !searchText.isEmpty {
+                            } else if !viewModel.hasReachedEnd, !searchText.isEmpty {
                                 Color.clear
                                     .frame(height: 1)
                                     .onAppear {
@@ -157,40 +162,39 @@ struct SearchView: View {
         }
         .navigationTitle("SEARCH")
         #if os(iOS)
-        .navigationBarTitleDisplayMode(.inline)
+            .navigationBarTitleDisplayMode(.inline)
         #endif
-        .toolbar {
-            #if os(iOS)
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button(action: { showFilters = true }) {
-                    Image(systemName: "line.3.horizontal.decrease.circle")
-                        .foregroundColor(.white)
+            .toolbar {
+                #if os(iOS)
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: { showFilters = true }) {
+                        Image(systemName: "line.3.horizontal.decrease.circle")
+                            .foregroundColor(.white)
+                    }
                 }
-            }
-            #else
-            ToolbarItem(placement: .primaryAction) {
-                Button(action: { showFilters = true }) {
-                    Image(systemName: "line.3.horizontal.decrease.circle")
-                        .foregroundColor(.white)
+                #else
+                ToolbarItem(placement: .primaryAction) {
+                    Button(action: { showFilters = true }) {
+                        Image(systemName: "line.3.horizontal.decrease.circle")
+                            .foregroundColor(.white)
+                    }
                 }
+                #endif
             }
-            #endif
-        }
-        .searchable(text: $searchText, prompt: "Photos, collections, or users")
-        .onChange(of: searchText) { _, newValue in
-            viewModel.updateQuery(newQuery: newValue)
-        }
-        .sheet(isPresented: $showFilters) {
-            SearchFiltersSheetView(filters: viewModel.filters) { newFilters in
-                viewModel.applyFilters(
-                    orderBy: newFilters.orderBy,
-                    color: newFilters.color,
-                    orientation: newFilters.orientation
-                )
+            .searchable(text: $searchText, prompt: "Photos, collections, or users")
+            .onChange(of: searchText) { _, newValue in
+                viewModel.updateQuery(newQuery: newValue)
             }
-            .presentationDetents([.medium])
-            .presentationDragIndicator(.visible)
-        }
+            .sheet(isPresented: $showFilters) {
+                SearchFiltersSheetView(filters: viewModel.filters) { newFilters in
+                    viewModel.applyFilters(
+                        orderBy: newFilters.orderBy,
+                        color: newFilters.color,
+                        orientation: newFilters.orientation)
+                }
+                .presentationDetents([.medium])
+                .presentationDragIndicator(.visible)
+            }
     }
 }
 
@@ -288,7 +292,7 @@ struct CollectionCardView: View {
                     .font(.system(size: 16, weight: .bold))
                     .foregroundColor(.white)
                     .tracking(1)
-                
+
                 Text("\(collection.totalPhotos) Photos  ·  Curated by \(collection.user.name)")
                     .font(.system(size: 12))
                     .foregroundColor(.gray)
@@ -364,7 +368,7 @@ struct SearchFiltersSheetView: View {
         ("Magenta", "magenta"),
         ("Green", "green"),
         ("Teal", "teal"),
-        ("Blue", "blue")
+        ("Blue", "blue"),
     ]
 
     private let colorMap: [String: Color] = [
@@ -377,7 +381,7 @@ struct SearchFiltersSheetView: View {
         "magenta": .pink,
         "green": .green,
         "teal": .teal,
-        "blue": .blue
+        "blue": .blue,
     ]
 
     init(filters: SearchFilters, onApply: @escaping (SearchFilters) -> Void) {
@@ -466,8 +470,7 @@ struct SearchFiltersSheetView: View {
                                             .frame(width: 32, height: 32)
                                             .overlay(
                                                 Circle()
-                                                    .stroke(.white, lineWidth: color == val ? 2 : 0)
-                                            )
+                                                    .stroke(.white, lineWidth: color == val ? 2 : 0))
                                             .scaleEffect(color == val ? 1.15 : 1.0)
                                         Text(name)
                                             .font(.system(size: 10))
@@ -488,8 +491,7 @@ struct SearchFiltersSheetView: View {
                         orderBy: orderBy,
                         color: color,
                         orientation: orientation,
-                        contentFilter: "low"
-                    )
+                        contentFilter: "low")
                     onApply(result)
                     dismiss()
                 }) {

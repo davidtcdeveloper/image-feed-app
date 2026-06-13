@@ -1,5 +1,5 @@
-import SwiftUI
 import shared
+import SwiftUI
 
 @Observable
 class SearchViewModel {
@@ -11,7 +11,7 @@ class SearchViewModel {
     var users: [User] = []
     var isLoading = false
     var isLoadingMore = false
-    var error: String? = nil
+    var error: String?
     var searchHistory: [String] = []
     var hasReachedEnd = false
 
@@ -27,7 +27,7 @@ class SearchViewModel {
         }
 
         self.closeable = presenter.iosState.watch { [weak self] state in
-            guard let self = self, let state = state else { return }
+            guard let self, let state else { return }
             self.query = state.query
             self.activeTab = state.activeTab
             self.filters = state.filters
@@ -55,8 +55,7 @@ class SearchViewModel {
             orderBy: orderBy,
             color: color,
             orientation: orientation,
-            contentFilter: "low"
-        )
+            contentFilter: "low")
         presenter.applyFilters(filters: newFilters)
     }
 

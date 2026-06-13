@@ -21,13 +21,13 @@ data class CollectionDetailState(
     val isHeaderLoading: Boolean = false,
     val error: String? = null,
     val photosPage: Int = 1,
-    val hasReachedEnd: Boolean = false
+    val hasReachedEnd: Boolean = false,
 )
 
 class CollectionDetailPresenter(
     private val repository: UnsplashRepository,
     private val collectionId: String,
-    private val presenterScope: CoroutineScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+    private val presenterScope: CoroutineScope = CoroutineScope(Dispatchers.Main + SupervisorJob()),
 ) {
     private val _state = MutableStateFlow(CollectionDetailState())
     val state: StateFlow<CollectionDetailState> = _state.asStateFlow()
@@ -77,14 +77,14 @@ class CollectionDetailPresenter(
                         isLoadingPhotos = false,
                         photosPage = nextPage,
                         hasReachedEnd = newPhotos.size < 15,
-                        error = null
+                        error = null,
                     )
                 }
             } catch (e: Exception) {
                 _state.update {
                     it.copy(
                         isLoadingPhotos = false,
-                        error = e.message ?: "Failed to load collection photos"
+                        error = e.message ?: "Failed to load collection photos",
                     )
                 }
             }

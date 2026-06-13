@@ -11,7 +11,7 @@ data class CollectionSummary(
     @SerialName("total_photos") val totalPhotos: Int,
     @SerialName("cover_photo") val coverPhoto: Photo? = null,
     val user: User,
-    val links: CollectionLinks? = null
+    val links: CollectionLinks? = null,
 )
 
 @Serializable
@@ -19,12 +19,12 @@ data class CollectionLinks(
     val self: String,
     val html: String,
     val photos: String,
-    val related: String? = null
+    val related: String? = null,
 )
 
 @Serializable
 data class SearchResponse<T>(
     val total: Int,
     @SerialName("total_pages") val totalPages: Int,
-    val results: List<T>
+    val results: List<T>,
 )

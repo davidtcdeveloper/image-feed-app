@@ -1,21 +1,21 @@
-import SwiftUI
 import shared
+import SwiftUI
 
 struct MacOSContentView: View {
     enum SidebarSelection: Hashable {
         case photos
         case collections
     }
-    
+
     @State private var selection: SidebarSelection? = .photos
-    
+
     var body: some View {
         NavigationSplitView {
             List(selection: $selection) {
                 NavigationLink(value: SidebarSelection.photos) {
                     Label("Photos", systemImage: "photo.stack")
                 }
-                
+
                 NavigationLink(value: SidebarSelection.collections) {
                     Label("Collections", systemImage: "square.grid.2x2")
                 }
@@ -24,7 +24,7 @@ struct MacOSContentView: View {
             .listStyle(SidebarListStyle())
             .frame(minWidth: 200)
         } detail: {
-            if let selection = selection {
+            if let selection {
                 switch selection {
                 case .photos:
                     PhotosFeedTabView()

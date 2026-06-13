@@ -1,5 +1,5 @@
-import SwiftUI
 import shared
+import SwiftUI
 
 struct CollectionsFeedView: View {
     @State private var viewModel = CollectionsFeedViewModel()
@@ -11,10 +11,10 @@ struct CollectionsFeedView: View {
             Color(hex: "0F0F11")
                 .ignoresSafeArea()
 
-            if viewModel.collections.isEmpty && viewModel.isLoading {
+            if viewModel.collections.isEmpty, viewModel.isLoading {
                 ProgressView()
                     .tint(.white)
-            } else if viewModel.collections.isEmpty && viewModel.error != nil {
+            } else if viewModel.collections.isEmpty, viewModel.error != nil {
                 ErrorView(error: viewModel.error ?? "Failed to load collections", onRetry: {
                     viewModel.refresh()
                 })
@@ -43,25 +43,25 @@ struct CollectionsFeedView: View {
         }
         .navigationTitle("COLLECTIONS")
         #if os(iOS)
-        .navigationBarTitleDisplayMode(.inline)
+            .navigationBarTitleDisplayMode(.inline)
         #endif
-        .toolbar {
-            #if os(iOS)
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button(action: onSearchClick) {
-                    Image(systemName: "magnifyingglass")
-                        .foregroundColor(.white)
+            .toolbar {
+                #if os(iOS)
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action: onSearchClick) {
+                        Image(systemName: "magnifyingglass")
+                            .foregroundColor(.white)
+                    }
                 }
-            }
-            #else
-            ToolbarItem(placement: .navigation) {
-                Button(action: onSearchClick) {
-                    Image(systemName: "magnifyingglass")
-                        .foregroundColor(.white)
+                #else
+                ToolbarItem(placement: .navigation) {
+                    Button(action: onSearchClick) {
+                        Image(systemName: "magnifyingglass")
+                            .foregroundColor(.white)
+                    }
                 }
+                #endif
             }
-            #endif
-        }
     }
 }
 

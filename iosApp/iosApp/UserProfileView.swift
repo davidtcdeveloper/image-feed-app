@@ -1,6 +1,6 @@
-import SwiftUI
 import Charts
 import shared
+import SwiftUI
 
 struct UserProfileView: View {
     let username: String
@@ -22,7 +22,7 @@ struct UserProfileView: View {
             Color(hex: "0F0F11")
                 .ignoresSafeArea()
 
-            if viewModel.isHeaderLoading && viewModel.user == nil {
+            if viewModel.isHeaderLoading, viewModel.user == nil {
                 ProgressView()
                     .tint(.white)
             } else if let error = viewModel.error, viewModel.user == nil {
@@ -66,28 +66,24 @@ struct UserProfileView: View {
                                     photos: viewModel.portfolioPhotos,
                                     isLoading: viewModel.isLoadingContent,
                                     onLoadMore: { viewModel.loadNextPage() },
-                                    onSelect: onPhotoSelect
-                                )
+                                    onSelect: onPhotoSelect)
                             case .likes:
                                 GridPhotosList(
                                     photos: viewModel.likedPhotos,
                                     isLoading: viewModel.isLoadingContent,
                                     onLoadMore: { viewModel.loadNextPage() },
-                                    onSelect: onPhotoSelect
-                                )
+                                    onSelect: onPhotoSelect)
                             case .collections:
                                 GridCollectionsList(
                                     collections: viewModel.collections,
                                     isLoading: viewModel.isLoadingContent,
                                     onLoadMore: { viewModel.loadNextPage() },
-                                    onSelect: onCollectionSelect
-                                )
+                                    onSelect: onCollectionSelect)
                             case .insights:
                                 InsightsView(
                                     stats: viewModel.stats,
                                     isLoading: viewModel.isLoadingStats,
-                                    error: viewModel.error
-                                )
+                                    error: viewModel.error)
                             default:
                                 EmptyView()
                             }
@@ -102,58 +98,58 @@ struct UserProfileView: View {
         }
         .navigationTitle(viewModel.user?.name ?? "Profile")
         #if os(iOS)
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbarBackground(Color(hex: "0F0F11"), for: .navigationBar)
-        .toolbarColorScheme(.dark, for: .navigationBar)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(Color(hex: "0F0F11"), for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
         #endif
-        .toolbar {
-            #if os(iOS)
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button(action: { dismiss() }) {
-                    Image(systemName: "chevron.left")
-                        .foregroundColor(.white)
-                        .fontWeight(.semibold)
-                }
-            }
-            #else
-            ToolbarItem(placement: .navigation) {
-                Button(action: { dismiss() }) {
-                    Image(systemName: "chevron.left")
-                        .foregroundColor(.white)
-                        .fontWeight(.semibold)
-                }
-            }
-            #endif
-            
-            if let user = viewModel.user {
+            .toolbar {
                 #if os(iOS)
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: {
-                        let utmProfile = "\(user.links.html)?utm_source=ImageFeedApp&utm_medium=referral"
-                        if let url = URL(string: utmProfile) {
-                            URLHelper.open(url)
-                        }
-                    }) {
-                        Image(systemName: "safari")
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action: { dismiss() }) {
+                        Image(systemName: "chevron.left")
                             .foregroundColor(.white)
+                            .fontWeight(.semibold)
                     }
                 }
                 #else
-                ToolbarItem(placement: .primaryAction) {
-                    Button(action: {
-                        let utmProfile = "\(user.links.html)?utm_source=ImageFeedApp&utm_medium=referral"
-                        if let url = URL(string: utmProfile) {
-                            URLHelper.open(url)
-                        }
-                    }) {
-                        Image(systemName: "safari")
+                ToolbarItem(placement: .navigation) {
+                    Button(action: { dismiss() }) {
+                        Image(systemName: "chevron.left")
                             .foregroundColor(.white)
+                            .fontWeight(.semibold)
                     }
                 }
                 #endif
+
+                if let user = viewModel.user {
+                    #if os(iOS)
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button(action: {
+                            let utmProfile = "\(user.links.html)?utm_source=ImageFeedApp&utm_medium=referral"
+                            if let url = URL(string: utmProfile) {
+                                URLHelper.open(url)
+                            }
+                        }) {
+                            Image(systemName: "safari")
+                                .foregroundColor(.white)
+                        }
+                    }
+                    #else
+                    ToolbarItem(placement: .primaryAction) {
+                        Button(action: {
+                            let utmProfile = "\(user.links.html)?utm_source=ImageFeedApp&utm_medium=referral"
+                            if let url = URL(string: utmProfile) {
+                                URLHelper.open(url)
+                            }
+                        }) {
+                            Image(systemName: "safari")
+                                .foregroundColor(.white)
+                        }
+                    }
+                    #endif
+                }
             }
-        }
-        .navigationBarBackButtonHidden(true)
+            .navigationBarBackButtonHidden(true)
     }
 }
 
@@ -282,15 +278,15 @@ struct ProfileTabPicker: View {
     private func tabLabel(for tab: ProfileTab) -> String {
         switch tab {
         case .portfolio:
-            return "PHOTOS (\(user.totalPhotos ?? 0))"
+            "PHOTOS (\(user.totalPhotos ?? 0))"
         case .likes:
-            return "LIKES (\(user.totalLikes ?? 0))"
+            "LIKES (\(user.totalLikes ?? 0))"
         case .collections:
-            return "COLLECTIONS (\(user.totalCollections ?? 0))"
+            "COLLECTIONS (\(user.totalCollections ?? 0))"
         case .insights:
-            return "INSIGHTS"
+            "INSIGHTS"
         default:
-            return ""
+            ""
         }
     }
 }
@@ -314,7 +310,7 @@ struct GridPhotosList: View {
 
     var body: some View {
         VStack(spacing: 12) {
-            if photos.isEmpty && isLoading {
+            if photos.isEmpty, isLoading {
                 ProgressView()
                     .tint(.white)
                     .padding(.top, 40)
@@ -329,22 +325,22 @@ struct GridPhotosList: View {
                         LazyVStack(spacing: 8) {
                             ForEach(AdaptiveLayoutHelper.photosForColumn(index: colIndex, totalColumns: columnCount, from: photos), id: \.id) { photo in
                                 KFImage(URL(string: photo.urls.small))
-                                .placeholder {
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .fill(Color(hex: photo.color ?? "1E1E24"))
-                                        .aspectRatio(CGFloat(photo.width)/CGFloat(photo.height), contentMode: .fit)
-                                }
-                                .resizable()
-                                .aspectRatio(CGFloat(photo.width)/CGFloat(photo.height), contentMode: .fit)
-                                .clipShape(RoundedRectangle(cornerRadius: 12))
-                                .onTapGesture {
-                                    onSelect(photo.id)
-                                }
-                                .onAppear {
-                                    if photo.id == photos.last?.id {
-                                        onLoadMore()
+                                    .placeholder {
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .fill(Color(hex: photo.color ?? "1E1E24"))
+                                            .aspectRatio(CGFloat(photo.width) / CGFloat(photo.height), contentMode: .fit)
                                     }
-                                }
+                                    .resizable()
+                                    .aspectRatio(CGFloat(photo.width) / CGFloat(photo.height), contentMode: .fit)
+                                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                                    .onTapGesture {
+                                        onSelect(photo.id)
+                                    }
+                                    .onAppear {
+                                        if photo.id == photos.last?.id {
+                                            onLoadMore()
+                                        }
+                                    }
                             }
                         }
                     }
@@ -369,7 +365,7 @@ struct GridCollectionsList: View {
 
     var body: some View {
         VStack(spacing: 12) {
-            if collections.isEmpty && isLoading {
+            if collections.isEmpty, isLoading {
                 ProgressView()
                     .tint(.white)
                     .padding(.top, 40)
@@ -440,16 +436,16 @@ struct InsightsView: View {
 
     var body: some View {
         VStack(spacing: 20) {
-            if isLoading && stats == nil {
+            if isLoading, stats == nil {
                 ProgressView()
                     .tint(.white)
                     .padding(.top, 40)
-            } else if error != nil && stats == nil {
+            } else if error != nil, stats == nil {
                 Text("Failed to load insights.")
                     .font(.subheadline)
                     .foregroundColor(.gray)
                     .padding(.top, 40)
-            } else if let stats = stats {
+            } else if let stats {
                 VStack(alignment: .leading, spacing: 24) {
                     // Consolidated metrics
                     HStack(spacing: 12) {
@@ -479,12 +475,12 @@ struct InsightsView: View {
     }
 
     private func formatMetric(_ value: Int32?) -> String {
-        guard let value = value else { return "--" }
+        guard let value else { return "--" }
         let num = Int(value)
-        if num >= 1_000_000 {
-            return String(format: "%.1fM", Double(num) / 1_000_000.0)
-        } else if num >= 1_000 {
-            return String(format: "%.1fK", Double(num) / 1_000.0)
+        if num >= 1000000 {
+            return String(format: "%.1fM", Double(num) / 1000000.0)
+        } else if num >= 1000 {
+            return String(format: "%.1fK", Double(num) / 1000.0)
         } else {
             return "\(num)"
         }
@@ -519,23 +515,19 @@ struct InteractiveTimelineChart: View {
                 ForEach(values, id: \.date) { item in
                     LineMark(
                         x: .value("Date", item.date),
-                        y: .value("Count", item.value)
-                    )
-                    .foregroundStyle(.white)
-                    .interpolationMethod(.catmullRom)
+                        y: .value("Count", item.value))
+                        .foregroundStyle(.white)
+                        .interpolationMethod(.catmullRom)
 
                     AreaMark(
                         x: .value("Date", item.date),
-                        y: .value("Count", item.value)
-                    )
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [.white.opacity(0.2), .clear],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
-                    .interpolationMethod(.catmullRom)
+                        y: .value("Count", item.value))
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [.white.opacity(0.2), .clear],
+                                startPoint: .top,
+                                endPoint: .bottom))
+                        .interpolationMethod(.catmullRom)
 
                     if let selected = rawSelectedDate, item.date == selected {
                         RuleMark(x: .value("Date", selected))
@@ -544,10 +536,9 @@ struct InteractiveTimelineChart: View {
 
                         PointMark(
                             x: .value("Date", selected),
-                            y: .value("Count", item.value)
-                        )
-                        .foregroundStyle(.white)
-                        .symbolSize(100)
+                            y: .value("Count", item.value))
+                            .foregroundStyle(.white)
+                            .symbolSize(100)
                     }
                 }
             }

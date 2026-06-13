@@ -1,7 +1,7 @@
-import SwiftUI
-import MapKit
 import Charts
+import MapKit
 import shared
+import SwiftUI
 
 struct PhotoDetailsView: View {
     let photoId: String
@@ -22,7 +22,7 @@ struct PhotoDetailsView: View {
             Color(hex: "0F0F11")
                 .ignoresSafeArea()
 
-            if viewModel.isLoading && viewModel.photo == nil {
+            if viewModel.isLoading, viewModel.photo == nil {
                 ProgressView()
                     .tint(.white)
             } else if let error = viewModel.error, viewModel.photo == nil {
@@ -52,7 +52,7 @@ struct PhotoDetailsView: View {
                         GeometryReader { geo in
                             let aspectRatio = CGFloat(photo.width) / CGFloat(photo.height)
                             let imageUrl = photo.urls.raw + "&w=\(Int(geo.size.width))&q=85&auto=format"
-                            
+
                             KFImage(URL(string: imageUrl))
                                 .resizable()
                                 .aspectRatio(aspectRatio, contentMode: .fill)
@@ -62,9 +62,7 @@ struct PhotoDetailsView: View {
                                     LinearGradient(
                                         colors: [.clear, .black.opacity(0.85)],
                                         startPoint: .top,
-                                        endPoint: .bottom
-                                    )
-                                )
+                                        endPoint: .bottom))
                         }
                         .aspectRatio(CGFloat(photo.width) / CGFloat(photo.height), contentMode: .fit)
                         .clipped()
@@ -278,19 +276,19 @@ struct PhotoDetailsView: View {
     }
 
     private func formatMetric(_ value: Int32?) -> String {
-        guard let value = value else { return "--" }
+        guard let value else { return "--" }
         let num = Int(value)
-        if num >= 1_000_000 {
-            return String(format: "%.1fM", Double(num) / 1_000_000.0)
-        } else if num >= 1_000 {
-            return String(format: "%.1fK", Double(num) / 1_000.0)
+        if num >= 1000000 {
+            return String(format: "%.1fM", Double(num) / 1000000.0)
+        } else if num >= 1000 {
+            return String(format: "%.1fK", Double(num) / 1000.0)
         } else {
             return "\(num)"
         }
     }
 
     private func hasExif(_ exif: Exif) -> Bool {
-        return exif.make != nil || exif.model != nil || exif.exposureTime != nil || exif.aperture != nil || exif.iso != nil
+        exif.make != nil || exif.model != nil || exif.exposureTime != nil || exif.aperture != nil || exif.iso != nil
     }
 
     private func formatCamera(make: String?, model: String?) -> String? {
@@ -299,7 +297,7 @@ struct PhotoDetailsView: View {
     }
 
     private func hasLocation(_ location: Location) -> Bool {
-        return location.name != nil || location.position != nil
+        location.name != nil || location.position != nil
     }
 }
 
@@ -332,7 +330,7 @@ struct ExifRowView: View {
     let value: String?
 
     var body: some View {
-        if let value = value, !value.isEmpty {
+        if let value, !value.isEmpty {
             HStack {
                 Text(label)
                     .font(.system(size: 13))
@@ -354,23 +352,19 @@ struct HistoricalStatsChart: View {
             ForEach(values, id: \.date) { item in
                 LineMark(
                     x: .value("Date", item.date),
-                    y: .value("Views", item.value)
-                )
-                .foregroundStyle(.white)
-                .interpolationMethod(.catmullRom)
+                    y: .value("Views", item.value))
+                    .foregroundStyle(.white)
+                    .interpolationMethod(.catmullRom)
 
                 AreaMark(
                     x: .value("Date", item.date),
-                    y: .value("Views", item.value)
-                )
-                .foregroundStyle(
-                    LinearGradient(
-                        colors: [.white.opacity(0.2), .clear],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
-                .interpolationMethod(.catmullRom)
+                    y: .value("Views", item.value))
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [.white.opacity(0.2), .clear],
+                            startPoint: .top,
+                            endPoint: .bottom))
+                    .interpolationMethod(.catmullRom)
             }
         }
         .chartXAxis(.hidden)
@@ -393,8 +387,7 @@ struct MapCardView: View {
         let coordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
         let region = MKCoordinateRegion(
             center: coordinate,
-            span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
-        )
+            span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05))
         self._position = State(initialValue: .region(region))
     }
 
@@ -408,7 +401,7 @@ struct MapCardView: View {
     }
 }
 
-// FlowLayout for dynamic SwiftUI wrapping badges
+/// FlowLayout for dynamic SwiftUI wrapping badges
 struct FlowLayout: Layout {
     var spacing: CGFloat
 

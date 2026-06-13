@@ -2,37 +2,37 @@ import SwiftUI
 
 public struct KFImage: View {
     private let url: URL?
-    private var placeholderView: AnyView? = nil
+    private var placeholderView: AnyView?
     private var fadeDuration: Double = 0.25
     private var isResizable = false
-    
+
     public init(_ url: URL?) {
         self.url = url
     }
-    
-    // Custom placeholder builder
-    public func placeholder<Content: View>(@ViewBuilder _ content: @escaping () -> Content) -> KFImage {
+
+    /// Custom placeholder builder
+    public func placeholder(@ViewBuilder _ content: @escaping () -> some View) -> KFImage {
         var copy = self
         copy.placeholderView = AnyView(content())
         return copy
     }
-    
-    // Custom fade modifier
+
+    /// Custom fade modifier
     public func fade(duration: Double) -> KFImage {
         var copy = self
         copy.fadeDuration = duration
         return copy
     }
-    
-    // Custom resizable modifier
+
+    /// Custom resizable modifier
     public func resizable() -> KFImage {
         var copy = self
         copy.isResizable = true
         return copy
     }
-    
+
     public var body: some View {
-        if let url = url {
+        if let url {
             AsyncImage(url: url) { phase in
                 switch phase {
                 case .empty:

@@ -18,7 +18,7 @@ data class Photo(
     val links: PhotoLinks,
     val exif: Exif? = null,
     val location: Location? = null,
-    val tags: List<Tag>? = null
+    val tags: List<Tag>? = null,
 ) {
     // Helper to calculate height given a target width (maintains original aspect ratio)
     fun getAspectRatioHeight(targetWidth: Int): Int {
@@ -33,7 +33,7 @@ data class PhotoUrls(
     val full: String,
     val regular: String,
     val small: String,
-    val thumb: String
+    val thumb: String,
 )
 
 @Serializable
@@ -49,35 +49,35 @@ data class User(
     @SerialName("total_likes") val totalLikes: Int? = null,
     @SerialName("total_photos") val totalPhotos: Int? = null,
     @SerialName("total_collections") val totalCollections: Int? = null,
-    val social: Social? = null
+    val social: Social? = null,
 )
 
 @Serializable
 data class Social(
     @SerialName("instagram_username") val instagramUsername: String? = null,
     @SerialName("twitter_username") val twitterUsername: String? = null,
-    @SerialName("portfolio_url") val portfolioUrl: String? = null
+    @SerialName("portfolio_url") val portfolioUrl: String? = null,
 )
 
 @Serializable
 data class UserStats(
     val username: String,
     val downloads: StatMetric,
-    val views: StatMetric
+    val views: StatMetric,
 )
 
 @Serializable
 data class ProfileImage(
     val small: String,
     val medium: String,
-    val large: String
+    val large: String,
 )
 
 @Serializable
 data class UserLinks(
     val self: String,
     val html: String,
-    val photos: String
+    val photos: String,
 )
 
 @Serializable
@@ -85,7 +85,7 @@ data class PhotoLinks(
     val self: String,
     val html: String,
     val download: String,
-    @SerialName("download_location") val downloadLocation: String
+    @SerialName("download_location") val downloadLocation: String,
 )
 
 @Serializable
@@ -95,7 +95,7 @@ data class Exif(
     @SerialName("exposure_time") val exposureTime: String? = null,
     val aperture: String? = null,
     @SerialName("focal_length") val focalLength: String? = null,
-    val iso: Int? = null
+    val iso: Int? = null,
 )
 
 @Serializable
@@ -103,24 +103,24 @@ data class Location(
     val name: String? = null,
     val city: String? = null,
     val country: String? = null,
-    val position: Position? = null
+    val position: Position? = null,
 )
 
 @Serializable
 data class Position(
     val latitude: Double? = null,
-    val longitude: Double? = null
+    val longitude: Double? = null,
 )
 
 @Serializable
 data class Tag(
-    val title: String
+    val title: String,
 )
 
 @Serializable
 data class StatsValue(
     val date: String,
-    val value: Int
+    val value: Int,
 )
 
 @Serializable
@@ -129,13 +129,13 @@ data class HistoricalStats(
     val average: Int? = null,
     val resolution: String? = null,
     val quantity: Int? = null,
-    val values: List<StatsValue> = emptyList()
+    val values: List<StatsValue> = emptyList(),
 )
 
 @Serializable
 data class StatMetric(
     val total: Int,
-    val historical: HistoricalStats? = null
+    val historical: HistoricalStats? = null,
 )
 
 @Serializable
@@ -143,5 +143,5 @@ data class PhotoStats(
     val id: String,
     val downloads: StatMetric,
     val views: StatMetric,
-    val likes: StatMetric? = null
+    val likes: StatMetric? = null,
 )

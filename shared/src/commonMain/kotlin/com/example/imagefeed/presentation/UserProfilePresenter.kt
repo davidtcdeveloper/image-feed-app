@@ -33,13 +33,13 @@ data class UserProfileState(
     val likesReachedEnd: Boolean = false,
     val collectionsPage: Int = 1,
     val collectionsReachedEnd: Boolean = false,
-    val isLoadingStats: Boolean = false
+    val isLoadingStats: Boolean = false,
 )
 
 class UserProfilePresenter(
     private val repository: UnsplashRepository,
     private val username: String,
-    private val presenterScope: CoroutineScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+    private val presenterScope: CoroutineScope = CoroutineScope(Dispatchers.Main + SupervisorJob()),
 ) {
     private val _state = MutableStateFlow(UserProfileState())
     val state: StateFlow<UserProfileState> = _state.asStateFlow()
@@ -61,7 +61,7 @@ class UserProfilePresenter(
                 _state.update {
                     it.copy(
                         isHeaderLoading = false,
-                        error = e.message ?: "Failed to load user profile"
+                        error = e.message ?: "Failed to load user profile",
                     )
                 }
             }
@@ -110,14 +110,14 @@ class UserProfilePresenter(
                 _state.update {
                     it.copy(
                         stats = userStats,
-                        isLoadingStats = false
+                        isLoadingStats = false,
                     )
                 }
             } catch (e: Exception) {
                 _state.update {
                     it.copy(
                         isLoadingStats = false,
-                        error = e.message ?: "Failed to load stats"
+                        error = e.message ?: "Failed to load stats",
                     )
                 }
             }
@@ -141,14 +141,14 @@ class UserProfilePresenter(
                                 portfolioPhotos = it.portfolioPhotos + items,
                                 portfolioPage = nextPage,
                                 portfolioReachedEnd = items.size < 15,
-                                isLoadingContent = false
+                                isLoadingContent = false,
                             )
                         }
                     } catch (e: Exception) {
                         _state.update {
                             it.copy(
                                 isLoadingContent = false,
-                                error = e.message ?: "Failed to load uploaded photos"
+                                error = e.message ?: "Failed to load uploaded photos",
                             )
                         }
                     }
@@ -166,14 +166,14 @@ class UserProfilePresenter(
                                 likedPhotos = it.likedPhotos + items,
                                 likesPage = nextPage,
                                 likesReachedEnd = items.size < 15,
-                                isLoadingContent = false
+                                isLoadingContent = false,
                             )
                         }
                     } catch (e: Exception) {
                         _state.update {
                             it.copy(
                                 isLoadingContent = false,
-                                error = e.message ?: "Failed to load liked photos"
+                                error = e.message ?: "Failed to load liked photos",
                             )
                         }
                     }
@@ -191,14 +191,14 @@ class UserProfilePresenter(
                                 collections = it.collections + items,
                                 collectionsPage = nextPage,
                                 collectionsReachedEnd = items.size < 15,
-                                isLoadingContent = false
+                                isLoadingContent = false,
                             )
                         }
                     } catch (e: Exception) {
                         _state.update {
                             it.copy(
                                 isLoadingContent = false,
-                                error = e.message ?: "Failed to load user collections"
+                                error = e.message ?: "Failed to load user collections",
                             )
                         }
                     }
@@ -223,7 +223,7 @@ class UserProfilePresenter(
                 likesReachedEnd = false,
                 collectionsPage = 1,
                 collectionsReachedEnd = false,
-                error = null
+                error = null,
             )
         }
         loadProfile()

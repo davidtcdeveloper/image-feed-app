@@ -1,5 +1,5 @@
-import SwiftUI
 import shared
+import SwiftUI
 
 struct CollectionDetailView: View {
     let collectionId: String
@@ -32,7 +32,7 @@ struct CollectionDetailView: View {
             Color(hex: "0F0F11")
                 .ignoresSafeArea()
 
-            if viewModel.photos.isEmpty && viewModel.isLoadingPhotos && viewModel.isHeaderLoading {
+            if viewModel.photos.isEmpty, viewModel.isLoadingPhotos, viewModel.isHeaderLoading {
                 VStack {
                     Spacer()
                     ProgressView()
@@ -67,10 +67,9 @@ struct CollectionDetailView: View {
                                 LinearGradient(
                                     colors: [.clear, .black.opacity(0.4), .black.opacity(0.85), Color(hex: "0F0F11")],
                                     startPoint: .top,
-                                    endPoint: .bottom
-                                )
-                                .frame(width: geo.size.width, height: stretchedHeight)
-                                .offset(y: scrollOffset > 0 ? -scrollOffset : 0)
+                                    endPoint: .bottom)
+                                    .frame(width: geo.size.width, height: stretchedHeight)
+                                    .offset(y: scrollOffset > 0 ? -scrollOffset : 0)
 
                                 // Information details
                                 if let collection = viewModel.collection {
@@ -159,7 +158,10 @@ struct CollectionDetailView: View {
                                 HStack(alignment: .top, spacing: 8) {
                                     ForEach(0..<columnCount, id: \.self) { colIndex in
                                         LazyVStack(spacing: 8) {
-                                            ForEach(AdaptiveLayoutHelper.photosForColumn(index: colIndex, totalColumns: columnCount, from: viewModel.photos), id: \.id) { photo in
+                                            ForEach(
+                                                AdaptiveLayoutHelper.photosForColumn(index: colIndex, totalColumns: columnCount, from: viewModel.photos),
+                                                id: \.id)
+                                            { photo in
                                                 CollectionPhotoGridCard(photo: photo, viewModel: viewModel) {
                                                     onPhotoSelect(photo.id)
                                                 }
@@ -230,9 +232,8 @@ struct RelatedCollectionCard: View {
                 LinearGradient(
                     colors: [.clear, .black.opacity(0.8)],
                     startPoint: .top,
-                    endPoint: .bottom
-                )
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+                    endPoint: .bottom)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(collection.title)
@@ -301,9 +302,7 @@ struct CollectionPhotoGridCard: View {
                 LinearGradient(
                     colors: [.clear, .black.opacity(0.75)],
                     startPoint: .top,
-                    endPoint: .bottom
-                )
-            )
+                    endPoint: .bottom))
             .clipShape(UnevenRoundedRectangle(bottomLeadingRadius: 12, bottomTrailingRadius: 12))
             .contentShape(Rectangle())
             .onTapGesture {

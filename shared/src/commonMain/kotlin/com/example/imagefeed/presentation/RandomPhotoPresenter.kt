@@ -15,12 +15,12 @@ import kotlinx.coroutines.launch
 data class RandomPhotoState(
     val photo: Photo? = null,
     val isLoading: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
 )
 
 class RandomPhotoPresenter(
     private val repository: UnsplashRepository,
-    private val presenterScope: CoroutineScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+    private val presenterScope: CoroutineScope = CoroutineScope(Dispatchers.Main + SupervisorJob()),
 ) {
     private val _state = MutableStateFlow(RandomPhotoState())
     val state: StateFlow<RandomPhotoState> = _state.asStateFlow()
@@ -30,9 +30,12 @@ class RandomPhotoPresenter(
         loadRandomPhoto()
     }
 
-    fun loadRandomPhoto(query: String? = null, orientation: String? = null) {
+    fun loadRandomPhoto(
+        query: String? = null,
+        orientation: String? = null,
+    ) {
         _state.update { it.copy(isLoading = true, error = null) }
-        
+
         presenterScope.launch {
             try {
                 // Fetch a single random photo (returns a list of 1 photo when count = 1)
@@ -41,14 +44,14 @@ class RandomPhotoPresenter(
                     it.copy(
                         photo = photos.firstOrNull(),
                         isLoading = false,
-                        error = null
+                        error = null,
                     )
                 }
             } catch (e: Exception) {
                 _state.update {
                     it.copy(
                         isLoading = false,
-                        error = e.message ?: "Failed to load random photo"
+                        error = e.message ?: "Failed to load random photo",
                     )
                 }
             }

@@ -5,11 +5,16 @@ import com.example.imagefeed.model.Photo
 import com.example.imagefeed.model.User
 import com.example.imagefeed.repository.UnsplashRepository
 import com.example.imagefeed.util.CommonFlow
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 enum class SearchTab { PHOTOS, COLLECTIONS, USERS }
 
@@ -17,7 +22,7 @@ data class SearchFilters(
     val orderBy: String = "relevant",
     val color: String? = null,
     val orientation: String? = null,
-    val contentFilter: String = "low"
+    val contentFilter: String = "low",
 ) {
     constructor() : this("relevant", null, null, "low")
 }
@@ -36,12 +41,12 @@ data class SearchState(
     val photoPage: Int = 1,
     val collectionPage: Int = 1,
     val userPage: Int = 1,
-    val hasReachedEnd: Boolean = false
+    val hasReachedEnd: Boolean = false,
 )
 
 class UnifiedSearchPresenter(
     private val repository: UnsplashRepository,
-    private val presenterScope: CoroutineScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+    private val presenterScope: CoroutineScope = CoroutineScope(Dispatchers.Main + SupervisorJob()),
 ) {
     private val _state = MutableStateFlow(SearchState())
     val state: StateFlow<SearchState> = _state.asStateFlow()
@@ -52,7 +57,7 @@ class UnifiedSearchPresenter(
 
     fun updateQuery(newQuery: String) {
         _state.update { it.copy(query = newQuery) }
-        
+
         searchJob?.cancel()
         if (newQuery.isBlank()) {
             _state.update {
@@ -61,30 +66,32 @@ class UnifiedSearchPresenter(
                     collections = emptyList(),
                     users = emptyList(),
                     isLoading = false,
-                    hasReachedEnd = false
+                    hasReachedEnd = false,
                 )
             }
             return
         }
 
-        searchJob = presenterScope.launch {
-            delay(300) // Debounce search requests
-            performSearch(newQuery, reset = true)
-        }
+        searchJob =
+            presenterScope.launch {
+                delay(300) // Debounce search requests
+                performSearch(newQuery, reset = true)
+            }
     }
 
     fun setTab(tab: SearchTab) {
         if (_state.value.activeTab == tab) return
         _state.update { it.copy(activeTab = tab, error = null, hasReachedEnd = false) }
-        
+
         // Trigger search on tab switch if query exists and no data is loaded yet
         val query = _state.value.query
         if (query.isNotBlank()) {
-            val shouldSearch = when (tab) {
-                SearchTab.PHOTOS -> _state.value.photos.isEmpty()
-                SearchTab.COLLECTIONS -> _state.value.collections.isEmpty()
-                SearchTab.USERS -> _state.value.users.isEmpty()
-            }
+            val shouldSearch =
+                when (tab) {
+                    SearchTab.PHOTOS -> _state.value.photos.isEmpty()
+                    SearchTab.COLLECTIONS -> _state.value.collections.isEmpty()
+                    SearchTab.USERS -> _state.value.users.isEmpty()
+                }
             if (shouldSearch) {
                 performSearch(query, reset = true)
             }
@@ -104,28 +111,29 @@ class UnifiedSearchPresenter(
         if (currentState.isLoading || currentState.isLoadingMore || currentState.hasReachedEnd || currentState.query.isBlank()) return
 
         _state.update { it.copy(isLoadingMore = true) }
-        
+
         presenterScope.launch {
             try {
                 val query = currentState.query
                 when (currentState.activeTab) {
                     SearchTab.PHOTOS -> {
                         val nextPage = currentState.photoPage + 1
-                        val response = repository.searchPhotos(
-                            query = query,
-                            page = nextPage,
-                            perPage = 15,
-                            orderBy = currentState.filters.orderBy,
-                            color = currentState.filters.color,
-                            orientation = currentState.filters.orientation,
-                            contentFilter = currentState.filters.contentFilter
-                        )
+                        val response =
+                            repository.searchPhotos(
+                                query = query,
+                                page = nextPage,
+                                perPage = 15,
+                                orderBy = currentState.filters.orderBy,
+                                color = currentState.filters.color,
+                                orientation = currentState.filters.orientation,
+                                contentFilter = currentState.filters.contentFilter,
+                            )
                         _state.update {
                             it.copy(
                                 photos = it.photos + response.results,
                                 photoPage = nextPage,
                                 hasReachedEnd = response.results.isEmpty() || nextPage >= response.totalPages,
-                                isLoadingMore = false
+                                isLoadingMore = false,
                             )
                         }
                     }
@@ -137,7 +145,7 @@ class UnifiedSearchPresenter(
                                 collections = it.collections + response.results,
                                 collectionPage = nextPage,
                                 hasReachedEnd = response.results.isEmpty() || nextPage >= response.totalPages,
-                                isLoadingMore = false
+                                isLoadingMore = false,
                             )
                         }
                     }
@@ -149,7 +157,7 @@ class UnifiedSearchPresenter(
                                 users = it.users + response.results,
                                 userPage = nextPage,
                                 hasReachedEnd = response.results.isEmpty() || nextPage >= response.totalPages,
-                                isLoadingMore = false
+                                isLoadingMore = false,
                             )
                         }
                     }
@@ -158,7 +166,7 @@ class UnifiedSearchPresenter(
                 _state.update {
                     it.copy(
                         isLoadingMore = false,
-                        error = e.message ?: "Failed to load more results"
+                        error = e.message ?: "Failed to load more results",
                     )
                 }
             }
@@ -183,40 +191,44 @@ class UnifiedSearchPresenter(
         _state.update { it.copy(searchHistory = emptyList()) }
     }
 
-    private fun performSearch(query: String, reset: Boolean) {
+    private fun performSearch(
+        query: String,
+        reset: Boolean,
+    ) {
         addHistoryEntry(query)
-        
-        _state.update { 
+
+        _state.update {
             it.copy(
-                isLoading = reset, 
+                isLoading = reset,
                 error = null,
                 photoPage = if (reset) 1 else it.photoPage,
                 collectionPage = if (reset) 1 else it.collectionPage,
                 userPage = if (reset) 1 else it.userPage,
                 photos = if (reset) emptyList() else it.photos,
                 collections = if (reset) emptyList() else it.collections,
-                users = if (reset) emptyList() else it.users
-            ) 
+                users = if (reset) emptyList() else it.users,
+            )
         }
 
         presenterScope.launch {
             try {
                 when (_state.value.activeTab) {
                     SearchTab.PHOTOS -> {
-                        val response = repository.searchPhotos(
-                            query = query,
-                            page = 1,
-                            perPage = 15,
-                            orderBy = _state.value.filters.orderBy,
-                            color = _state.value.filters.color,
-                            orientation = _state.value.filters.orientation,
-                            contentFilter = _state.value.filters.contentFilter
-                        )
+                        val response =
+                            repository.searchPhotos(
+                                query = query,
+                                page = 1,
+                                perPage = 15,
+                                orderBy = _state.value.filters.orderBy,
+                                color = _state.value.filters.color,
+                                orientation = _state.value.filters.orientation,
+                                contentFilter = _state.value.filters.contentFilter,
+                            )
                         _state.update {
                             it.copy(
                                 photos = response.results,
                                 hasReachedEnd = response.results.isEmpty() || response.totalPages <= 1,
-                                isLoading = false
+                                isLoading = false,
                             )
                         }
                     }
@@ -226,7 +238,7 @@ class UnifiedSearchPresenter(
                             it.copy(
                                 collections = response.results,
                                 hasReachedEnd = response.results.isEmpty() || response.totalPages <= 1,
-                                isLoading = false
+                                isLoading = false,
                             )
                         }
                     }
@@ -236,7 +248,7 @@ class UnifiedSearchPresenter(
                             it.copy(
                                 users = response.results,
                                 hasReachedEnd = response.results.isEmpty() || response.totalPages <= 1,
-                                isLoading = false
+                                isLoading = false,
                             )
                         }
                     }
@@ -245,7 +257,7 @@ class UnifiedSearchPresenter(
                 _state.update {
                     it.copy(
                         isLoading = false,
-                        error = e.message ?: "Search failed"
+                        error = e.message ?: "Search failed",
                     )
                 }
             }

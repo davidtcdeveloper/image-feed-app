@@ -14,5 +14,5 @@ data class Topic(
     @SerialName("total_photos") val totalPhotos: Int,
     val status: String? = null,
     @SerialName("cover_photo") val coverPhoto: Photo? = null,
-    val owners: List<User>? = null
+    val owners: List<User>? = null,
 )

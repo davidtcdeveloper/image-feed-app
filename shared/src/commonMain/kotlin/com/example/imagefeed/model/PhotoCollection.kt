@@ -15,7 +15,7 @@ data class PhotoCollection(
     @SerialName("cover_photo") val coverPhoto: Photo? = null,
     val user: User,
     val links: CollectionLinks? = null,
-    @SerialName("preview_photos") val previewPhotos: List<PreviewPhoto>? = null
+    @SerialName("preview_photos") val previewPhotos: List<PreviewPhoto>? = null,
 )
 
 @Serializable
@@ -23,5 +23,5 @@ data class PreviewPhoto(
     val id: String,
     @SerialName("created_at") val createdAt: String? = null,
     @SerialName("updated_at") val updatedAt: String? = null,
-    val urls: PhotoUrls
+    val urls: PhotoUrls,
 )

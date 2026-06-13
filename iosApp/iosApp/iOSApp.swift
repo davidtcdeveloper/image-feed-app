@@ -1,8 +1,8 @@
-import SwiftUI
 import shared
+import SwiftUI
 
 @main
-struct iOSApp: App {
+struct IOSApp: App {
     init() {
         // Initialize Koin DI on iOS startup
         KoinKt.doInitKoin()

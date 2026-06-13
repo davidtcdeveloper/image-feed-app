@@ -1,5 +1,5 @@
-import java.util.Properties
 import com.codingfeline.buildkonfig.compiler.FieldSpec.Type
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
@@ -23,14 +23,14 @@ kotlin {
         compileSdk = 37
         minSdk = 29
     }
-    
+
     // Register iOS targets directly
     iosArm64()
     iosSimulatorArm64()
-    
+
     // Register macOS targets directly
     macosArm64()
-    
+
     // Configure frameworks for iOS targets
     targets.withType<org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget>().configureEach {
         binaries.framework {
@@ -43,22 +43,22 @@ kotlin {
         commonMain.dependencies {
             // Coroutines & Concurrency
             implementation(libs.kotlin.coroutines.core)
-            
+
             // Networking (Ktor) - using bundle
             implementation(libs.bundles.ktor.common)
-            
+
             // Serialization
             implementation(libs.kotlin.serialization.json)
-            
+
             // Dependency Injection
             implementation(libs.koin.core)
         }
-        
+
         androidMain.dependencies {
             // Ktor Android Engine
             implementation(libs.ktor.client.okhttp)
         }
-        
+
         appleMain.dependencies {
             // Ktor iOS/macOS/Darwin Engine
             implementation(libs.ktor.client.darwin)
