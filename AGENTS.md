@@ -25,6 +25,9 @@ Use the existing project tooling for verification and build work:
 *   `./gradlew :androidApp:assembleDebug`
 *   `./gradlew :shared:compileKotlinIosSimulatorArm64`
 *   `cd iosApp && xcodegen`
+*   `./gradlew ktlintCheck detekt`
+*   `swiftlint` (or the project’s SwiftLint entry point)
+*   `swiftformat --lint .` (if SwiftFormat is configured)
 
 ## Workflow
 
@@ -32,6 +35,8 @@ Use the existing project tooling for verification and build work:
 *   Update the relevant spec and `specs/steps.md` together when the implementation path changes.
 *   Prefer small, traceable changes and clarify ambiguous requirements before coding.
 *   **Zero Warning Policy**: Actively monitor and resolve compiler warnings. After every significant change, run `analyze_file` on modified files or execute a full build to identify new warnings or deprecations. Fix them immediately to keep the codebase clean.
+*   **Lint and static-analysis policy**: After making code changes, run the relevant project linting/static-analysis tools and fix any issues they report before considering the work complete.
+*   **Toolchain feedback loop**: Use ktlint, detekt, SwiftLint, and SwiftFormat (when configured) to get consistent feedback on Kotlin and Swift code, then resolve the reported issues in the same change set whenever practical.
 
 ---
 

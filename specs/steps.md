@@ -43,6 +43,7 @@ The `specs/` folder currently contains the following implementation and design d
 *   `specs/14_dependency_updates.md`
 *   `specs/15_gradle_dsl_modernization.md`
 *   `specs/17_build_warnings_resolution.md`
+*   `specs/18_linting_tooling_plan.md`
 *   `specs/implementation_plan.md`
 *   `specs/steps.md`
 
@@ -232,3 +233,18 @@ These are the spec files that the implementation notes and planning references s
     *   Silence build script phase warnings by enabling `alwaysRun: true` in `project.yml`.
 3.  **Verification:**
     *   Run `xcodegen` and clean build Android, iOS, and macOS to verify all warnings have been cleared.
+
+### Step 18: Linting & Static Analysis Toolchain Setup
+1.  **Establish the baseline:**
+    *   Add ktlint, detekt, SwiftLint, and SwiftFormat configuration files without immediately turning every rule into a hard failure.
+    *   Run the tools in report-only mode to capture the current violation baseline for Kotlin and Swift.
+2.  **Analyze pre-existing issues:**
+    *   Classify violations into auto-fixable, low-risk, and high-risk categories before changing code.
+    *   Fix the obvious, safe issues first.
+    *   Do not lower rule severity or relax the rules to make existing issues pass; the project quality bar must remain strict.
+3.  **Enforce the toolchain progressively:**
+    *   Enable Kotlin style and static-analysis rules in Gradle and wire them into CI.
+    *   Enable SwiftLint/SwiftFormat for Apple targets and make local developer commands available.
+    *   Update `AGENTS.md` so agents run the lint/static-analysis tools after changes and fix any reported issues before marking work done.
+4.  **Verify consistency:**
+    *   Re-run the toolchain after remediation to confirm the project now produces stable, consistent lint feedback for both Kotlin and Swift.

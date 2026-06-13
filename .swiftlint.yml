@@ -1,0 +1,16 @@
+excluded:
+  - Carthage
+  - Pods
+  - .build
+  - iosApp/iosApp.xcodeproj
+  - iosApp/iosApp/Assets.xcassets
+
+line_length:
+  warning: 160
+  error: 200
+
+identifier_name:
+  min_length: 2
+
+type_name:
+  min_length: 3
