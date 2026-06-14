@@ -44,6 +44,7 @@ The `specs/` folder currently contains the following implementation and design d
 *   `specs/15_gradle_dsl_modernization.md`
 *   `specs/17_build_warnings_resolution.md`
 *   `specs/18_linting_tooling_plan.md`
+*   `specs/19_koin_to_metro_migration_plan.md`
 *   `specs/implementation_plan.md`
 *   `specs/steps.md`
 
@@ -248,3 +249,23 @@ These are the spec files that the implementation notes and planning references s
     *   Update `AGENTS.md` so agents run the lint/static-analysis tools after changes and fix any reported issues before marking work done.
 4.  **Verify consistency:**
     *   Re-run the toolchain after remediation to confirm the project now produces stable, consistent lint feedback for both Kotlin and Swift.
+
+### Step 19: Transitioning from Koin to Metro Dependency Injection
+1.  **Gradle & Catalogs Integration:**
+    *   Add Metro dependency `dev.zacsweers.metro` (version `1.2.1`) to `gradle/libs.versions.toml`.
+    *   Apply the Metro plugin in root `build.gradle.kts` and `shared/build.gradle.kts`.
+2.  **Core Scopes & Root Dependency Graph:**
+    *   Define `@Scope annotation class AppScope` inside the shared module.
+    *   Create `NetworkModule` providing `HttpClient`, and bind interfaces via `@ContributesBinding`.
+    *   Define `@DependencyGraph` interface representing the complete application dependencies.
+3.  **Refactor Presenters for Constructor & Assisted Injection:**
+    *   Migrate un-parameterized presenters (`FeedPresenter`, `RandomPhotoPresenter`) to `@Inject constructor(...)`.
+    *   Migrate parameterized presenters (`PhotoDetailsPresenter`, `CollectionDetailPresenter`, `UserProfilePresenter`) to use `@Inject` and `@Assisted` constructor parameters alongside respective `@AssistedFactory` interfaces.
+4.  **Establish Coexistence Bridge & Expose to Platforms:**
+    *   Implement `MetroHelper` in KMP and delegate Koin's `commonModule` dependencies to the generated Metro Graph (`MetroHelper.graph`).
+    *   Gradually shift both Android (`MainActivity`) and iOS views/ViewModels to obtain instances directly from `MetroHelper`, replacing Koin's `by inject()`.
+5.  **Remove Koin & Set Diagnostics:**
+    *   Remove Koin initialization block from both `ImageFeedApplication.kt` and `iOSApp.swift`.
+    *   Remove all Koin dependencies and libraries from Gradle version catalogs.
+    *   Set `desugaredProviderSeverity = "ERROR"` in `metro` configuration to enforce strict static checking.
+
