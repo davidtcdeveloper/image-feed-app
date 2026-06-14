@@ -22,6 +22,7 @@ kotlin {
         namespace = "com.example.imagefeed"
         compileSdk = 37
         minSdk = 29
+        withHostTest {}
     }
 
     // Register iOS targets directly
@@ -59,6 +60,11 @@ kotlin {
             implementation(libs.ktor.client.okhttp)
         }
 
+        commonTest.dependencies {
+            implementation(kotlin("test"))
+            implementation(libs.kotlinx.coroutines.test)
+        }
+
         appleMain.dependencies {
             // Ktor iOS/macOS/Darwin Engine
             implementation(libs.ktor.client.darwin)
@@ -70,5 +76,16 @@ buildkonfig {
     packageName = "com.example.imagefeed"
     defaultConfigs {
         buildConfigField(Type.STRING, "UNSPLASH_API_KEY", unsplashApiKey)
+    }
+}
+
+tasks.named("generateBuildKonfig") {
+    doLast {
+        val generatedFile = file("build/generated/source/buildkonfig/commonMain/com/example/imagefeed/BuildKonfig.kt")
+        if (generatedFile.exists()) {
+            generatedFile.writeText(
+                generatedFile.readText().replace(Regex("^  (?=public|internal)", RegexOption.MULTILINE), "    "),
+            )
+        }
     }
 }

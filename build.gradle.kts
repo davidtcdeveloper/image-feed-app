@@ -24,6 +24,13 @@ subprojects {
         android.set(true)
         outputToConsole.set(true)
         ignoreFailures.set(false)
+        filter {
+            exclude("**/build/generated/source/buildkonfig/**/*.kt")
+        }
+    }
+
+    tasks.withType<org.jlleitschuh.gradle.ktlint.tasks.KtLintCheckTask>().configureEach {
+        exclude("**/build/generated/source/buildkonfig/**/*.kt")
     }
 
     tasks.withType<io.gitlab.arturbosch.detekt.Detekt>(io.gitlab.arturbosch.detekt.Detekt::class.java).configureEach {

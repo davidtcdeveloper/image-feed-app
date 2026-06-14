@@ -12,6 +12,7 @@ Load the relevant rule files on demand instead of dumping the full rule set into
 *   `ai-rules/architecture.md` — shared KMP boundaries, presenter/state flows, and UI shell responsibilities.
 *   `ai-rules/build-and-deps.md` — Gradle, version catalogs, dependency modernization, and Apple build tooling.
 *   `ai-rules/specs-and-commits.md` — specs, planning, and commit-message guidance.
+*   `ai-rules/testing.md` — integration/package-level test strategy, fake-repository patterns, and verification commands.
 *   `ai-rules/git-guidelines.md` — commit hygiene and traceability for commit-time tasks.
 
 ## Repository Overview
@@ -21,6 +22,8 @@ This repository combines a shared Kotlin module with Android Compose, iOS SwiftU
 ## Commands
 
 Use the existing project tooling for verification and build work:
+
+*   `./gradlew :shared:allTests` — run the shared integration/package-level test suite.
 
 *   `./gradlew :androidApp:assembleDebug`
 *   `./gradlew :shared:compileKotlinIosSimulatorArm64`
@@ -32,6 +35,8 @@ Use the existing project tooling for verification and build work:
 ## Workflow
 
 *   Match the task to the nearest real spec in `specs/` before changing code.
+*   When adding tests, prefer integration/package-level coverage in `shared/src/commonTest` over brittle class-by-class assertions.
+*   Drive tests through real presenter flows and fake repository boundaries, then assert observable outcomes instead of private internals.
 *   Update the relevant spec and `specs/steps.md` together when the implementation path changes.
 *   Prefer small, traceable changes and clarify ambiguous requirements before coding.
 *   **Zero Warning Policy**: Actively monitor and resolve compiler warnings. After every significant change, run `analyze_file` on modified files or execute a full build to identify new warnings or deprecations. Fix them immediately to keep the codebase clean.

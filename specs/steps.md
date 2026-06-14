@@ -45,6 +45,7 @@ The `specs/` folder currently contains the following implementation and design d
 *   `specs/17_build_warnings_resolution.md`
 *   `specs/18_linting_tooling_plan.md`
 *   `specs/19_koin_to_metro_migration_plan.md`
+*   `specs/20_testing_strategy.md`
 *   `specs/implementation_plan.md`
 *   `specs/steps.md`
 
@@ -268,4 +269,15 @@ These are the spec files that the implementation notes and planning references s
     *   Remove Koin initialization block from both `ImageFeedApplication.kt` and `iOSApp.swift`.
     *   Remove all Koin dependencies and libraries from Gradle version catalogs.
     *   Set `desugaredProviderSeverity = "ERROR"` in `metro` configuration to enforce strict static checking.
+
+### Step 20: Shared Integration Coverage for High-Value App Flows
+1.  **Establish the baseline:**
+    *   Add `shared/src/commonTest` coverage for the shared presenter layer, since it is the main integration seam between repository data and app behavior.
+2.  **Test user-visible flows, not internals:**
+    *   Validate initial feed loading, refresh behavior, and topic selection through the real presenter state flow and a fake repository.
+    *   Avoid assertions about private implementation details, helper calls, or internal state transitions.
+3.  **Keep the suite package-oriented:**
+    *   Add future tests for search, photo detail loading, and collection browsing in the same shared integration style rather than one-off class probes.
+4.  **Verify locally and in CI:**
+    *   Run `./gradlew :shared:allTests` as the standard quality gate for shared behavior changes.
 

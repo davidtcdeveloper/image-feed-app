@@ -66,5 +66,5 @@ dependencies {
 
     // Tooling/Test
     debugImplementation(libs.androidx.compose.ui.tooling)
-    testImplementation(libs.junit)
+    testImplementation(kotlin("test"))
 }
