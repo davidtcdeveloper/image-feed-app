@@ -15,7 +15,7 @@ class CollectionDetailViewModel {
     private var closeable: Closeable?
 
     init(collectionId: String) {
-        let presenter = KoinHelper.shared.getCollectionDetailPresenter(collectionId: collectionId)
+        let presenter = MetroHelper.shared.getCollectionDetailPresenter(collectionId: collectionId)
         self.presenter = presenter
 
         self.closeable = presenter.iosState.watch { [weak self] state in

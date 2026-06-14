@@ -4,6 +4,7 @@ import com.example.imagefeed.model.Photo
 import com.example.imagefeed.model.Topic
 import com.example.imagefeed.repository.UnsplashRepository
 import com.example.imagefeed.util.CommonFlow
+import dev.zacsweers.metro.Inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -25,6 +26,7 @@ data class FeedState(
     val hasReachedEnd: Boolean = false,
 )
 
+@Inject
 class FeedPresenter(
     private val repository: UnsplashRepository,
     private val presenterScope: CoroutineScope = CoroutineScope(Dispatchers.Main + SupervisorJob()),

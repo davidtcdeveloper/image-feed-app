@@ -5,6 +5,7 @@ import com.example.imagefeed.model.Photo
 import com.example.imagefeed.model.User
 import com.example.imagefeed.repository.UnsplashRepository
 import com.example.imagefeed.util.CommonFlow
+import dev.zacsweers.metro.Inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -44,6 +45,7 @@ data class SearchState(
     val hasReachedEnd: Boolean = false,
 )
 
+@Inject
 class UnifiedSearchPresenter(
     private val repository: UnsplashRepository,
     private val presenterScope: CoroutineScope = CoroutineScope(Dispatchers.Main + SupervisorJob()),

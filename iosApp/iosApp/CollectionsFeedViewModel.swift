@@ -13,7 +13,7 @@ class CollectionsFeedViewModel {
     private var closeable: Closeable?
 
     init() {
-        let presenter = KoinHelper.shared.getCollectionsFeedPresenter()
+        let presenter = MetroHelper.shared.getCollectionsFeedPresenter()
         self.presenter = presenter
 
         self.closeable = presenter.iosState.watch { [weak self] state in

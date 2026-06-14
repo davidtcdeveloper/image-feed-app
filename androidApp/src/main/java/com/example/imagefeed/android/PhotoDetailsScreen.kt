@@ -74,7 +74,7 @@ import coil3.compose.rememberAsyncImagePainter
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.example.imagefeed.android.util.BlurHashDecoder
-import com.example.imagefeed.di.KoinHelper
+import com.example.imagefeed.di.MetroHelper
 import com.example.imagefeed.model.Photo
 import com.example.imagefeed.model.PhotoStats
 import com.example.imagefeed.presentation.PhotoDetailsState
@@ -88,7 +88,7 @@ fun PhotoDetailsScreen(
     onTagClick: (String) -> Unit
 ) {
     val context = LocalPlatformContext.current
-    val presenter = remember(photoId) { KoinHelper.getPhotoDetailsPresenter(photoId) }
+    val presenter = remember(photoId) { MetroHelper.getPhotoDetailsPresenter(photoId) }
     val state by presenter.state.collectAsStateWithLifecycle(initialValue = PhotoDetailsState())
 
     Scaffold(

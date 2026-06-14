@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.android.kotlin.multiplatform.library)
     alias(libs.plugins.buildkonfig)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.metro)
 }
 
 // Read Unsplash API Access Key from local.properties
@@ -49,9 +50,6 @@ kotlin {
 
             // Serialization
             implementation(libs.kotlin.serialization.json)
-
-            // Dependency Injection
-            implementation(libs.koin.core)
         }
 
         androidMain.dependencies {
@@ -71,4 +69,10 @@ buildkonfig {
     defaultConfigs {
         buildConfigField(Type.STRING, "UNSPLASH_API_KEY", unsplashApiKey)
     }
+}
+
+metro {
+    enabled = true
+    debug = false
+    // desugaredProviderSeverity = "WARN"
 }

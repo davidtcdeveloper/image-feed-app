@@ -73,7 +73,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.LocalPlatformContext
 import coil3.compose.rememberAsyncImagePainter
-import com.example.imagefeed.di.KoinHelper
+import com.example.imagefeed.di.MetroHelper
 import com.example.imagefeed.model.CollectionSummary
 import com.example.imagefeed.model.Photo
 import com.example.imagefeed.model.User
@@ -90,7 +90,7 @@ fun SearchScreen(
     onUserClick: (User) -> Unit
 ) {
     val context = LocalPlatformContext.current
-    val presenter = remember { KoinHelper.getUnifiedSearchPresenter() }
+    val presenter = remember { MetroHelper.getUnifiedSearchPresenter() }
     val state by presenter.state.collectAsStateWithLifecycle(initialValue = SearchState())
     var showFiltersSheet by remember { mutableStateOf(false) }
 

@@ -4,6 +4,9 @@ import com.example.imagefeed.model.Photo
 import com.example.imagefeed.model.PhotoCollection
 import com.example.imagefeed.repository.UnsplashRepository
 import com.example.imagefeed.util.CommonFlow
+import dev.zacsweers.metro.Assisted
+import dev.zacsweers.metro.AssistedFactory
+import dev.zacsweers.metro.AssistedInject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -24,11 +27,17 @@ data class CollectionDetailState(
     val hasReachedEnd: Boolean = false,
 )
 
+@AssistedInject
 class CollectionDetailPresenter(
     private val repository: UnsplashRepository,
-    private val collectionId: String,
+    @Assisted private val collectionId: String,
     private val presenterScope: CoroutineScope = CoroutineScope(Dispatchers.Main + SupervisorJob()),
 ) {
+    @AssistedFactory
+    interface Factory {
+        fun create(collectionId: String): CollectionDetailPresenter
+    }
+
     private val _state = MutableStateFlow(CollectionDetailState())
     val state: StateFlow<CollectionDetailState> = _state.asStateFlow()
     val iosState: CommonFlow<CollectionDetailState> = CommonFlow(state)
