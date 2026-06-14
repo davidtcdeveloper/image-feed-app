@@ -75,8 +75,8 @@ fun CollectionDetailScreen(
     onCollectionClick: (String) -> Unit
 ) {
     val context = LocalPlatformContext.current
-    val koinHelper = remember { com.example.imagefeed.di.KoinHelper }
-    val presenter = remember(collectionId) { koinHelper.getCollectionDetailPresenter(collectionId) }
+    val metroHelper = remember { com.example.imagefeed.di.MetroHelper }
+    val presenter = remember(collectionId) { metroHelper.getCollectionDetailPresenter(collectionId) }
     val state by presenter.state.collectAsStateWithLifecycle(initialValue = CollectionDetailState())
 
     val gridState = rememberLazyStaggeredGridState()

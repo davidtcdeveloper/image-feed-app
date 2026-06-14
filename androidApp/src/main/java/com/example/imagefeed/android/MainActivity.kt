@@ -86,6 +86,7 @@ import coil3.compose.rememberAsyncImagePainter
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.example.imagefeed.android.util.BlurHashDecoder
+import com.example.imagefeed.di.MetroHelper
 import com.example.imagefeed.model.Photo
 import com.example.imagefeed.model.User
 import com.example.imagefeed.presentation.CollectionsFeedPresenter
@@ -94,7 +95,6 @@ import com.example.imagefeed.presentation.FeedState
 import com.example.imagefeed.repository.UnsplashRepository
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
-import org.koin.android.ext.android.inject
 import kotlin.math.sqrt
 
 @Serializable
@@ -119,9 +119,9 @@ sealed class Screen : NavKey {
 }
 
 class MainActivity : ComponentActivity() {
-    private val presenter: FeedPresenter by inject()
-    private val collectionsPresenter: CollectionsFeedPresenter by inject()
-    private val repository: UnsplashRepository by inject()
+    private val presenter: FeedPresenter by lazy { MetroHelper.getFeedPresenter() }
+    private val collectionsPresenter: CollectionsFeedPresenter by lazy { MetroHelper.getCollectionsFeedPresenter() }
+    private val repository: UnsplashRepository by lazy { MetroHelper.graph.repository }
     
     private var sensorManager: SensorManager? = null
     private var shakeDetector: ShakeDetector? = null

@@ -12,6 +12,7 @@ plugins {
 
     // Build and analysis tools
     alias(libs.plugins.buildkonfig) apply false
+    alias(libs.plugins.metro) apply false
     alias(libs.plugins.ktlint) apply false
     alias(libs.plugins.detekt) apply false
 }

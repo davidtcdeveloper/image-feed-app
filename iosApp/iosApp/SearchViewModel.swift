@@ -19,7 +19,7 @@ class SearchViewModel {
     private var closeable: Closeable?
 
     init(initialQuery: String = "") {
-        let presenter = KoinHelper.shared.getUnifiedSearchPresenter()
+        let presenter = MetroHelper.shared.getUnifiedSearchPresenter()
         self.presenter = presenter
 
         if !initialQuery.isEmpty {

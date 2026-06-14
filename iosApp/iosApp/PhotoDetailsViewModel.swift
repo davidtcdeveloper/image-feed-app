@@ -12,7 +12,7 @@ class PhotoDetailsViewModel {
     private var closeable: Closeable?
 
     init(photoId: String) {
-        let presenter = KoinHelper.shared.getPhotoDetailsPresenter(photoId: photoId)
+        let presenter = MetroHelper.shared.getPhotoDetailsPresenter(photoId: photoId)
         self.presenter = presenter
 
         self.closeable = presenter.iosState.watch { [weak self] state in

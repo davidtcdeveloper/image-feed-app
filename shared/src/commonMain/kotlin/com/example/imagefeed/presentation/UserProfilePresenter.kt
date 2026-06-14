@@ -6,6 +6,9 @@ import com.example.imagefeed.model.User
 import com.example.imagefeed.model.UserStats
 import com.example.imagefeed.repository.UnsplashRepository
 import com.example.imagefeed.util.CommonFlow
+import dev.zacsweers.metro.Assisted
+import dev.zacsweers.metro.AssistedFactory
+import dev.zacsweers.metro.AssistedInject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -36,11 +39,17 @@ data class UserProfileState(
     val isLoadingStats: Boolean = false,
 )
 
+@AssistedInject
 class UserProfilePresenter(
     private val repository: UnsplashRepository,
-    private val username: String,
+    @Assisted private val username: String,
     private val presenterScope: CoroutineScope = CoroutineScope(Dispatchers.Main + SupervisorJob()),
 ) {
+    @AssistedFactory
+    interface Factory {
+        fun create(username: String): UserProfilePresenter
+    }
+
     private val _state = MutableStateFlow(UserProfileState())
     val state: StateFlow<UserProfileState> = _state.asStateFlow()
     val iosState: CommonFlow<UserProfileState> = CommonFlow(state)

@@ -17,7 +17,7 @@ class FeedViewModel {
 
     init() {
         // Resolve FeedPresenter using the KoinHelper from the shared KMP module
-        let presenter = KoinHelper.shared.getFeedPresenter()
+        let presenter = MetroHelper.shared.getFeedPresenter()
         self.presenter = presenter
 
         // Start watching the StateFlow and update state on main thread
@@ -51,7 +51,7 @@ class FeedViewModel {
     }
 
     func fetchRandomPhotoId(completion: @escaping (String) -> Void) {
-        let presenter = KoinHelper.shared.getRandomPhotoPresenter()
+        let presenter = MetroHelper.shared.getRandomPhotoPresenter()
         var closeable: Closeable? = nil
         closeable = presenter.iosState.watch { state in
             if let photo = state?.photo {

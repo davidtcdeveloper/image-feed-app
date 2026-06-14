@@ -18,7 +18,7 @@ class UserProfileViewModel {
     private var closeable: Closeable?
 
     init(username: String) {
-        let presenter = KoinHelper.shared.getUserProfilePresenter(username: username)
+        let presenter = MetroHelper.shared.getUserProfilePresenter(username: username)
         self.presenter = presenter
 
         self.closeable = presenter.iosState.watch { [weak self] state in

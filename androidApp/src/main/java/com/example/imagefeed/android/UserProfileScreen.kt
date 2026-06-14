@@ -86,7 +86,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.LocalPlatformContext
 import coil3.compose.rememberAsyncImagePainter
-import com.example.imagefeed.di.KoinHelper
+import com.example.imagefeed.di.MetroHelper
 import com.example.imagefeed.model.Photo
 import com.example.imagefeed.model.PhotoCollection
 import com.example.imagefeed.model.User
@@ -104,7 +104,7 @@ fun UserProfileScreen(
     onCollectionClick: (PhotoCollection) -> Unit
 ) {
     val context = LocalPlatformContext.current
-    val presenter = remember(username) { KoinHelper.getUserProfilePresenter(username) }
+    val presenter = remember(username) { MetroHelper.getUserProfilePresenter(username) }
     val state by presenter.state.collectAsStateWithLifecycle(initialValue = UserProfileState())
 
     Scaffold(

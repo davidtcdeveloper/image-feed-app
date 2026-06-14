@@ -61,9 +61,6 @@ dependencies {
     implementation(libs.coil.compose)
     implementation(libs.coil.network.okhttp)
 
-    // Koin for DI
-    implementation(libs.koin.android.compose)
-
     // Tooling/Test
     debugImplementation(libs.androidx.compose.ui.tooling)
     testImplementation(kotlin("test"))
