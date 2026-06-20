@@ -12,8 +12,15 @@ struct CollectionsFeedView: View {
                 .ignoresSafeArea()
 
             if viewModel.collections.isEmpty, viewModel.isLoading {
-                ProgressView()
-                    .tint(.white)
+                ScrollView {
+                    VStack(spacing: 16) {
+                        ForEach(0..<4, id: \.self) { _ in
+                            CollectionMosaicCardSkeleton()
+                        }
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.top, 10)
+                }
             } else if viewModel.collections.isEmpty, viewModel.error != nil {
                 ErrorView(error: viewModel.error ?? "Failed to load collections", onRetry: {
                     viewModel.refresh()
@@ -21,10 +28,14 @@ struct CollectionsFeedView: View {
             } else {
                 ScrollView {
                     LazyVStack(spacing: 16) {
-                        ForEach(viewModel.collections, id: \.id) { collection in
-                            CollectionMosaicCard(collection: collection, viewModel: viewModel) {
+                        ForEach(Array(viewModel.collections.enumerated()), id: \.element.id) { index, collection in
+                            Button(action: {
                                 onCollectionSelect(collection.id)
+                            }) {
+                                CollectionMosaicCard(collection: collection, viewModel: viewModel, onTap: {})
+                                    .staggeredReveal(index: index)
                             }
+                            .buttonStyle(SpringCardButtonStyle())
                         }
 
                         if viewModel.isLoading {

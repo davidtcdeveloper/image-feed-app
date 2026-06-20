@@ -5,13 +5,17 @@ import SwiftUI
 
 struct PhotoDetailsView: View {
     let photoId: String
+    let heroNamespace: Namespace.ID
+    let onDismiss: (() -> Void)?
     let onUserSelect: (String) -> Void
     let onTagSelect: (String) -> Void
     @State private var viewModel: PhotoDetailsViewModel
     @Environment(\.dismiss) private var dismiss
 
-    init(photoId: String, onUserSelect: @escaping (String) -> Void, onTagSelect: @escaping (String) -> Void) {
+    init(photoId: String, heroNamespace: Namespace.ID, onDismiss: (() -> Void)? = nil, onUserSelect: @escaping (String) -> Void, onTagSelect: @escaping (String) -> Void) {
         self.photoId = photoId
+        self.heroNamespace = heroNamespace
+        self.onDismiss = onDismiss
         self.onUserSelect = onUserSelect
         self.onTagSelect = onTagSelect
         self._viewModel = State(initialValue: PhotoDetailsViewModel(photoId: photoId))
@@ -56,6 +60,7 @@ struct PhotoDetailsView: View {
                             KFImage(URL(string: imageUrl))
                                 .resizable()
                                 .aspectRatio(aspectRatio, contentMode: .fill)
+                                .matchedGeometryEffect(id: "photo-img-\(photoId)", in: heroNamespace, isSource: false)
                                 .frame(width: geo.size.width, height: geo.size.height)
                                 .clipped()
                                 .overlay(
@@ -250,6 +255,21 @@ struct PhotoDetailsView: View {
             }
         }
         .navigationBarBackButtonHidden(true)
+        .overlay(alignment: .topLeading) {
+            if onDismiss != nil {
+                Button(action: {
+                    onDismiss?()
+                }) {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.white)
+                        .padding(8)
+                        .background(Circle().fill(Color.black.opacity(0.4)))
+                }
+                .padding(.top, 60)
+                .padding(.leading, 16)
+            }
+        }
         .toolbar {
             #if os(iOS)
             ToolbarItem(placement: .navigationBarLeading) {

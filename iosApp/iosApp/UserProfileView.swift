@@ -23,8 +23,8 @@ struct UserProfileView: View {
                 .ignoresSafeArea()
 
             if viewModel.isHeaderLoading, viewModel.user == nil {
-                ProgressView()
-                    .tint(.white)
+                UserProfileHeaderSkeleton()
+                    .padding(.top, 40)
             } else if let error = viewModel.error, viewModel.user == nil {
                 VStack(spacing: 16) {
                     Text("Failed to load profile")
@@ -311,9 +311,17 @@ struct GridPhotosList: View {
     var body: some View {
         VStack(spacing: 12) {
             if photos.isEmpty, isLoading {
-                ProgressView()
-                    .tint(.white)
-                    .padding(.top, 40)
+                HStack(alignment: .top, spacing: 8) {
+                    ForEach(0..<columnCount, id: \.self) { _ in
+                        VStack(spacing: 8) {
+                            ForEach(0..<3, id: \.self) { index in
+                                PhotoCardSkeleton(height: index % 2 == 0 ? 180 : 240)
+                            }
+                        }
+                    }
+                }
+                .padding(.horizontal, 8)
+                .padding(.top, 20)
             } else if photos.isEmpty {
                 Text("No photos to display.")
                     .font(.subheadline)
@@ -324,23 +332,27 @@ struct GridPhotosList: View {
                     ForEach(0..<columnCount, id: \.self) { colIndex in
                         LazyVStack(spacing: 8) {
                             ForEach(AdaptiveLayoutHelper.photosForColumn(index: colIndex, totalColumns: columnCount, from: photos), id: \.id) { photo in
-                                KFImage(URL(string: photo.urls.small))
-                                    .placeholder {
-                                        RoundedRectangle(cornerRadius: 12)
-                                            .fill(Color(hex: photo.color ?? "1E1E24"))
-                                            .aspectRatio(CGFloat(photo.width) / CGFloat(photo.height), contentMode: .fit)
-                                    }
-                                    .resizable()
-                                    .aspectRatio(CGFloat(photo.width) / CGFloat(photo.height), contentMode: .fit)
-                                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                                    .onTapGesture {
-                                        onSelect(photo.id)
-                                    }
-                                    .onAppear {
-                                        if photo.id == photos.last?.id {
-                                            onLoadMore()
+                                let flatIndex = photos.firstIndex(where: { $0.id == photo.id }) ?? 0
+                                Button(action: {
+                                    onSelect(photo.id)
+                                }) {
+                                    KFImage(URL(string: photo.urls.small))
+                                        .placeholder {
+                                            RoundedRectangle(cornerRadius: 12)
+                                                .fill(Color(hex: photo.color ?? "1E1E24"))
+                                                .aspectRatio(CGFloat(photo.width) / CGFloat(photo.height), contentMode: .fit)
                                         }
+                                        .resizable()
+                                        .aspectRatio(CGFloat(photo.width) / CGFloat(photo.height), contentMode: .fit)
+                                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                                        .staggeredReveal(index: flatIndex)
+                                }
+                                .buttonStyle(SpringCardButtonStyle())
+                                .onAppear {
+                                    if photo.id == photos.last?.id {
+                                        onLoadMore()
                                     }
+                                }
                             }
                         }
                     }
@@ -366,9 +378,13 @@ struct GridCollectionsList: View {
     var body: some View {
         VStack(spacing: 12) {
             if collections.isEmpty, isLoading {
-                ProgressView()
-                    .tint(.white)
-                    .padding(.top, 40)
+                VStack(spacing: 16) {
+                    ForEach(0..<3, id: \.self) { _ in
+                        CollectionMosaicCardSkeleton()
+                    }
+                }
+                .padding(.horizontal, 12)
+                .padding(.top, 20)
             } else if collections.isEmpty {
                 Text("No collections to display.")
                     .font(.subheadline)
@@ -376,40 +392,43 @@ struct GridCollectionsList: View {
                     .padding(.top, 40)
             } else {
                 LazyVStack(spacing: 16) {
-                    ForEach(collections, id: \.id) { col in
-                        ZStack(alignment: .bottomLeading) {
-                            if let coverPhoto = col.coverPhoto {
-                                KFImage(URL(string: coverPhoto.urls.regular))
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fill)
-                                    .frame(height: 180)
-                                    .clipped()
-                            } else {
-                                Color(hex: "1E1E24")
-                                    .frame(height: 180)
-                            }
-
-                            // Dark scrim
-                            Color.black.opacity(0.4)
-
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(col.title.uppercased())
-                                    .font(.system(size: 16, weight: .bold))
-                                    .foregroundColor(.white)
-                                    .tracking(1)
-
-                                Text("\(col.totalPhotos) Photos · Curated by \(col.user.name)")
-                                    .font(.system(size: 11))
-                                    .foregroundColor(.gray)
-                            }
-                            .padding(16)
-                        }
-                        .frame(height: 180)
-                        .cornerRadius(12)
-                        .clipped()
-                        .onTapGesture {
+                    ForEach(Array(collections.enumerated()), id: \.element.id) { index, col in
+                        Button(action: {
                             onSelect(col.id)
+                        }) {
+                            ZStack(alignment: .bottomLeading) {
+                                if let coverPhoto = col.coverPhoto {
+                                    KFImage(URL(string: coverPhoto.urls.regular))
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fill)
+                                        .frame(height: 180)
+                                        .clipped()
+                                } else {
+                                    Color(hex: "1E1E24")
+                                        .frame(height: 180)
+                                }
+
+                                // Dark scrim
+                                Color.black.opacity(0.4)
+
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(col.title.uppercased())
+                                        .font(.system(size: 16, weight: .bold))
+                                        .foregroundColor(.white)
+                                        .tracking(1)
+
+                                    Text("\(col.totalPhotos) Photos · Curated by \(col.user.name)")
+                                        .font(.system(size: 11))
+                                        .foregroundColor(.gray)
+                                }
+                                .padding(16)
+                            }
+                            .frame(height: 180)
+                            .cornerRadius(12)
+                            .clipped()
+                            .staggeredReveal(index: index)
                         }
+                        .buttonStyle(SpringCardButtonStyle())
                         .onAppear {
                             if col.id == collections.last?.id {
                                 onLoadMore()

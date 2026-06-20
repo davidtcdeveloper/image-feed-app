@@ -283,13 +283,13 @@ These are the spec files that the implementation notes and planning references s
 4.  **Verify locally and in CI:**
     *   Run `./gradlew :shared:allTests` as the standard quality gate for shared behavior changes.
 
-### Step 21: Fluid Animations Implementation
-1.  **Android Jetpack Compose Motion:**
+### Step 21: Fluid Animations Implementation (Completed)
+1.  **Android Jetpack Compose Motion (Completed):**
     *   Configure `SharedTransitionLayout` wrapping the navigation container.
     *   Implement staggered grid entrance effects and bounce-scale clickable interactions.
     *   Design and deploy linear-gradient shimmering skeleton placeholders.
     *   Reference the detailed blueprint in `specs/21_android_fluid_animations_plan.md`.
-2.  **iOS SwiftUI Fluid Transitions:**
+2.  **iOS SwiftUI Fluid Transitions (Completed):**
     *   Implement overlay-based hero transitions using `matchedGeometryEffect` to zoom grid cards seamlessly.
     *   Build staggered bottom-up transitions for loaded feed grids using index-delayed spring curves.
     *   Develop springy press-scale feedbacks on interactive card buttons.

@@ -60,10 +60,18 @@ import com.example.imagefeed.android.util.BlurHashDecoder
 import com.example.imagefeed.model.PhotoCollection
 import com.example.imagefeed.presentation.CollectionsFeedPresenter
 import com.example.imagefeed.presentation.CollectionsFeedState
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
+import com.example.imagefeed.android.util.bounceClick
+import com.example.imagefeed.android.util.staggeredEntrance
+import com.example.imagefeed.android.util.CollectionMosaicCardSkeleton
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
 fun CollectionsFeedScreen(
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedVisibilityScope,
     presenter: CollectionsFeedPresenter,
     onCollectionClick: (PhotoCollection) -> Unit,
     onSearchClick: () -> Unit
@@ -120,8 +128,14 @@ fun CollectionsFeedScreen(
                 .padding(paddingValues)
         ) {
             if (state.collections.isEmpty() && state.isLoading) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = Color.White)
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    items(5) {
+                        CollectionMosaicCardSkeleton()
+                    }
                 }
             } else if (state.collections.isEmpty() && state.error != null) {
                 ErrorView(error = state.error!!, onRetry = { presenter.refresh() })
@@ -133,7 +147,11 @@ fun CollectionsFeedScreen(
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     items(state.collections, key = { it.id }) { collection ->
+                        val index = state.collections.indexOfFirst { it.id == collection.id }
                         CollectionMosaicCard(
+                            sharedTransitionScope = sharedTransitionScope,
+                            animatedVisibilityScope = animatedVisibilityScope,
+                            index = index,
                             collection = collection,
                             onClick = { onCollectionClick(collection) }
                         )
@@ -157,8 +175,12 @@ fun CollectionsFeedScreen(
     }
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun CollectionMosaicCard(
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedVisibilityScope,
+    index: Int,
     collection: PhotoCollection,
     onClick: () -> Unit
 ) {
@@ -183,8 +205,8 @@ fun CollectionMosaicCard(
         shape = RoundedCornerShape(16.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .clickable { onClick() },
+            .staggeredEntrance(index = index)
+            .bounceClick(onClick = onClick),
         colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E24))
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
@@ -205,18 +227,25 @@ fun CollectionMosaicCard(
                         .background(Color(0xFF2C2C35))
                 ) {
                     if (coverUrl != null) {
-                        Image(
-                            painter = rememberAsyncImagePainter(
-                                model = ImageRequest.Builder(context)
-                                    .data(coverUrl)
-                                    .crossfade(true)
-                                    .build(),
-                                placeholder = placeholderBitmap?.let { BitmapPainter(it.asImageBitmap()) }
-                            ),
-                            contentDescription = collection.title,
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
-                        )
+                        with(sharedTransitionScope) {
+                            Image(
+                                painter = rememberAsyncImagePainter(
+                                    model = ImageRequest.Builder(context)
+                                        .data(coverUrl)
+                                        .crossfade(true)
+                                        .build(),
+                                    placeholder = placeholderBitmap?.let { BitmapPainter(it.asImageBitmap()) }
+                                ),
+                                contentDescription = collection.title,
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .sharedBounds(
+                                        sharedContentState = rememberSharedContentState(key = "col_cover_${collection.id}"),
+                                        animatedVisibilityScope = animatedVisibilityScope
+                                    ),
+                                contentScale = ContentScale.Crop
+                            )
+                        }
                     }
                 }
 

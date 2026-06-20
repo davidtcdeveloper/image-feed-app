@@ -65,10 +65,17 @@ import com.example.imagefeed.android.util.BlurHashDecoder
 import com.example.imagefeed.model.Photo
 import com.example.imagefeed.model.PhotoCollection
 import com.example.imagefeed.presentation.CollectionDetailState
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
+import com.example.imagefeed.android.util.bounceClick
+import com.example.imagefeed.android.util.staggeredEntrance
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
 fun CollectionDetailScreen(
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedVisibilityScope,
     collectionId: String,
     onBack: () -> Unit,
     onPhotoClick: (Photo) -> Unit,
@@ -170,6 +177,8 @@ fun CollectionDetailScreen(
                     // Header Item: Spans full width
                     item(span = StaggeredGridItemSpan.FullLine) {
                         CollectionDetailHeader(
+                            sharedTransitionScope = sharedTransitionScope,
+                            animatedVisibilityScope = animatedVisibilityScope,
                             collection = state.collection,
                             isHeaderLoading = state.isHeaderLoading
                         )
@@ -201,7 +210,11 @@ fun CollectionDetailScreen(
                     // Photos grid
                     items(state.photos, key = { it.id }) { photo ->
                         Box(modifier = Modifier.padding(horizontal = 4.dp)) {
+                            val index = state.photos.indexOfFirst { it.id == photo.id }
                             PhotoCard(
+                                sharedTransitionScope = sharedTransitionScope,
+                                animatedVisibilityScope = animatedVisibilityScope,
+                                index = index,
                                 photo = photo,
                                 onClick = { onPhotoClick(photo) },
                                 onUserClick = {
@@ -231,8 +244,11 @@ fun CollectionDetailScreen(
     }
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun CollectionDetailHeader(
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedVisibilityScope,
     collection: PhotoCollection?,
     isHeaderLoading: Boolean
 ) {
@@ -261,20 +277,26 @@ fun CollectionDetailHeader(
     ) {
         // Blurred Background Cover Photo to act as beautiful backdrop
         collection.coverPhoto?.urls?.regular?.let { coverUrl ->
-            Image(
-                painter = rememberAsyncImagePainter(
-                    model = ImageRequest.Builder(context)
-                        .data(coverUrl)
-                        .crossfade(true)
-                        .build(),
-                    placeholder = placeholderBitmap?.let { BitmapPainter(it.asImageBitmap()) }
-                ),
-                contentDescription = null,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .blur(20.dp),
-                contentScale = ContentScale.Crop
-            )
+            with(sharedTransitionScope) {
+                Image(
+                    painter = rememberAsyncImagePainter(
+                        model = ImageRequest.Builder(context)
+                            .data(coverUrl)
+                            .crossfade(true)
+                            .build(),
+                        placeholder = placeholderBitmap?.let { BitmapPainter(it.asImageBitmap()) }
+                    ),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .sharedBounds(
+                            sharedContentState = rememberSharedContentState(key = "col_cover_${collection.id}"),
+                            animatedVisibilityScope = animatedVisibilityScope
+                        )
+                        .blur(20.dp),
+                    contentScale = ContentScale.Crop
+                )
+            }
         }
 
         // Overlay Gradient for contrast
@@ -412,8 +434,7 @@ fun RelatedCollectionCard(
         modifier = Modifier
             .width(180.dp)
             .height(130.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .clickable { onClick() }
+            .bounceClick(onClick = onClick)
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             val coverUrl = collection.coverPhoto?.urls?.small

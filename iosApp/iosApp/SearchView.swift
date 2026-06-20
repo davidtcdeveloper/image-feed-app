@@ -63,10 +63,57 @@ struct SearchView: View {
                             viewModel.clearHistory()
                         })
                 } else if viewModel.isLoading {
-                    Spacer()
-                    ProgressView()
-                        .tint(.white)
-                    Spacer()
+                    ScrollView {
+                        VStack(spacing: 16) {
+                            switch viewModel.activeTab {
+                            case .photos:
+                                HStack(alignment: .top, spacing: 8) {
+                                    ForEach(0..<columnCount, id: \.self) { _ in
+                                        VStack(spacing: 8) {
+                                            ForEach(0..<3, id: \.self) { index in
+                                                PhotoCardSkeleton(height: index % 2 == 0 ? 180 : 240)
+                                            }
+                                        }
+                                    }
+                                }
+                                .padding(.horizontal, 8)
+                            case .collections:
+                                VStack(spacing: 16) {
+                                    ForEach(0..<3, id: \.self) { _ in
+                                        CollectionMosaicCardSkeleton()
+                                    }
+                                }
+                                .padding(.horizontal, 16)
+                            case .users:
+                                VStack(spacing: 12) {
+                                    ForEach(0..<4, id: \.self) { _ in
+                                        HStack(spacing: 16) {
+                                            Circle()
+                                                .fill(Color.white.opacity(0.06))
+                                                .frame(width: 50, height: 50)
+                                            VStack(alignment: .leading, spacing: 4) {
+                                                RoundedRectangle(cornerRadius: 4)
+                                                    .fill(Color.white.opacity(0.06))
+                                                    .frame(width: 120, height: 14)
+                                                RoundedRectangle(cornerRadius: 4)
+                                                    .fill(Color.white.opacity(0.06))
+                                                    .frame(width: 80, height: 10)
+                                            }
+                                            Spacer()
+                                        }
+                                        .padding(12)
+                                        .background(Color(hex: "1E1E24"))
+                                        .cornerRadius(12)
+                                        .shimmer()
+                                    }
+                                }
+                                .padding(.horizontal, 16)
+                            default:
+                                EmptyView()
+                            }
+                        }
+                        .padding(.top, 10)
+                    }
                 } else if let error = viewModel.error {
                     Spacer()
                     VStack(spacing: 8) {
@@ -94,14 +141,17 @@ struct SearchView: View {
                                                     AdaptiveLayoutHelper.photosForColumn(index: colIndex, totalColumns: columnCount, from: viewModel.photos),
                                                     id: \.id)
                                                 { photo in
-                                                    KFImage(URL(string: photo.urls.small))
-                                                        .resizable()
-                                                        .aspectRatio(CGFloat(photo.width) / CGFloat(photo.height), contentMode: .fit)
-                                                        .cornerRadius(12)
-                                                        .contentShape(Rectangle())
-                                                        .onTapGesture {
-                                                            onPhotoSelect(photo.id)
-                                                        }
+                                                    let flatIndex = viewModel.photos.firstIndex(where: { $0.id == photo.id }) ?? 0
+                                                    Button(action: {
+                                                        onPhotoSelect(photo.id)
+                                                    }) {
+                                                        KFImage(URL(string: photo.urls.small))
+                                                            .resizable()
+                                                            .aspectRatio(CGFloat(photo.width) / CGFloat(photo.height), contentMode: .fit)
+                                                            .cornerRadius(12)
+                                                            .staggeredReveal(index: flatIndex)
+                                                    }
+                                                    .buttonStyle(SpringCardButtonStyle())
                                                 }
                                             }
                                         }
@@ -114,15 +164,18 @@ struct SearchView: View {
                                 if viewModel.collections.isEmpty {
                                     NoSearchResultsView()
                                 } else {
-                                    ForEach(viewModel.collections, id: \.id) { collection in
-                                        CollectionCardView(collection: collection)
-                                            .onTapGesture {
-                                                if let links = collection.links,
-                                                   let url = URL(string: "\(links.html)?utm_source=ImageFeedApp&utm_medium=referral")
-                                                {
-                                                    URLHelper.open(url)
-                                                }
+                                    ForEach(Array(viewModel.collections.enumerated()), id: \.element.id) { index, collection in
+                                        Button(action: {
+                                            if let links = collection.links,
+                                               let url = URL(string: "\(links.html)?utm_source=ImageFeedApp&utm_medium=referral")
+                                            {
+                                                URLHelper.open(url)
                                             }
+                                        }) {
+                                            CollectionCardView(collection: collection)
+                                                .staggeredReveal(index: index)
+                                        }
+                                        .buttonStyle(SpringCardButtonStyle())
                                     }
                                     .padding(.horizontal, 16)
                                 }
@@ -131,11 +184,14 @@ struct SearchView: View {
                                 if viewModel.users.isEmpty {
                                     NoSearchResultsView()
                                 } else {
-                                    ForEach(viewModel.users, id: \.id) { user in
-                                        UserCardView(user: user)
-                                            .onTapGesture {
-                                                onUserSelect(user.username)
-                                            }
+                                    ForEach(Array(viewModel.users.enumerated()), id: \.element.id) { index, user in
+                                        Button(action: {
+                                            onUserSelect(user.username)
+                                        }) {
+                                            UserCardView(user: user)
+                                                .staggeredReveal(index: index)
+                                        }
+                                        .buttonStyle(SpringCardButtonStyle())
                                     }
                                     .padding(.horizontal, 16)
                                 }

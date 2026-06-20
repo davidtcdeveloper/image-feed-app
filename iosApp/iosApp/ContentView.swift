@@ -35,6 +35,7 @@ struct ContentView: View {
 
 struct CollectionsFeedTabView: View {
     @State private var path = NavigationPath()
+    @Namespace private var dummyNamespace
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -59,6 +60,7 @@ struct CollectionsFeedTabView: View {
                     case .photo:
                         PhotoDetailsView(
                             photoId: item.id,
+                            heroNamespace: dummyNamespace,
                             onUserSelect: { username in
                                 path.append(CollectionPathItem(id: username, type: .user))
                             },
@@ -121,6 +123,8 @@ struct PhotosFeedTabView: View {
     @State private var path = NavigationPath()
     @State private var isShaking = false
     @Namespace private var categoryNamespace
+    @Namespace private var heroNamespace
+    @State private var selectedPhotoForHero: Photo? = nil
 
     private var columnCount: Int {
         #if os(iOS)
@@ -209,8 +213,11 @@ struct PhotosFeedTabView: View {
                                                 PhotoCard(
                                                     photo: photo,
                                                     viewModel: viewModel,
+                                                    heroNamespace: heroNamespace,
                                                     onSelect: { photoId in
-                                                        path.append(FeedPathItem(id: photoId, type: .photo))
+                                                        withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
+                                                            selectedPhotoForHero = photo
+                                                        }
                                                     },
                                                     onUserSelect: { username in
                                                         path.append(FeedPathItem(id: username, type: .user))
@@ -298,6 +305,7 @@ struct PhotosFeedTabView: View {
                     case .photo:
                         PhotoDetailsView(
                             photoId: item.id,
+                            heroNamespace: heroNamespace,
                             onUserSelect: { username in
                                 path.append(FeedPathItem(id: username, type: .user))
                             },
@@ -381,6 +389,7 @@ struct CategoryTabButton: View {
 struct PhotoCard: View {
     let photo: Photo
     let viewModel: FeedViewModel
+    let heroNamespace: Namespace.ID
     let onSelect: (String) -> Void
     let onUserSelect: (String) -> Void
 
@@ -407,6 +416,7 @@ struct PhotoCard: View {
                 .fade(duration: 0.25)
                 .resizable()
                 .aspectRatio(contentRatio(photoWidth: Int(photo.width), photoHeight: Int(photo.height)), contentMode: .fit)
+                .matchedGeometryEffect(id: "photo-img-\(photo.id)", in: heroNamespace)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 .contentShape(Rectangle())
                 .onTapGesture {

@@ -80,10 +80,19 @@ import com.example.imagefeed.model.User
 import com.example.imagefeed.presentation.SearchFilters
 import com.example.imagefeed.presentation.SearchState
 import com.example.imagefeed.presentation.SearchTab
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
+import com.example.imagefeed.android.util.bounceClick
+import com.example.imagefeed.android.util.staggeredEntrance
+import com.example.imagefeed.android.util.PhotoGridSkeleton
+import com.example.imagefeed.android.util.CollectionMosaicCardSkeleton
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
 fun SearchScreen(
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedVisibilityScope,
     initialQuery: String = "",
     onBack: () -> Unit,
     onPhotoClick: (Photo) -> Unit,
@@ -194,8 +203,28 @@ fun SearchScreen(
                     onClearAll = { presenter.clearHistory() }
                 )
             } else if (state.isLoading) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = Color.White)
+                when (state.activeTab) {
+                    SearchTab.PHOTOS -> {
+                        PhotoGridSkeleton()
+                    }
+                    SearchTab.COLLECTIONS -> {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(12.dp)
+                                .verticalScroll(rememberScrollState()),
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            repeat(4) {
+                                CollectionMosaicCardSkeleton()
+                            }
+                        }
+                    }
+                    SearchTab.USERS -> {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator(color = Color.White)
+                        }
+                    }
                 }
             } else if (state.error != null) {
                 Column(
@@ -217,6 +246,8 @@ fun SearchScreen(
                             NoResultsView()
                         } else {
                             PhotosResultGrid(
+                                sharedTransitionScope = sharedTransitionScope,
+                                animatedVisibilityScope = animatedVisibilityScope,
                                 photos = state.photos,
                                 isLoadingMore = state.isLoadingMore,
                                 onLoadMore = { presenter.loadNextPage() },
@@ -289,7 +320,7 @@ fun SearchSuggestionsAndHistory(
                     color = Color.White.copy(alpha = 0.6f),
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.clickable { onClearAll() }
+                    modifier = Modifier.bounceClick { onClearAll() }
                 )
             }
             Spacer(modifier = Modifier.height(8.dp))
@@ -299,7 +330,7 @@ fun SearchSuggestionsAndHistory(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 10.dp)
-                        .clickable { onItemClick(item) },
+                        .bounceClick { onItemClick(item) },
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(imageVector = Icons.Default.Refresh, contentDescription = "History", tint = Color.Gray, modifier = Modifier.size(16.dp))
@@ -331,7 +362,7 @@ fun SearchSuggestionsAndHistory(
                 Box(
                     modifier = Modifier
                         .background(Color(0xFF1E1E24), RoundedCornerShape(18.dp))
-                        .clickable { onItemClick(topic) }
+                        .bounceClick { onItemClick(topic) }
                         .padding(horizontal = 14.dp, vertical = 8.dp)
                 ) {
                     Text(text = topic, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Medium)
@@ -341,8 +372,11 @@ fun SearchSuggestionsAndHistory(
     }
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun PhotosResultGrid(
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedVisibilityScope,
     photos: List<Photo>,
     isLoadingMore: Boolean,
     onLoadMore: () -> Unit,
@@ -374,7 +408,11 @@ fun PhotosResultGrid(
         verticalItemSpacing = 8.dp
     ) {
         items(photos, key = { it.id }) { photo ->
+            val index = photos.indexOfFirst { it.id == photo.id }
             PhotoCard(
+                sharedTransitionScope = sharedTransitionScope,
+                animatedVisibilityScope = animatedVisibilityScope,
+                index = index,
                 photo = photo,
                 onClick = { onPhotoClick(photo) },
                 onUserClick = {
@@ -430,8 +468,10 @@ fun CollectionsResultList(
         verticalItemSpacing = 16.dp
     ) {
         items(collections, key = { it.id }) { collection ->
+            val index = collections.indexOfFirst { it.id == collection.id }
             CollectionRowCard(
                 collection = collection,
+                modifier = Modifier.staggeredEntrance(index),
                 onClick = {
                     collection.links?.html?.let { link ->
                         val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse("$link?utm_source=ImageFeedApp&utm_medium=referral"))
@@ -459,15 +499,16 @@ fun CollectionsResultList(
 @Composable
 fun CollectionRowCard(
     collection: CollectionSummary,
+    modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
     Card(
         shape = RoundedCornerShape(12.dp),
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .height(200.dp)
             .clip(RoundedCornerShape(12.dp))
-            .clickable { onClick() }
+            .bounceClick { onClick() }
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             val coverPhoto = collection.coverPhoto
@@ -542,8 +583,10 @@ fun UsersResultList(
         verticalItemSpacing = 12.dp
     ) {
         items(users, key = { it.id }) { user ->
+            val index = users.indexOfFirst { it.id == user.id }
             UserRowCard(
                 user = user,
+                modifier = Modifier.staggeredEntrance(index),
                 onClick = {
                     onUserClick(user)
                 }
@@ -568,14 +611,15 @@ fun UsersResultList(
 @Composable
 fun UserRowCard(
     user: User,
+    modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
     Card(
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E24)),
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
-            .clickable { onClick() }
+            .bounceClick { onClick() }
     ) {
         Row(
             modifier = Modifier
