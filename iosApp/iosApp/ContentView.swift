@@ -136,8 +136,12 @@ struct PhotosFeedTabView: View {
 
     var body: some View {
         NavigationStack(path: $path) {
-            VStack(spacing: 0) {
-                // Sliding horizontal category bar
+            ZStack {
+                Color(hex: "0F0F11")
+                    .ignoresSafeArea()
+
+                VStack(spacing: 0) {
+                    // Sliding horizontal category bar
                 ScrollView(.horizontal, showsIndicators: false) {
                     LazyHStack(spacing: 12) {
                         CategoryTabButton(
@@ -256,12 +260,39 @@ struct PhotosFeedTabView: View {
                             }
                     }
                 }
+
+                if let photo = selectedPhotoForHero {
+                    PhotoDetailsView(
+                        photoId: photo.id,
+                        heroNamespace: heroNamespace,
+                        onDismiss: {
+                            withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
+                                selectedPhotoForHero = nil
+                            }
+                        },
+                        onUserSelect: { username in
+                            withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
+                                selectedPhotoForHero = nil
+                            }
+                            path.append(FeedPathItem(id: username, type: .user))
+                        },
+                        onTagSelect: { tag in
+                            withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
+                                selectedPhotoForHero = nil
+                            }
+                            path.append(FeedPathItem(id: tag, type: .search))
+                        })
+                        .transition(.asymmetric(insertion: .identity, removal: .identity))
+                        .zIndex(1)
+                }
             }
             .navigationTitle("FEED")
             #if os(iOS)
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbarBackground(Color(hex: "0F0F11"), for: .navigationBar)
                 .toolbarColorScheme(.dark, for: .navigationBar)
+                .toolbar(selectedPhotoForHero != nil ? .hidden : .visible, for: .navigationBar)
+                .toolbar(selectedPhotoForHero != nil ? .hidden : .automatic, for: .tabBar)
             #endif
                 .toolbar {
                     #if os(iOS)
