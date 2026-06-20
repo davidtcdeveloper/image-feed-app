@@ -297,7 +297,14 @@ struct PhotoDetailsView: View {
     }
 
     private func hasLocation(_ location: Location) -> Bool {
-        location.name != nil || location.position != nil
+        if let latValue = location.position?.latitude, let lonValue = location.position?.longitude {
+            let lat = Double(truncating: latValue)
+            let lon = Double(truncating: lonValue)
+            if lat == 0.0 && lon == 0.0 {
+                return false
+            }
+        }
+        return location.name != nil || location.position != nil
     }
 }
 

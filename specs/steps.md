@@ -281,3 +281,19 @@ These are the spec files that the implementation notes and planning references s
 4.  **Verify locally and in CI:**
     *   Run `./gradlew :shared:allTests` as the standard quality gate for shared behavior changes.
 
+### Step 21: Google Maps Android Integration Plan
+1.  **Define Gradle Configuration:**
+    *   Add Google Play Services Maps (`play-services-maps`) and Google Maps Compose wrapper (`maps-compose`) to `libs.versions.toml`.
+    *   Declare dependencies in `androidApp/build.gradle.kts`.
+2.  **Ensure Secure API Key Loading:**
+    *   Configure `androidApp/build.gradle.kts` to load `google.maps.api.key` from local git-ignored properties.
+    *   Expose it using Gradle `manifestPlaceholders`.
+3.  **Configure Android Manifest:**
+    *   Add the meta-data element referencing the placeholder into `AndroidManifest.xml`.
+4.  **Implement Inline Map UI:**
+    *   Refactor `PhotoDetailsScreen.kt` to load a `GoogleMap` element showing the captured image coordinates inline.
+    *   Configure dark-styled styling properties to maintain dark mode consistency.
+5.  **Verify compilation & navigation:**
+    *   Clean build the Android app and verify the layout and map launching mechanics.
+
+

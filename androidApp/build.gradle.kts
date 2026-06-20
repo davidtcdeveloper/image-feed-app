@@ -1,8 +1,18 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
 }
+
+// Read Google Maps API Key from local.properties
+val localProperties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localProperties.load(localPropertiesFile.inputStream())
+}
+val googleMapsApiKey = localProperties.getProperty("google.maps.api.key") ?: ""
 
 configure<com.android.build.api.dsl.ApplicationExtension> {
     namespace = "com.example.imagefeed.android"
@@ -14,6 +24,7 @@ configure<com.android.build.api.dsl.ApplicationExtension> {
         versionCode = 1
         versionName = "1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        manifestPlaceholders["GOOGLE_MAPS_API_KEY"] = googleMapsApiKey
     }
     buildTypes {
         getByName("release") {
@@ -60,6 +71,10 @@ dependencies {
     // Coil (Image Loading)
     implementation(libs.coil.compose)
     implementation(libs.coil.network.okhttp)
+
+    // Google Maps Integration
+    implementation(libs.play.services.maps)
+    implementation(libs.maps.compose)
 
     // Tooling/Test
     debugImplementation(libs.androidx.compose.ui.tooling)

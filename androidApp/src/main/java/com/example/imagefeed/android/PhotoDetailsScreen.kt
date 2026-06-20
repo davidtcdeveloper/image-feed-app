@@ -78,6 +78,16 @@ import com.example.imagefeed.di.MetroHelper
 import com.example.imagefeed.model.Photo
 import com.example.imagefeed.model.PhotoStats
 import com.example.imagefeed.presentation.PhotoDetailsState
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MapStyleOptions
+import com.google.android.gms.maps.model.CameraPosition
+import com.google.maps.android.compose.GoogleMap
+import com.google.maps.android.compose.Marker
+import com.google.maps.android.compose.MarkerState
+import com.google.maps.android.compose.rememberCameraPositionState
+import com.google.maps.android.compose.MapProperties
+import com.google.maps.android.compose.MapUiSettings
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -400,10 +410,13 @@ fun PhotoDetailsContent(
 
             // Location card with map launcher
             photo.location?.let { location ->
-                if (!location.name.isNullOrEmpty() || (location.position?.latitude != null && location.position?.longitude != null)) {
+                val lat = location.position?.latitude
+                val lon = location.position?.longitude
+                val isZero = lat == 0.0 && lon == 0.0
+                if (!isZero && (!location.name.isNullOrEmpty() || (lat != null && lon != null))) {
                     Spacer(modifier = Modifier.height(24.dp))
                     Text(
-                        text = "LOCATION INFORMATION",
+                        text = "LOCATION",
                         color = Color.White.copy(alpha = 0.6f),
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
@@ -417,8 +430,6 @@ fun PhotoDetailsContent(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable {
-                                val lat = location.position?.latitude
-                                val lon = location.position?.longitude
                                 val query = location.name ?: ""
                                 val gmmIntentUri = if (lat != null && lon != null) {
                                     Uri.parse("geo:$lat,$lon?q=${Uri.encode(query)}")
@@ -436,42 +447,82 @@ fun PhotoDetailsContent(
                                 }
                             }
                     ) {
-                        Row(
+                        Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                                .padding(16.dp)
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.LocationOn,
-                                contentDescription = "Location Pin",
-                                tint = Color.White,
-                                modifier = Modifier.size(28.dp)
-                            )
-                            Spacer(modifier = Modifier.width(16.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = location.name ?: "Unknown Coordinates",
-                                    color = Color.White,
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Bold
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.LocationOn,
+                                    contentDescription = "Location Pin",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(28.dp)
                                 )
-                                Text(
-                                    text = if (location.position?.latitude != null) {
-                                        "Lat: ${location.position?.latitude?.toString()?.take(7)}, Lon: ${location.position?.longitude?.toString()?.take(7)}"
-                                    } else {
-                                        "Open in Google Maps"
-                                    },
-                                    color = Color.LightGray,
-                                    fontSize = 12.sp
+                                Spacer(modifier = Modifier.width(16.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = location.name ?: "Unknown Coordinates",
+                                        color = Color.White,
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Text(
+                                        text = if (location.position?.latitude != null) {
+                                            "Lat: ${location.position?.latitude?.toString()?.take(7)}, Lon: ${location.position?.longitude?.toString()?.take(7)}"
+                                        } else {
+                                            "Open in Google Maps"
+                                        },
+                                        color = Color.LightGray,
+                                        fontSize = 12.sp
+                                    )
+                                }
+                                Icon(
+                                    imageVector = Icons.Default.PlayArrow,
+                                    contentDescription = "Map Launcher",
+                                    tint = Color.LightGray,
+                                    modifier = Modifier.size(16.dp)
                                 )
                             }
-                            Icon(
-                                imageVector = Icons.Default.PlayArrow,
-                                contentDescription = "Map Launcher",
-                                tint = Color.LightGray,
-                                modifier = Modifier.size(16.dp)
-                            )
+
+                            if (lat != null && lon != null) {
+                                Spacer(modifier = Modifier.height(12.dp))
+                                val positionLatLng = remember(lat, lon) { LatLng(lat, lon) }
+                                val cameraPositionState = rememberCameraPositionState {
+                                    position = CameraPosition.fromLatLngZoom(positionLatLng, 12f)
+                                }
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(150.dp)
+                                        .clip(RoundedCornerShape(8.dp))
+                                ) {
+                                    GoogleMap(
+                                        modifier = Modifier.fillMaxSize(),
+                                        cameraPositionState = cameraPositionState,
+                                        properties = MapProperties(
+                                            mapStyleOptions = MapStyleOptions.loadRawResourceStyle(context, R.raw.map_style_dark)
+                                        ),
+                                        uiSettings = MapUiSettings(
+                                            zoomControlsEnabled = false,
+                                            myLocationButtonEnabled = false,
+                                            mapToolbarEnabled = false,
+                                            scrollGesturesEnabled = false,
+                                            zoomGesturesEnabled = false,
+                                            tiltGesturesEnabled = false,
+                                            rotationGesturesEnabled = false
+                                        )
+                                    ) {
+                                        Marker(
+                                            state = MarkerState(position = positionLatLng),
+                                            title = location.name ?: "Captured Location"
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
                 }
