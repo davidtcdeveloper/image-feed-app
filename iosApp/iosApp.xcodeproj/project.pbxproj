@@ -20,6 +20,7 @@
 		4AEE59556DA6EADB1DFB3A94 /* SearchViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E1949CA4CC0721B37ED3C17 /* SearchViewModel.swift */; };
 		5252C0672DA90D2556389956 /* CollectionsFeedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 298ED366617419B1EFC70A9C /* CollectionsFeedView.swift */; };
 		56B0305B5D3847FC6B326502 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE8509E5A49E4A5CAAEB3ADB /* ContentView.swift */; };
+		578E70FD9BF3D49506D0F93F /* AnimationPrimitives.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D64FD58F855E3EB9CE9011 /* AnimationPrimitives.swift */; };
 		598B065C17D40292754A667C /* SearchViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E1949CA4CC0721B37ED3C17 /* SearchViewModel.swift */; };
 		5B583CC50CC494A6C810CBF6 /* CollectionDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 500FCC73158DBC28123C57D0 /* CollectionDetailView.swift */; };
 		60CB1AC2D681625138724B4C /* AdaptiveLayoutHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF61A3F7036F2537D2F8745F /* AdaptiveLayoutHelper.swift */; };
@@ -39,11 +40,13 @@
 		E73E1BB01DC9A07D73B5EE81 /* CollectionDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 500FCC73158DBC28123C57D0 /* CollectionDetailView.swift */; };
 		ECAF30CCE7441589DD2986F7 /* KFImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = A52E766EFBC2CFA8C9E3063F /* KFImage.swift */; };
 		EE2E6F06824C1F3FBF2D40B9 /* KFImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = A52E766EFBC2CFA8C9E3063F /* KFImage.swift */; };
+		F1784764E2B66FFB8487C8C6 /* AnimationPrimitives.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D64FD58F855E3EB9CE9011 /* AnimationPrimitives.swift */; };
 		F9FC4D46C2489345C4F5A30E /* FeedViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBF03DE24E6E4B163090C57 /* FeedViewModel.swift */; };
 		FF86FCBD1B9AB0C102683571 /* UserProfileViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EB1FE8AA5494D00679598F4 /* UserProfileViewModel.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		06D64FD58F855E3EB9CE9011 /* AnimationPrimitives.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnimationPrimitives.swift; sourceTree = "<group>"; };
 		298ED366617419B1EFC70A9C /* CollectionsFeedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionsFeedView.swift; sourceTree = "<group>"; };
 		2EB1FE8AA5494D00679598F4 /* UserProfileViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfileViewModel.swift; sourceTree = "<group>"; };
 		3172037528BC5F82E8C06F5D /* CollectionsFeedViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionsFeedViewModel.swift; sourceTree = "<group>"; };
@@ -70,6 +73,7 @@
 			isa = PBXGroup;
 			children = (
 				DF61A3F7036F2537D2F8745F /* AdaptiveLayoutHelper.swift */,
+				06D64FD58F855E3EB9CE9011 /* AnimationPrimitives.swift */,
 				F543015C899423D4B01CEB2E /* Assets.xcassets */,
 				500FCC73158DBC28123C57D0 /* CollectionDetailView.swift */,
 				6A45CA5093D791064865721B /* CollectionDetailViewModel.swift */,
@@ -239,7 +243,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "if [ -z \"$KOTLIN_BUILD_INVOKED\" ]; then\n  export KOTLIN_BUILD_INVOKED=1\n  \"$SRCROOT/../gradlew\" -p \"$SRCROOT/..\" :shared:embedAndSignAppleFrameworkForXcode\nfi\n";
+			shellScript = "if [ \"YES\" = \"$OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED\" ]; then\n  echo \"Skipping Gradle build task invocation due to OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED environment variable set to \\\"YES\\\"\"\n  exit 0\nfi\nif [ -z \"$KOTLIN_BUILD_INVOKED\" ]; then\n  export KOTLIN_BUILD_INVOKED=1\n  \"$SRCROOT/../gradlew\" -p \"$SRCROOT/..\" :shared:embedAndSignAppleFrameworkForXcode\nfi";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -249,6 +253,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				60CB1AC2D681625138724B4C /* AdaptiveLayoutHelper.swift in Sources */,
+				F1784764E2B66FFB8487C8C6 /* AnimationPrimitives.swift in Sources */,
 				5B583CC50CC494A6C810CBF6 /* CollectionDetailView.swift in Sources */,
 				BF1A6987C043125A0E0FA03A /* CollectionDetailViewModel.swift in Sources */,
 				5252C0672DA90D2556389956 /* CollectionsFeedView.swift in Sources */,
@@ -272,6 +277,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				2A221BFD55873867678BFB18 /* AdaptiveLayoutHelper.swift in Sources */,
+				578E70FD9BF3D49506D0F93F /* AnimationPrimitives.swift in Sources */,
 				E73E1BB01DC9A07D73B5EE81 /* CollectionDetailView.swift in Sources */,
 				4A361949DA7731BD6E3905E6 /* CollectionDetailViewModel.swift in Sources */,
 				61570D134B38C644FF37AB34 /* CollectionsFeedView.swift in Sources */,

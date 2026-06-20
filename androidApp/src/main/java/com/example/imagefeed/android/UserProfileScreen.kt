@@ -93,11 +93,21 @@ import com.example.imagefeed.model.User
 import com.example.imagefeed.model.UserStats
 import com.example.imagefeed.presentation.ProfileTab
 import com.example.imagefeed.presentation.UserProfileState
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
+import com.example.imagefeed.android.util.bounceClick
+import com.example.imagefeed.android.util.staggeredEntrance
+import com.example.imagefeed.android.util.UserProfileHeaderSkeleton
+import com.example.imagefeed.android.util.PhotoGridSkeleton
+import com.example.imagefeed.android.util.CollectionMosaicCardSkeleton
 import kotlin.math.roundToInt
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
 fun UserProfileScreen(
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedVisibilityScope,
     username: String,
     onBack: () -> Unit,
     onPhotoClick: (Photo) -> Unit,
@@ -158,9 +168,7 @@ fun UserProfileScreen(
                 .background(Color(0xFF0F0F11))
         ) {
             if (state.isHeaderLoading && state.user == null) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = Color.White)
-                }
+                UserProfileHeaderSkeleton()
             } else if (state.error != null && state.user == null) {
                 Column(
                     modifier = Modifier
@@ -183,6 +191,8 @@ fun UserProfileScreen(
             } else {
                 state.user?.let { user ->
                     UserProfileContent(
+                        sharedTransitionScope = sharedTransitionScope,
+                        animatedVisibilityScope = animatedVisibilityScope,
                         user = user,
                         state = state,
                         onTabSelect = { presenter.selectTab(it) },
@@ -196,8 +206,11 @@ fun UserProfileScreen(
     }
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun UserProfileContent(
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedVisibilityScope,
     user: User,
     state: UserProfileState,
     onTabSelect: (ProfileTab) -> Unit,
@@ -235,6 +248,8 @@ fun UserProfileContent(
             when (state.activeTab) {
                 ProfileTab.PORTFOLIO -> {
                     PortfolioTabContent(
+                        sharedTransitionScope = sharedTransitionScope,
+                        animatedVisibilityScope = animatedVisibilityScope,
                         photos = state.portfolioPhotos,
                         isLoading = state.isLoadingContent,
                         onLoadMore = onLoadMore,
@@ -243,6 +258,8 @@ fun UserProfileContent(
                 }
                 ProfileTab.LIKES -> {
                     PortfolioTabContent(
+                        sharedTransitionScope = sharedTransitionScope,
+                        animatedVisibilityScope = animatedVisibilityScope,
                         photos = state.likedPhotos,
                         isLoading = state.isLoadingContent,
                         onLoadMore = onLoadMore,
@@ -392,7 +409,7 @@ fun SocialBadge(label: String, handle: String, onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .background(Color(0xFF1E1E24), RoundedCornerShape(16.dp))
-            .clickable { onClick() }
+            .bounceClick { onClick() }
             .padding(horizontal = 12.dp, vertical = 6.dp)
     ) {
         Text(
@@ -447,8 +464,11 @@ fun ProfileTabSelector(
     }
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun PortfolioTabContent(
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedVisibilityScope,
     photos: List<Photo>,
     isLoading: Boolean,
     onLoadMore: () -> Unit,
@@ -472,14 +492,7 @@ fun PortfolioTabContent(
 
     Box(modifier = Modifier.fillMaxSize()) {
         if (photos.isEmpty() && isLoading) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(48.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator(color = Color.White)
-            }
+            PhotoGridSkeleton()
         } else if (photos.isEmpty()) {
             Box(
                 modifier = Modifier
@@ -502,7 +515,11 @@ fun PortfolioTabContent(
                 userScrollEnabled = false // Scroll is controlled by parent vertical scroll
             ) {
                 items(photos, key = { it.id }) { photo ->
+                    val index = photos.indexOfFirst { it.id == photo.id }
                     PhotoCard(
+                        sharedTransitionScope = sharedTransitionScope,
+                        animatedVisibilityScope = animatedVisibilityScope,
+                        index = index,
                         photo = photo,
                         onClick = { onPhotoClick(photo) },
                         onUserClick = {} // Disable click on same user to avoid looping
@@ -551,13 +568,15 @@ fun CollectionsTabContent(
 
     Box(modifier = Modifier.fillMaxSize()) {
         if (collections.isEmpty() && isLoading) {
-            Box(
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(48.dp),
-                contentAlignment = Alignment.Center
+                    .padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                CircularProgressIndicator(color = Color.White)
+                repeat(3) {
+                    CollectionMosaicCardSkeleton()
+                }
             }
         } else if (collections.isEmpty()) {
             Box(
@@ -580,7 +599,12 @@ fun CollectionsTabContent(
                 userScrollEnabled = false
             ) {
                 items(collections, key = { it.id }) { col ->
-                    CollectionRowLayout(collection = col, onClick = { onCollectionClick(col) })
+                    val index = collections.indexOfFirst { it.id == col.id }
+                    CollectionRowLayout(
+                        collection = col,
+                        modifier = Modifier.staggeredEntrance(index),
+                        onClick = { onCollectionClick(col) }
+                    )
                 }
 
                 if (isLoading) {
@@ -601,14 +625,17 @@ fun CollectionsTabContent(
 }
 
 @Composable
-fun CollectionRowLayout(collection: PhotoCollection, onClick: () -> Unit) {
+fun CollectionRowLayout(
+    collection: PhotoCollection,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
     Card(
         shape = RoundedCornerShape(12.dp),
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .height(200.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .clickable { onClick() }
+            .bounceClick(onClick = onClick)
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             val coverPhoto = collection.coverPhoto

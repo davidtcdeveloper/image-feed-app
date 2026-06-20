@@ -33,12 +33,55 @@ struct CollectionDetailView: View {
                 .ignoresSafeArea()
 
             if viewModel.photos.isEmpty, viewModel.isLoadingPhotos, viewModel.isHeaderLoading {
-                VStack {
-                    Spacer()
-                    ProgressView()
-                        .tint(.white)
-                    Spacer()
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 16) {
+                        // Header skeleton
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color.white.opacity(0.06))
+                            .frame(height: 300)
+                            .shimmer()
+                        
+                        // Related collections label skeleton
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(Color.white.opacity(0.06))
+                            .frame(width: 150, height: 20)
+                            .padding(.horizontal, 16)
+                            .shimmer()
+                        
+                        // Related collections placeholder
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 12) {
+                                ForEach(0..<3, id: \.self) { _ in
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .fill(Color.white.opacity(0.06))
+                                        .frame(width: 160, height: 110)
+                                        .shimmer()
+                                }
+                            }
+                            .padding(.horizontal, 16)
+                        }
+
+                        // Grid photos label skeleton
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(Color.white.opacity(0.06))
+                            .frame(width: 100, height: 20)
+                            .padding(.horizontal, 16)
+                            .shimmer()
+
+                        // Grid photos placeholder
+                        HStack(alignment: .top, spacing: 8) {
+                            ForEach(0..<columnCount, id: \.self) { _ in
+                                VStack(spacing: 8) {
+                                    ForEach(0..<3, id: \.self) { index in
+                                        PhotoCardSkeleton(height: index % 2 == 0 ? 180 : 240)
+                                    }
+                                }
+                            }
+                        }
+                        .padding(.horizontal, 8)
+                    }
                 }
+                .ignoresSafeArea(edges: .top)
             } else {
                 ScrollView {
                     VStack(spacing: 0) {
@@ -162,9 +205,14 @@ struct CollectionDetailView: View {
                                                 AdaptiveLayoutHelper.photosForColumn(index: colIndex, totalColumns: columnCount, from: viewModel.photos),
                                                 id: \.id)
                                             { photo in
-                                                CollectionPhotoGridCard(photo: photo, viewModel: viewModel) {
+                                                let flatIndex = viewModel.photos.firstIndex(where: { $0.id == photo.id }) ?? 0
+                                                Button(action: {
                                                     onPhotoSelect(photo.id)
+                                                }) {
+                                                    CollectionPhotoGridCard(photo: photo, viewModel: viewModel, onSelect: {})
+                                                        .staggeredReveal(index: flatIndex)
                                                 }
+                                                .buttonStyle(SpringCardButtonStyle())
                                             }
                                         }
                                     }
@@ -248,6 +296,7 @@ struct RelatedCollectionCard: View {
             }
             .frame(width: 160, height: 110)
         }
+        .buttonStyle(SpringCardButtonStyle())
     }
 }
 

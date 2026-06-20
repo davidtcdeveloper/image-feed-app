@@ -35,6 +35,7 @@ struct ContentView: View {
 
 struct CollectionsFeedTabView: View {
     @State private var path = NavigationPath()
+    @Namespace private var dummyNamespace
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -59,6 +60,7 @@ struct CollectionsFeedTabView: View {
                     case .photo:
                         PhotoDetailsView(
                             photoId: item.id,
+                            heroNamespace: dummyNamespace,
                             onUserSelect: { username in
                                 path.append(CollectionPathItem(id: username, type: .user))
                             },
@@ -121,6 +123,8 @@ struct PhotosFeedTabView: View {
     @State private var path = NavigationPath()
     @State private var isShaking = false
     @Namespace private var categoryNamespace
+    @Namespace private var heroNamespace
+    @State private var selectedPhotoForHero: Photo? = nil
 
     private var columnCount: Int {
         #if os(iOS)
@@ -132,8 +136,12 @@ struct PhotosFeedTabView: View {
 
     var body: some View {
         NavigationStack(path: $path) {
-            VStack(spacing: 0) {
-                // Sliding horizontal category bar
+            ZStack {
+                Color(hex: "0F0F11")
+                    .ignoresSafeArea()
+
+                VStack(spacing: 0) {
+                    // Sliding horizontal category bar
                 ScrollView(.horizontal, showsIndicators: false) {
                     LazyHStack(spacing: 12) {
                         CategoryTabButton(
@@ -209,8 +217,11 @@ struct PhotosFeedTabView: View {
                                                 PhotoCard(
                                                     photo: photo,
                                                     viewModel: viewModel,
+                                                    heroNamespace: heroNamespace,
                                                     onSelect: { photoId in
-                                                        path.append(FeedPathItem(id: photoId, type: .photo))
+                                                        withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
+                                                            selectedPhotoForHero = photo
+                                                        }
                                                     },
                                                     onUserSelect: { username in
                                                         path.append(FeedPathItem(id: username, type: .user))
@@ -249,12 +260,39 @@ struct PhotosFeedTabView: View {
                             }
                     }
                 }
+
+                if let photo = selectedPhotoForHero {
+                    PhotoDetailsView(
+                        photoId: photo.id,
+                        heroNamespace: heroNamespace,
+                        onDismiss: {
+                            withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
+                                selectedPhotoForHero = nil
+                            }
+                        },
+                        onUserSelect: { username in
+                            withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
+                                selectedPhotoForHero = nil
+                            }
+                            path.append(FeedPathItem(id: username, type: .user))
+                        },
+                        onTagSelect: { tag in
+                            withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
+                                selectedPhotoForHero = nil
+                            }
+                            path.append(FeedPathItem(id: tag, type: .search))
+                        })
+                        .transition(.asymmetric(insertion: .identity, removal: .identity))
+                        .zIndex(1)
+                }
             }
             .navigationTitle("FEED")
             #if os(iOS)
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbarBackground(Color(hex: "0F0F11"), for: .navigationBar)
                 .toolbarColorScheme(.dark, for: .navigationBar)
+                .toolbar(selectedPhotoForHero != nil ? .hidden : .visible, for: .navigationBar)
+                .toolbar(selectedPhotoForHero != nil ? .hidden : .automatic, for: .tabBar)
             #endif
                 .toolbar {
                     #if os(iOS)
@@ -298,6 +336,7 @@ struct PhotosFeedTabView: View {
                     case .photo:
                         PhotoDetailsView(
                             photoId: item.id,
+                            heroNamespace: heroNamespace,
                             onUserSelect: { username in
                                 path.append(FeedPathItem(id: username, type: .user))
                             },
@@ -381,6 +420,7 @@ struct CategoryTabButton: View {
 struct PhotoCard: View {
     let photo: Photo
     let viewModel: FeedViewModel
+    let heroNamespace: Namespace.ID
     let onSelect: (String) -> Void
     let onUserSelect: (String) -> Void
 
@@ -407,6 +447,7 @@ struct PhotoCard: View {
                 .fade(duration: 0.25)
                 .resizable()
                 .aspectRatio(contentRatio(photoWidth: Int(photo.width), photoHeight: Int(photo.height)), contentMode: .fit)
+                .matchedGeometryEffect(id: "photo-img-\(photo.id)", in: heroNamespace)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 .contentShape(Rectangle())
                 .onTapGesture {

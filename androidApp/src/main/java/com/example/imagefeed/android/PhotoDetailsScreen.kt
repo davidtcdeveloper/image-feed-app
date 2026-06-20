@@ -87,11 +87,15 @@ import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
 import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.MapUiSettings
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
 
-
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
 fun PhotoDetailsScreen(
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedVisibilityScope,
     photoId: String,
     onBack: () -> Unit,
     onUserClick: (String) -> Unit,
@@ -174,6 +178,8 @@ fun PhotoDetailsScreen(
             } else {
                 state.photo?.let { photo ->
                     PhotoDetailsContent(
+                        sharedTransitionScope = sharedTransitionScope,
+                        animatedVisibilityScope = animatedVisibilityScope,
                         photo = photo,
                         stats = state.stats,
                         onTrackDownload = { presenter.trackDownload() },
@@ -186,9 +192,11 @@ fun PhotoDetailsScreen(
     }
 }
 
-@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class, ExperimentalSharedTransitionApi::class)
 @Composable
 fun PhotoDetailsContent(
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedVisibilityScope,
     photo: Photo,
     stats: PhotoStats?,
     onTrackDownload: () -> Unit,
@@ -227,12 +235,19 @@ fun PhotoDetailsContent(
                 .fillMaxWidth()
                 .aspectRatio(aspectRatio.coerceIn(0.6f, 1.8f))
         ) {
-            Image(
-                painter = painter,
-                contentDescription = photo.altDescription ?: photo.description,
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop
-            )
+            with(sharedTransitionScope) {
+                Image(
+                    painter = painter,
+                    contentDescription = photo.altDescription ?: photo.description,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .sharedElement(
+                            sharedContentState = rememberSharedContentState(key = "photo_img_${photo.id}"),
+                            animatedVisibilityScope = animatedVisibilityScope
+                        ),
+                    contentScale = ContentScale.Crop
+                )
+            }
 
             // Photographer Attribution on bottom-overlay
             Box(
