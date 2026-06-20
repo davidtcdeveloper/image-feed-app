@@ -46,6 +46,8 @@ The `specs/` folder currently contains the following implementation and design d
 *   `specs/18_linting_tooling_plan.md`
 *   `specs/19_koin_to_metro_migration_plan.md`
 *   `specs/20_testing_strategy.md`
+*   `specs/21_android_fluid_animations_plan.md`
+*   `specs/21_ios_fluid_animations_plan.md`
 *   `specs/implementation_plan.md`
 *   `specs/steps.md`
 
@@ -280,4 +282,17 @@ These are the spec files that the implementation notes and planning references s
     *   Add future tests for search, photo detail loading, and collection browsing in the same shared integration style rather than one-off class probes.
 4.  **Verify locally and in CI:**
     *   Run `./gradlew :shared:allTests` as the standard quality gate for shared behavior changes.
+
+### Step 21: Fluid Animations Implementation
+1.  **Android Jetpack Compose Motion:**
+    *   Configure `SharedTransitionLayout` wrapping the navigation container.
+    *   Implement staggered grid entrance effects and bounce-scale clickable interactions.
+    *   Design and deploy linear-gradient shimmering skeleton placeholders.
+    *   Reference the detailed blueprint in `specs/21_android_fluid_animations_plan.md`.
+2.  **iOS SwiftUI Fluid Transitions:**
+    *   Implement overlay-based hero transitions using `matchedGeometryEffect` to zoom grid cards seamlessly.
+    *   Build staggered bottom-up transitions for loaded feed grids using index-delayed spring curves.
+    *   Develop springy press-scale feedbacks on interactive card buttons.
+    *   Replace standard activity views with shimmering layout outlines in `ContentView`, `CollectionsFeedView`, and `UserProfileView`.
+    *   Reference the detailed blueprint in `specs/21_ios_fluid_animations_plan.md`.
 
