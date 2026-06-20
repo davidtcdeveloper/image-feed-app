@@ -54,5 +54,6 @@ class UserProfileViewModel {
 
     deinit {
         closeable?.close()
+        presenter.clear()
     }
 }

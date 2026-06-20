@@ -66,5 +66,6 @@ class FeedViewModel {
 
     deinit {
         closeable?.close()
+        presenter.clear()
     }
 }

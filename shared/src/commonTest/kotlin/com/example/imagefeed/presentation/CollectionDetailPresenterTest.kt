@@ -12,9 +12,7 @@ import com.example.imagefeed.model.User
 import com.example.imagefeed.model.UserLinks
 import com.example.imagefeed.model.UserStats
 import com.example.imagefeed.repository.UnsplashRepository
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -67,7 +65,7 @@ class CollectionDetailPresenterTest {
                 CollectionDetailPresenter(
                     repository = repository,
                     collectionId = "col-1",
-                    presenterScope = CoroutineScope(dispatcher + SupervisorJob()),
+                    presenterScopeFactory = TestPresenterScopeFactory(dispatcher),
                 )
 
             advanceUntilIdle()

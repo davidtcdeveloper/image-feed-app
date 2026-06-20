@@ -7,9 +7,6 @@ import com.example.imagefeed.util.CommonFlow
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
 import dev.zacsweers.metro.AssistedInject
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -27,8 +24,9 @@ data class PhotoDetailsState(
 class PhotoDetailsPresenter(
     private val repository: UnsplashRepository,
     @Assisted private val photoId: String,
-    private val presenterScope: CoroutineScope = CoroutineScope(Dispatchers.Main + SupervisorJob()),
+    private val presenterScopeFactory: PresenterScopeFactory,
 ) {
+    private val presenterScope: PresenterScope = presenterScopeFactory.create()
     @AssistedFactory
     interface Factory {
         fun create(photoId: String): PhotoDetailsPresenter
@@ -42,16 +40,23 @@ class PhotoDetailsPresenter(
         loadDetails()
     }
 
+    fun clear() {
+        presenterScope.clear()
+    }
+
+    private fun isActive(): Boolean = presenterScope.coroutineContext.isActive()
+
     fun loadDetails() {
         _state.update { it.copy(isLoading = true, error = null) }
 
         presenterScope.launch {
+            if (!isActive()) return@launch
             try {
                 // Fetch photo details and statistics from Unsplash API
                 val details = repository.getPhotoDetails(photoId)
                 val stats = repository.getPhotoStats(photoId)
 
-                _state.update {
+                _state.updateIfActive(coroutineContext) {
                     it.copy(
                         photo = details,
                         stats = stats,
@@ -60,7 +65,7 @@ class PhotoDetailsPresenter(
                     )
                 }
             } catch (e: Exception) {
-                _state.update {
+                _state.updateIfActive(coroutineContext) {
                     it.copy(
                         isLoading = false,
                         error = e.message ?: "Failed to load photo details",
@@ -73,6 +78,7 @@ class PhotoDetailsPresenter(
     fun trackDownload() {
         _state.value.photo?.let { photo ->
             presenterScope.launch {
+                if (!isActive()) return@launch
                 repository.trackDownload(photo.links.downloadLocation)
             }
         }

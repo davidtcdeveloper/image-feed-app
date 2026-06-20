@@ -46,6 +46,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
@@ -99,6 +100,9 @@ fun PhotoDetailsScreen(
 ) {
     val context = LocalPlatformContext.current
     val presenter = remember(photoId) { MetroHelper.getPhotoDetailsPresenter(photoId) }
+    DisposableEffect(presenter) {
+        onDispose { presenter.clear() }
+    }
     val state by presenter.state.collectAsStateWithLifecycle(initialValue = PhotoDetailsState())
 
     Scaffold(

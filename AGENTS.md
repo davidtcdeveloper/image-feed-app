@@ -63,7 +63,14 @@ Welcome! If you are an AI developer agent working on this codebase, please adher
 *   Use the **Shared Presenter** pattern. All states (loading, paging, error) are represented by Kotlin data classes and streamed via `StateFlow` from `shared`.
 *   Platform UIs must simply bind to these states (with Compose state collection on Android, and a Swift ViewModel mapping flows to SwiftUI variables on iOS).
 
-### 3. API Key & Security
+### 3. Coroutine Lifecycle Standards
+*   Presenter coroutines must be lifecycle-aware. Do not create unmanaged `CoroutineScope` instances inside shared presenters or other state holders.
+*   Prefer injected presenter-scoped dependencies (for example `PresenterScope`/`PresenterScopeFactory`) and cancel work in `clear()`/`close()` when a screen is dismissed.
+*   Keep presenter creation and teardown aligned with DI and platform lifecycle boundaries; avoid turning UI presenters into long-lived app singletons.
+*   Guard state updates with shared helpers such as `CoroutineContext.isActive()` and `MutableStateFlow.updateIfActive(...)` (or `ensureActive()`/`currentCoroutineContext().ensureActive()` where appropriate) instead of repeating ad-hoc `if (!isActive())` checks around every emission.
+*   Platform wrappers should own presenter cleanup on teardown so in-flight work cannot continue after the UI has moved on.
+
+### 4. API Key & Security
 *   **NEVER commit API access keys, client secrets, or credentials** to this repository.
 *   The project loads the API access key from `local.properties` (which is git-ignored) and exposes it via `BuildKonfig` to the shared client. 
 *   If you introduce new configurations, follow this pattern: load them in Gradle and inject via BuildKonfig.

@@ -13,9 +13,7 @@ import com.example.imagefeed.model.User
 import com.example.imagefeed.model.UserLinks
 import com.example.imagefeed.model.UserStats
 import com.example.imagefeed.repository.UnsplashRepository
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -39,7 +37,7 @@ class UnifiedSearchPresenterTest {
                         ),
                 )
 
-            val presenter = UnifiedSearchPresenter(repository, CoroutineScope(dispatcher + SupervisorJob()))
+            val presenter = UnifiedSearchPresenter(repository, TestPresenterScopeFactory(dispatcher))
             presenter.updateQuery("forest")
 
             // Advance time partially, but not past the debounce delay (300ms)
@@ -71,7 +69,7 @@ class UnifiedSearchPresenterTest {
                     collectionsResponse = SearchResponse(1, 1, listOf(collectionSummary("c-1"))),
                 )
 
-            val presenter = UnifiedSearchPresenter(repository, CoroutineScope(dispatcher + SupervisorJob()))
+            val presenter = UnifiedSearchPresenter(repository, TestPresenterScopeFactory(dispatcher))
             presenter.updateQuery("nature")
             testScheduler.advanceTimeBy(350)
             advanceUntilIdle()

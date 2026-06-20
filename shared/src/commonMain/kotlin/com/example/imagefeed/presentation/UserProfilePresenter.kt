@@ -9,9 +9,6 @@ import com.example.imagefeed.util.CommonFlow
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
 import dev.zacsweers.metro.AssistedInject
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -43,8 +40,9 @@ data class UserProfileState(
 class UserProfilePresenter(
     private val repository: UnsplashRepository,
     @Assisted private val username: String,
-    private val presenterScope: CoroutineScope = CoroutineScope(Dispatchers.Main + SupervisorJob()),
+    private val presenterScopeFactory: PresenterScopeFactory,
 ) {
+    private val presenterScope: PresenterScope = presenterScopeFactory.create()
     @AssistedFactory
     interface Factory {
         fun create(username: String): UserProfilePresenter
@@ -58,21 +56,30 @@ class UserProfilePresenter(
         loadProfile()
     }
 
+    fun clear() {
+        presenterScope.clear()
+    }
+
+    private fun isActive(): Boolean = presenterScope.coroutineContext.isActive()
+
     fun loadProfile() {
         _state.update { it.copy(isHeaderLoading = true, error = null) }
         presenterScope.launch {
+            if (!isActive()) return@launch
             try {
                 val profile = repository.getUserProfile(username)
-                _state.update { it.copy(user = profile, isHeaderLoading = false) }
+                if (!_state.updateIfActive(coroutineContext) {
+                        it.copy(user = profile, isHeaderLoading = false)
+                    }) return@launch
                 // Fetch the default tab's first page of content
                 loadNextPage()
             } catch (e: Exception) {
-                _state.update {
-                    it.copy(
-                        isHeaderLoading = false,
-                        error = e.message ?: "Failed to load user profile",
-                    )
-                }
+                if (!_state.updateIfActive(coroutineContext) {
+                        it.copy(
+                            isHeaderLoading = false,
+                            error = e.message ?: "Failed to load user profile",
+                        )
+                    }) return@launch
             }
         }
     }
@@ -114,21 +121,22 @@ class UserProfilePresenter(
 
         _state.update { it.copy(isLoadingStats = true, error = null) }
         presenterScope.launch {
+            if (!isActive()) return@launch
             try {
                 val userStats = repository.getUserStats(username)
-                _state.update {
-                    it.copy(
-                        stats = userStats,
-                        isLoadingStats = false,
-                    )
-                }
+                if (!_state.updateIfActive(coroutineContext) {
+                        it.copy(
+                            stats = userStats,
+                            isLoadingStats = false,
+                        )
+                    }) return@launch
             } catch (e: Exception) {
-                _state.update {
-                    it.copy(
-                        isLoadingStats = false,
-                        error = e.message ?: "Failed to load stats",
-                    )
-                }
+                if (!_state.updateIfActive(coroutineContext) {
+                        it.copy(
+                            isLoadingStats = false,
+                            error = e.message ?: "Failed to load stats",
+                        )
+                    }) return@launch
             }
         }
     }
@@ -142,24 +150,25 @@ class UserProfilePresenter(
                 if (currentState.portfolioReachedEnd) return
                 _state.update { it.copy(isLoadingContent = true, error = null) }
                 presenterScope.launch {
+                    if (!isActive()) return@launch
                     try {
                         val nextPage = if (currentState.portfolioPhotos.isEmpty()) 1 else currentState.portfolioPage + 1
                         val items = repository.getUserPhotos(username, page = nextPage, perPage = 15)
-                        _state.update {
-                            it.copy(
-                                portfolioPhotos = it.portfolioPhotos + items,
-                                portfolioPage = nextPage,
-                                portfolioReachedEnd = items.size < 15,
-                                isLoadingContent = false,
-                            )
-                        }
+                        if (!_state.updateIfActive(coroutineContext) {
+                                it.copy(
+                                    portfolioPhotos = it.portfolioPhotos + items,
+                                    portfolioPage = nextPage,
+                                    portfolioReachedEnd = items.size < 15,
+                                    isLoadingContent = false,
+                                )
+                            }) return@launch
                     } catch (e: Exception) {
-                        _state.update {
-                            it.copy(
-                                isLoadingContent = false,
-                                error = e.message ?: "Failed to load uploaded photos",
-                            )
-                        }
+                        if (!_state.updateIfActive(coroutineContext) {
+                                it.copy(
+                                    isLoadingContent = false,
+                                    error = e.message ?: "Failed to load uploaded photos",
+                                )
+                            }) return@launch
                     }
                 }
             }
@@ -167,24 +176,25 @@ class UserProfilePresenter(
                 if (currentState.likesReachedEnd) return
                 _state.update { it.copy(isLoadingContent = true, error = null) }
                 presenterScope.launch {
+                    if (!isActive()) return@launch
                     try {
                         val nextPage = if (currentState.likedPhotos.isEmpty()) 1 else currentState.likesPage + 1
                         val items = repository.getUserLikes(username, page = nextPage, perPage = 15)
-                        _state.update {
-                            it.copy(
-                                likedPhotos = it.likedPhotos + items,
-                                likesPage = nextPage,
-                                likesReachedEnd = items.size < 15,
-                                isLoadingContent = false,
-                            )
-                        }
+                        if (!_state.updateIfActive(coroutineContext) {
+                                it.copy(
+                                    likedPhotos = it.likedPhotos + items,
+                                    likesPage = nextPage,
+                                    likesReachedEnd = items.size < 15,
+                                    isLoadingContent = false,
+                                )
+                            }) return@launch
                     } catch (e: Exception) {
-                        _state.update {
-                            it.copy(
-                                isLoadingContent = false,
-                                error = e.message ?: "Failed to load liked photos",
-                            )
-                        }
+                        if (!_state.updateIfActive(coroutineContext) {
+                                it.copy(
+                                    isLoadingContent = false,
+                                    error = e.message ?: "Failed to load liked photos",
+                                )
+                            }) return@launch
                     }
                 }
             }
@@ -192,24 +202,25 @@ class UserProfilePresenter(
                 if (currentState.collectionsReachedEnd) return
                 _state.update { it.copy(isLoadingContent = true, error = null) }
                 presenterScope.launch {
+                    if (!isActive()) return@launch
                     try {
                         val nextPage = if (currentState.collections.isEmpty()) 1 else currentState.collectionsPage + 1
                         val items = repository.getUserCollections(username, page = nextPage, perPage = 15)
-                        _state.update {
-                            it.copy(
-                                collections = it.collections + items,
-                                collectionsPage = nextPage,
-                                collectionsReachedEnd = items.size < 15,
-                                isLoadingContent = false,
-                            )
-                        }
+                        if (!_state.updateIfActive(coroutineContext) {
+                                it.copy(
+                                    collections = it.collections + items,
+                                    collectionsPage = nextPage,
+                                    collectionsReachedEnd = items.size < 15,
+                                    isLoadingContent = false,
+                                )
+                            }) return@launch
                     } catch (e: Exception) {
-                        _state.update {
-                            it.copy(
-                                isLoadingContent = false,
-                                error = e.message ?: "Failed to load user collections",
-                            )
-                        }
+                        if (!_state.updateIfActive(coroutineContext) {
+                                it.copy(
+                                    isLoadingContent = false,
+                                    error = e.message ?: "Failed to load user collections",
+                                )
+                            }) return@launch
                     }
                 }
             }
@@ -240,6 +251,7 @@ class UserProfilePresenter(
 
     fun trackDownload(photo: Photo) {
         presenterScope.launch {
+            if (!isActive()) return@launch
             repository.trackDownload(photo.links.downloadLocation)
         }
     }
