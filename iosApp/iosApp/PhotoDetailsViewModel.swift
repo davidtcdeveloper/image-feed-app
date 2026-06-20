@@ -34,5 +34,6 @@ class PhotoDetailsViewModel {
 
     deinit {
         closeable?.close()
+        presenter.clear()
     }
 }

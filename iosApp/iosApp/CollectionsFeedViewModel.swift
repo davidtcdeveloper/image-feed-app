@@ -36,5 +36,6 @@ class CollectionsFeedViewModel {
 
     deinit {
         closeable?.close()
+        presenter.clear()
     }
 }

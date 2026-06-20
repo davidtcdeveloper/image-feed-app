@@ -73,5 +73,6 @@ class SearchViewModel {
 
     deinit {
         closeable?.close()
+        presenter.clear()
     }
 }

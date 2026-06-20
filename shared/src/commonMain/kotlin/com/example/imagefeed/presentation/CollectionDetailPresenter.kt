@@ -7,9 +7,6 @@ import com.example.imagefeed.util.CommonFlow
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
 import dev.zacsweers.metro.AssistedInject
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -31,8 +28,9 @@ data class CollectionDetailState(
 class CollectionDetailPresenter(
     private val repository: UnsplashRepository,
     @Assisted private val collectionId: String,
-    private val presenterScope: CoroutineScope = CoroutineScope(Dispatchers.Main + SupervisorJob()),
+    private val presenterScopeFactory: PresenterScopeFactory,
 ) {
+    private val presenterScope: PresenterScope = presenterScopeFactory.create()
     @AssistedFactory
     interface Factory {
         fun create(collectionId: String): CollectionDetailPresenter
@@ -47,24 +45,36 @@ class CollectionDetailPresenter(
         loadNextPhotosPage()
     }
 
+    fun clear() {
+        presenterScope.clear()
+    }
+
+    private fun isActive(): Boolean = presenterScope.coroutineContext.isActive()
+
     fun loadHeaderAndRelated() {
         _state.update { it.copy(isHeaderLoading = true, error = null) }
         presenterScope.launch {
+            if (!isActive()) return@launch
             try {
                 // Fetch collection metadata
                 val collectionDetails = repository.getCollection(collectionId)
-                _state.update { it.copy(collection = collectionDetails) }
+                _state.updateIfActive(coroutineContext) { it.copy(collection = collectionDetails) }
             } catch (e: Exception) {
-                _state.update { it.copy(error = e.message ?: "Failed to load collection details") }
+                _state.updateIfActive(coroutineContext) {
+                    it.copy(error = e.message ?: "Failed to load collection details")
+                }
             }
 
+            if (!isActive()) return@launch
             try {
                 // Fetch related collections
                 val relatedCollections = repository.getRelatedCollections(collectionId)
-                _state.update { it.copy(related = relatedCollections, isHeaderLoading = false) }
+                _state.updateIfActive(coroutineContext) {
+                    it.copy(related = relatedCollections, isHeaderLoading = false)
+                }
             } catch (e: Exception) {
                 // Ignore related fetch failures so it doesn't break the main details
-                _state.update { it.copy(isHeaderLoading = false) }
+                _state.updateIfActive(coroutineContext) { it.copy(isHeaderLoading = false) }
             }
         }
     }
@@ -76,10 +86,12 @@ class CollectionDetailPresenter(
         _state.update { it.copy(isLoadingPhotos = true, error = null) }
 
         presenterScope.launch {
+            if (!isActive()) return@launch
             try {
                 val nextPage = if (currentState.photos.isEmpty()) 1 else currentState.photosPage + 1
                 val newPhotos = repository.getCollectionPhotos(collectionId, page = nextPage, perPage = 15)
 
+                if (!isActive()) return@launch
                 _state.update {
                     it.copy(
                         photos = it.photos + newPhotos,
@@ -90,6 +102,7 @@ class CollectionDetailPresenter(
                     )
                 }
             } catch (e: Exception) {
+                if (!isActive()) return@launch
                 _state.update {
                     it.copy(
                         isLoadingPhotos = false,
@@ -102,6 +115,7 @@ class CollectionDetailPresenter(
 
     fun trackDownload(photo: Photo) {
         presenterScope.launch {
+            if (!isActive()) return@launch
             repository.trackDownload(photo.links.downloadLocation)
         }
     }

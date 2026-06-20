@@ -55,6 +55,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -161,6 +162,12 @@ class MainActivity : ComponentActivity() {
                 ) {
                     val backStackState = rememberNavBackStack(Screen.Feed)
                     backStack = backStackState
+                    DisposableEffect(Unit) {
+                        onDispose {
+                            presenter.clear()
+                            collectionsPresenter.clear()
+                        }
+                    }
 
                     val navigateToTab = { targetScreen: Screen ->
                         if (targetScreen is Screen.Feed) {

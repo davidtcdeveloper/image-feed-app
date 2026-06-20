@@ -56,6 +56,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -100,6 +101,9 @@ fun SearchScreen(
 ) {
     val context = LocalPlatformContext.current
     val presenter = remember { MetroHelper.getUnifiedSearchPresenter() }
+    DisposableEffect(presenter) {
+        onDispose { presenter.clear() }
+    }
     val state by presenter.state.collectAsStateWithLifecycle(initialValue = SearchState())
     var showFiltersSheet by remember { mutableStateOf(false) }
 

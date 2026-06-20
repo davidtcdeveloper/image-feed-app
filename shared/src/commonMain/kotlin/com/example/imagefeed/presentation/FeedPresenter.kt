@@ -5,9 +5,6 @@ import com.example.imagefeed.model.Topic
 import com.example.imagefeed.repository.UnsplashRepository
 import com.example.imagefeed.util.CommonFlow
 import dev.zacsweers.metro.Inject
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -29,8 +26,9 @@ data class FeedState(
 @Inject
 class FeedPresenter(
     private val repository: UnsplashRepository,
-    private val presenterScope: CoroutineScope = CoroutineScope(Dispatchers.Main + SupervisorJob()),
+    private val presenterScopeFactory: PresenterScopeFactory,
 ) {
+    private val presenterScope: PresenterScope = presenterScopeFactory.create()
     private val _state = MutableStateFlow(FeedState())
     val state: StateFlow<FeedState> = _state.asStateFlow()
     val iosState: CommonFlow<FeedState> = CommonFlow(state)
@@ -40,20 +38,27 @@ class FeedPresenter(
         loadNextPage()
     }
 
+    fun clear() {
+        presenterScope.clear()
+    }
+
+    private fun isActive(): Boolean = presenterScope.coroutineContext.isActive()
+
     fun loadTopics() {
         if (_state.value.isLoadingTopics) return
         _state.update { it.copy(isLoadingTopics = true) }
         presenterScope.launch {
+            if (!isActive()) return@launch
             try {
                 val list = repository.getTopics(page = 1, perPage = 25)
-                _state.update {
+                _state.updateIfActive(coroutineContext) {
                     it.copy(
                         topics = list,
                         isLoadingTopics = false,
                     )
                 }
             } catch (e: Exception) {
-                _state.update {
+                _state.updateIfActive(coroutineContext) {
                     it.copy(
                         isLoadingTopics = false,
                         error = e.message ?: "Failed to load categories",
@@ -87,6 +92,7 @@ class FeedPresenter(
         _state.update { it.copy(isRefreshing = true, error = null) }
 
         presenterScope.launch {
+            if (!isActive()) return@launch
             try {
                 val slug = _state.value.selectedTopicSlug
                 val freshPhotos =
@@ -96,7 +102,7 @@ class FeedPresenter(
                         repository.getTopicPhotos(slug, page = 1, perPage = 15)
                     }
 
-                _state.update {
+                _state.updateIfActive(coroutineContext) {
                     it.copy(
                         photos = freshPhotos,
                         isLoading = false,
@@ -107,7 +113,7 @@ class FeedPresenter(
                     )
                 }
             } catch (e: Exception) {
-                _state.update {
+                _state.updateIfActive(coroutineContext) {
                     it.copy(
                         isRefreshing = false,
                         error = e.message ?: "Failed to refresh feed",
@@ -124,6 +130,7 @@ class FeedPresenter(
         _state.update { it.copy(isLoading = true, error = null) }
 
         presenterScope.launch {
+            if (!isActive()) return@launch
             try {
                 val slug = currentState.selectedTopicSlug
                 val nextPage = if (currentState.photos.isEmpty()) 1 else currentState.page + 1
@@ -135,7 +142,7 @@ class FeedPresenter(
                         repository.getTopicPhotos(slug, page = nextPage, perPage = 15)
                     }
 
-                _state.update {
+                _state.updateIfActive(coroutineContext) {
                     it.copy(
                         photos = it.photos + newPhotos,
                         isLoading = false,
@@ -145,7 +152,7 @@ class FeedPresenter(
                     )
                 }
             } catch (e: Exception) {
-                _state.update {
+                _state.updateIfActive(coroutineContext) {
                     it.copy(
                         isLoading = false,
                         error = e.message ?: "Failed to load photos",
@@ -157,6 +164,7 @@ class FeedPresenter(
 
     fun trackDownload(photo: Photo) {
         presenterScope.launch {
+            if (!isActive()) return@launch
             repository.trackDownload(photo.links.downloadLocation)
         }
     }

@@ -21,6 +21,10 @@ This document outlines the detailed steps to execute the project implementation,
 *   **Decision:** Pass the UI container width to the image loader (Coil on Android, Kingfisher on iOS) and dynamically modify the Unsplash image request parameters (`w` parameter).
 *   **Reasoning:** Unsplash photos are high resolution (several megapixels). Downloading full-size photos on a mobile screen causes high memory usage, laggy scrolling, and huge cellular data consumption. Appending `&w=X` (where X is the screen or card width in pixels) and `&q=80&auto=format` instructs the Unsplash/Imgix CDN to downscale and optimize the image on-the-fly. This delivers fast, fluid image loads while fully complying with Unsplash's hotlinking terms.
 
+### 4. Presenter Coroutine Lifecycle Hardening
+*   **Decision:** Keep the shared presenter architecture but make each presenter own a lifecycle-aware scope and cancel work in `clear()`.
+*   **Reasoning:** The shared presenters should remain the integration layer between KMP state logic and platform UIs, but they need explicit teardown boundaries to avoid state emissions after the UI has moved on. We use a shared `PresenterScope` plus `CoroutineContext.isActive()` and `MutableStateFlow.updateIfActive(...)` helpers so presenters can guard state updates without repeating boilerplate checks around every emission.
+
 ---
 
 ## Current Specification Inventory
@@ -48,6 +52,7 @@ The `specs/` folder currently contains the following implementation and design d
 *   `specs/20_testing_strategy.md`
 *   `specs/21_android_fluid_animations_plan.md`
 *   `specs/21_ios_fluid_animations_plan.md`
+*   `specs/22_coroutine_lifecycle_scope_management.md`
 *   `specs/implementation_plan.md`
 *   `specs/steps.md`
 
@@ -310,4 +315,17 @@ These are the spec files that the implementation notes and planning references s
     *   Develop springy press-scale feedbacks on interactive card buttons.
     *   Replace standard activity views with shimmering layout outlines in `ContentView`, `CollectionsFeedView`, and `UserProfileView`.
     *   Reference the detailed blueprint in `specs/21_ios_fluid_animations_plan.md`.
+
+### Step 23: Coroutine Lifecycle & Metro DI Hardening
+1.  **Audit current presenter scopes:**
+    *   Review every shared presenter for self-created `CoroutineScope` instances and identify which ones are retained by Metro graph singletons.
+2.  **Introduce shared lifecycle abstractions:**
+    *   Add a `DispatcherProvider` plus a presenter cleanup contract in `shared/commonMain` so coroutines can be cancelled deterministically.
+3.  **Refactor Metro bindings for screen-scoped instances:**
+    *   Replace app-scoped presenter singletons with factory-based creation for feed, search, collections, random-photo, and detail/profile flows.
+4.  **Wire cleanup into Android and iOS layers:**
+    *   Update platform wrappers to create presenters per screen and invoke cleanup when the UI lifecycle ends.
+5.  **Verify cancellation behavior:**
+    *   Add shared tests with a test dispatcher to confirm that in-flight work is cancelled and state emissions stop once the presenter is cleared.
+    *   Track the implementation plan in `specs/22_coroutine_lifecycle_scope_management.md`.
 

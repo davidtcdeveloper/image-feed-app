@@ -6,10 +6,7 @@ import com.example.imagefeed.model.User
 import com.example.imagefeed.repository.UnsplashRepository
 import com.example.imagefeed.util.CommonFlow
 import dev.zacsweers.metro.Inject
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -48,14 +45,22 @@ data class SearchState(
 @Inject
 class UnifiedSearchPresenter(
     private val repository: UnsplashRepository,
-    private val presenterScope: CoroutineScope = CoroutineScope(Dispatchers.Main + SupervisorJob()),
+    private val presenterScopeFactory: PresenterScopeFactory,
 ) {
+    private val presenterScope: PresenterScope = presenterScopeFactory.create()
     private val _state = MutableStateFlow(SearchState())
     val state: StateFlow<SearchState> = _state.asStateFlow()
     val iosState: CommonFlow<SearchState> = CommonFlow(state)
 
     private var searchJob: Job? = null
     private val defaultSuggestions = listOf("nature", "travel", "minimalist", "urban", "vintage", "people", "neon", "textures")
+
+    fun clear() {
+        searchJob?.cancel()
+        presenterScope.clear()
+    }
+
+    private fun isActive(): Boolean = presenterScope.coroutineContext.isActive()
 
     fun updateQuery(newQuery: String) {
         _state.update { it.copy(query = newQuery) }
@@ -76,7 +81,9 @@ class UnifiedSearchPresenter(
 
         searchJob =
             presenterScope.launch {
+                if (!isActive()) return@launch
                 delay(300) // Debounce search requests
+                if (!isActive()) return@launch
                 performSearch(newQuery, reset = true)
             }
     }
@@ -115,6 +122,7 @@ class UnifiedSearchPresenter(
         _state.update { it.copy(isLoadingMore = true) }
 
         presenterScope.launch {
+            if (!isActive()) return@launch
             try {
                 val query = currentState.query
                 when (currentState.activeTab) {
@@ -130,47 +138,47 @@ class UnifiedSearchPresenter(
                                 orientation = currentState.filters.orientation,
                                 contentFilter = currentState.filters.contentFilter,
                             )
-                        _state.update {
-                            it.copy(
-                                photos = it.photos + response.results,
-                                photoPage = nextPage,
-                                hasReachedEnd = response.results.isEmpty() || nextPage >= response.totalPages,
-                                isLoadingMore = false,
-                            )
-                        }
+                        if (!_state.updateIfActive(coroutineContext) {
+                                it.copy(
+                                    photos = it.photos + response.results,
+                                    photoPage = nextPage,
+                                    hasReachedEnd = response.results.isEmpty() || nextPage >= response.totalPages,
+                                    isLoadingMore = false,
+                                )
+                            }) return@launch
                     }
                     SearchTab.COLLECTIONS -> {
                         val nextPage = currentState.collectionPage + 1
                         val response = repository.searchCollections(query, nextPage, 15)
-                        _state.update {
-                            it.copy(
-                                collections = it.collections + response.results,
-                                collectionPage = nextPage,
-                                hasReachedEnd = response.results.isEmpty() || nextPage >= response.totalPages,
-                                isLoadingMore = false,
-                            )
-                        }
+                        if (!_state.updateIfActive(coroutineContext) {
+                                it.copy(
+                                    collections = it.collections + response.results,
+                                    collectionPage = nextPage,
+                                    hasReachedEnd = response.results.isEmpty() || nextPage >= response.totalPages,
+                                    isLoadingMore = false,
+                                )
+                            }) return@launch
                     }
                     SearchTab.USERS -> {
                         val nextPage = currentState.userPage + 1
                         val response = repository.searchUsers(query, nextPage, 15)
-                        _state.update {
-                            it.copy(
-                                users = it.users + response.results,
-                                userPage = nextPage,
-                                hasReachedEnd = response.results.isEmpty() || nextPage >= response.totalPages,
-                                isLoadingMore = false,
-                            )
-                        }
+                        if (!_state.updateIfActive(coroutineContext) {
+                                it.copy(
+                                    users = it.users + response.results,
+                                    userPage = nextPage,
+                                    hasReachedEnd = response.results.isEmpty() || nextPage >= response.totalPages,
+                                    isLoadingMore = false,
+                                )
+                            }) return@launch
                     }
                 }
             } catch (e: Exception) {
-                _state.update {
-                    it.copy(
-                        isLoadingMore = false,
-                        error = e.message ?: "Failed to load more results",
-                    )
-                }
+                if (!_state.updateIfActive(coroutineContext) {
+                        it.copy(
+                            isLoadingMore = false,
+                            error = e.message ?: "Failed to load more results",
+                        )
+                    }) return@launch
             }
         }
     }
@@ -213,6 +221,7 @@ class UnifiedSearchPresenter(
         }
 
         presenterScope.launch {
+            if (!isActive()) return@launch
             try {
                 when (_state.value.activeTab) {
                     SearchTab.PHOTOS -> {
@@ -226,42 +235,42 @@ class UnifiedSearchPresenter(
                                 orientation = _state.value.filters.orientation,
                                 contentFilter = _state.value.filters.contentFilter,
                             )
-                        _state.update {
-                            it.copy(
-                                photos = response.results,
-                                hasReachedEnd = response.results.isEmpty() || response.totalPages <= 1,
-                                isLoading = false,
-                            )
-                        }
+                        if (!_state.updateIfActive(coroutineContext) {
+                                it.copy(
+                                    photos = response.results,
+                                    hasReachedEnd = response.results.isEmpty() || response.totalPages <= 1,
+                                    isLoading = false,
+                                )
+                            }) return@launch
                     }
                     SearchTab.COLLECTIONS -> {
                         val response = repository.searchCollections(query, 1, 15)
-                        _state.update {
-                            it.copy(
-                                collections = response.results,
-                                hasReachedEnd = response.results.isEmpty() || response.totalPages <= 1,
-                                isLoading = false,
-                            )
-                        }
+                        if (!_state.updateIfActive(coroutineContext) {
+                                it.copy(
+                                    collections = response.results,
+                                    hasReachedEnd = response.results.isEmpty() || response.totalPages <= 1,
+                                    isLoading = false,
+                                )
+                            }) return@launch
                     }
                     SearchTab.USERS -> {
                         val response = repository.searchUsers(query, 1, 15)
-                        _state.update {
-                            it.copy(
-                                users = response.results,
-                                hasReachedEnd = response.results.isEmpty() || response.totalPages <= 1,
-                                isLoading = false,
-                            )
-                        }
+                        if (!_state.updateIfActive(coroutineContext) {
+                                it.copy(
+                                    users = response.results,
+                                    hasReachedEnd = response.results.isEmpty() || response.totalPages <= 1,
+                                    isLoading = false,
+                                )
+                            }) return@launch
                     }
                 }
             } catch (e: Exception) {
-                _state.update {
-                    it.copy(
-                        isLoading = false,
-                        error = e.message ?: "Search failed",
-                    )
-                }
+                if (!_state.updateIfActive(coroutineContext) {
+                        it.copy(
+                            isLoading = false,
+                            error = e.message ?: "Search failed",
+                        )
+                    }) return@launch
             }
         }
     }

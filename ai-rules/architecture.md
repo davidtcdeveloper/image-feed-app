@@ -12,6 +12,13 @@
 - Keep platform code responsible for rendering, input handling, and navigation shell behavior.
 - Preserve the existing KMP/SwiftUI/Compose separation instead of moving logic into the UI layers.
 
+## Coroutine Lifecycle Standards
+
+- Shared presenters should use lifecycle-aware scopes supplied by DI instead of creating unmanaged coroutine scopes internally.
+- Cancel in-flight work in teardown hooks such as `clear()`/`close()` and avoid leaving work running after a screen is dismissed.
+- Centralize cancellation-aware state updates with shared helpers like `CoroutineContext.isActive()` and `MutableStateFlow.updateIfActive(...)` or `ensureActive()` rather than repeating ad-hoc active checks in every presenter.
+- Platform wrappers remain responsible for presenter creation and cleanup so the UI lifecycle owns the boundary.
+
 ## Image and API Compliance
 
 - Preserve Unsplash image URL parameters such as `ixid`.

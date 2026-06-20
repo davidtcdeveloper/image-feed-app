@@ -40,5 +40,6 @@ class CollectionDetailViewModel {
 
     deinit {
         closeable?.close()
+        presenter.clear()
     }
 }

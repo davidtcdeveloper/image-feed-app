@@ -12,9 +12,8 @@ import com.example.imagefeed.model.User
 import com.example.imagefeed.model.UserLinks
 import com.example.imagefeed.model.UserStats
 import com.example.imagefeed.repository.UnsplashRepository
-import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -33,8 +32,8 @@ class FeedPresenterTest {
                     topics = listOf(Topic("t1", "nature", "Nature", totalPhotos = 2)),
                     photosByPage = mapOf("editorial" to mapOf(1 to listOf(photo("p1"), photo("p2")))),
                 )
-
-            val presenter = FeedPresenter(repository, CoroutineScope(dispatcher + SupervisorJob()))
+ 
+            val presenter = FeedPresenter(repository, TestPresenterScopeFactory(dispatcher))
 
             advanceUntilIdle()
 
@@ -53,6 +52,22 @@ class FeedPresenterTest {
         }
 
     @Test
+    fun clearCancelsPendingWorkAndPreventsStateUpdates() =
+        runTest {
+            val dispatcher = StandardTestDispatcher(testScheduler)
+            val repository = BlockingFeedRepository()
+            val presenter = FeedPresenter(repository, TestPresenterScopeFactory(dispatcher))
+
+            advanceUntilIdle()
+            presenter.clear()
+            repository.releaseTopics(listOf(Topic("t1", "nature", "Nature", totalPhotos = 2)))
+            advanceUntilIdle()
+
+            assertTrue(presenter.state.value.topics.isEmpty())
+            assertTrue(presenter.state.value.isLoadingTopics)
+        }
+
+    @Test
     fun refreshReplacesFeedContent() =
         runTest {
             val dispatcher = StandardTestDispatcher(testScheduler)
@@ -62,8 +77,8 @@ class FeedPresenterTest {
                     photosByPage = mapOf("editorial" to mapOf(1 to listOf(photo("old-1")))),
                     refreshedPhotosByPage = mapOf("editorial" to mapOf(1 to listOf(photo("fresh-1"), photo("fresh-2")))),
                 )
-
-            val presenter = FeedPresenter(repository, CoroutineScope(dispatcher + SupervisorJob()))
+ 
+            val presenter = FeedPresenter(repository, TestPresenterScopeFactory(dispatcher))
             advanceUntilIdle()
 
             presenter.refresh()
@@ -90,8 +105,8 @@ class FeedPresenterTest {
                             "nature" to mapOf(1 to listOf(photo("nature-1"))),
                         ),
                 )
-
-            val presenter = FeedPresenter(repository, CoroutineScope(dispatcher + SupervisorJob()))
+ 
+            val presenter = FeedPresenter(repository, TestPresenterScopeFactory(dispatcher))
             advanceUntilIdle()
 
             presenter.selectTopic("nature")
@@ -122,6 +137,103 @@ class FeedPresenterTest {
                 ),
             links = PhotoLinks("self", "html", "download", "download-location"),
         )
+
+    private class BlockingFeedRepository : UnsplashRepository {
+        private val topicsDeferred = CompletableDeferred<List<Topic>>()
+
+        fun releaseTopics(topics: List<Topic>) {
+            topicsDeferred.complete(topics)
+        }
+
+        override suspend fun getPhotos(
+            page: Int,
+            perPage: Int,
+        ): List<Photo> = emptyList()
+
+        override suspend fun getPhotoDetails(id: String): Photo = error("Not used")
+
+        override suspend fun getPhotoStats(id: String): PhotoStats = error("Not used")
+
+        override suspend fun getRandomPhotos(
+            orientation: String?,
+            query: String?,
+            count: Int?,
+        ): List<Photo> = emptyList()
+
+        override suspend fun trackDownload(downloadLocationUrl: String) = Unit
+
+        override suspend fun getCollections(
+            page: Int,
+            perPage: Int,
+        ): List<PhotoCollection> = emptyList()
+
+        override suspend fun getCollection(id: String): PhotoCollection = error("Not used")
+
+        override suspend fun getCollectionPhotos(
+            id: String,
+            page: Int,
+            perPage: Int,
+        ): List<Photo> = emptyList()
+
+        override suspend fun getRelatedCollections(id: String): List<PhotoCollection> = emptyList()
+
+        override suspend fun getTopics(
+            page: Int,
+            perPage: Int,
+        ): List<Topic> = topicsDeferred.await()
+
+        override suspend fun getTopic(idOrSlug: String): Topic = error("Not used")
+
+        override suspend fun getTopicPhotos(
+            idOrSlug: String,
+            page: Int,
+            perPage: Int,
+        ): List<Photo> = emptyList()
+
+        override suspend fun getUserProfile(username: String): User = error("Not used")
+
+        override suspend fun getUserPhotos(
+            username: String,
+            page: Int,
+            perPage: Int,
+        ): List<Photo> = emptyList()
+
+        override suspend fun getUserLikes(
+            username: String,
+            page: Int,
+            perPage: Int,
+        ): List<Photo> = emptyList()
+
+        override suspend fun getUserCollections(
+            username: String,
+            page: Int,
+            perPage: Int,
+        ): List<PhotoCollection> = emptyList()
+
+        override suspend fun getUserStats(username: String): UserStats = error("Not used")
+
+        override suspend fun searchPhotos(
+            query: String,
+            page: Int,
+            perPage: Int,
+            orderBy: String?,
+            color: String?,
+            orientation: String?,
+            contentFilter: String?,
+        ): SearchResponse<Photo> = error("Not used")
+
+        override suspend fun searchCollections(
+            query: String,
+            page: Int,
+            perPage: Int,
+        ): SearchResponse<com.example.imagefeed.model.CollectionSummary> = error("Not used")
+
+        override suspend fun searchUsers(
+            query: String,
+            page: Int,
+            perPage: Int,
+        ): SearchResponse<User> = error("Not used")
+    }
 
     private class FakeUnsplashRepository(
         private val topics: List<Topic>,
