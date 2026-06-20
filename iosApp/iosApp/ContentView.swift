@@ -260,6 +260,7 @@ struct PhotosFeedTabView: View {
                             }
                     }
                 }
+            }
 
                 if let photo = selectedPhotoForHero {
                     PhotoDetailsView(
