@@ -52,7 +52,7 @@ The codebase is built on the **Shared Presenter Pattern**, maximizing cross-plat
 └─────────────────────────────────────────────────────────────┘
 ```
 
-* **`shared` module (`commonMain`)**: Exposes highly-optimized, stateful presenters mapping Ktor API models into declarative Kotlin `State` objects. Uses **Koin** for Dependency Injection.
+* **`shared` module (`commonMain`)**: Exposes highly-optimized, stateful presenters mapping Ktor API models into declarative Kotlin `State` objects. Uses **Metro** for compile-time Dependency Injection.
 * **`androidApp`**: Thin visual representation shell rendered entirely using Jetpack Compose.
 * **`iosApp`**: SwiftUI visual shell that binds directly to Shared flows mapped into native Swift variables.
 
