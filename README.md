@@ -68,10 +68,20 @@ To comply with security best practices, the application loads your API Access Ke
    ```
 2. Insert your Unsplash API Client Access Key inside `local.properties` using the property name shown below:
    ```properties
-   unsplash.api.key=YOUR_UNSPLASH_ACCESS_KEY_HERE
-   ```
+    unsplash.api.key=YOUR_UNSPLASH_ACCESS_KEY_HERE
+    ```
 
 ---
+
+## 🛠️ Development Workflow
+
+This project follows a spec-driven implementation process:
+- **Planning**: All features and bug fixes must have a corresponding specification in the `specs/` directory.
+- **Guidelines**: Refer to `AGENTS.md` and the `ai-rules/` folder for architectural standards and project-specific rules.
+- **Tracking**: Implementation progress is tracked in `specs/steps.md`.
+
+---
+
 
 ## 🛠️ How to Build and Run
 
@@ -111,19 +121,22 @@ To run the SwiftUI App:
 3. Select either the `iosApp` (for iPhone/iPad) or `macosApp` (for macOS) scheme in the top toolbar.
 4. Hit **Run (⌘R)**.
 
-### 💻 Running the macOS Application from Android Studio / Terminal
-If you are on macOS, you can build and run the native macOS application directly using Gradle:
+### 💻 Running the macOS Application
+The macOS app is managed within the same Xcode project as the iOS app.
+1. Open `iosApp/iosApp.xcodeproj` in **Xcode**.
+2. Select the `macosApp` scheme in the top toolbar.
+3. Hit **Run (⌘R)**.
+
+### 🧪 Testing & Verification
+To run the shared integration and package-level test suite:
 ```bash
-./gradlew :shared:assemble
-cd iosApp && xcodegen
-xcodebuild -scheme macosApp -destination 'platform=macOS' build
-open -a "$(xcodebuild -scheme macosApp -destination 'platform=macOS' -showBuildSettings | awk -F' = ' '/CODESIGNING_FOLDER_PATH/ {print $2}')"
+./gradlew :shared:allTests
 ```
 
-To integrate with Android Studio:
-1. Create a **Shell Script** run configuration.
-2. Set **Execute:** `Script text`.
-3. Paste the build/run commands listed above. You can now compile and run macOS app alongside your Android/iOS work directly within Android Studio!
+### 🧹 Code Quality & Linting
+To ensure code consistency, run the following tools before committing:
+- **Kotlin**: `./gradlew ktlintCheck detekt`
+- **Swift**: `swiftlint` and `swiftformat --lint .`
 
 ---
 
