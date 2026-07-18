@@ -329,3 +329,12 @@ These are the spec files that the implementation notes and planning references s
     *   Add shared tests with a test dispatcher to confirm that in-flight work is cancelled and state emissions stop once the presenter is cleared.
     *   Track the implementation plan in `specs/22_coroutine_lifecycle_scope_management.md`.
 
+### Step 24: July 2026 Dependency Assessment & Update Plan
+1.  **Dependency Audit:**
+    *   Compare currently declared versions catalog against latest stable versions in July 2026.
+2.  **Define Mitigation & Integration Risks:**
+    *   Assess impact of upgrading Gradle 9.6.1, AGP 9.3.0, Ktor 3.5.1, and Google Maps dependencies.
+3.  **Reference Specification:**
+    *   Track the assessment table and step-by-step update plan in `specs/14_dependency_updates.md`.
+
+
