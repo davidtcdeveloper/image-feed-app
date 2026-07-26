@@ -1,7 +1,7 @@
 [versions]
 # Kotlin & Plugins
 kotlin = "2.4.10"
-agp = "9.3.0"          # Android Gradle Plugin
+agp = "9.3.1"          # Android Gradle Plugin
 buildkonfig = "0.22.0"
 ktlint = "14.2.0"
 detekt = "1.23.8"
