@@ -9,7 +9,7 @@ detekt = "1.23.8"
 # Core KMP Libraries
 coroutines = "1.11.0"
 serialization = "1.11.0"
-metro = "1.4.0"
+metro = "1.4.2"
 
 # Networking & Logging (Ktor)
 ktor = "3.5.2"
@@ -20,10 +20,10 @@ androidx-lifecycle = "2.11.0"
 androidx-navigation = "2.9.8"
 androidx-navigation3 = "1.2.0-alpha07"
 androidx-lifecycle-navigation3 = "2.11.0"
-androidx-compose-bom = "2026.06.01"
+androidx-compose-bom = "2026.08.00"
 coil = "3.5.0"
 play-services-maps = "20.0.0"
-maps-compose = "8.4.0"
+maps-compose = "8.5.0"
 
 [libraries]
 # Coroutines & Serialization
