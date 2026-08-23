@@ -225,7 +225,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "if [ -z \"$KOTLIN_BUILD_INVOKED\" ]; then\n  export KOTLIN_BUILD_INVOKED=1\n  \"$SRCROOT/../gradlew\" -p \"$SRCROOT/..\" :shared:embedAndSignAppleFrameworkForXcode\nfi\n";
+			shellScript = "if [ \"YES\" = \"$OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED\" ]; then\n  echo \"Skipping Gradle build task invocation due to OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED environment variable set to \\\"YES\\\"\"\n  exit 0\nfi\nif [ -z \"$KOTLIN_BUILD_INVOKED\" ]; then\n  export KOTLIN_BUILD_INVOKED=1\n  \"$SRCROOT/../gradlew\" -p \"$SRCROOT/..\" :shared:embedAndSignAppleFrameworkForXcode\nfi";
 		};
 		FE6189B836B2F5614841F754 /* Compile Kotlin Shared Framework */ = {
 			isa = PBXShellScriptBuildPhase;
