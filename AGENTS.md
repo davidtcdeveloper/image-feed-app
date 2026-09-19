@@ -24,12 +24,12 @@ This repository combines a shared Kotlin module with Android Compose, iOS SwiftU
 Use the existing project tooling for verification and build work:
 
 *   `./gradlew :shared:allTests` — run the shared integration/package-level test suite.
-
-*   `./gradlew :androidApp:assembleDebug`
-*   `./gradlew :shared:compileKotlinIosSimulatorArm64`
-*   `cd iosApp && xcodegen`
-*   `./gradlew ktlintCheck detekt`
-*   `swiftlint` (or the project’s SwiftLint entry point)
+*   `./gradlew :androidApp:assembleDebug` — build Android debug application.
+*   `./gradlew :shared:compileKotlinIosSimulatorArm64` — verify Kotlin Native framework compilation for iOS.
+*   `cd iosApp && xcodegen && xcodebuild -project iosApp.xcodeproj -scheme iosApp -destination 'generic/platform=iOS Simulator' build CODE_SIGNING_ALLOWED=NO` — verify full iOS app build and Swift compilation.
+*   `./gradlew ktlintFormat` — format Kotlin files automatically according to project rules.
+*   `./gradlew ktlintCheck detekt` — run Kotlin linting and static analysis (detecting unused properties/parameters).
+*   `swiftlint lint iosApp/iosApp` — run SwiftLint on iOS source code.
 *   `swiftformat --lint .` (if SwiftFormat is configured)
 
 ## Workflow
@@ -40,6 +40,9 @@ Use the existing project tooling for verification and build work:
 *   Update the relevant spec and `specs/steps.md` together when the implementation path changes.
 *   Prefer small, traceable changes and clarify ambiguous requirements before coding.
 *   **Zero Warning Policy**: Actively monitor and resolve compiler warnings. After every significant change, run `analyze_file` on modified files or execute a full build to identify new warnings or deprecations. Fix them immediately to keep the codebase clean.
+*   **Dual-Platform Build Policy**: Whenever changes affect `shared/` or `iosApp/`, verify BOTH the Android build (`:androidApp:assembleDebug`) AND the iOS build via `xcodebuild` (iOS Simulator). Never assume a shared change works in Swift just because Kotlin compiles.
+*   **Cross-Language Reference Auditing**: Before removing or refactoring any declaration in `shared/commonMain`, search both Kotlin files (`androidApp/`, `shared/`) AND Swift files (`iosApp/`). Keep in mind Swift interop name transformations (e.g., `description` -> `description_`, closure signatures). Code that must be invoked from Swift only and has no calls from Kotlin should be annotated with `@Suppress("unused") // Invoked on Swift code`.
+*   **Zero Dead Code Policy**: Do NOT create speculative, unused helper properties, functions, or parameters. When replacing a parameter, service, or pattern during refactoring, eliminate the old code, variables, and imports across all call sites in the same change set.
 *   **Lint and static-analysis policy**: After making code changes, run the relevant project linting/static-analysis tools and fix any issues they report before considering the work complete.
 *   **Toolchain feedback loop**: Use ktlint, detekt, SwiftLint, and SwiftFormat (when configured) to get consistent feedback on Kotlin and Swift code, then resolve the reported issues in the same change set whenever practical.
 

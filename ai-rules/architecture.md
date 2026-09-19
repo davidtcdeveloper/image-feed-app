@@ -5,6 +5,7 @@
 - Keep business logic, models, networking, and presentation state in `shared/commonMain`.
 - Keep `androidApp`, `iosApp`, and `macosApp` thin UI shells that observe shared state.
 - Avoid duplicating pagination, network parsing, or offset logic in platform modules.
+- Avoid speculative dead code; when auditing shared declarations, verify they are not consumed by Swift in `iosApp`. Code that must be invoked from Swift only and has no calls from Kotlin should be annotated with `@Suppress("unused") // Invoked on Swift code`.
 
 ## Shared Presenter Pattern
 

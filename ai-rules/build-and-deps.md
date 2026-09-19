@@ -16,3 +16,6 @@
 
 - If iOS/macOS changes are involved, keep the existing XcodeGen and Apple target setup in mind.
 - Do not introduce duplicate platform-only logic when the shared module can absorb the behavior.
+- Always verify iOS builds after shared changes with:
+  `cd iosApp && xcodegen && xcodebuild -project iosApp.xcodeproj -scheme iosApp -destination 'generic/platform=iOS Simulator' build CODE_SIGNING_ALLOWED=NO`
+- When auditing shared declarations for dead code, always inspect `iosApp/` for Swift consumers before deleting. Code that must be invoked from Swift only and has no calls from Kotlin should be annotated with `@Suppress("unused") // Invoked on Swift code`.
