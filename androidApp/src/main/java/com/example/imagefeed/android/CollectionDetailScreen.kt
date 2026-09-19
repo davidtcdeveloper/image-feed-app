@@ -3,6 +3,9 @@ package com.example.imagefeed.android
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
@@ -63,14 +66,10 @@ import coil3.compose.rememberAsyncImagePainter
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.example.imagefeed.android.util.BlurHashDecoder
+import com.example.imagefeed.android.util.bounceClick
 import com.example.imagefeed.model.Photo
 import com.example.imagefeed.model.PhotoCollection
 import com.example.imagefeed.presentation.CollectionDetailState
-import androidx.compose.animation.AnimatedVisibilityScope
-import androidx.compose.animation.ExperimentalSharedTransitionApi
-import androidx.compose.animation.SharedTransitionScope
-import com.example.imagefeed.android.util.bounceClick
-import com.example.imagefeed.android.util.staggeredEntrance
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
@@ -80,7 +79,7 @@ fun CollectionDetailScreen(
     collectionId: String,
     onBack: () -> Unit,
     onPhotoClick: (Photo) -> Unit,
-    onCollectionClick: (String) -> Unit
+    onCollectionClick: (String) -> Unit,
 ) {
     val context = LocalPlatformContext.current
     val metroHelper = remember { com.example.imagefeed.di.MetroHelper }
@@ -93,14 +92,18 @@ fun CollectionDetailScreen(
     val gridState = rememberLazyStaggeredGridState()
 
     // Determine when to trigger infinite pre-fetching
-    val shouldLoadMore = remember {
-        derivedStateOf {
-            val lastVisibleItem = gridState.layoutInfo.visibleItemsInfo.lastOrNull()
-            val totalItems = gridState.layoutInfo.totalItemsCount
-            if (lastVisibleItem == null || totalItems == 0) false
-            else lastVisibleItem.index >= totalItems - 5
+    val shouldLoadMore =
+        remember {
+            derivedStateOf {
+                val lastVisibleItem = gridState.layoutInfo.visibleItemsInfo.lastOrNull()
+                val totalItems = gridState.layoutInfo.totalItemsCount
+                if (lastVisibleItem == null || totalItems == 0) {
+                    false
+                } else {
+                    lastVisibleItem.index >= totalItems - 5
+                }
+            }
         }
-    }
 
     LaunchedEffect(shouldLoadMore.value) {
         if (shouldLoadMore.value) {
@@ -109,11 +112,12 @@ fun CollectionDetailScreen(
     }
 
     // Sticky Header transparency control based on scroll position
-    val showCollapsedTitle = remember {
-        derivedStateOf {
-            gridState.firstVisibleItemIndex > 0 || gridState.firstVisibleItemScrollOffset > 300
+    val showCollapsedTitle =
+        remember {
+            derivedStateOf {
+                gridState.firstVisibleItemIndex > 0 || gridState.firstVisibleItemScrollOffset > 300
+            }
         }
-    }
 
     Scaffold(
         topBar = {
@@ -122,7 +126,7 @@ fun CollectionDetailScreen(
                     AnimatedVisibility(
                         visible = showCollapsedTitle.value,
                         enter = fadeIn(),
-                        exit = fadeOut()
+                        exit = fadeOut(),
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
@@ -132,13 +136,13 @@ fun CollectionDetailScreen(
                                 color = Color.White,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.widthIn(max = 200.dp)
+                                modifier = Modifier.widthIn(max = 200.dp),
                             )
                             state.collection?.let {
                                 Text(
                                     text = "${it.totalPhotos} Photos",
                                     fontSize = 11.sp,
-                                    color = Color.LightGray
+                                    color = Color.LightGray,
                                 )
                             }
                         }
@@ -149,21 +153,23 @@ fun CollectionDetailScreen(
                         Image(
                             painter = rememberAsyncImagePainter(model = android.R.drawable.ic_media_previous),
                             contentDescription = "Back",
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier.size(24.dp),
                         )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = if (showCollapsedTitle.value) Color(0xEE0F0F11) else Color.Transparent
-                )
+                colors =
+                    TopAppBarDefaults.topAppBarColors(
+                        containerColor = if (showCollapsedTitle.value) Color(0xEE0F0F11) else Color.Transparent,
+                    ),
             )
-        }
+        },
     ) { paddingValues ->
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color(0xFF0F0F11))
-                .padding(bottom = paddingValues.calculateBottomPadding()) // top is drawn fully behind transparent top bar
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .background(Color(0xFF0F0F11))
+                    .padding(bottom = paddingValues.calculateBottomPadding()), // top is drawn fully behind transparent top bar
         ) {
             if (state.photos.isEmpty() && state.isLoadingPhotos && state.isHeaderLoading) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -176,7 +182,7 @@ fun CollectionDetailScreen(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(bottom = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalItemSpacing = 8.dp
+                    verticalItemSpacing = 8.dp,
                 ) {
                     // Header Item: Spans full width
                     item(span = StaggeredGridItemSpan.FullLine) {
@@ -184,7 +190,6 @@ fun CollectionDetailScreen(
                             sharedTransitionScope = sharedTransitionScope,
                             animatedVisibilityScope = animatedVisibilityScope,
                             collection = state.collection,
-                            isHeaderLoading = state.isHeaderLoading
                         )
                     }
 
@@ -193,7 +198,7 @@ fun CollectionDetailScreen(
                         item(span = StaggeredGridItemSpan.FullLine) {
                             RelatedCollectionsCarousel(
                                 related = state.related,
-                                onCollectionClick = onCollectionClick
+                                onCollectionClick = onCollectionClick,
                             )
                         }
                     }
@@ -206,7 +211,7 @@ fun CollectionDetailScreen(
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 18.sp,
                                 color = Color.White,
-                                modifier = Modifier.padding(start = 12.dp, top = 16.dp, bottom = 8.dp)
+                                modifier = Modifier.padding(start = 12.dp, top = 16.dp, bottom = 8.dp),
                             )
                         }
                     }
@@ -225,7 +230,7 @@ fun CollectionDetailScreen(
                                     val userProfileUrl = "${photo.user.links.html}?utm_source=ImageFeedApp&utm_medium=referral"
                                     val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(userProfileUrl))
                                     context.startActivity(browserIntent)
-                                }
+                                },
                             )
                         }
                     }
@@ -233,10 +238,11 @@ fun CollectionDetailScreen(
                     if (state.isLoadingPhotos) {
                         item(span = StaggeredGridItemSpan.FullLine) {
                             Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(24.dp),
-                                contentAlignment = Alignment.Center
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .padding(24.dp),
+                                contentAlignment = Alignment.Center,
                             ) {
                                 CircularProgressIndicator(color = Color.White)
                             }
@@ -254,15 +260,15 @@ fun CollectionDetailHeader(
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope,
     collection: PhotoCollection?,
-    isHeaderLoading: Boolean
 ) {
     val context = LocalPlatformContext.current
     if (collection == null) {
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(300.dp)
-                .background(Color(0xFF1E1E24))
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(300.dp)
+                    .background(Color(0xFF1E1E24)),
         )
         return
     }
@@ -275,73 +281,81 @@ fun CollectionDetailHeader(
     }
 
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(320.dp)
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .height(320.dp),
     ) {
         // Blurred Background Cover Photo to act as beautiful backdrop
         collection.coverPhoto?.urls?.regular?.let { coverUrl ->
             with(sharedTransitionScope) {
                 Image(
-                    painter = rememberAsyncImagePainter(
-                        model = ImageRequest.Builder(context)
-                            .data(coverUrl)
-                            .crossfade(true)
-                            .build(),
-                        placeholder = placeholderBitmap?.let { BitmapPainter(it.asImageBitmap()) }
-                    ),
+                    painter =
+                        rememberAsyncImagePainter(
+                            model =
+                                ImageRequest
+                                    .Builder(context)
+                                    .data(coverUrl)
+                                    .crossfade(true)
+                                    .build(),
+                            placeholder = placeholderBitmap?.let { BitmapPainter(it.asImageBitmap()) },
+                        ),
                     contentDescription = null,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .sharedBounds(
-                            sharedContentState = rememberSharedContentState(key = "col_cover_${collection.id}"),
-                            animatedVisibilityScope = animatedVisibilityScope
-                        )
-                        .blur(20.dp),
-                    contentScale = ContentScale.Crop
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .sharedBounds(
+                                sharedContentState = rememberSharedContentState(key = "col_cover_${collection.id}"),
+                                animatedVisibilityScope = animatedVisibilityScope,
+                            ).blur(20.dp),
+                    contentScale = ContentScale.Crop,
                 )
             }
         }
 
         // Overlay Gradient for contrast
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            Color.Black.copy(alpha = 0.5f),
-                            Color(0xFF0F0F11).copy(alpha = 0.85f),
-                            Color(0xFF0F0F11)
-                        )
-                    )
-                )
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.verticalGradient(
+                            colors =
+                                listOf(
+                                    Color.Black.copy(alpha = 0.5f),
+                                    Color(0xFF0F0F11).copy(alpha = 0.85f),
+                                    Color(0xFF0F0F11),
+                                ),
+                        ),
+                    ),
         )
 
         // Contents
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 16.dp, vertical = 24.dp),
-            verticalArrangement = Arrangement.Bottom
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp, vertical = 24.dp),
+            verticalArrangement = Arrangement.Bottom,
         ) {
             // Curator details
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .clickable {
-                        val utmProfile = "${collection.user.links.html}?utm_source=ImageFeedApp&utm_medium=referral"
-                        val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(utmProfile))
-                        context.startActivity(browserIntent)
-                    }
-                    .padding(bottom = 12.dp)
+                modifier =
+                    Modifier
+                        .clickable {
+                            val utmProfile = "${collection.user.links.html}?utm_source=ImageFeedApp&utm_medium=referral"
+                            val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(utmProfile))
+                            context.startActivity(browserIntent)
+                        }.padding(bottom = 12.dp),
             ) {
                 Image(
                     painter = rememberAsyncImagePainter(model = collection.user.profileImage.medium),
                     contentDescription = collection.user.name,
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(CircleShape)
+                    modifier =
+                        Modifier
+                            .size(36.dp)
+                            .clip(CircleShape),
                 )
 
                 Spacer(modifier = Modifier.width(10.dp))
@@ -350,13 +364,13 @@ fun CollectionDetailHeader(
                     Text(
                         text = "Curated by",
                         fontSize = 11.sp,
-                        color = Color.LightGray
+                        color = Color.LightGray,
                     )
                     Text(
                         text = collection.user.name,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White
+                        color = Color.White,
                     )
                 }
             }
@@ -367,7 +381,7 @@ fun CollectionDetailHeader(
                 fontSize = 24.sp,
                 fontWeight = FontWeight.ExtraBold,
                 color = Color.White,
-                lineHeight = 28.sp
+                lineHeight = 28.sp,
             )
 
             Text(
@@ -375,7 +389,7 @@ fun CollectionDetailHeader(
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Medium,
                 color = Color.Gray,
-                modifier = Modifier.padding(top = 4.dp, bottom = 8.dp)
+                modifier = Modifier.padding(top = 4.dp, bottom = 8.dp),
             )
 
             // Description
@@ -387,7 +401,7 @@ fun CollectionDetailHeader(
                     color = Color.LightGray,
                     maxLines = 3,
                     overflow = TextOverflow.Ellipsis,
-                    lineHeight = 20.sp
+                    lineHeight = 20.sp,
                 )
             }
         }
@@ -397,30 +411,31 @@ fun CollectionDetailHeader(
 @Composable
 fun RelatedCollectionsCarousel(
     related: List<PhotoCollection>,
-    onCollectionClick: (String) -> Unit
+    onCollectionClick: (String) -> Unit,
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 16.dp)
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(top = 16.dp),
     ) {
         Text(
             text = "Related Collections",
             fontWeight = FontWeight.Bold,
             fontSize = 16.sp,
             color = Color.White,
-            modifier = Modifier.padding(start = 12.dp, bottom = 10.dp)
+            modifier = Modifier.padding(start = 12.dp, bottom = 10.dp),
         )
 
         LazyRow(
             contentPadding = PaddingValues(horizontal = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         ) {
             items(related, key = { it.id }) { item ->
                 RelatedCollectionCard(
                     collection = item,
-                    onClick = { onCollectionClick(item.id) }
+                    onClick = { onCollectionClick(item.id) },
                 )
             }
         }
@@ -430,49 +445,55 @@ fun RelatedCollectionsCarousel(
 @Composable
 fun RelatedCollectionCard(
     collection: PhotoCollection,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) {
     val context = LocalPlatformContext.current
     Card(
         shape = RoundedCornerShape(12.dp),
-        modifier = Modifier
-            .width(180.dp)
-            .height(130.dp)
-            .bounceClick(onClick = onClick)
+        modifier =
+            Modifier
+                .width(180.dp)
+                .height(130.dp)
+                .bounceClick(onClick = onClick),
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             val coverUrl = collection.coverPhoto?.urls?.small
             if (coverUrl != null) {
                 Image(
-                    painter = rememberAsyncImagePainter(
-                        model = ImageRequest.Builder(context)
-                            .data(coverUrl)
-                            .crossfade(true)
-                            .build()
-                    ),
+                    painter =
+                        rememberAsyncImagePainter(
+                            model =
+                                ImageRequest
+                                    .Builder(context)
+                                    .data(coverUrl)
+                                    .crossfade(true)
+                                    .build(),
+                        ),
                     contentDescription = collection.title,
                     modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
+                    contentScale = ContentScale.Crop,
                 )
             }
 
             // Dark semi-transparent overlay
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.8f))
-                        )
-                    )
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .background(
+                            Brush.verticalGradient(
+                                colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.8f)),
+                            ),
+                        ),
             )
 
             // Collection text details
             Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(8.dp),
-                verticalArrangement = Arrangement.Bottom
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(8.dp),
+                verticalArrangement = Arrangement.Bottom,
             ) {
                 Text(
                     text = collection.title,
@@ -480,12 +501,12 @@ fun RelatedCollectionCard(
                     fontSize = 12.sp,
                     color = Color.White,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
                 )
                 Text(
                     text = "${collection.totalPhotos} Photos",
                     fontSize = 10.sp,
-                    color = Color.LightGray
+                    color = Color.LightGray,
                 )
             }
         }

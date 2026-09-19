@@ -2,6 +2,9 @@ package com.example.imagefeed.android
 
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -20,10 +23,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
-import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.foundation.rememberScrollState
@@ -74,6 +77,10 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.LocalPlatformContext
 import coil3.compose.rememberAsyncImagePainter
+import com.example.imagefeed.android.util.CollectionMosaicCardSkeleton
+import com.example.imagefeed.android.util.PhotoGridSkeleton
+import com.example.imagefeed.android.util.bounceClick
+import com.example.imagefeed.android.util.staggeredEntrance
 import com.example.imagefeed.di.MetroHelper
 import com.example.imagefeed.model.CollectionSummary
 import com.example.imagefeed.model.Photo
@@ -81,13 +88,6 @@ import com.example.imagefeed.model.User
 import com.example.imagefeed.presentation.SearchFilters
 import com.example.imagefeed.presentation.SearchState
 import com.example.imagefeed.presentation.SearchTab
-import androidx.compose.animation.AnimatedVisibilityScope
-import androidx.compose.animation.ExperimentalSharedTransitionApi
-import androidx.compose.animation.SharedTransitionScope
-import com.example.imagefeed.android.util.bounceClick
-import com.example.imagefeed.android.util.staggeredEntrance
-import com.example.imagefeed.android.util.PhotoGridSkeleton
-import com.example.imagefeed.android.util.CollectionMosaicCardSkeleton
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
@@ -97,9 +97,8 @@ fun SearchScreen(
     initialQuery: String = "",
     onBack: () -> Unit,
     onPhotoClick: (Photo) -> Unit,
-    onUserClick: (User) -> Unit
+    onUserClick: (User) -> Unit,
 ) {
-    val context = LocalPlatformContext.current
     val presenter = remember { MetroHelper.getUnifiedSearchPresenter() }
     DisposableEffect(presenter) {
         onDispose { presenter.clear() }
@@ -117,34 +116,37 @@ fun SearchScreen(
         topBar = {
             Column(modifier = Modifier.background(Color(0xFF0F0F11))) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 8.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     IconButton(onClick = onBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back",
-                            tint = Color.White
+                            tint = Color.White,
                         )
                     }
-                    
+
                     TextField(
                         value = state.query,
                         onValueChange = { presenter.updateQuery(it) },
                         placeholder = { Text("Search Photos, Collections, Users...", color = Color.Gray, fontSize = 14.sp) },
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(52.dp),
-                        colors = TextFieldDefaults.colors(
-                            focusedContainerColor = Color(0xFF1E1E24),
-                            unfocusedContainerColor = Color(0xFF1E1E24),
-                            focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent,
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color.White
-                        ),
+                        modifier =
+                            Modifier
+                                .weight(1f)
+                                .height(52.dp),
+                        colors =
+                            TextFieldDefaults.colors(
+                                focusedContainerColor = Color(0xFF1E1E24),
+                                unfocusedContainerColor = Color(0xFF1E1E24),
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent,
+                                focusedTextColor = Color.White,
+                                unfocusedTextColor = Color.White,
+                            ),
                         shape = RoundedCornerShape(26.dp),
                         singleLine = true,
                         trailingIcon = {
@@ -153,7 +155,7 @@ fun SearchScreen(
                                     Icon(Icons.Default.Clear, contentDescription = "Clear", tint = Color.LightGray)
                                 }
                             }
-                        }
+                        },
                     )
 
                     Spacer(modifier = Modifier.width(4.dp))
@@ -162,7 +164,7 @@ fun SearchScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.List, // Standard List serves as an elegant filter icon
                             contentDescription = "Filters",
-                            tint = if (state.filters != SearchFilters()) Color.White else Color.Gray
+                            tint = if (state.filters != SearchFilters()) Color.White else Color.Gray,
                         )
                     }
                 }
@@ -175,28 +177,29 @@ fun SearchScreen(
                     indicator = {
                         TabRowDefaults.SecondaryIndicator(
                             modifier = Modifier.tabIndicatorOffset(state.activeTab.ordinal),
-                            color = Color.White
+                            color = Color.White,
                         )
-                    }
+                    },
                 ) {
-                    SearchTab.values().forEach { tab ->
+                    SearchTab.entries.forEach { tab ->
                         Tab(
                             selected = state.activeTab == tab,
                             onClick = { presenter.setTab(tab) },
                             text = { Text(tab.name, fontWeight = FontWeight.Bold, fontSize = 13.sp) },
                             selectedContentColor = Color.White,
-                            unselectedContentColor = Color.Gray
+                            unselectedContentColor = Color.Gray,
                         )
                     }
                 }
             }
-        }
+        },
     ) { paddingValues ->
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .background(Color(0xFF0F0F11))
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .background(Color(0xFF0F0F11)),
         ) {
             if (state.query.isBlank()) {
                 // Show search suggestions and history
@@ -204,7 +207,7 @@ fun SearchScreen(
                     history = state.searchHistory,
                     onItemClick = { presenter.updateQuery(it) },
                     onDeleteClick = { presenter.removeHistoryEntry(it) },
-                    onClearAll = { presenter.clearHistory() }
+                    onClearAll = { presenter.clearHistory() },
                 )
             } else if (state.isLoading) {
                 when (state.activeTab) {
@@ -213,11 +216,12 @@ fun SearchScreen(
                     }
                     SearchTab.COLLECTIONS -> {
                         Column(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(12.dp)
-                                .verticalScroll(rememberScrollState()),
-                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                            modifier =
+                                Modifier
+                                    .fillMaxSize()
+                                    .padding(12.dp)
+                                    .verticalScroll(rememberScrollState()),
+                            verticalArrangement = Arrangement.spacedBy(16.dp),
                         ) {
                             repeat(4) {
                                 CollectionMosaicCardSkeleton()
@@ -232,11 +236,12 @@ fun SearchScreen(
                 }
             } else if (state.error != null) {
                 Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(24.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .padding(24.dp),
                     verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Text("Search failed", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
                     Spacer(modifier = Modifier.height(8.dp))
@@ -255,7 +260,7 @@ fun SearchScreen(
                                 photos = state.photos,
                                 isLoadingMore = state.isLoadingMore,
                                 onLoadMore = { presenter.loadNextPage() },
-                                onPhotoClick = onPhotoClick
+                                onPhotoClick = onPhotoClick,
                             )
                         }
                     }
@@ -266,7 +271,7 @@ fun SearchScreen(
                             CollectionsResultList(
                                 collections = state.collections,
                                 isLoadingMore = state.isLoadingMore,
-                                onLoadMore = { presenter.loadNextPage() }
+                                onLoadMore = { presenter.loadNextPage() },
                             )
                         }
                     }
@@ -278,7 +283,7 @@ fun SearchScreen(
                                 users = state.users,
                                 isLoadingMore = state.isLoadingMore,
                                 onLoadMore = { presenter.loadNextPage() },
-                                onUserClick = onUserClick
+                                onUserClick = onUserClick,
                             )
                         }
                     }
@@ -290,7 +295,7 @@ fun SearchScreen(
                 SearchFiltersSheet(
                     filters = state.filters,
                     onDismiss = { showFiltersSheet = false },
-                    onApply = { presenter.applyFilters(it) }
+                    onApply = { presenter.applyFilters(it) },
                 )
             }
         }
@@ -302,21 +307,22 @@ fun SearchSuggestionsAndHistory(
     history: List<String>,
     onItemClick: (String) -> Unit,
     onDeleteClick: (String) -> Unit,
-    onClearAll: () -> Unit
+    onClearAll: () -> Unit,
 ) {
     val suggestions = listOf("nature", "travel", "architecture", "wallpapers", "neon", "minimalist", "urban", "textures")
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-            .verticalScroll(rememberScrollState())
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState()),
     ) {
         if (history.isNotEmpty()) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text("RECENTS", color = Color.Gray, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
                 Text(
@@ -324,28 +330,39 @@ fun SearchSuggestionsAndHistory(
                     color = Color.White.copy(alpha = 0.6f),
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.bounceClick { onClearAll() }
+                    modifier = Modifier.bounceClick { onClearAll() },
                 )
             }
             Spacer(modifier = Modifier.height(8.dp))
 
             history.forEach { item ->
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 10.dp)
-                        .bounceClick { onItemClick(item) },
-                    verticalAlignment = Alignment.CenterVertically
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 10.dp)
+                            .bounceClick { onItemClick(item) },
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Icon(imageVector = Icons.Default.Refresh, contentDescription = "History", tint = Color.Gray, modifier = Modifier.size(16.dp))
+                    Icon(
+                        imageVector = Icons.Default.Refresh,
+                        contentDescription = "History",
+                        tint = Color.Gray,
+                        modifier = Modifier.size(16.dp),
+                    )
                     Spacer(modifier = Modifier.width(16.dp))
                     Text(text = item, color = Color.White, fontSize = 14.sp)
                     Spacer(modifier = Modifier.weight(1f))
                     IconButton(
                         onClick = { onDeleteClick(item) },
-                        modifier = Modifier.size(24.dp)
+                        modifier = Modifier.size(24.dp),
                     ) {
-                        Icon(imageVector = Icons.Default.Clear, contentDescription = "Delete", tint = Color.Gray, modifier = Modifier.size(16.dp))
+                        Icon(
+                            imageVector = Icons.Default.Clear,
+                            contentDescription = "Delete",
+                            tint = Color.Gray,
+                            modifier = Modifier.size(16.dp),
+                        )
                     }
                 }
             }
@@ -360,14 +377,15 @@ fun SearchSuggestionsAndHistory(
         FlowRow(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             suggestions.forEach { topic ->
                 Box(
-                    modifier = Modifier
-                        .background(Color(0xFF1E1E24), RoundedCornerShape(18.dp))
-                        .bounceClick { onItemClick(topic) }
-                        .padding(horizontal = 14.dp, vertical = 8.dp)
+                    modifier =
+                        Modifier
+                            .background(Color(0xFF1E1E24), RoundedCornerShape(18.dp))
+                            .bounceClick { onItemClick(topic) }
+                            .padding(horizontal = 14.dp, vertical = 8.dp),
                 ) {
                     Text(text = topic, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Medium)
                 }
@@ -384,18 +402,22 @@ fun PhotosResultGrid(
     photos: List<Photo>,
     isLoadingMore: Boolean,
     onLoadMore: () -> Unit,
-    onPhotoClick: (Photo) -> Unit
+    onPhotoClick: (Photo) -> Unit,
 ) {
     val listState = rememberLazyStaggeredGridState()
 
-    val shouldLoadMore = remember {
-        derivedStateOf {
-            val lastVisibleItem = listState.layoutInfo.visibleItemsInfo.lastOrNull()
-            val totalItems = listState.layoutInfo.totalItemsCount
-            if (lastVisibleItem == null || totalItems == 0) false
-            else lastVisibleItem.index >= totalItems - 6
+    val shouldLoadMore =
+        remember {
+            derivedStateOf {
+                val lastVisibleItem = listState.layoutInfo.visibleItemsInfo.lastOrNull()
+                val totalItems = listState.layoutInfo.totalItemsCount
+                if (lastVisibleItem == null || totalItems == 0) {
+                    false
+                } else {
+                    lastVisibleItem.index >= totalItems - 6
+                }
+            }
         }
-    }
 
     LaunchedEffect(shouldLoadMore.value) {
         if (shouldLoadMore.value) {
@@ -409,7 +431,7 @@ fun PhotosResultGrid(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalItemSpacing = 8.dp
+        verticalItemSpacing = 8.dp,
     ) {
         items(photos, key = { it.id }) { photo ->
             val index = photos.indexOfFirst { it.id == photo.id }
@@ -421,17 +443,18 @@ fun PhotosResultGrid(
                 onClick = { onPhotoClick(photo) },
                 onUserClick = {
                     // Handled inside PhotoCard or default link click
-                }
+                },
             )
         }
 
         if (isLoadingMore) {
             item {
                 Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    contentAlignment = Alignment.Center
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                    contentAlignment = Alignment.Center,
                 ) {
                     CircularProgressIndicator(color = Color.White)
                 }
@@ -444,19 +467,23 @@ fun PhotosResultGrid(
 fun CollectionsResultList(
     collections: List<CollectionSummary>,
     isLoadingMore: Boolean,
-    onLoadMore: () -> Unit
+    onLoadMore: () -> Unit,
 ) {
     val context = LocalPlatformContext.current
     val listState = rememberLazyStaggeredGridState() // staggered grid with 1 column as flexible list
 
-    val shouldLoadMore = remember {
-        derivedStateOf {
-            val lastVisibleItem = listState.layoutInfo.visibleItemsInfo.lastOrNull()
-            val totalItems = listState.layoutInfo.totalItemsCount
-            if (lastVisibleItem == null || totalItems == 0) false
-            else lastVisibleItem.index >= totalItems - 4
+    val shouldLoadMore =
+        remember {
+            derivedStateOf {
+                val lastVisibleItem = listState.layoutInfo.visibleItemsInfo.lastOrNull()
+                val totalItems = listState.layoutInfo.totalItemsCount
+                if (lastVisibleItem == null || totalItems == 0) {
+                    false
+                } else {
+                    lastVisibleItem.index >= totalItems - 4
+                }
+            }
         }
-    }
 
     LaunchedEffect(shouldLoadMore.value) {
         if (shouldLoadMore.value) {
@@ -465,11 +492,12 @@ fun CollectionsResultList(
     }
 
     LazyVerticalStaggeredGrid(
-        columns = StaggeredGridCells.Fixed(1),
+        columns = calculateCollectionGridColumns(),
         state = listState,
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(12.dp),
-        verticalItemSpacing = 16.dp
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalItemSpacing = 16.dp,
     ) {
         items(collections, key = { it.id }) { collection ->
             val index = collections.indexOfFirst { it.id == collection.id }
@@ -481,17 +509,18 @@ fun CollectionsResultList(
                         val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse("$link?utm_source=ImageFeedApp&utm_medium=referral"))
                         context.startActivity(browserIntent)
                     }
-                }
+                },
             )
         }
 
         if (isLoadingMore) {
             item {
                 Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    contentAlignment = Alignment.Center
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                    contentAlignment = Alignment.Center,
                 ) {
                     CircularProgressIndicator(color = Color.White)
                 }
@@ -504,15 +533,16 @@ fun CollectionsResultList(
 fun CollectionRowCard(
     collection: CollectionSummary,
     modifier: Modifier = Modifier,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) {
     Card(
         shape = RoundedCornerShape(12.dp),
-        modifier = modifier
-            .fillMaxWidth()
-            .height(200.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .bounceClick { onClick() }
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .height(200.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .bounceClick { onClick() },
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             val coverPhoto = collection.coverPhoto
@@ -521,18 +551,19 @@ fun CollectionRowCard(
                     painter = rememberAsyncImagePainter(model = coverPhoto.urls.regular),
                     contentDescription = collection.title,
                     modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
+                    contentScale = ContentScale.Crop,
                 )
             } else {
                 Box(modifier = Modifier.fillMaxSize().background(Color(0xFF1E1E24)))
             }
 
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.45f))
-                    .padding(16.dp),
-                contentAlignment = Alignment.BottomStart
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.45f))
+                        .padding(16.dp),
+                contentAlignment = Alignment.BottomStart,
             ) {
                 Column {
                     Text(
@@ -540,13 +571,13 @@ fun CollectionRowCard(
                         fontWeight = FontWeight.Bold,
                         color = Color.White,
                         fontSize = 16.sp,
-                        letterSpacing = 1.sp
+                        letterSpacing = 1.sp,
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = "${collection.totalPhotos} Photos  ·  Curated by ${collection.user.name}",
                         color = Color.LightGray,
-                        fontSize = 12.sp
+                        fontSize = 12.sp,
                     )
                 }
             }
@@ -559,19 +590,22 @@ fun UsersResultList(
     users: List<User>,
     isLoadingMore: Boolean,
     onLoadMore: () -> Unit,
-    onUserClick: (User) -> Unit
+    onUserClick: (User) -> Unit,
 ) {
-    val context = LocalPlatformContext.current
     val listState = rememberLazyStaggeredGridState()
 
-    val shouldLoadMore = remember {
-        derivedStateOf {
-            val lastVisibleItem = listState.layoutInfo.visibleItemsInfo.lastOrNull()
-            val totalItems = listState.layoutInfo.totalItemsCount
-            if (lastVisibleItem == null || totalItems == 0) false
-            else lastVisibleItem.index >= totalItems - 4
+    val shouldLoadMore =
+        remember {
+            derivedStateOf {
+                val lastVisibleItem = listState.layoutInfo.visibleItemsInfo.lastOrNull()
+                val totalItems = listState.layoutInfo.totalItemsCount
+                if (lastVisibleItem == null || totalItems == 0) {
+                    false
+                } else {
+                    lastVisibleItem.index >= totalItems - 4
+                }
+            }
         }
-    }
 
     LaunchedEffect(shouldLoadMore.value) {
         if (shouldLoadMore.value) {
@@ -580,11 +614,12 @@ fun UsersResultList(
     }
 
     LazyVerticalStaggeredGrid(
-        columns = StaggeredGridCells.Fixed(1),
+        columns = calculateUserGridColumns(),
         state = listState,
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(12.dp),
-        verticalItemSpacing = 12.dp
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalItemSpacing = 12.dp,
     ) {
         items(users, key = { it.id }) { user ->
             val index = users.indexOfFirst { it.id == user.id }
@@ -593,17 +628,18 @@ fun UsersResultList(
                 modifier = Modifier.staggeredEntrance(index),
                 onClick = {
                     onUserClick(user)
-                }
+                },
             )
         }
 
         if (isLoadingMore) {
             item {
                 Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    contentAlignment = Alignment.Center
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                    contentAlignment = Alignment.Center,
                 ) {
                     CircularProgressIndicator(color = Color.White)
                 }
@@ -616,29 +652,32 @@ fun UsersResultList(
 fun UserRowCard(
     user: User,
     modifier: Modifier = Modifier,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) {
     Card(
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E24)),
-        modifier = modifier
-            .fillMaxWidth()
-            .bounceClick { onClick() }
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .bounceClick { onClick() },
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Image(
                 painter = rememberAsyncImagePainter(model = user.profileImage.large),
                 contentDescription = user.name,
-                modifier = Modifier
-                    .size(54.dp)
-                    .clip(CircleShape)
-                    .background(Color.Gray),
-                contentScale = ContentScale.Crop
+                modifier =
+                    Modifier
+                        .size(54.dp)
+                        .clip(CircleShape)
+                        .background(Color.Gray),
+                contentScale = ContentScale.Crop,
             )
 
             Spacer(modifier = Modifier.width(16.dp))
@@ -648,12 +687,12 @@ fun UserRowCard(
                     text = user.name,
                     color = Color.White,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 15.sp
+                    fontSize = 15.sp,
                 )
                 Text(
                     text = "@${user.username}",
                     color = Color.Gray,
-                    fontSize = 12.sp
+                    fontSize = 12.sp,
                 )
             }
 
@@ -661,7 +700,7 @@ fun UserRowCard(
                 imageVector = Icons.Default.PlayArrow,
                 contentDescription = "View Profile",
                 tint = Color.LightGray,
-                modifier = Modifier.size(16.dp)
+                modifier = Modifier.size(16.dp),
             )
         }
     }
@@ -671,7 +710,7 @@ fun UserRowCard(
 fun NoResultsView() {
     Box(
         modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.Center,
     ) {
         Text("No results found.", color = Color.Gray, fontSize = 14.sp)
     }
@@ -682,54 +721,59 @@ fun NoResultsView() {
 fun SearchFiltersSheet(
     filters: SearchFilters,
     onDismiss: () -> Unit,
-    onApply: (SearchFilters) -> Unit
+    onApply: (SearchFilters) -> Unit,
 ) {
     var selectedOrderBy by remember { mutableStateOf(filters.orderBy) }
     var selectedOrientation by remember { mutableStateOf(filters.orientation) }
     var selectedColor by remember { mutableStateOf(filters.color) }
 
-    val colors = listOf(
-        Pair("Any", null),
-        Pair("B&W", "black_and_white"),
-        Pair("Black", "black"),
-        Pair("White", "white"),
-        Pair("Yellow", "yellow"),
-        Pair("Orange", "orange"),
-        Pair("Red", "red"),
-        Pair("Purple", "purple"),
-        Pair("Magenta", "magenta"),
-        Pair("Green", "green"),
-        Pair("Teal", "teal"),
-        Pair("Blue", "blue")
-    )
+    val colors =
+        listOf(
+            Pair("Any", null),
+            Pair("B&W", "black_and_white"),
+            Pair("Black", "black"),
+            Pair("White", "white"),
+            Pair("Yellow", "yellow"),
+            Pair("Orange", "orange"),
+            Pair("Red", "red"),
+            Pair("Purple", "purple"),
+            Pair("Magenta", "magenta"),
+            Pair("Green", "green"),
+            Pair("Teal", "teal"),
+            Pair("Blue", "blue"),
+        )
 
-    val colorHexes = mapOf(
-        "black" to Color.Black,
-        "white" to Color.White,
-        "yellow" to Color(0xFFFFEB3B),
-        "orange" to Color(0xFFFF9800),
-        "red" to Color(0xFFF44336),
-        "purple" to Color(0xFF9C27B0),
-        "magenta" to Color(0xFFE91E63),
-        "green" to Color(0xFF4CAF50),
-        "teal" to Color(0xFF009688),
-        "blue" to Color(0xFF2196F3)
-    )
+    val colorHexes =
+        mapOf(
+            "black" to Color.Black,
+            "white" to Color.White,
+            "yellow" to Color(0xFFFFEB3B),
+            "orange" to Color(0xFFFF9800),
+            "red" to Color(0xFFF44336),
+            "purple" to Color(0xFF9C27B0),
+            "magenta" to Color(0xFFE91E63),
+            "green" to Color(0xFF4CAF50),
+            "teal" to Color(0xFF009688),
+            "blue" to Color(0xFF2196F3),
+        )
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         containerColor = Color(0xFF1E1E24),
-        contentColor = Color.White
+        contentColor = Color.White,
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 16.dp)
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .widthIn(max = 560.dp)
+                    .align(Alignment.CenterHorizontally)
+                    .padding(horizontal = 20.dp, vertical = 16.dp),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text("FILTERS", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
                 Text(
@@ -737,11 +781,12 @@ fun SearchFiltersSheet(
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.LightGray,
-                    modifier = Modifier.clickable {
-                        selectedOrderBy = "relevant"
-                        selectedOrientation = null
-                        selectedColor = null
-                    }
+                    modifier =
+                        Modifier.clickable {
+                            selectedOrderBy = "relevant"
+                            selectedOrientation = null
+                            selectedColor = null
+                        },
                 )
             }
 
@@ -755,23 +800,25 @@ fun SearchFiltersSheet(
                     selected = selectedOrderBy == "relevant",
                     onClick = { selectedOrderBy = "relevant" },
                     label = { Text("RELEVANT") },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = Color.White,
-                        selectedLabelColor = Color.Black,
-                        containerColor = Color(0xFF2C2C35),
-                        labelColor = Color.White
-                    )
+                    colors =
+                        FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = Color.White,
+                            selectedLabelColor = Color.Black,
+                            containerColor = Color(0xFF2C2C35),
+                            labelColor = Color.White,
+                        ),
                 )
                 FilterChip(
                     selected = selectedOrderBy == "latest",
                     onClick = { selectedOrderBy = "latest" },
                     label = { Text("LATEST") },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = Color.White,
-                        selectedLabelColor = Color.Black,
-                        containerColor = Color(0xFF2C2C35),
-                        labelColor = Color.White
-                    )
+                    colors =
+                        FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = Color.White,
+                            selectedLabelColor = Color.Black,
+                            containerColor = Color(0xFF2C2C35),
+                            labelColor = Color.White,
+                        ),
                 )
             }
 
@@ -785,34 +832,37 @@ fun SearchFiltersSheet(
                     selected = selectedOrientation == null,
                     onClick = { selectedOrientation = null },
                     label = { Text("ALL") },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = Color.White,
-                        selectedLabelColor = Color.Black,
-                        containerColor = Color(0xFF2C2C35),
-                        labelColor = Color.White
-                    )
+                    colors =
+                        FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = Color.White,
+                            selectedLabelColor = Color.Black,
+                            containerColor = Color(0xFF2C2C35),
+                            labelColor = Color.White,
+                        ),
                 )
                 FilterChip(
                     selected = selectedOrientation == "landscape",
                     onClick = { selectedOrientation = "landscape" },
                     label = { Text("LANDSCAPE") },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = Color.White,
-                        selectedLabelColor = Color.Black,
-                        containerColor = Color(0xFF2C2C35),
-                        labelColor = Color.White
-                    )
+                    colors =
+                        FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = Color.White,
+                            selectedLabelColor = Color.Black,
+                            containerColor = Color(0xFF2C2C35),
+                            labelColor = Color.White,
+                        ),
                 )
                 FilterChip(
                     selected = selectedOrientation == "portrait",
                     onClick = { selectedOrientation = "portrait" },
                     label = { Text("PORTRAIT") },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = Color.White,
-                        selectedLabelColor = Color.Black,
-                        containerColor = Color(0xFF2C2C35),
-                        labelColor = Color.White
-                    )
+                    colors =
+                        FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = Color.White,
+                            selectedLabelColor = Color.Black,
+                            containerColor = Color(0xFF2C2C35),
+                            labelColor = Color.White,
+                        ),
                 )
             }
 
@@ -823,37 +873,40 @@ fun SearchFiltersSheet(
             Spacer(modifier = Modifier.height(8.dp))
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             ) {
                 items(colors) { pair ->
                     val name = pair.first
                     val value = pair.second
-                    
+
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.clickable { selectedColor = value }
+                        modifier = Modifier.clickable { selectedColor = value },
                     ) {
                         Box(
-                            modifier = Modifier
-                                .size(36.dp)
-                                .clip(CircleShape)
-                                .background(
-                                    if (value == "black_and_white") Color.Gray
-                                    else colorHexes[value] ?: Color(0xFF2C2C35)
-                                )
-                                .border(
-                                    width = if (selectedColor == value) 2.dp else 1.dp,
-                                    color = if (selectedColor == value) Color.White else Color.Transparent,
-                                    shape = CircleShape
-                                ),
-                            contentAlignment = Alignment.Center
+                            modifier =
+                                Modifier
+                                    .size(36.dp)
+                                    .clip(CircleShape)
+                                    .background(
+                                        if (value == "black_and_white") {
+                                            Color.Gray
+                                        } else {
+                                            colorHexes[value] ?: Color(0xFF2C2C35)
+                                        },
+                                    ).border(
+                                        width = if (selectedColor == value) 2.dp else 1.dp,
+                                        color = if (selectedColor == value) Color.White else Color.Transparent,
+                                        shape = CircleShape,
+                                    ),
+                            contentAlignment = Alignment.Center,
                         ) {
                             if (selectedColor == value) {
                                 Icon(
                                     imageVector = Icons.Default.Check,
                                     contentDescription = "Selected",
                                     tint = if (value == "white" || value == "yellow") Color.Black else Color.White,
-                                    modifier = Modifier.size(16.dp)
+                                    modifier = Modifier.size(16.dp),
                                 )
                             }
                         }
@@ -871,16 +924,17 @@ fun SearchFiltersSheet(
                         SearchFilters(
                             orderBy = selectedOrderBy,
                             color = selectedColor,
-                            orientation = selectedOrientation
-                        )
+                            orientation = selectedOrientation,
+                        ),
                     )
                     onDismiss()
                 },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color.Black),
-                shape = RoundedCornerShape(8.dp)
+                shape = RoundedCornerShape(8.dp),
             ) {
                 Text("APPLY FILTERS", fontWeight = FontWeight.Bold)
             }

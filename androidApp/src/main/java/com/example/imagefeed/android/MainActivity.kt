@@ -1,6 +1,5 @@
 package com.example.imagefeed.android
 
-import android.content.Context
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
@@ -9,6 +8,13 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -47,6 +53,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.NavigationRail
+import androidx.compose.material3.NavigationRailItem
+import androidx.compose.material3.NavigationRailItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SecondaryScrollableTabRow
 import androidx.compose.material3.Surface
@@ -69,24 +78,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.AnimatedVisibilityScope
-import androidx.compose.animation.ExperimentalSharedTransitionApi
-import androidx.compose.animation.SharedTransitionLayout
-import androidx.compose.animation.SharedTransitionScope
-import com.example.imagefeed.android.util.bounceClick
-import com.example.imagefeed.android.util.staggeredEntrance
-import com.example.imagefeed.android.util.PhotoGridSkeleton
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
@@ -96,7 +93,12 @@ import coil3.compose.LocalPlatformContext
 import coil3.compose.rememberAsyncImagePainter
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import com.example.imagefeed.android.adaptive.LocalAdaptiveLayoutInfo
+import com.example.imagefeed.android.adaptive.ProvideAdaptiveLayoutInfo
 import com.example.imagefeed.android.util.BlurHashDecoder
+import com.example.imagefeed.android.util.PhotoGridSkeleton
+import com.example.imagefeed.android.util.bounceClick
+import com.example.imagefeed.android.util.staggeredEntrance
 import com.example.imagefeed.di.MetroHelper
 import com.example.imagefeed.model.Photo
 import com.example.imagefeed.model.User
@@ -117,23 +119,31 @@ sealed class Screen : NavKey {
     data object Collections : Screen()
 
     @Serializable
-    data class CollectionDetails(val collectionId: String) : Screen()
+    data class CollectionDetails(
+        val collectionId: String,
+    ) : Screen()
 
     @Serializable
-    data class Search(val query: String = "") : Screen()
+    data class Search(
+        val query: String = "",
+    ) : Screen()
 
     @Serializable
-    data class PhotoDetails(val photoId: String) : Screen()
+    data class PhotoDetails(
+        val photoId: String,
+    ) : Screen()
 
     @Serializable
-    data class UserProfile(val username: String) : Screen()
+    data class UserProfile(
+        val username: String,
+    ) : Screen()
 }
 
 class MainActivity : ComponentActivity() {
     private val presenter: FeedPresenter by lazy { MetroHelper.getFeedPresenter() }
     private val collectionsPresenter: CollectionsFeedPresenter by lazy { MetroHelper.getCollectionsFeedPresenter() }
     private val repository: UnsplashRepository by lazy { MetroHelper.graph.repository }
-    
+
     private var sensorManager: SensorManager? = null
     private var shakeDetector: ShakeDetector? = null
     private var backStack: NavBackStack<NavKey>? = null
@@ -141,73 +151,94 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        
+
         // Setup shake sensor
-        sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
-        shakeDetector = ShakeDetector {
-            handleShake()
-        }
+        sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
+        shakeDetector =
+            ShakeDetector {
+                handleShake()
+            }
 
         setContent {
             MaterialTheme(
-                colorScheme = darkColorScheme(
-                    primary = Color(0xFF111111),
-                    background = Color(0xFF0F0F11),
-                    surface = Color(0xFF1E1E24)
-                )
+                colorScheme =
+                    darkColorScheme(
+                        primary = Color(0xFF111111),
+                        background = Color(0xFF0F0F11),
+                        surface = Color(0xFF1E1E24),
+                    ),
             ) {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    val backStackState = rememberNavBackStack(Screen.Feed)
-                    backStack = backStackState
-                    DisposableEffect(Unit) {
-                        onDispose {
-                            presenter.clear()
-                            collectionsPresenter.clear()
+                ProvideAdaptiveLayoutInfo(activity = this@MainActivity) {
+                    val adaptiveLayoutInfo = LocalAdaptiveLayoutInfo.current
+                    Surface(
+                        modifier = Modifier.fillMaxSize(),
+                        color = MaterialTheme.colorScheme.background,
+                    ) {
+                        val backStackState = rememberNavBackStack(Screen.Feed)
+                        backStack = backStackState
+                        DisposableEffect(Unit) {
+                            onDispose {
+                                presenter.clear()
+                                collectionsPresenter.clear()
+                            }
                         }
-                    }
 
-                    val navigateToTab = { targetScreen: Screen ->
-                        if (targetScreen is Screen.Feed) {
-                            while (backStackState.size > 1) {
-                                backStackState.removeAt(backStackState.size - 1)
-                            }
-                        } else {
-                            val targetIndex = backStackState.indexOfFirst {
-                                (targetScreen is Screen.Search && it is Screen.Search) ||
-                                (targetScreen is Screen.Collections && it is Screen.Collections) ||
-                                (targetScreen is Screen.Feed && it is Screen.Feed)
-                            }
-                            if (targetIndex != -1) {
-                                while (backStackState.size > targetIndex + 1) {
+                        val navigateToTab = { targetScreen: Screen ->
+                            if (targetScreen is Screen.Feed) {
+                                while (backStackState.size > 1) {
                                     backStackState.removeAt(backStackState.size - 1)
                                 }
                             } else {
-                                while (backStackState.size > 2) {
-                                    backStackState.removeAt(backStackState.size - 1)
-                                }
-                                if (backStackState.size > 1) {
-                                    backStackState[1] = targetScreen
+                                val targetIndex =
+                                    backStackState.indexOfFirst {
+                                        (targetScreen is Screen.Search && it is Screen.Search) ||
+                                            (targetScreen is Screen.Collections && it is Screen.Collections)
+                                    }
+                                if (targetIndex != -1) {
+                                    while (backStackState.size > targetIndex + 1) {
+                                        backStackState.removeAt(backStackState.size - 1)
+                                    }
                                 } else {
-                                    backStackState.add(targetScreen)
+                                    while (backStackState.size > 2) {
+                                        backStackState.removeAt(backStackState.size - 1)
+                                    }
+                                    if (backStackState.size > 1) {
+                                        backStackState[1] = targetScreen
+                                    } else {
+                                        backStackState.add(targetScreen)
+                                    }
                                 }
                             }
                         }
-                    }
 
-                    val currentScreen = backStackState.lastOrNull() as? Screen ?: Screen.Feed
-                    val showBottomBar = currentScreen is Screen.Feed || currentScreen is Screen.Collections || currentScreen is Screen.Search
+                        val currentScreen = backStackState.lastOrNull() as? Screen ?: Screen.Feed
+                        val showNavigation =
+                            currentScreen is Screen.Feed ||
+                                currentScreen is Screen.Collections ||
+                                currentScreen is Screen.Search
+                        val useRail = adaptiveLayoutInfo.useNavigationRail && showNavigation
+                        val useBottomBar = !adaptiveLayoutInfo.useNavigationRail && showNavigation
 
-                    Scaffold(
-                        bottomBar = {
-                            if (showBottomBar) {
-                                NavigationBar(
+                        Row(modifier = Modifier.fillMaxSize()) {
+                            if (useRail) {
+                                NavigationRail(
                                     containerColor = Color(0xFF0F0F11),
-                                    contentColor = Color.White
+                                    contentColor = Color.White,
+                                    header = {
+                                        IconButton(
+                                            onClick = { handleShake() },
+                                            modifier = Modifier.padding(top = 8.dp),
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Refresh,
+                                                contentDescription = "Randomize",
+                                                tint = Color.White,
+                                            )
+                                        }
+                                    },
                                 ) {
-                                    NavigationBarItem(
+                                    Spacer(modifier = Modifier.height(16.dp))
+                                    NavigationRailItem(
                                         selected = currentScreen is Screen.Feed,
                                         onClick = {
                                             if (currentScreen !is Screen.Feed) {
@@ -217,20 +248,21 @@ class MainActivity : ComponentActivity() {
                                         icon = {
                                             Icon(
                                                 imageVector = Icons.Default.Home,
-                                                contentDescription = "Photos"
+                                                contentDescription = "Photos",
                                             )
                                         },
                                         label = { Text("Photos") },
-                                        colors = NavigationBarItemDefaults.colors(
-                                            selectedIconColor = Color.Black,
-                                            selectedTextColor = Color.White,
-                                            unselectedIconColor = Color.Gray,
-                                            unselectedTextColor = Color.Gray,
-                                            indicatorColor = Color.White
-                                        )
+                                        colors =
+                                            NavigationRailItemDefaults.colors(
+                                                selectedIconColor = Color.Black,
+                                                selectedTextColor = Color.White,
+                                                unselectedIconColor = Color.Gray,
+                                                unselectedTextColor = Color.Gray,
+                                                indicatorColor = Color.White,
+                                            ),
                                     )
 
-                                    NavigationBarItem(
+                                    NavigationRailItem(
                                         selected = currentScreen is Screen.Collections,
                                         onClick = {
                                             if (currentScreen !is Screen.Collections) {
@@ -240,20 +272,21 @@ class MainActivity : ComponentActivity() {
                                         icon = {
                                             Icon(
                                                 imageVector = Icons.AutoMirrored.Filled.List,
-                                                contentDescription = "Collections"
+                                                contentDescription = "Collections",
                                             )
                                         },
                                         label = { Text("Collections") },
-                                        colors = NavigationBarItemDefaults.colors(
-                                            selectedIconColor = Color.Black,
-                                            selectedTextColor = Color.White,
-                                            unselectedIconColor = Color.Gray,
-                                            unselectedTextColor = Color.Gray,
-                                            indicatorColor = Color.White
-                                        )
+                                        colors =
+                                            NavigationRailItemDefaults.colors(
+                                                selectedIconColor = Color.Black,
+                                                selectedTextColor = Color.White,
+                                                unselectedIconColor = Color.Gray,
+                                                unselectedTextColor = Color.Gray,
+                                                indicatorColor = Color.White,
+                                            ),
                                     )
 
-                                    NavigationBarItem(
+                                    NavigationRailItem(
                                         selected = currentScreen is Screen.Search,
                                         onClick = {
                                             if (currentScreen !is Screen.Search) {
@@ -263,186 +296,276 @@ class MainActivity : ComponentActivity() {
                                         icon = {
                                             Icon(
                                                 imageVector = Icons.Default.Search,
-                                                contentDescription = "Search"
+                                                contentDescription = "Search",
                                             )
                                         },
                                         label = { Text("Search") },
-                                        colors = NavigationBarItemDefaults.colors(
-                                            selectedIconColor = Color.Black,
-                                            selectedTextColor = Color.White,
-                                            unselectedIconColor = Color.Gray,
-                                            unselectedTextColor = Color.Gray,
-                                            indicatorColor = Color.White
-                                        )
+                                        colors =
+                                            NavigationRailItemDefaults.colors(
+                                                selectedIconColor = Color.Black,
+                                                selectedTextColor = Color.White,
+                                                unselectedIconColor = Color.Gray,
+                                                unselectedTextColor = Color.Gray,
+                                                indicatorColor = Color.White,
+                                            ),
                                     )
                                 }
                             }
-                        }
-                    ) { innerPadding ->
-                        SharedTransitionLayout {
-                            val sharedTransitionScope = this
-                            NavDisplay(
-                                backStack = backStackState,
-                                onBack = {
-                                    if (backStackState.size > 1) {
-                                        backStackState.removeAt(backStackState.size - 1)
-                                    } else {
-                                        finish()
+
+                            Scaffold(
+                                modifier = Modifier.weight(1f),
+                                bottomBar = {
+                                    if (useBottomBar) {
+                                        NavigationBar(
+                                            containerColor = Color(0xFF0F0F11),
+                                            contentColor = Color.White,
+                                        ) {
+                                            NavigationBarItem(
+                                                selected = currentScreen is Screen.Feed,
+                                                onClick = {
+                                                    if (currentScreen !is Screen.Feed) {
+                                                        navigateToTab(Screen.Feed)
+                                                    }
+                                                },
+                                                icon = {
+                                                    Icon(
+                                                        imageVector = Icons.Default.Home,
+                                                        contentDescription = "Photos",
+                                                    )
+                                                },
+                                                label = { Text("Photos") },
+                                                colors =
+                                                    NavigationBarItemDefaults.colors(
+                                                        selectedIconColor = Color.Black,
+                                                        selectedTextColor = Color.White,
+                                                        unselectedIconColor = Color.Gray,
+                                                        unselectedTextColor = Color.Gray,
+                                                        indicatorColor = Color.White,
+                                                    ),
+                                            )
+
+                                            NavigationBarItem(
+                                                selected = currentScreen is Screen.Collections,
+                                                onClick = {
+                                                    if (currentScreen !is Screen.Collections) {
+                                                        navigateToTab(Screen.Collections)
+                                                    }
+                                                },
+                                                icon = {
+                                                    Icon(
+                                                        imageVector = Icons.AutoMirrored.Filled.List,
+                                                        contentDescription = "Collections",
+                                                    )
+                                                },
+                                                label = { Text("Collections") },
+                                                colors =
+                                                    NavigationBarItemDefaults.colors(
+                                                        selectedIconColor = Color.Black,
+                                                        selectedTextColor = Color.White,
+                                                        unselectedIconColor = Color.Gray,
+                                                        unselectedTextColor = Color.Gray,
+                                                        indicatorColor = Color.White,
+                                                    ),
+                                            )
+
+                                            NavigationBarItem(
+                                                selected = currentScreen is Screen.Search,
+                                                onClick = {
+                                                    if (currentScreen !is Screen.Search) {
+                                                        navigateToTab(Screen.Search())
+                                                    }
+                                                },
+                                                icon = {
+                                                    Icon(
+                                                        imageVector = Icons.Default.Search,
+                                                        contentDescription = "Search",
+                                                    )
+                                                },
+                                                label = { Text("Search") },
+                                                colors =
+                                                    NavigationBarItemDefaults.colors(
+                                                        selectedIconColor = Color.Black,
+                                                        selectedTextColor = Color.White,
+                                                        unselectedIconColor = Color.Gray,
+                                                        unselectedTextColor = Color.Gray,
+                                                        indicatorColor = Color.White,
+                                                    ),
+                                            )
+                                        }
                                     }
                                 },
-                                modifier = Modifier.padding(innerPadding),
-                                entryProvider = { navKey ->
-                                    val key = navKey as Screen
-                                    when (key) {
-                                                                       is Screen.Feed -> NavEntry(key) {
-                                            AnimatedVisibility(
-                                                visible = true,
-                                                enter = fadeIn(),
-                                                exit = fadeOut()
-                                            ) {
-                                                val animatedVisibilityScope = this
-                                                FeedScreen(
-                                                    sharedTransitionScope = sharedTransitionScope,
-                                                    animatedVisibilityScope = animatedVisibilityScope,
-                                                    presenter = presenter,
-                                                    onPhotoClick = { photo ->
-                                                        backStackState.add(Screen.PhotoDetails(photo.id))
-                                                    },
-                                                    onUserClick = { user ->
-                                                        backStackState.add(Screen.UserProfile(user.username))
-                                                    },
-                                                    onSearchClick = {
-                                                        backStackState.add(Screen.Search())
-                                                    },
-                                                    onRandomClick = {
-                                                        handleShake()
-                                                    }
-                                                )
+                            ) { innerPadding ->
+                                SharedTransitionLayout {
+                                    val sharedTransitionScope = this
+                                    NavDisplay(
+                                        backStack = backStackState,
+                                        onBack = {
+                                            if (backStackState.size > 1) {
+                                                backStackState.removeAt(backStackState.size - 1)
+                                            } else {
+                                                finish()
                                             }
-                                        }
-                                        is Screen.Collections -> NavEntry(key) {
-                                            AnimatedVisibility(
-                                                visible = true,
-                                                enter = fadeIn(),
-                                                exit = fadeOut()
-                                            ) {
-                                                val animatedVisibilityScope = this
-                                                CollectionsFeedScreen(
-                                                    sharedTransitionScope = sharedTransitionScope,
-                                                    animatedVisibilityScope = animatedVisibilityScope,
-                                                    presenter = collectionsPresenter,
-                                                    onCollectionClick = { coll ->
-                                                        backStackState.add(Screen.CollectionDetails(coll.id))
-                                                    },
-                                                    onSearchClick = {
-                                                        backStackState.add(Screen.Search())
-                                                    }
-                                                )
-                                            }
-                                        }
-                                        is Screen.CollectionDetails -> NavEntry(key) {
-                                            AnimatedVisibility(
-                                                visible = true,
-                                                enter = fadeIn(),
-                                                exit = fadeOut()
-                                            ) {
-                                                val animatedVisibilityScope = this
-                                                CollectionDetailScreen(
-                                                    sharedTransitionScope = sharedTransitionScope,
-                                                    animatedVisibilityScope = animatedVisibilityScope,
-                                                    collectionId = key.collectionId,
-                                                    onBack = {
-                                                        if (backStackState.size > 1) {
-                                                            backStackState.removeAt(backStackState.size - 1)
+                                        },
+                                        modifier = Modifier.padding(innerPadding),
+                                        entryProvider = { navKey ->
+                                            when (val key = navKey as Screen) {
+                                                is Screen.Feed ->
+                                                    NavEntry(key) {
+                                                        AnimatedVisibility(
+                                                            visible = true,
+                                                            enter = fadeIn(),
+                                                            exit = fadeOut(),
+                                                        ) {
+                                                            val animatedVisibilityScope = this
+                                                            FeedScreen(
+                                                                sharedTransitionScope = sharedTransitionScope,
+                                                                animatedVisibilityScope = animatedVisibilityScope,
+                                                                presenter = presenter,
+                                                                onPhotoClick = { photo ->
+                                                                    backStackState.add(Screen.PhotoDetails(photo.id))
+                                                                },
+                                                                onUserClick = { user ->
+                                                                    backStackState.add(Screen.UserProfile(user.username))
+                                                                },
+                                                                onSearchClick = {
+                                                                    backStackState.add(Screen.Search())
+                                                                },
+                                                                onRandomClick = {
+                                                                    handleShake()
+                                                                },
+                                                            )
                                                         }
-                                                    },
-                                                    onPhotoClick = { photo ->
-                                                        backStackState.add(Screen.PhotoDetails(photo.id))
-                                                    },
-                                                    onCollectionClick = { id ->
-                                                        backStackState.add(Screen.CollectionDetails(id))
                                                     }
-                                                )
-                                            }
-                                        }
-                                        is Screen.Search -> NavEntry(key) {
-                                            AnimatedVisibility(
-                                                visible = true,
-                                                enter = fadeIn(),
-                                                exit = fadeOut()
-                                            ) {
-                                                val animatedVisibilityScope = this
-                                                SearchScreen(
-                                                    sharedTransitionScope = sharedTransitionScope,
-                                                    animatedVisibilityScope = animatedVisibilityScope,
-                                                    initialQuery = key.query,
-                                                    onBack = {
-                                                        if (backStackState.size > 1) {
-                                                            backStackState.removeAt(backStackState.size - 1)
+                                                is Screen.Collections ->
+                                                    NavEntry(key) {
+                                                        AnimatedVisibility(
+                                                            visible = true,
+                                                            enter = fadeIn(),
+                                                            exit = fadeOut(),
+                                                        ) {
+                                                            val animatedVisibilityScope = this
+                                                            CollectionsFeedScreen(
+                                                                sharedTransitionScope = sharedTransitionScope,
+                                                                animatedVisibilityScope = animatedVisibilityScope,
+                                                                presenter = collectionsPresenter,
+                                                                onCollectionClick = { coll ->
+                                                                    backStackState.add(Screen.CollectionDetails(coll.id))
+                                                                },
+                                                                onSearchClick = {
+                                                                    backStackState.add(Screen.Search())
+                                                                },
+                                                            )
                                                         }
-                                                    },
-                                                    onPhotoClick = { photo ->
-                                                        backStackState.add(Screen.PhotoDetails(photo.id))
-                                                    },
-                                                    onUserClick = { user ->
-                                                        backStackState.add(Screen.UserProfile(user.username))
                                                     }
-                                                )
-                                            }
-                                        }
-                                        is Screen.PhotoDetails -> NavEntry(key) {
-                                            AnimatedVisibility(
-                                                visible = true,
-                                                enter = fadeIn(),
-                                                exit = fadeOut()
-                                            ) {
-                                                val animatedVisibilityScope = this
-                                                PhotoDetailsScreen(
-                                                    sharedTransitionScope = sharedTransitionScope,
-                                                    animatedVisibilityScope = animatedVisibilityScope,
-                                                    photoId = key.photoId,
-                                                    onBack = {
-                                                        if (backStackState.size > 1) {
-                                                            backStackState.removeAt(backStackState.size - 1)
+                                                is Screen.CollectionDetails ->
+                                                    NavEntry(key) {
+                                                        AnimatedVisibility(
+                                                            visible = true,
+                                                            enter = fadeIn(),
+                                                            exit = fadeOut(),
+                                                        ) {
+                                                            val animatedVisibilityScope = this
+                                                            CollectionDetailScreen(
+                                                                sharedTransitionScope = sharedTransitionScope,
+                                                                animatedVisibilityScope = animatedVisibilityScope,
+                                                                collectionId = key.collectionId,
+                                                                onBack = {
+                                                                    if (backStackState.size > 1) {
+                                                                        backStackState.removeAt(backStackState.size - 1)
+                                                                    }
+                                                                },
+                                                                onPhotoClick = { photo ->
+                                                                    backStackState.add(Screen.PhotoDetails(photo.id))
+                                                                },
+                                                                onCollectionClick = { id ->
+                                                                    backStackState.add(Screen.CollectionDetails(id))
+                                                                },
+                                                            )
                                                         }
-                                                    },
-                                                    onUserClick = { username ->
-                                                        backStackState.add(Screen.UserProfile(username))
-                                                    },
-                                                    onTagClick = { tag ->
-                                                        backStackState.add(Screen.Search(query = tag))
                                                     }
-                                                )
-                                            }
-                                        }
-                                        is Screen.UserProfile -> NavEntry(key) {
-                                            AnimatedVisibility(
-                                                visible = true,
-                                                enter = fadeIn(),
-                                                exit = fadeOut()
-                                            ) {
-                                                val animatedVisibilityScope = this
-                                                UserProfileScreen(
-                                                    sharedTransitionScope = sharedTransitionScope,
-                                                    animatedVisibilityScope = animatedVisibilityScope,
-                                                    username = key.username,
-                                                    onBack = {
-                                                        if (backStackState.size > 1) {
-                                                            backStackState.removeAt(backStackState.size - 1)
+                                                is Screen.Search ->
+                                                    NavEntry(key) {
+                                                        AnimatedVisibility(
+                                                            visible = true,
+                                                            enter = fadeIn(),
+                                                            exit = fadeOut(),
+                                                        ) {
+                                                            val animatedVisibilityScope = this
+                                                            SearchScreen(
+                                                                sharedTransitionScope = sharedTransitionScope,
+                                                                animatedVisibilityScope = animatedVisibilityScope,
+                                                                initialQuery = key.query,
+                                                                onBack = {
+                                                                    if (backStackState.size > 1) {
+                                                                        backStackState.removeAt(backStackState.size - 1)
+                                                                    }
+                                                                },
+                                                                onPhotoClick = { photo ->
+                                                                    backStackState.add(Screen.PhotoDetails(photo.id))
+                                                                },
+                                                                onUserClick = { user ->
+                                                                    backStackState.add(Screen.UserProfile(user.username))
+                                                                },
+                                                            )
                                                         }
-                                                    },
-                                                    onPhotoClick = { photo ->
-                                                        backStackState.add(Screen.PhotoDetails(photo.id))
-                                                    },
-                                                    onCollectionClick = { col ->
-                                                        backStackState.add(Screen.CollectionDetails(col.id))
                                                     }
-                                                )
+                                                is Screen.PhotoDetails ->
+                                                    NavEntry(key) {
+                                                        AnimatedVisibility(
+                                                            visible = true,
+                                                            enter = fadeIn(),
+                                                            exit = fadeOut(),
+                                                        ) {
+                                                            val animatedVisibilityScope = this
+                                                            PhotoDetailsScreen(
+                                                                sharedTransitionScope = sharedTransitionScope,
+                                                                animatedVisibilityScope = animatedVisibilityScope,
+                                                                photoId = key.photoId,
+                                                                onBack = {
+                                                                    if (backStackState.size > 1) {
+                                                                        backStackState.removeAt(backStackState.size - 1)
+                                                                    }
+                                                                },
+                                                                onUserClick = { username ->
+                                                                    backStackState.add(Screen.UserProfile(username))
+                                                                },
+                                                                onTagClick = { tag ->
+                                                                    backStackState.add(Screen.Search(query = tag))
+                                                                },
+                                                            )
+                                                        }
+                                                    }
+                                                is Screen.UserProfile ->
+                                                    NavEntry(key) {
+                                                        AnimatedVisibility(
+                                                            visible = true,
+                                                            enter = fadeIn(),
+                                                            exit = fadeOut(),
+                                                        ) {
+                                                            val animatedVisibilityScope = this
+                                                            UserProfileScreen(
+                                                                sharedTransitionScope = sharedTransitionScope,
+                                                                animatedVisibilityScope = animatedVisibilityScope,
+                                                                username = key.username,
+                                                                onBack = {
+                                                                    if (backStackState.size > 1) {
+                                                                        backStackState.removeAt(backStackState.size - 1)
+                                                                    }
+                                                                },
+                                                                onPhotoClick = { photo ->
+                                                                    backStackState.add(Screen.PhotoDetails(photo.id))
+                                                                },
+                                                                onCollectionClick = { col ->
+                                                                    backStackState.add(Screen.CollectionDetails(col.id))
+                                                                },
+                                                            )
+                                                        }
+                                                    }
                                             }
-                                        }
-                                    }
+                                        },
+                                    )
                                 }
-                            )
+                            }
                         }
                     }
                 }
@@ -453,10 +576,10 @@ class MainActivity : ComponentActivity() {
     private fun handleShake() {
         if (isFetchingRandom) return
         val backStackState = backStack ?: return
-        
+
         isFetchingRandom = true
         Toast.makeText(this, "🎲 Shaking up a random photo...", Toast.LENGTH_SHORT).show()
-        
+
         lifecycleScope.launch {
             try {
                 val randomPhotos = repository.getRandomPhotos(count = 1)
@@ -479,7 +602,7 @@ class MainActivity : ComponentActivity() {
         sensorManager?.registerListener(
             shakeDetector,
             sensorManager?.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),
-            SensorManager.SENSOR_DELAY_UI
+            SensorManager.SENSOR_DELAY_UI,
         )
     }
 
@@ -489,7 +612,9 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-class ShakeDetector(private val onShake: () -> Unit) : SensorEventListener {
+class ShakeDetector(
+    private val onShake: () -> Unit,
+) : SensorEventListener {
     private var lastUpdate: Long = 0
     private var lastX = 0f
     private var lastY = 0f
@@ -517,7 +642,10 @@ class ShakeDetector(private val onShake: () -> Unit) : SensorEventListener {
         }
     }
 
-    override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) {}
+    override fun onAccuracyChanged(
+        sensor: Sensor,
+        accuracy: Int,
+    ) {}
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
@@ -529,21 +657,24 @@ fun FeedScreen(
     onPhotoClick: (Photo) -> Unit,
     onUserClick: (User) -> Unit,
     onSearchClick: () -> Unit,
-    onRandomClick: () -> Unit
+    onRandomClick: () -> Unit,
 ) {
     val state by presenter.state.collectAsStateWithLifecycle(initialValue = FeedState())
-    val context = LocalPlatformContext.current
     val listState = rememberLazyStaggeredGridState()
 
     // Infinite scrolling logic
-    val shouldLoadMore = remember {
-        derivedStateOf {
-            val lastVisibleItem = listState.layoutInfo.visibleItemsInfo.lastOrNull()
-            val totalItems = listState.layoutInfo.totalItemsCount
-            if (lastVisibleItem == null || totalItems == 0) false
-            else lastVisibleItem.index >= totalItems - 6
+    val shouldLoadMore =
+        remember {
+            derivedStateOf {
+                val lastVisibleItem = listState.layoutInfo.visibleItemsInfo.lastOrNull()
+                val totalItems = listState.layoutInfo.totalItemsCount
+                if (lastVisibleItem == null || totalItems == 0) {
+                    false
+                } else {
+                    lastVisibleItem.index >= totalItems - 6
+                }
+            }
         }
-    }
 
     LaunchedEffect(shouldLoadMore.value) {
         if (shouldLoadMore.value) {
@@ -561,7 +692,7 @@ fun FeedScreen(
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 2.sp,
                             fontSize = 18.sp,
-                            color = Color.White
+                            color = Color.White,
                         )
                     },
                     actions = {
@@ -569,34 +700,36 @@ fun FeedScreen(
                             Icon(
                                 imageVector = Icons.Default.Search,
                                 contentDescription = "Search",
-                                tint = Color.White
+                                tint = Color.White,
                             )
                         }
                         IconButton(onClick = onRandomClick) {
                             Icon(
                                 imageVector = Icons.Default.Refresh,
                                 contentDescription = "Randomize",
-                                tint = Color.White
+                                tint = Color.White,
                             )
                         }
                     },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = Color(0xFF0F0F11)
-                    )
+                    colors =
+                        TopAppBarDefaults.topAppBarColors(
+                            containerColor = Color(0xFF0F0F11),
+                        ),
                 )
 
-                val activeIndex = if (state.selectedTopicSlug == "editorial") {
-                    0
-                } else {
-                    val idx = state.topics.indexOfFirst { it.slug == state.selectedTopicSlug }
-                    if (idx >= 0) idx + 1 else 0
-                }
+                val activeIndex =
+                    if (state.selectedTopicSlug == "editorial") {
+                        0
+                    } else {
+                        val idx = state.topics.indexOfFirst { it.slug == state.selectedTopicSlug }
+                        if (idx >= 0) idx + 1 else 0
+                    }
 
                 SecondaryScrollableTabRow(
                     selectedTabIndex = activeIndex,
                     containerColor = Color(0xFF0F0F11),
                     contentColor = Color.White,
-                    edgePadding = 12.dp
+                    edgePadding = 12.dp,
                 ) {
                     Tab(
                         selected = state.selectedTopicSlug == "editorial",
@@ -605,9 +738,9 @@ fun FeedScreen(
                             Text(
                                 "Editorial",
                                 fontWeight = if (state.selectedTopicSlug == "editorial") FontWeight.Bold else FontWeight.Normal,
-                                fontSize = 13.sp
+                                fontSize = 13.sp,
                             )
-                        }
+                        },
                     )
                     state.topics.forEach { topic ->
                         val isSelected = state.selectedTopicSlug == topic.slug
@@ -618,19 +751,20 @@ fun FeedScreen(
                                 Text(
                                     topic.title,
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                    fontSize = 13.sp
+                                    fontSize = 13.sp,
                                 )
-                            }
+                            },
                         )
                     }
                 }
             }
-        }
+        },
     ) { paddingValues ->
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
         ) {
             if (state.photos.isEmpty() && state.isLoading) {
                 PhotoGridSkeleton()
@@ -644,7 +778,7 @@ fun FeedScreen(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(8.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalItemSpacing = 8.dp
+                    verticalItemSpacing = 8.dp,
                 ) {
                     items(state.photos, key = { it.id }) { photo ->
                         val index = state.photos.indexOfFirst { it.id == photo.id }
@@ -658,17 +792,18 @@ fun FeedScreen(
                             },
                             onUserClick = {
                                 onUserClick(photo.user)
-                            }
+                            },
                         )
                     }
 
                     if (state.isLoading) {
                         item {
                             Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                                contentAlignment = Alignment.Center
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                contentAlignment = Alignment.Center,
                             ) {
                                 CircularProgressIndicator(color = Color.White)
                             }
@@ -688,16 +823,10 @@ fun PhotoCard(
     index: Int,
     photo: Photo,
     onClick: () -> Unit,
-    onUserClick: () -> Unit
+    onUserClick: () -> Unit,
 ) {
     val context = LocalPlatformContext.current
-    val density = LocalDensity.current
-    val configuration = LocalConfiguration.current
-    
-    // Calculate image width based on half screen size to resize request
-    val screenWidthDp = configuration.screenWidthDp
-    val itemWidthPx = with(density) { (screenWidthDp / 2).dp.roundToPx() }
-    
+    val itemWidthPx = calculatePhotoItemWidthPx()
     val aspectRatio = photo.width.toFloat() / photo.height.toFloat()
 
     // Decode BlurHash placeholder in background
@@ -705,70 +834,80 @@ fun PhotoCard(
         value = BlurHashDecoder.decode(photo.blurHash, 32, (32 / aspectRatio).toInt())
     }
 
-    val painter = rememberAsyncImagePainter(
-        model = ImageRequest.Builder(context)
-            .data(photo.urls.raw + "&w=" + itemWidthPx + "&q=80&auto=format")
-            .crossfade(true)
-            .build(),
-        placeholder = placeholderBitmap?.let { BitmapPainter(it.asImageBitmap()) }
-    )
+    val painter =
+        rememberAsyncImagePainter(
+            model =
+                ImageRequest
+                    .Builder(context)
+                    .data(photo.urls.raw + "&w=" + itemWidthPx + "&q=80&auto=format")
+                    .crossfade(true)
+                    .build(),
+            placeholder = placeholderBitmap?.let { BitmapPainter(it.asImageBitmap()) },
+        )
 
     Card(
         shape = RoundedCornerShape(12.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .staggeredEntrance(index = index)
-            .bounceClick(onClick = onClick)
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .staggeredEntrance(index = index)
+                .bounceClick(onClick = onClick),
     ) {
         Box(
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         ) {
             with(sharedTransitionScope) {
                 Image(
                     painter = painter,
                     contentDescription = photo.altDescription ?: photo.description,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(aspectRatio)
-                        .sharedElement(
-                            sharedContentState = rememberSharedContentState(key = "photo_img_${photo.id}"),
-                            animatedVisibilityScope = animatedVisibilityScope
-                        ),
-                    contentScale = ContentScale.Crop
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .aspectRatio(aspectRatio)
+                            .sharedElement(
+                                sharedContentState = rememberSharedContentState(key = "photo_img_${photo.id}"),
+                                animatedVisibilityScope = animatedVisibilityScope,
+                            ),
+                    contentScale = ContentScale.Crop,
                 )
             }
 
             // Dynamic bottom overlay containing photographer attribution
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .align(Alignment.BottomCenter)
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.75f))
-                        )
-                    )
-                    .padding(8.dp)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .align(Alignment.BottomCenter)
+                        .background(
+                            Brush.verticalGradient(
+                                colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.75f)),
+                            ),
+                        ).padding(8.dp),
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onUserClick() }
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .clickable { onUserClick() },
                 ) {
-                    val userProfileImagePainter = rememberAsyncImagePainter(
-                        model = ImageRequest.Builder(context)
-                            .data(photo.user.profileImage.small)
-                            .crossfade(true)
-                            .build()
-                    )
-                    
+                    val userProfileImagePainter =
+                        rememberAsyncImagePainter(
+                            model =
+                                ImageRequest
+                                    .Builder(context)
+                                    .data(photo.user.profileImage.small)
+                                    .crossfade(true)
+                                    .build(),
+                        )
+
                     Image(
                         painter = userProfileImagePainter,
                         contentDescription = "User profile",
-                        modifier = Modifier
-                            .size(24.dp)
-                            .clip(CircleShape)
+                        modifier =
+                            Modifier
+                                .size(24.dp)
+                                .clip(CircleShape),
                     )
 
                     Spacer(modifier = Modifier.width(6.dp))
@@ -780,7 +919,7 @@ fun PhotoCard(
                         fontWeight = FontWeight.Medium,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
                     )
                 }
             }
@@ -789,30 +928,34 @@ fun PhotoCard(
 }
 
 @Composable
-fun ErrorView(error: String, onRetry: () -> Unit) {
+fun ErrorView(
+    error: String,
+    onRetry: () -> Unit,
+) {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .padding(24.dp),
         verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(
             text = "Error Loading Feed",
             fontWeight = FontWeight.Bold,
             color = Color.White,
-            fontSize = 18.sp
+            fontSize = 18.sp,
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = error,
             color = Color.LightGray,
-            fontSize = 14.sp
+            fontSize = 14.sp,
         )
         Spacer(modifier = Modifier.height(16.dp))
         Button(
             onClick = onRetry,
-            colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color.Black)
+            colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color.Black),
         ) {
             Text("Retry")
         }

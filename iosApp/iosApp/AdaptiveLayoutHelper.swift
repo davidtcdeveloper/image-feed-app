@@ -13,9 +13,20 @@ enum AdaptiveLayoutHelper {
         }
         return 2
     }
+
+    static func getCollectionColumnCount(sizeClass: UserInterfaceSizeClass?) -> Int {
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            return sizeClass == .regular ? 3 : 2
+        }
+        return 1
+    }
     #else
     static func getColumnCount() -> Int {
         3 // Standard desktop column count
+    }
+
+    static func getCollectionColumnCount() -> Int {
+        2 // Standard desktop collection count
     }
     #endif
 
@@ -27,11 +38,15 @@ enum AdaptiveLayoutHelper {
         #endif
     }
 
-    static func photosForColumn(index: Int, totalColumns: Int, from photos: [Photo]) -> [Photo] {
+    static func itemsForColumn<T>(index: Int, totalColumns: Int, from items: [T]) -> [T] {
         guard totalColumns > 0 else { return [] }
-        return photos.enumerated()
+        return items.enumerated()
             .filter { $0.offset % totalColumns == index }
             .map(\.element)
+    }
+
+    static func photosForColumn(index: Int, totalColumns: Int, from photos: [Photo]) -> [Photo] {
+        itemsForColumn(index: index, totalColumns: totalColumns, from: photos)
     }
 }
 

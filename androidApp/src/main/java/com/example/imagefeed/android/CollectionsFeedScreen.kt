@@ -2,6 +2,9 @@ package com.example.imagefeed.android
 
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -18,9 +21,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
+import androidx.compose.foundation.lazy.staggeredgrid.items
+import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
@@ -57,15 +61,12 @@ import coil3.compose.rememberAsyncImagePainter
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.example.imagefeed.android.util.BlurHashDecoder
+import com.example.imagefeed.android.util.CollectionMosaicCardSkeleton
+import com.example.imagefeed.android.util.bounceClick
+import com.example.imagefeed.android.util.staggeredEntrance
 import com.example.imagefeed.model.PhotoCollection
 import com.example.imagefeed.presentation.CollectionsFeedPresenter
 import com.example.imagefeed.presentation.CollectionsFeedState
-import androidx.compose.animation.AnimatedVisibilityScope
-import androidx.compose.animation.ExperimentalSharedTransitionApi
-import androidx.compose.animation.SharedTransitionScope
-import com.example.imagefeed.android.util.bounceClick
-import com.example.imagefeed.android.util.staggeredEntrance
-import com.example.imagefeed.android.util.CollectionMosaicCardSkeleton
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
@@ -74,20 +75,24 @@ fun CollectionsFeedScreen(
     animatedVisibilityScope: AnimatedVisibilityScope,
     presenter: CollectionsFeedPresenter,
     onCollectionClick: (PhotoCollection) -> Unit,
-    onSearchClick: () -> Unit
+    onSearchClick: () -> Unit,
 ) {
     val state by presenter.state.collectAsStateWithLifecycle(initialValue = CollectionsFeedState())
-    val listState = rememberLazyListState()
+    val listState = rememberLazyStaggeredGridState()
 
     // Infinite scrolling logic
-    val shouldLoadMore = remember {
-        derivedStateOf {
-            val lastVisibleItem = listState.layoutInfo.visibleItemsInfo.lastOrNull()
-            val totalItems = listState.layoutInfo.totalItemsCount
-            if (lastVisibleItem == null || totalItems == 0) false
-            else lastVisibleItem.index >= totalItems - 3
+    val shouldLoadMore =
+        remember {
+            derivedStateOf {
+                val lastVisibleItem = listState.layoutInfo.visibleItemsInfo.lastOrNull()
+                val totalItems = listState.layoutInfo.totalItemsCount
+                if (lastVisibleItem == null || totalItems == 0) {
+                    false
+                } else {
+                    lastVisibleItem.index >= totalItems - 4
+                }
+            }
         }
-    }
 
     LaunchedEffect(shouldLoadMore.value) {
         if (shouldLoadMore.value) {
@@ -104,7 +109,7 @@ fun CollectionsFeedScreen(
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 2.sp,
                         fontSize = 18.sp,
-                        color = Color.White
+                        color = Color.White,
                     )
                 },
                 actions = {
@@ -112,39 +117,45 @@ fun CollectionsFeedScreen(
                         Image(
                             painter = rememberAsyncImagePainter(model = android.R.drawable.ic_menu_search),
                             contentDescription = "Search",
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier.size(24.dp),
                         )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFF0F0F11)
-                )
+                colors =
+                    TopAppBarDefaults.topAppBarColors(
+                        containerColor = Color(0xFF0F0F11),
+                    ),
             )
-        }
+        },
     ) { paddingValues ->
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
         ) {
             if (state.collections.isEmpty() && state.isLoading) {
-                LazyColumn(
+                LazyVerticalStaggeredGrid(
+                    columns = calculateCollectionGridColumns(),
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalItemSpacing = 16.dp,
                 ) {
-                    items(5) {
+                    items(6) {
                         CollectionMosaicCardSkeleton()
                     }
                 }
             } else if (state.collections.isEmpty() && state.error != null) {
                 ErrorView(error = state.error!!, onRetry = { presenter.refresh() })
             } else {
-                LazyColumn(
+                LazyVerticalStaggeredGrid(
+                    columns = calculateCollectionGridColumns(),
                     state = listState,
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalItemSpacing = 16.dp,
                 ) {
                     items(state.collections, key = { it.id }) { collection ->
                         val index = state.collections.indexOfFirst { it.id == collection.id }
@@ -153,17 +164,18 @@ fun CollectionsFeedScreen(
                             animatedVisibilityScope = animatedVisibilityScope,
                             index = index,
                             collection = collection,
-                            onClick = { onCollectionClick(collection) }
+                            onClick = { onCollectionClick(collection) },
                         )
                     }
 
                     if (state.isLoading) {
-                        item {
+                        item(span = StaggeredGridItemSpan.FullLine) {
                             Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                                contentAlignment = Alignment.Center
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                contentAlignment = Alignment.Center,
                             ) {
                                 CircularProgressIndicator(color = Color.White)
                             }
@@ -182,7 +194,7 @@ fun CollectionMosaicCard(
     animatedVisibilityScope: AnimatedVisibilityScope,
     index: Int,
     collection: PhotoCollection,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) {
     val context = LocalPlatformContext.current
     val density = LocalDensity.current
@@ -203,47 +215,64 @@ fun CollectionMosaicCard(
 
     Card(
         shape = RoundedCornerShape(16.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .staggeredEntrance(index = index)
-            .bounceClick(onClick = onClick),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E24))
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .staggeredEntrance(index = index)
+                .bounceClick(onClick = onClick),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E24)),
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
             // Mosaic Grid: Left large cover, right two smaller thumbnails
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(200.dp)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(200.dp),
             ) {
                 // Left Image: Cover Photo (weight 2f)
-                val coverUrl = collection.coverPhoto?.urls?.raw?.let { "$it&w=${cardWidthPx * 2 / 3}&q=80&auto=format" }
-                    ?: collection.previewPhotos?.firstOrNull()?.urls?.small
+                val coverUrl =
+                    collection.coverPhoto
+                        ?.urls
+                        ?.raw
+                        ?.let { "$it&w=${cardWidthPx * 2 / 3}&q=80&auto=format" }
+                        ?: collection.previewPhotos
+                            ?.firstOrNull()
+                            ?.urls
+                            ?.small
 
                 Box(
-                    modifier = Modifier
-                        .weight(2f)
-                        .fillMaxHeight()
-                        .background(Color(0xFF2C2C35))
+                    modifier =
+                        Modifier
+                            .weight(2f)
+                            .fillMaxHeight()
+                            .background(Color(0xFF2C2C35)),
                 ) {
                     if (coverUrl != null) {
                         with(sharedTransitionScope) {
                             Image(
-                                painter = rememberAsyncImagePainter(
-                                    model = ImageRequest.Builder(context)
-                                        .data(coverUrl)
-                                        .crossfade(true)
-                                        .build(),
-                                    placeholder = placeholderBitmap?.let { BitmapPainter(it.asImageBitmap()) }
-                                ),
-                                contentDescription = collection.title,
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .sharedBounds(
-                                        sharedContentState = rememberSharedContentState(key = "col_cover_${collection.id}"),
-                                        animatedVisibilityScope = animatedVisibilityScope
+                                painter =
+                                    rememberAsyncImagePainter(
+                                        model =
+                                            ImageRequest
+                                                .Builder(context)
+                                                .data(coverUrl)
+                                                .crossfade(true)
+                                                .build(),
+                                        placeholder = placeholderBitmap?.let { BitmapPainter(it.asImageBitmap()) },
                                     ),
-                                contentScale = ContentScale.Crop
+                                contentDescription = collection.title,
+                                modifier =
+                                    Modifier
+                                        .fillMaxSize()
+                                        .sharedBounds(
+                                            sharedContentState =
+                                                rememberSharedContentState(
+                                                    key = "col_cover_${collection.id}",
+                                                ),
+                                            animatedVisibilityScope = animatedVisibilityScope,
+                                        ),
+                                contentScale = ContentScale.Crop,
                             )
                         }
                     }
@@ -253,30 +282,42 @@ fun CollectionMosaicCard(
 
                 // Right Column: Two thumbnails (weight 1f)
                 Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight()
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .fillMaxHeight(),
                 ) {
                     // Top Thumbnail
-                    val topThumbUrl = collection.previewPhotos?.getOrNull(1)?.urls?.small
-                        ?: collection.previewPhotos?.getOrNull(0)?.urls?.small
+                    val topThumbUrl =
+                        collection.previewPhotos
+                            ?.getOrNull(1)
+                            ?.urls
+                            ?.small
+                            ?: collection.previewPhotos
+                                ?.getOrNull(0)
+                                ?.urls
+                                ?.small
                     Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxWidth()
-                            .background(Color(0xFF2C2C35))
+                        modifier =
+                            Modifier
+                                .weight(1f)
+                                .fillMaxWidth()
+                                .background(Color(0xFF2C2C35)),
                     ) {
                         if (topThumbUrl != null) {
                             Image(
-                                painter = rememberAsyncImagePainter(
-                                    model = ImageRequest.Builder(context)
-                                        .data("$topThumbUrl&w=$sideWidthPx&q=80&auto=format")
-                                        .crossfade(true)
-                                        .build()
-                                ),
+                                painter =
+                                    rememberAsyncImagePainter(
+                                        model =
+                                            ImageRequest
+                                                .Builder(context)
+                                                .data("$topThumbUrl&w=$sideWidthPx&q=80&auto=format")
+                                                .crossfade(true)
+                                                .build(),
+                                    ),
                                 contentDescription = "Preview photo 1",
                                 modifier = Modifier.fillMaxSize(),
-                                contentScale = ContentScale.Crop
+                                contentScale = ContentScale.Crop,
                             )
                         }
                     }
@@ -284,25 +325,36 @@ fun CollectionMosaicCard(
                     Spacer(modifier = Modifier.height(4.dp))
 
                     // Bottom Thumbnail
-                    val bottomThumbUrl = collection.previewPhotos?.getOrNull(2)?.urls?.small
-                        ?: collection.previewPhotos?.getOrNull(1)?.urls?.small
+                    val bottomThumbUrl =
+                        collection.previewPhotos
+                            ?.getOrNull(2)
+                            ?.urls
+                            ?.small
+                            ?: collection.previewPhotos
+                                ?.getOrNull(1)
+                                ?.urls
+                                ?.small
                     Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxWidth()
-                            .background(Color(0xFF2C2C35))
+                        modifier =
+                            Modifier
+                                .weight(1f)
+                                .fillMaxWidth()
+                                .background(Color(0xFF2C2C35)),
                     ) {
                         if (bottomThumbUrl != null) {
                             Image(
-                                painter = rememberAsyncImagePainter(
-                                    model = ImageRequest.Builder(context)
-                                        .data("$bottomThumbUrl&w=$sideWidthPx&q=80&auto=format")
-                                        .crossfade(true)
-                                        .build()
-                                ),
+                                painter =
+                                    rememberAsyncImagePainter(
+                                        model =
+                                            ImageRequest
+                                                .Builder(context)
+                                                .data("$bottomThumbUrl&w=$sideWidthPx&q=80&auto=format")
+                                                .crossfade(true)
+                                                .build(),
+                                    ),
                                 contentDescription = "Preview photo 2",
                                 modifier = Modifier.fillMaxSize(),
-                                contentScale = ContentScale.Crop
+                                contentScale = ContentScale.Crop,
                             )
                         }
                     }
@@ -311,9 +363,10 @@ fun CollectionMosaicCard(
 
             // Collection Information Footer
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(12.dp)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(12.dp),
             ) {
                 Text(
                     text = collection.title,
@@ -321,7 +374,7 @@ fun CollectionMosaicCard(
                     fontSize = 16.sp,
                     color = Color.White,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
                 )
 
                 val description = collection.description
@@ -332,7 +385,7 @@ fun CollectionMosaicCard(
                         fontSize = 13.sp,
                         color = Color.LightGray,
                         maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
 
@@ -340,32 +393,38 @@ fun CollectionMosaicCard(
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
                     // Curator Profile & Attribution
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .weight(1f)
-                            .clickable {
-                                val utmProfile = "${collection.user.links.html}?utm_source=ImageFeedApp&utm_medium=referral"
-                                val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(utmProfile))
-                                context.startActivity(browserIntent)
-                            }
+                        modifier =
+                            Modifier
+                                .weight(1f)
+                                .clickable {
+                                    val userHtml = collection.user.links.html
+                                    val utmProfile = "$userHtml?utm_source=ImageFeedApp&utm_medium=referral"
+                                    val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(utmProfile))
+                                    context.startActivity(browserIntent)
+                                },
                     ) {
-                        val avatarPainter = rememberAsyncImagePainter(
-                            model = ImageRequest.Builder(context)
-                                .data(collection.user.profileImage.small)
-                                .crossfade(true)
-                                .build()
-                        )
+                        val avatarPainter =
+                            rememberAsyncImagePainter(
+                                model =
+                                    ImageRequest
+                                        .Builder(context)
+                                        .data(collection.user.profileImage.small)
+                                        .crossfade(true)
+                                        .build(),
+                            )
 
                         Image(
                             painter = avatarPainter,
                             contentDescription = "Curator profile image",
-                            modifier = Modifier
-                                .size(24.dp)
-                                .clip(CircleShape)
+                            modifier =
+                                Modifier
+                                    .size(24.dp)
+                                    .clip(CircleShape),
                         )
 
                         Spacer(modifier = Modifier.width(8.dp))
@@ -374,7 +433,7 @@ fun CollectionMosaicCard(
                             Text(
                                 text = "Curated by",
                                 fontSize = 10.sp,
-                                color = Color.Gray
+                                color = Color.Gray,
                             )
                             Text(
                                 text = collection.user.name,
@@ -382,22 +441,23 @@ fun CollectionMosaicCard(
                                 fontWeight = FontWeight.SemiBold,
                                 color = Color.White,
                                 maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
+                                overflow = TextOverflow.Ellipsis,
                             )
                         }
                     }
 
                     // Total photos badge
                     Box(
-                        modifier = Modifier
-                            .background(Color.White.copy(alpha = 0.12f), RoundedCornerShape(12.dp))
-                            .padding(horizontal = 10.dp, vertical = 4.dp)
+                        modifier =
+                            Modifier
+                                .background(Color.White.copy(alpha = 0.12f), RoundedCornerShape(12.dp))
+                                .padding(horizontal = 10.dp, vertical = 4.dp),
                     ) {
                         Text(
                             text = "${collection.totalPhotos} Photos",
                             color = Color.White,
                             fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
                         )
                     }
                 }

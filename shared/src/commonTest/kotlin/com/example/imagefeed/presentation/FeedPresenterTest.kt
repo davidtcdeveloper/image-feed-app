@@ -32,7 +32,7 @@ class FeedPresenterTest {
                     topics = listOf(Topic("t1", "nature", "Nature", totalPhotos = 2)),
                     photosByPage = mapOf("editorial" to mapOf(1 to listOf(photo("p1"), photo("p2")))),
                 )
- 
+
             val presenter = FeedPresenter(repository, TestPresenterScopeFactory(dispatcher))
 
             advanceUntilIdle()
@@ -63,8 +63,9 @@ class FeedPresenterTest {
             repository.releaseTopics(listOf(Topic("t1", "nature", "Nature", totalPhotos = 2)))
             advanceUntilIdle()
 
-            assertTrue(presenter.state.value.topics.isEmpty())
-            assertTrue(presenter.state.value.isLoadingTopics)
+            val state = presenter.state.value
+            assertTrue(state.topics.isEmpty())
+            assertTrue(state.isLoadingTopics)
         }
 
     @Test
@@ -77,7 +78,7 @@ class FeedPresenterTest {
                     photosByPage = mapOf("editorial" to mapOf(1 to listOf(photo("old-1")))),
                     refreshedPhotosByPage = mapOf("editorial" to mapOf(1 to listOf(photo("fresh-1"), photo("fresh-2")))),
                 )
- 
+
             val presenter = FeedPresenter(repository, TestPresenterScopeFactory(dispatcher))
             advanceUntilIdle()
 
@@ -105,7 +106,7 @@ class FeedPresenterTest {
                             "nature" to mapOf(1 to listOf(photo("nature-1"))),
                         ),
                 )
- 
+
             val presenter = FeedPresenter(repository, TestPresenterScopeFactory(dispatcher))
             advanceUntilIdle()
 

@@ -24,6 +24,7 @@ androidx-compose-bom = "2026.08.00"
 coil = "3.5.0"
 play-services-maps = "20.0.0"
 maps-compose = "8.5.0"
+androidx-window = "1.4.0"
 
 [libraries]
 # Coroutines & Serialization
@@ -45,6 +46,8 @@ androidx-compose-ui-graphics = { group = "androidx.compose.ui", name = "ui-graph
 androidx-compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
 androidx-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
 androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3" }
+androidx-compose-material3-window-size = { group = "androidx.compose.material3", name = "material3-window-size-class" }
+androidx-window = { group = "androidx.window", name = "window", version.ref = "androidx-window" }
 
 # Android Lifecycle, Activity, Navigation & Image Loading
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "androidx-activity" }

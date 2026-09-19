@@ -12,6 +12,18 @@ struct PhotoDetailsView: View {
     @State private var viewModel: PhotoDetailsViewModel
     @Environment(\.dismiss) private var dismiss
 
+    #if os(iOS)
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    #endif
+
+    private var isDualPane: Bool {
+        #if os(iOS)
+        return horizontalSizeClass == .regular
+        #else
+        return true
+        #endif
+    }
+
     init(photoId: String, heroNamespace: Namespace.ID, onDismiss: (() -> Void)? = nil, onUserSelect: @escaping (String) -> Void, onTagSelect: @escaping (String) -> Void) {
         self.photoId = photoId
         self.heroNamespace = heroNamespace
@@ -50,208 +62,115 @@ struct PhotoDetailsView: View {
                     }
                 }
             } else if let photo = viewModel.photo {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 20) {
-                        // High resolution image section
-                        GeometryReader { geo in
-                            let aspectRatio = CGFloat(photo.width) / CGFloat(photo.height)
-                            let imageUrl = photo.urls.raw + "&w=\(Int(geo.size.width))&q=85&auto=format"
+                if isDualPane {
+                    GeometryReader { totalGeo in
+                        let inspectorWidth = max(320, min(420, totalGeo.size.width * 0.42))
 
-                            KFImage(URL(string: imageUrl))
-                                .resizable()
-                                .aspectRatio(aspectRatio, contentMode: .fill)
-                                .matchedGeometryEffect(id: "photo-img-\(photoId)", in: heroNamespace, isSource: false)
-                                .frame(width: geo.size.width, height: geo.size.height)
-                                .clipped()
-                                .overlay(
-                                    LinearGradient(
-                                        colors: [.clear, .black.opacity(0.85)],
-                                        startPoint: .top,
-                                        endPoint: .bottom))
-                        }
-                        .aspectRatio(CGFloat(photo.width) / CGFloat(photo.height), contentMode: .fit)
-                        .clipped()
+                        HStack(spacing: 0) {
+                            // Left: Photo Canvas
+                            ZStack(alignment: .bottomLeading) {
+                                Color(hex: "070709")
+                                    .ignoresSafeArea()
 
-                        VStack(alignment: .leading, spacing: 20) {
-                            // Photographer Info Row
-                            HStack(spacing: 12) {
-                                KFImage(URL(string: photo.user.profileImage.medium))
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fill)
-                                    .frame(width: 44, height: 44)
-                                    .clipShape(Circle())
-                                    .overlay(Circle().stroke(.white.opacity(0.4), lineWidth: 1.5))
+                                GeometryReader { geo in
+                                    let aspectRatio = CGFloat(photo.width) / CGFloat(photo.height)
+                                    let imageUrl = photo.urls.raw + "&w=\(Int(geo.size.width))&q=85&auto=format"
 
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(photo.user.name)
-                                        .font(.system(size: 15, weight: .bold))
-                                        .foregroundColor(.white)
-                                    Text("@\(photo.user.username)")
-                                        .font(.system(size: 12))
-                                        .foregroundColor(.gray)
+                                    KFImage(URL(string: imageUrl))
+                                        .resizable()
+                                        .aspectRatio(aspectRatio, contentMode: .fit)
+                                        .matchedGeometryEffect(id: "photo-img-\(photoId)", in: heroNamespace, isSource: false)
+                                        .frame(width: geo.size.width, height: geo.size.height)
                                 }
 
-                                Spacer()
+                                // Photographer floating attribution
+                                HStack(spacing: 10) {
+                                    KFImage(URL(string: photo.user.profileImage.medium))
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fill)
+                                        .frame(width: 36, height: 36)
+                                        .clipShape(Circle())
+                                        .overlay(Circle().stroke(.white.opacity(0.4), lineWidth: 1.5))
 
-                                Button(action: {
-                                    onUserSelect(photo.user.username)
-                                }) {
-                                    HStack(spacing: 4) {
-                                        Text("Profile")
-                                            .font(.system(size: 12, weight: .semibold))
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(photo.user.name)
+                                            .font(.system(size: 14, weight: .bold))
+                                            .foregroundColor(.white)
+                                        Text("@\(photo.user.username)")
+                                            .font(.system(size: 11))
+                                            .foregroundColor(.gray)
+                                    }
+
+                                    Spacer()
+
+                                    Button(action: {
+                                        onUserSelect(photo.user.username)
+                                    }) {
                                         Image(systemName: "arrow.up.right")
-                                            .font(.system(size: 10, weight: .bold))
+                                            .font(.system(size: 12, weight: .bold))
+                                            .foregroundColor(.white)
                                     }
-                                    .foregroundColor(.white)
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 6)
-                                    .background(Color.white.opacity(0.15))
-                                    .cornerRadius(16)
                                 }
+                                .padding(12)
+                                .background(Color.black.opacity(0.65))
+                                .cornerRadius(24)
+                                .padding(16)
                             }
-                            .padding(.top, -30) // Overlap slightly into gradient
-                            .padding(.horizontal, 16)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-                            VStack(alignment: .leading, spacing: 16) {
-                                // Title / Description
-                                // The generated Kotlin binding exposes the API field as description_,
-                                // while `photo.description` resolves to Swift's NSObject debug text.
-                                if let description = photo.description_ ?? photo.altDescription {
-                                    Text(description)
-                                        .font(.system(size: 15))
-                                        .lineSpacing(4)
-                                        .foregroundColor(.white)
-                                }
-
-                                // Metrics Grid
-                                HStack(spacing: 12) {
-                                    MetricCard(label: "Views", value: formatMetric(viewModel.stats?.views.total), systemImage: "eye.fill")
-                                    MetricCard(label: "Downloads", value: formatMetric(viewModel.stats?.downloads.total), systemImage: "arrow.down.circle.fill")
-                                    MetricCard(label: "Likes", value: formatMetric(viewModel.stats?.likes?.total), systemImage: "heart.fill")
-                                }
-
-                                // Interactive Chart Section
-                                if let viewsHist = viewModel.stats?.views.historical, !viewsHist.values.isEmpty {
-                                    VStack(alignment: .leading, spacing: 8) {
-                                        Text("HISTORICAL VIEWS (LAST 30 DAYS)")
-                                            .font(.system(size: 11, weight: .bold))
-                                            .foregroundColor(.gray)
-                                            .tracking(1)
-
-                                        HistoricalStatsChart(values: viewsHist.values)
-                                            .padding(16)
-                                            .background(.ultraThinMaterial)
-                                            .cornerRadius(12)
-                                    }
-                                }
-
-                                // Action Download button
-                                Button(action: {
-                                    viewModel.trackDownload()
-                                    if let url = URL(string: photo.urls.full) {
-                                        URLHelper.open(url)
-                                    }
-                                }) {
-                                    HStack {
-                                        Spacer()
-                                        Image(systemName: "arrow.down.doc.fill")
-                                        Text("Download High Resolution")
-                                            .fontWeight(.bold)
-                                        Spacer()
-                                    }
-                                    .foregroundColor(.black)
-                                    .padding(.vertical, 14)
-                                    .background(Color.white)
-                                    .cornerRadius(8)
-                                }
-
-                                // EXIF Glassmorphic Card
-                                if let exif = photo.exif, hasExif(exif) {
-                                    VStack(alignment: .leading, spacing: 8) {
-                                        Text("CAMERA & LENS SPECS")
-                                            .font(.system(size: 11, weight: .bold))
-                                            .foregroundColor(.gray)
-                                            .tracking(1)
-
-                                        VStack(spacing: 12) {
-                                            ExifRowView(label: "Camera", value: formatCamera(make: exif.make, model: exif.model))
-                                            ExifRowView(label: "Aperture", value: exif.aperture != nil ? "f/\(exif.aperture!)" : nil)
-                                            ExifRowView(label: "Exposure Time", value: exif.exposureTime != nil ? "\(exif.exposureTime!)s" : nil)
-                                            ExifRowView(label: "Focal Length", value: exif.focalLength != nil ? "\(exif.focalLength!)mm" : nil)
-                                            ExifRowView(label: "ISO", value: exif.iso != nil ? "\(exif.iso!)" : nil)
-                                        }
-                                        .padding(16)
-                                        .background(.ultraThinMaterial)
-                                        .cornerRadius(12)
-                                    }
-                                }
-
-                                // MapKit Coordinates Card
-                                if let location = photo.location, hasLocation(location) {
-                                    VStack(alignment: .leading, spacing: 8) {
-                                        Text("LOCATION")
-                                            .font(.system(size: 11, weight: .bold))
-                                            .foregroundColor(.gray)
-                                            .tracking(1)
-
-                                        VStack(alignment: .leading, spacing: 10) {
-                                            if let name = location.name {
-                                                Text(name)
-                                                    .font(.system(size: 14, weight: .bold))
-                                                    .foregroundColor(.white)
-                                            }
-
-                                            if let latValue = location.position?.latitude, let lonValue = location.position?.longitude {
-                                                let lat = Double(truncating: latValue)
-                                                let lon = Double(truncating: lonValue)
-                                                MapCardView(latitude: lat, longitude: lon, name: location.name)
-                                                    .onTapGesture {
-                                                        let urlString = "maps://?q=\(location.name?.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")&ll=\(lat),\(lon)"
-                                                        if let url = URL(string: urlString) {
-                                                            URLHelper.open(url)
-                                                        }
-                                                    }
-                                            }
-                                        }
-                                        .padding(16)
-                                        .background(.ultraThinMaterial)
-                                        .cornerRadius(12)
-                                    }
-                                }
-
-                                // Related Tags / Badges Flow
-                                if let tags = photo.tags, !tags.isEmpty {
-                                    VStack(alignment: .leading, spacing: 8) {
-                                        Text("RELATED TAGS")
-                                            .font(.system(size: 11, weight: .bold))
-                                            .foregroundColor(.gray)
-                                            .tracking(1)
-
-                                        FlowLayout(spacing: 8) {
-                                            ForEach(tags, id: \.title) { tag in
-                                                Button(action: {
-                                                    onTagSelect(tag.title)
-                                                }) {
-                                                    Text(tag.title.uppercased())
-                                                        .font(.system(size: 10, weight: .bold))
-                                                        .foregroundColor(.white)
-                                                        .padding(.horizontal, 10)
-                                                        .padding(.vertical, 6)
-                                                        .background(Color.white.opacity(0.12))
-                                                        .cornerRadius(14)
-                                                }
-                                                .buttonStyle(PlainButtonStyle())
-                                            }
-                                        }
-                                    }
-                                }
+                            // Right: Inspector Pane
+                            ScrollView {
+                                PhotoInspectorView(
+                                    photo: photo,
+                                    viewModel: viewModel,
+                                    showPhotographerHeader: true,
+                                    onUserSelect: onUserSelect,
+                                    onTagSelect: onTagSelect
+                                )
+                                .padding(20)
+                                .padding(.bottom, 32)
                             }
-                            .padding(.horizontal, 16)
+                            .frame(width: inspectorWidth)
+                            .background(Color(hex: "0F0F11"))
                         }
                     }
-                    .padding(.bottom, 32)
+                    .ignoresSafeArea(edges: .top)
+                } else {
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 20) {
+                            // High resolution image section
+                            GeometryReader { geo in
+                                let aspectRatio = CGFloat(photo.width) / CGFloat(photo.height)
+                                let imageUrl = photo.urls.raw + "&w=\(Int(geo.size.width))&q=85&auto=format"
+
+                                KFImage(URL(string: imageUrl))
+                                    .resizable()
+                                    .aspectRatio(aspectRatio, contentMode: .fill)
+                                    .matchedGeometryEffect(id: "photo-img-\(photoId)", in: heroNamespace, isSource: false)
+                                    .frame(width: geo.size.width, height: geo.size.height)
+                                    .clipped()
+                                    .overlay(
+                                        LinearGradient(
+                                            colors: [.clear, .black.opacity(0.85)],
+                                            startPoint: .top,
+                                            endPoint: .bottom))
+                            }
+                            .aspectRatio(CGFloat(photo.width) / CGFloat(photo.height), contentMode: .fit)
+                            .clipped()
+
+                            PhotoInspectorView(
+                                photo: photo,
+                                viewModel: viewModel,
+                                showPhotographerHeader: false,
+                                onUserSelect: onUserSelect,
+                                onTagSelect: onTagSelect
+                            )
+                            .padding(.horizontal, 16)
+                        }
+                        .padding(.bottom, 32)
+                    }
+                    .ignoresSafeArea(edges: .top)
                 }
-                .ignoresSafeArea(edges: .top)
             }
         }
         .navigationBarBackButtonHidden(true)
@@ -292,6 +211,232 @@ struct PhotoDetailsView: View {
                 }
             }
             #endif
+        }
+    }
+}
+
+struct PhotoInspectorView: View {
+    let photo: Photo
+    let viewModel: PhotoDetailsViewModel
+    let showPhotographerHeader: Bool
+    let onUserSelect: (String) -> Void
+    let onTagSelect: (String) -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            // Photographer Info Row
+            if showPhotographerHeader {
+                HStack(spacing: 12) {
+                    KFImage(URL(string: photo.user.profileImage.medium))
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(width: 44, height: 44)
+                        .clipShape(Circle())
+                        .overlay(Circle().stroke(.white.opacity(0.4), lineWidth: 1.5))
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(photo.user.name)
+                            .font(.system(size: 15, weight: .bold))
+                            .foregroundColor(.white)
+                        Text("@\(photo.user.username)")
+                            .font(.system(size: 12))
+                            .foregroundColor(.gray)
+                    }
+
+                    Spacer()
+
+                    Button(action: {
+                        onUserSelect(photo.user.username)
+                    }) {
+                        HStack(spacing: 4) {
+                            Text("Profile")
+                                .font(.system(size: 12, weight: .semibold))
+                            Image(systemName: "arrow.up.right")
+                                .font(.system(size: 10, weight: .bold))
+                        }
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(Color.white.opacity(0.15))
+                        .cornerRadius(16)
+                    }
+                }
+                .padding(14)
+                .background(Color(hex: "1E1E24"))
+                .cornerRadius(12)
+            } else {
+                HStack(spacing: 12) {
+                    KFImage(URL(string: photo.user.profileImage.medium))
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(width: 44, height: 44)
+                        .clipShape(Circle())
+                        .overlay(Circle().stroke(.white.opacity(0.4), lineWidth: 1.5))
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(photo.user.name)
+                            .font(.system(size: 15, weight: .bold))
+                            .foregroundColor(.white)
+                        Text("@\(photo.user.username)")
+                            .font(.system(size: 12))
+                            .foregroundColor(.gray)
+                    }
+
+                    Spacer()
+
+                    Button(action: {
+                        onUserSelect(photo.user.username)
+                    }) {
+                        HStack(spacing: 4) {
+                            Text("Profile")
+                                .font(.system(size: 12, weight: .semibold))
+                            Image(systemName: "arrow.up.right")
+                                .font(.system(size: 10, weight: .bold))
+                        }
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(Color.white.opacity(0.15))
+                        .cornerRadius(16)
+                    }
+                }
+                .padding(.top, -30)
+                .padding(.horizontal, 16)
+            }
+
+            VStack(alignment: .leading, spacing: 16) {
+                // Title / Description
+                if let description = photo.description_ ?? photo.altDescription {
+                    Text(description)
+                        .font(.system(size: 15))
+                        .lineSpacing(4)
+                        .foregroundColor(.white)
+                }
+
+                // Metrics Grid
+                HStack(spacing: 12) {
+                    MetricCard(label: "Views", value: formatMetric(viewModel.stats?.views.total), systemImage: "eye.fill")
+                    MetricCard(label: "Downloads", value: formatMetric(viewModel.stats?.downloads.total), systemImage: "arrow.down.circle.fill")
+                    MetricCard(label: "Likes", value: formatMetric(viewModel.stats?.likes?.total), systemImage: "heart.fill")
+                }
+
+                // Interactive Chart Section
+                if let viewsHist = viewModel.stats?.views.historical, !viewsHist.values.isEmpty {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("HISTORICAL VIEWS (LAST 30 DAYS)")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundColor(.gray)
+                            .tracking(1)
+
+                        HistoricalStatsChart(values: viewsHist.values)
+                            .padding(16)
+                            .background(.ultraThinMaterial)
+                            .cornerRadius(12)
+                    }
+                }
+
+                // Action Download button
+                Button(action: {
+                    viewModel.trackDownload()
+                    if let url = URL(string: photo.urls.full) {
+                        URLHelper.open(url)
+                    }
+                }) {
+                    HStack {
+                        Spacer()
+                        Image(systemName: "arrow.down.doc.fill")
+                        Text("Download High Resolution")
+                            .fontWeight(.bold)
+                        Spacer()
+                    }
+                    .foregroundColor(.black)
+                    .padding(.vertical, 14)
+                    .background(Color.white)
+                    .cornerRadius(8)
+                }
+
+                // EXIF Glassmorphic Card
+                if let exif = photo.exif, hasExif(exif) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("CAMERA & LENS SPECS")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundColor(.gray)
+                            .tracking(1)
+
+                        VStack(spacing: 12) {
+                            ExifRowView(label: "Camera", value: formatCamera(make: exif.make, model: exif.model))
+                            ExifRowView(label: "Aperture", value: exif.aperture != nil ? "f/\(exif.aperture!)" : nil)
+                            ExifRowView(label: "Exposure Time", value: exif.exposureTime != nil ? "\(exif.exposureTime!)s" : nil)
+                            ExifRowView(label: "Focal Length", value: exif.focalLength != nil ? "\(exif.focalLength!)mm" : nil)
+                            ExifRowView(label: "ISO", value: exif.iso != nil ? "\(exif.iso!)" : nil)
+                        }
+                        .padding(16)
+                        .background(.ultraThinMaterial)
+                        .cornerRadius(12)
+                    }
+                }
+
+                // MapKit Coordinates Card
+                if let location = photo.location, hasLocation(location) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("LOCATION")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundColor(.gray)
+                            .tracking(1)
+
+                        VStack(alignment: .leading, spacing: 10) {
+                            if let name = location.name {
+                                Text(name)
+                                    .font(.system(size: 14, weight: .bold))
+                                    .foregroundColor(.white)
+                            }
+
+                            if let latValue = location.position?.latitude, let lonValue = location.position?.longitude {
+                                let lat = Double(truncating: latValue)
+                                let lon = Double(truncating: lonValue)
+                                MapCardView(latitude: lat, longitude: lon, name: location.name)
+                                    .onTapGesture {
+                                        let urlString = "maps://?q=\(location.name?.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")&ll=\(lat),\(lon)"
+                                        if let url = URL(string: urlString) {
+                                            URLHelper.open(url)
+                                        }
+                                    }
+                            }
+                        }
+                        .padding(16)
+                        .background(.ultraThinMaterial)
+                        .cornerRadius(12)
+                    }
+                }
+
+                // Related Tags / Badges Flow
+                if let tags = photo.tags, !tags.isEmpty {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("RELATED TAGS")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundColor(.gray)
+                            .tracking(1)
+
+                        FlowLayout(spacing: 8) {
+                            ForEach(tags, id: \.title) { tag in
+                                Button(action: {
+                                    onTagSelect(tag.title)
+                                }) {
+                                    Text(tag.title.uppercased())
+                                        .font(.system(size: 10, weight: .bold))
+                                        .foregroundColor(.white)
+                                        .padding(.horizontal, 10)
+                                        .padding(.vertical, 6)
+                                        .background(Color.white.opacity(0.12))
+                                        .cornerRadius(14)
+                                }
+                                .buttonStyle(PlainButtonStyle())
+                            }
+                        }
+                    }
+                }
+            }
+            .padding(.horizontal, showPhotographerHeader ? 0 : 16)
         }
     }
 

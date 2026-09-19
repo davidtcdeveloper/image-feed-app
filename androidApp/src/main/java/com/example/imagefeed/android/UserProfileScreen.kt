@@ -7,13 +7,15 @@ import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -28,8 +30,8 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
-import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.foundation.rememberScrollState
@@ -78,7 +80,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -87,6 +88,11 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.LocalPlatformContext
 import coil3.compose.rememberAsyncImagePainter
+import com.example.imagefeed.android.util.CollectionMosaicCardSkeleton
+import com.example.imagefeed.android.util.PhotoGridSkeleton
+import com.example.imagefeed.android.util.UserProfileHeaderSkeleton
+import com.example.imagefeed.android.util.bounceClick
+import com.example.imagefeed.android.util.staggeredEntrance
 import com.example.imagefeed.di.MetroHelper
 import com.example.imagefeed.model.Photo
 import com.example.imagefeed.model.PhotoCollection
@@ -94,14 +100,6 @@ import com.example.imagefeed.model.User
 import com.example.imagefeed.model.UserStats
 import com.example.imagefeed.presentation.ProfileTab
 import com.example.imagefeed.presentation.UserProfileState
-import androidx.compose.animation.AnimatedVisibilityScope
-import androidx.compose.animation.ExperimentalSharedTransitionApi
-import androidx.compose.animation.SharedTransitionScope
-import com.example.imagefeed.android.util.bounceClick
-import com.example.imagefeed.android.util.staggeredEntrance
-import com.example.imagefeed.android.util.UserProfileHeaderSkeleton
-import com.example.imagefeed.android.util.PhotoGridSkeleton
-import com.example.imagefeed.android.util.CollectionMosaicCardSkeleton
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
@@ -112,7 +110,7 @@ fun UserProfileScreen(
     username: String,
     onBack: () -> Unit,
     onPhotoClick: (Photo) -> Unit,
-    onCollectionClick: (PhotoCollection) -> Unit
+    onCollectionClick: (PhotoCollection) -> Unit,
 ) {
     val context = LocalPlatformContext.current
     val presenter = remember(username) { MetroHelper.getUserProfilePresenter(username) }
@@ -132,7 +130,7 @@ fun UserProfileScreen(
                         fontSize = 15.sp,
                         color = Color.White,
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        overflow = TextOverflow.Ellipsis,
                     )
                 },
                 navigationIcon = {
@@ -140,7 +138,7 @@ fun UserProfileScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back",
-                            tint = Color.White
+                            tint = Color.White,
                         )
                     }
                 },
@@ -154,32 +152,35 @@ fun UserProfileScreen(
                             Icon(
                                 imageVector = Icons.Default.Share,
                                 contentDescription = "Open in Browser",
-                                tint = Color.White
+                                tint = Color.White,
                             )
                         }
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFF0F0F11)
-                )
+                colors =
+                    TopAppBarDefaults.topAppBarColors(
+                        containerColor = Color(0xFF0F0F11),
+                    ),
             )
-        }
+        },
     ) { paddingValues ->
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .background(Color(0xFF0F0F11))
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .background(Color(0xFF0F0F11)),
         ) {
             if (state.isHeaderLoading && state.user == null) {
                 UserProfileHeaderSkeleton()
             } else if (state.error != null && state.user == null) {
                 Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(24.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .padding(24.dp),
                     verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Text(text = "Failed to load profile", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
                     Spacer(modifier = Modifier.height(8.dp))
@@ -187,7 +188,7 @@ fun UserProfileScreen(
                     Spacer(modifier = Modifier.height(16.dp))
                     Button(
                         onClick = { presenter.loadProfile() },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color.Black)
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color.Black),
                     ) {
                         Text("Retry")
                     }
@@ -202,7 +203,7 @@ fun UserProfileScreen(
                         onTabSelect = { presenter.selectTab(it) },
                         onLoadMore = { presenter.loadNextPage() },
                         onPhotoClick = onPhotoClick,
-                        onCollectionClick = onCollectionClick
+                        onCollectionClick = onCollectionClick,
                     )
                 }
             }
@@ -220,14 +221,15 @@ fun UserProfileContent(
     onTabSelect: (ProfileTab) -> Unit,
     onLoadMore: () -> Unit,
     onPhotoClick: (Photo) -> Unit,
-    onCollectionClick: (PhotoCollection) -> Unit
+    onCollectionClick: (PhotoCollection) -> Unit,
 ) {
     val scrollState = rememberScrollState()
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(scrollState)
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .verticalScroll(scrollState),
     ) {
         // Sticky Profile Info Card
         ProfileHeaderSection(user = user)
@@ -238,16 +240,17 @@ fun UserProfileContent(
         ProfileTabSelector(
             activeTab = state.activeTab,
             user = user,
-            onTabSelect = onTabSelect
+            onTabSelect = onTabSelect,
         )
 
         Spacer(modifier = Modifier.height(8.dp))
 
         // Multi-Tab Content Area
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(min = 400.dp, max = 2000.dp)
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 400.dp, max = 2000.dp),
         ) {
             when (state.activeTab) {
                 ProfileTab.PORTFOLIO -> {
@@ -257,7 +260,7 @@ fun UserProfileContent(
                         photos = state.portfolioPhotos,
                         isLoading = state.isLoadingContent,
                         onLoadMore = onLoadMore,
-                        onPhotoClick = onPhotoClick
+                        onPhotoClick = onPhotoClick,
                     )
                 }
                 ProfileTab.LIKES -> {
@@ -267,7 +270,7 @@ fun UserProfileContent(
                         photos = state.likedPhotos,
                         isLoading = state.isLoadingContent,
                         onLoadMore = onLoadMore,
-                        onPhotoClick = onPhotoClick
+                        onPhotoClick = onPhotoClick,
                     )
                 }
                 ProfileTab.COLLECTIONS -> {
@@ -275,14 +278,14 @@ fun UserProfileContent(
                         collections = state.collections,
                         isLoading = state.isLoadingContent,
                         onLoadMore = onLoadMore,
-                        onCollectionClick = onCollectionClick
+                        onCollectionClick = onCollectionClick,
                     )
                 }
                 ProfileTab.INSIGHTS -> {
                     InsightsTabContent(
                         stats = state.stats,
                         isLoading = state.isLoadingStats,
-                        error = state.error
+                        error = state.error,
                     )
                 }
             }
@@ -293,21 +296,24 @@ fun UserProfileContent(
 @Composable
 fun ProfileHeaderSection(user: User) {
     val context = LocalPlatformContext.current
-    
+
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .widthIn(max = 680.dp)
+                .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Image(
             painter = rememberAsyncImagePainter(model = user.profileImage.large),
             contentDescription = user.name,
-            modifier = Modifier
-                .size(88.dp)
-                .clip(CircleShape)
-                .border(2.dp, Color.White.copy(alpha = 0.8f), CircleShape),
-            contentScale = ContentScale.Crop
+            modifier =
+                Modifier
+                    .size(88.dp)
+                    .clip(CircleShape)
+                    .border(2.dp, Color.White.copy(alpha = 0.8f), CircleShape),
+            contentScale = ContentScale.Crop,
         )
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -317,33 +323,33 @@ fun ProfileHeaderSection(user: User) {
             color = Color.White,
             fontWeight = FontWeight.Bold,
             fontSize = 20.sp,
-            textAlign = TextAlign.Center
+            textAlign = TextAlign.Center,
         )
 
         Text(
             text = "@${user.username}",
             color = Color.Gray,
             fontSize = 13.sp,
-            textAlign = TextAlign.Center
+            textAlign = TextAlign.Center,
         )
 
         if (!user.location.isNullOrEmpty()) {
             Spacer(modifier = Modifier.height(8.dp))
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center
+                horizontalArrangement = Arrangement.Center,
             ) {
                 Icon(
                     imageVector = Icons.Default.LocationOn,
                     contentDescription = "Location",
                     tint = Color.LightGray,
-                    modifier = Modifier.size(14.dp)
+                    modifier = Modifier.size(14.dp),
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
                     text = user.location ?: "",
                     color = Color.LightGray,
-                    fontSize = 12.sp
+                    fontSize = 12.sp,
                 )
             }
         }
@@ -356,7 +362,7 @@ fun ProfileHeaderSection(user: User) {
                 fontSize = 13.sp,
                 lineHeight = 18.sp,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.padding(horizontal = 16.dp)
+                modifier = Modifier.padding(horizontal = 16.dp),
             )
         }
 
@@ -369,7 +375,7 @@ fun ProfileHeaderSection(user: User) {
             Spacer(modifier = Modifier.height(16.dp))
             Row(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 if (hasInstagram) {
                     SocialBadge(label = "Instagram", handle = user.social?.instagramUsername ?: "") {
@@ -378,9 +384,11 @@ fun ProfileHeaderSection(user: User) {
                         intent.setPackage("com.instagram.android")
                         try {
                             context.startActivity(intent)
-                        } catch (e: Exception) {
+                        } catch (_: Exception) {
                             // Fallback to web browser
-                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://instagram.com/${user.social?.instagramUsername}")))
+                            context.startActivity(
+                                Intent(Intent.ACTION_VIEW, Uri.parse("https://instagram.com/${user.social?.instagramUsername}")),
+                            )
                         }
                     }
                 }
@@ -391,9 +399,11 @@ fun ProfileHeaderSection(user: User) {
                         intent.setPackage("com.twitter.android")
                         try {
                             context.startActivity(intent)
-                        } catch (e: Exception) {
+                        } catch (_: Exception) {
                             // Fallback to web browser
-                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://twitter.com/${user.social?.twitterUsername}")))
+                            context.startActivity(
+                                Intent(Intent.ACTION_VIEW, Uri.parse("https://twitter.com/${user.social?.twitterUsername}")),
+                            )
                         }
                     }
                 }
@@ -409,19 +419,24 @@ fun ProfileHeaderSection(user: User) {
 }
 
 @Composable
-fun SocialBadge(label: String, handle: String, onClick: () -> Unit) {
+fun SocialBadge(
+    label: String,
+    handle: String,
+    onClick: () -> Unit,
+) {
     Box(
-        modifier = Modifier
-            .background(Color(0xFF1E1E24), RoundedCornerShape(16.dp))
-            .bounceClick { onClick() }
-            .padding(horizontal = 12.dp, vertical = 6.dp)
+        modifier =
+            Modifier
+                .background(Color(0xFF1E1E24), RoundedCornerShape(16.dp))
+                .bounceClick { onClick() }
+                .padding(horizontal = 12.dp, vertical = 6.dp),
     ) {
         Text(
             text = "$label: @$handle".uppercase(),
             color = Color.White,
             fontWeight = FontWeight.Bold,
             fontSize = 9.sp,
-            letterSpacing = 0.5.sp
+            letterSpacing = 0.5.sp,
         )
     }
 }
@@ -430,7 +445,7 @@ fun SocialBadge(label: String, handle: String, onClick: () -> Unit) {
 fun ProfileTabSelector(
     activeTab: ProfileTab,
     user: User,
-    onTabSelect: (ProfileTab) -> Unit
+    onTabSelect: (ProfileTab) -> Unit,
 ) {
     SecondaryTabRow(
         selectedTabIndex = activeTab.ordinal,
@@ -439,18 +454,19 @@ fun ProfileTabSelector(
         indicator = {
             TabRowDefaults.SecondaryIndicator(
                 modifier = Modifier.tabIndicatorOffset(activeTab.ordinal),
-                color = Color.White
+                color = Color.White,
             )
-        }
+        },
     ) {
-        ProfileTab.values().forEach { tab ->
+        ProfileTab.entries.forEach { tab ->
             val isSelected = activeTab == tab
-            val tabLabel = when (tab) {
-                ProfileTab.PORTFOLIO -> "PHOTOS (${user.totalPhotos ?: 0})"
-                ProfileTab.LIKES -> "LIKES (${user.totalLikes ?: 0})"
-                ProfileTab.COLLECTIONS -> "COLLECTIONS (${user.totalCollections ?: 0})"
-                ProfileTab.INSIGHTS -> "INSIGHTS"
-            }
+            val tabLabel =
+                when (tab) {
+                    ProfileTab.PORTFOLIO -> "PHOTOS (${user.totalPhotos ?: 0})"
+                    ProfileTab.LIKES -> "LIKES (${user.totalLikes ?: 0})"
+                    ProfileTab.COLLECTIONS -> "COLLECTIONS (${user.totalCollections ?: 0})"
+                    ProfileTab.INSIGHTS -> "INSIGHTS"
+                }
             Tab(
                 selected = isSelected,
                 onClick = { onTabSelect(tab) },
@@ -458,11 +474,11 @@ fun ProfileTabSelector(
                     Text(
                         text = tabLabel,
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                        fontSize = 11.sp
+                        fontSize = 11.sp,
                     )
                 },
                 selectedContentColor = Color.White,
-                unselectedContentColor = Color.Gray
+                unselectedContentColor = Color.Gray,
             )
         }
     }
@@ -476,17 +492,21 @@ fun PortfolioTabContent(
     photos: List<Photo>,
     isLoading: Boolean,
     onLoadMore: () -> Unit,
-    onPhotoClick: (Photo) -> Unit
+    onPhotoClick: (Photo) -> Unit,
 ) {
     val listState = rememberLazyStaggeredGridState()
-    val shouldLoadMore = remember {
-        derivedStateOf {
-            val lastVisibleItem = listState.layoutInfo.visibleItemsInfo.lastOrNull()
-            val totalItems = listState.layoutInfo.totalItemsCount
-            if (lastVisibleItem == null || totalItems == 0) false
-            else lastVisibleItem.index >= totalItems - 6
+    val shouldLoadMore =
+        remember {
+            derivedStateOf {
+                val lastVisibleItem = listState.layoutInfo.visibleItemsInfo.lastOrNull()
+                val totalItems = listState.layoutInfo.totalItemsCount
+                if (lastVisibleItem == null || totalItems == 0) {
+                    false
+                } else {
+                    lastVisibleItem.index >= totalItems - 6
+                }
+            }
         }
-    }
 
     LaunchedEffect(shouldLoadMore.value) {
         if (shouldLoadMore.value) {
@@ -499,10 +519,11 @@ fun PortfolioTabContent(
             PhotoGridSkeleton()
         } else if (photos.isEmpty()) {
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(48.dp),
-                contentAlignment = Alignment.Center
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(48.dp),
+                contentAlignment = Alignment.Center,
             ) {
                 Text("No photos found.", color = Color.Gray, fontSize = 14.sp)
             }
@@ -510,13 +531,14 @@ fun PortfolioTabContent(
             LazyVerticalStaggeredGrid(
                 columns = calculateGridColumns(),
                 state = listState,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(max = 2000.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 2000.dp),
                 contentPadding = PaddingValues(8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalItemSpacing = 8.dp,
-                userScrollEnabled = false // Scroll is controlled by parent vertical scroll
+                userScrollEnabled = false, // Scroll is controlled by parent vertical scroll
             ) {
                 items(photos, key = { it.id }) { photo ->
                     val index = photos.indexOfFirst { it.id == photo.id }
@@ -526,17 +548,18 @@ fun PortfolioTabContent(
                         index = index,
                         photo = photo,
                         onClick = { onPhotoClick(photo) },
-                        onUserClick = {} // Disable click on same user to avoid looping
+                        onUserClick = {}, // Disable click on same user to avoid looping
                     )
                 }
 
                 if (isLoading) {
                     item {
                         Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            contentAlignment = Alignment.Center
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                            contentAlignment = Alignment.Center,
                         ) {
                             CircularProgressIndicator(color = Color.White)
                         }
@@ -552,17 +575,21 @@ fun CollectionsTabContent(
     collections: List<PhotoCollection>,
     isLoading: Boolean,
     onLoadMore: () -> Unit,
-    onCollectionClick: (PhotoCollection) -> Unit
+    onCollectionClick: (PhotoCollection) -> Unit,
 ) {
     val listState = rememberLazyStaggeredGridState()
-    val shouldLoadMore = remember {
-        derivedStateOf {
-            val lastVisibleItem = listState.layoutInfo.visibleItemsInfo.lastOrNull()
-            val totalItems = listState.layoutInfo.totalItemsCount
-            if (lastVisibleItem == null || totalItems == 0) false
-            else lastVisibleItem.index >= totalItems - 4
+    val shouldLoadMore =
+        remember {
+            derivedStateOf {
+                val lastVisibleItem = listState.layoutInfo.visibleItemsInfo.lastOrNull()
+                val totalItems = listState.layoutInfo.totalItemsCount
+                if (lastVisibleItem == null || totalItems == 0) {
+                    false
+                } else {
+                    lastVisibleItem.index >= totalItems - 4
+                }
+            }
         }
-    }
 
     LaunchedEffect(shouldLoadMore.value) {
         if (shouldLoadMore.value) {
@@ -573,10 +600,11 @@ fun CollectionsTabContent(
     Box(modifier = Modifier.fillMaxSize()) {
         if (collections.isEmpty() && isLoading) {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(12.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 repeat(3) {
                     CollectionMosaicCardSkeleton()
@@ -584,40 +612,44 @@ fun CollectionsTabContent(
             }
         } else if (collections.isEmpty()) {
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(48.dp),
-                contentAlignment = Alignment.Center
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(48.dp),
+                contentAlignment = Alignment.Center,
             ) {
                 Text("No collections found.", color = Color.Gray, fontSize = 14.sp)
             }
         } else {
             LazyVerticalStaggeredGrid(
-                columns = StaggeredGridCells.Fixed(1),
+                columns = calculateCollectionGridColumns(),
                 state = listState,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(max = 2000.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 2000.dp),
                 contentPadding = PaddingValues(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalItemSpacing = 16.dp,
-                userScrollEnabled = false
+                userScrollEnabled = false,
             ) {
                 items(collections, key = { it.id }) { col ->
                     val index = collections.indexOfFirst { it.id == col.id }
                     CollectionRowLayout(
                         collection = col,
                         modifier = Modifier.staggeredEntrance(index),
-                        onClick = { onCollectionClick(col) }
+                        onClick = { onCollectionClick(col) },
                     )
                 }
 
                 if (isLoading) {
                     item {
                         Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            contentAlignment = Alignment.Center
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                            contentAlignment = Alignment.Center,
                         ) {
                             CircularProgressIndicator(color = Color.White)
                         }
@@ -632,14 +664,15 @@ fun CollectionsTabContent(
 fun CollectionRowLayout(
     collection: PhotoCollection,
     modifier: Modifier = Modifier,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) {
     Card(
         shape = RoundedCornerShape(12.dp),
-        modifier = modifier
-            .fillMaxWidth()
-            .height(200.dp)
-            .bounceClick(onClick = onClick)
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .height(200.dp)
+                .bounceClick(onClick = onClick),
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             val coverPhoto = collection.coverPhoto
@@ -648,18 +681,19 @@ fun CollectionRowLayout(
                     painter = rememberAsyncImagePainter(model = coverPhoto.urls.regular),
                     contentDescription = collection.title,
                     modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
+                    contentScale = ContentScale.Crop,
                 )
             } else {
                 Box(modifier = Modifier.fillMaxSize().background(Color(0xFF1E1E24)))
             }
 
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.45f))
-                    .padding(16.dp),
-                contentAlignment = Alignment.BottomStart
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.45f))
+                        .padding(16.dp),
+                contentAlignment = Alignment.BottomStart,
             ) {
                 Column {
                     Text(
@@ -667,13 +701,13 @@ fun CollectionRowLayout(
                         fontWeight = FontWeight.Bold,
                         color = Color.White,
                         fontSize = 16.sp,
-                        letterSpacing = 1.sp
+                        letterSpacing = 1.sp,
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = "${collection.totalPhotos} Photos  ·  Curated by ${collection.user.name}",
                         color = Color.LightGray,
-                        fontSize = 12.sp
+                        fontSize = 12.sp,
                     )
                 }
             }
@@ -685,49 +719,53 @@ fun CollectionRowLayout(
 fun InsightsTabContent(
     stats: UserStats?,
     isLoading: Boolean,
-    error: String?
+    error: String?,
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         if (isLoading && stats == null) {
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(48.dp),
-                contentAlignment = Alignment.Center
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(48.dp),
+                contentAlignment = Alignment.Center,
             ) {
                 CircularProgressIndicator(color = Color.White)
             }
         } else if (error != null && stats == null) {
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(48.dp),
-                contentAlignment = Alignment.Center
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(48.dp),
+                contentAlignment = Alignment.Center,
             ) {
                 Text("Failed to load insights.", color = Color.Gray, fontSize = 14.sp)
             }
         } else if (stats != null) {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
             ) {
                 // Headline Consolidated Stats Panel
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 24.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 24.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     StatItem(
                         label = "Total Views",
                         value = formatStatValue(stats.views.total),
-                        icon = Icons.Default.Info
+                        icon = Icons.Default.Info,
                     )
                     StatItem(
                         label = "Total Downloads",
                         value = formatStatValue(stats.downloads.total),
-                        icon = Icons.Default.LocationOn // placeholder icon
+                        icon = Icons.Default.LocationOn, // placeholder icon
                     )
                 }
 
@@ -739,21 +777,22 @@ fun InsightsTabContent(
                             color = Color.White.copy(alpha = 0.6f),
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
-                            letterSpacing = 1.sp
+                            letterSpacing = 1.sp,
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Card(
                             colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E24)),
                             shape = RoundedCornerShape(12.dp),
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
                         ) {
                             Box(modifier = Modifier.padding(16.dp)) {
                                 InteractiveTimelineChart(
                                     data = viewsList.map { it.value.toFloat() },
                                     dates = viewsList.map { it.date },
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(180.dp)
+                                    modifier =
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .height(180.dp),
                                 )
                             }
                         }
@@ -770,21 +809,22 @@ fun InsightsTabContent(
                             color = Color.White.copy(alpha = 0.6f),
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
-                            letterSpacing = 1.sp
+                            letterSpacing = 1.sp,
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Card(
                             colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E24)),
                             shape = RoundedCornerShape(12.dp),
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
                         ) {
                             Box(modifier = Modifier.padding(16.dp)) {
                                 InteractiveTimelineChart(
                                     data = downloadsList.map { it.value.toFloat() },
                                     dates = downloadsList.map { it.date },
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(180.dp)
+                                    modifier =
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .height(180.dp),
                                 )
                             }
                         }
@@ -799,12 +839,11 @@ fun InsightsTabContent(
 fun InteractiveTimelineChart(
     data: List<Float>,
     dates: List<String>,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     var dragX by remember { mutableStateOf<Float?>(null) }
-    val haptic = LocalHapticFeedback.current
     val context = LocalContext.current
-    
+
     val maxVal = data.maxOrNull() ?: 1f
     val minVal = data.minOrNull() ?: 0f
     val diff = if (maxVal == minVal) 1f else maxVal - minVal
@@ -812,43 +851,44 @@ fun InteractiveTimelineChart(
     val animProgress by animateFloatAsState(
         targetValue = 1f,
         animationSpec = tween(durationMillis = 800),
-        label = "drawChart"
+        label = "drawChart",
     )
 
     Column(modifier = modifier) {
         // Overlay displaying hovered detail
         if (dragX != null && data.isNotEmpty()) {
-            val width = 300.dp // Approx width placeholder
             val density = LocalDensity.current
             val stepX = with(density) { (300.dp / (data.size - 1).coerceAtLeast(1)).toPx() }
             val index = (dragX!! / stepX).roundToInt().coerceIn(0, data.size - 1)
-            
+
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 8.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 8.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
                     text = dates[index],
                     color = Color.LightGray,
                     fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
                 )
                 Text(
                     text = "${data[index].toInt()} units",
                     color = Color.White,
                     fontSize = 13.sp,
-                    fontWeight = FontWeight.ExtraBold
+                    fontWeight = FontWeight.ExtraBold,
                 )
             }
         } else {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Text("Drag curve to inspect daily stats", color = Color.Gray, fontSize = 11.sp)
                 Text("Peak: ${maxVal.toInt()}", color = Color.LightGray, fontSize = 11.sp, fontWeight = FontWeight.Bold)
@@ -856,37 +896,39 @@ fun InteractiveTimelineChart(
         }
 
         Canvas(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth()
-                .clipToBounds()
-                .pointerInput(Unit) {
-                    detectDragGestures(
-                        onDragStart = { offset ->
-                            dragX = offset.x
-                            // Vibrate gracefully using system haptics
-                            val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                                val vibratorManager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager
-                                vibratorManager?.defaultVibrator
-                            } else {
-                                @Suppress("DEPRECATION")
-                                context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
-                            }
+            modifier =
+                Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .clipToBounds()
+                    .pointerInput(Unit) {
+                        detectDragGestures(
+                            onDragStart = { offset ->
+                                dragX = offset.x
+                                // Vibrate gracefully using system haptics
+                                val vibrator =
+                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                                        val vibratorManager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager
+                                        vibratorManager?.defaultVibrator
+                                    } else {
+                                        @Suppress("DEPRECATION")
+                                        context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
+                                    }
 
-                            vibrator?.vibrate(VibrationEffect.createOneShot(20, VibrationEffect.DEFAULT_AMPLITUDE))
-                        },
-                        onDrag = { change, dragAmount ->
-                            change.consume()
-                            dragX = change.position.x
-                        },
-                        onDragEnd = {
-                            dragX = null
-                        },
-                        onDragCancel = {
-                            dragX = null
-                        }
-                    )
-                }
+                                vibrator?.vibrate(VibrationEffect.createOneShot(20, VibrationEffect.DEFAULT_AMPLITUDE))
+                            },
+                            onDrag = { change, _ ->
+                                change.consume()
+                                dragX = change.position.x
+                            },
+                            onDragEnd = {
+                                dragX = null
+                            },
+                            onDragCancel = {
+                                dragX = null
+                            },
+                        )
+                    },
         ) {
             if (data.isEmpty()) return@Canvas
 
@@ -895,66 +937,73 @@ fun InteractiveTimelineChart(
 
             val stepX = width / (data.size - 1).coerceAtLeast(1)
 
-            val points = data.mapIndexed { idx, value ->
-                val x = idx * stepX
-                val y = height - ((value - minVal) / diff) * height * 0.85f - (height * 0.05f)
-                Offset(x, y * animProgress)
-            }
+            val points =
+                data.mapIndexed { idx, value ->
+                    val x = idx * stepX
+                    val y = height - ((value - minVal) / diff) * height * 0.85f - (height * 0.05f)
+                    Offset(x, y * animProgress)
+                }
 
             // Fill gradient
-            val fillPath = Path().apply {
-                moveTo(0f, height)
-                points.forEach { point ->
-                    lineTo(point.x, point.y)
+            val fillPath =
+                Path().apply {
+                    moveTo(0f, height)
+                    points.forEach { point ->
+                        lineTo(point.x, point.y)
+                    }
+                    lineTo(width, height)
+                    close()
                 }
-                lineTo(width, height)
-                close()
-            }
             drawPath(
                 path = fillPath,
-                brush = Brush.verticalGradient(
-                    colors = listOf(Color.White.copy(alpha = 0.22f), Color.Transparent),
-                    startY = 0f,
-                    endY = height
-                )
+                brush =
+                    Brush.verticalGradient(
+                        colors = listOf(Color.White.copy(alpha = 0.22f), Color.Transparent),
+                        startY = 0f,
+                        endY = height,
+                    ),
             )
 
             // Main stroke
-            val strokePath = Path().apply {
-                points.forEachIndexed { idx, point ->
-                    if (idx == 0) moveTo(point.x, point.y)
-                    else lineTo(point.x, point.y)
+            val strokePath =
+                Path().apply {
+                    points.forEachIndexed { idx, point ->
+                        if (idx == 0) {
+                            moveTo(point.x, point.y)
+                        } else {
+                            lineTo(point.x, point.y)
+                        }
+                    }
                 }
-            }
             drawPath(
                 path = strokePath,
                 color = Color.White,
-                style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round)
+                style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round),
             )
 
             // Draw interaction slider line if dragging
             dragX?.let { xOffset ->
                 val index = (xOffset / stepX).roundToInt().coerceIn(0, data.size - 1)
                 val hoverPoint = points[index]
-                
+
                 // Draw vertical indicator line
                 drawLine(
                     color = Color.White.copy(alpha = 0.4f),
                     start = Offset(hoverPoint.x, 0f),
                     end = Offset(hoverPoint.x, height),
-                    strokeWidth = 1.dp.toPx()
+                    strokeWidth = 1.dp.toPx(),
                 )
 
                 // Highlighted interaction dot
                 drawCircle(
                     color = Color.White,
                     radius = 7.dp.toPx(),
-                    center = hoverPoint
+                    center = hoverPoint,
                 )
                 drawCircle(
                     color = Color(0xFF1E1E24),
                     radius = 3.dp.toPx(),
-                    center = hoverPoint
+                    center = hoverPoint,
                 )
             }
         }

@@ -329,12 +329,23 @@ These are the spec files that the implementation notes and planning references s
     *   Add shared tests with a test dispatcher to confirm that in-flight work is cancelled and state emissions stop once the presenter is cleared.
     *   Track the implementation plan in `specs/22_coroutine_lifecycle_scope_management.md`.
 
-### Step 24: July 2026 Dependency Assessment & Update Plan
-1.  **Dependency Audit:**
-    *   Compare currently declared versions catalog against latest stable versions in July 2026.
-2.  **Define Mitigation & Integration Risks:**
-    *   Assess impact of upgrading Gradle 9.6.1, AGP 9.3.0, Ktor 3.5.1, and Google Maps dependencies.
-3.  **Reference Specification:**
-    *   Track the assessment table and step-by-step update plan in `specs/14_dependency_updates.md`.
+### Step 25: Android Tablets & Foldables Adaptive Layout
+1.  **Define Window Size & Posture Infrastructure:**
+    *   Introduce `AdaptiveLayoutInfo` observing `WindowWidthSizeClass` (Compact, Medium, Expanded) and Jetpack WindowManager `FoldingFeature` (Book, TableTop, Flat).
+    *   Add responsive grid column calculation utilities for Photos, Collections, and Search User/Collection items in `AdaptiveUtils.kt`.
+    *   Fix CDN image request resolution calculation using container/column width instead of hardcoding `screenWidthDp / 2`.
+2.  **Modernize Navigation Shell in `MainActivity`:**
+    *   Provide start-docked `NavigationRail` for Medium and Expanded screens ($\ge 600\text{dp}$), replacing the bottom `NavigationBar`.
+    *   Retain bottom `NavigationBar` on Compact screens (< 600dp).
+3.  **Modernize Collections, Search, and Profile Grids:**
+    *   Migrate `CollectionsFeedScreen` from `LazyColumn` to adaptive multi-column grid (`calculateCollectionGridColumns`).
+    *   Update `SearchScreen` and `UserProfileScreen` to eliminate 1-column hardcoding on wide displays.
+4.  **Implement Responsive Dual-Pane Photo Details:**
+    *   Side-by-side Dual-Pane layout on Medium/Expanded widths and Book posture (Left: Photo Canvas; Right: Inspector sidebar with stats, map, EXIF, and tags).
+    *   Horizontal split in TableTop posture (Top: Photo; Bottom: Controls & metadata deck).
+    *   Hinge bounds avoidance to prevent crease bisecting.
+5.  **Reference Specification:**
+    *   Track the detailed layout blueprint and checklist in `specs/23_adaptive_layout_tablets_foldables.md`.
+
 
 

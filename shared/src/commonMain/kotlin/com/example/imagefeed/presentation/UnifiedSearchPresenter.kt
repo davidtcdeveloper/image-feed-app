@@ -4,7 +4,6 @@ import com.example.imagefeed.model.CollectionSummary
 import com.example.imagefeed.model.Photo
 import com.example.imagefeed.model.User
 import com.example.imagefeed.repository.UnsplashRepository
-import com.example.imagefeed.util.CommonFlow
 import dev.zacsweers.metro.Inject
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -13,6 +12,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
 enum class SearchTab { PHOTOS, COLLECTIONS, USERS }
 
@@ -45,15 +45,13 @@ data class SearchState(
 @Inject
 class UnifiedSearchPresenter(
     private val repository: UnsplashRepository,
-    private val presenterScopeFactory: PresenterScopeFactory,
+    presenterScopeFactory: PresenterScopeFactory,
 ) {
     private val presenterScope: PresenterScope = presenterScopeFactory.create()
     private val _state = MutableStateFlow(SearchState())
     val state: StateFlow<SearchState> = _state.asStateFlow()
-    val iosState: CommonFlow<SearchState> = CommonFlow(state)
 
     private var searchJob: Job? = null
-    private val defaultSuggestions = listOf("nature", "travel", "minimalist", "urban", "vintage", "people", "neon", "textures")
 
     fun clear() {
         searchJob?.cancel()
@@ -82,7 +80,7 @@ class UnifiedSearchPresenter(
         searchJob =
             presenterScope.launch {
                 if (!isActive()) return@launch
-                delay(300) // Debounce search requests
+                delay(300.milliseconds) // Debounce search requests
                 if (!isActive()) return@launch
                 performSearch(newQuery, reset = true)
             }
@@ -145,7 +143,10 @@ class UnifiedSearchPresenter(
                                     hasReachedEnd = response.results.isEmpty() || nextPage >= response.totalPages,
                                     isLoadingMore = false,
                                 )
-                            }) return@launch
+                            }
+                        ) {
+                            return@launch
+                        }
                     }
                     SearchTab.COLLECTIONS -> {
                         val nextPage = currentState.collectionPage + 1
@@ -157,7 +158,10 @@ class UnifiedSearchPresenter(
                                     hasReachedEnd = response.results.isEmpty() || nextPage >= response.totalPages,
                                     isLoadingMore = false,
                                 )
-                            }) return@launch
+                            }
+                        ) {
+                            return@launch
+                        }
                     }
                     SearchTab.USERS -> {
                         val nextPage = currentState.userPage + 1
@@ -169,7 +173,10 @@ class UnifiedSearchPresenter(
                                     hasReachedEnd = response.results.isEmpty() || nextPage >= response.totalPages,
                                     isLoadingMore = false,
                                 )
-                            }) return@launch
+                            }
+                        ) {
+                            return@launch
+                        }
                     }
                 }
             } catch (e: Exception) {
@@ -178,7 +185,10 @@ class UnifiedSearchPresenter(
                             isLoadingMore = false,
                             error = e.message ?: "Failed to load more results",
                         )
-                    }) return@launch
+                    }
+                ) {
+                    return@launch
+                }
             }
         }
     }
@@ -241,7 +251,10 @@ class UnifiedSearchPresenter(
                                     hasReachedEnd = response.results.isEmpty() || response.totalPages <= 1,
                                     isLoading = false,
                                 )
-                            }) return@launch
+                            }
+                        ) {
+                            return@launch
+                        }
                     }
                     SearchTab.COLLECTIONS -> {
                         val response = repository.searchCollections(query, 1, 15)
@@ -251,7 +264,10 @@ class UnifiedSearchPresenter(
                                     hasReachedEnd = response.results.isEmpty() || response.totalPages <= 1,
                                     isLoading = false,
                                 )
-                            }) return@launch
+                            }
+                        ) {
+                            return@launch
+                        }
                     }
                     SearchTab.USERS -> {
                         val response = repository.searchUsers(query, 1, 15)
@@ -261,7 +277,10 @@ class UnifiedSearchPresenter(
                                     hasReachedEnd = response.results.isEmpty() || response.totalPages <= 1,
                                     isLoading = false,
                                 )
-                            }) return@launch
+                            }
+                        ) {
+                            return@launch
+                        }
                     }
                 }
             } catch (e: Exception) {
@@ -270,7 +289,10 @@ class UnifiedSearchPresenter(
                             isLoading = false,
                             error = e.message ?: "Search failed",
                         )
-                    }) return@launch
+                    }
+                ) {
+                    return@launch
+                }
             }
         }
     }

@@ -31,6 +31,7 @@ class CollectionDetailPresenter(
     private val presenterScopeFactory: PresenterScopeFactory,
 ) {
     private val presenterScope: PresenterScope = presenterScopeFactory.create()
+
     @AssistedFactory
     interface Factory {
         fun create(collectionId: String): CollectionDetailPresenter

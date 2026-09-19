@@ -7,10 +7,17 @@ import kotlin.math.pow
 import kotlin.math.withSign
 
 object BlurHashDecoder {
-    private val charMap = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz#\$%*+,-.:;=?@[]^_{|}~"
-        .mapIndexed { index, c -> c to index }.toMap()
+    private val charMap =
+        "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz#\$%*+,-.:;=?@[]^_{|}~"
+            .mapIndexed { index, c -> c to index }
+            .toMap()
 
-    fun decode(blurHash: String?, width: Int, height: Int, punch: Float = 1.0f): Bitmap? {
+    fun decode(
+        blurHash: String?,
+        width: Int,
+        height: Int,
+        punch: Float = 1.0f,
+    ): Bitmap? {
         if (blurHash == null || blurHash.length < 6) return null
 
         try {
@@ -21,15 +28,16 @@ object BlurHashDecoder {
             if (blurHash.length != 4 + 2 * xComponents * yComponents) return null
 
             val maxAc = (decode83(blurHash, 1, 2) + 1) / 166f * punch
-            val colors = Array(xComponents * yComponents) { i ->
-                if (i == 0) {
-                    val color = decode83(blurHash, 2, 6)
-                    decodeDc(color)
-                } else {
-                    val color = decode83(blurHash, 6 + (i - 1) * 2, 6 + i * 2)
-                    decodeAc(color, maxAc)
+            val colors =
+                Array(xComponents * yComponents) { i ->
+                    if (i == 0) {
+                        val color = decode83(blurHash, 2, 6)
+                        decodeDc(color)
+                    } else {
+                        val color = decode83(blurHash, 6 + (i - 1) * 2, 6 + i * 2)
+                        decodeAc(color, maxAc)
+                    }
                 }
-            }
 
             val pixels = IntArray(width * height)
             for (y in 0 until height) {
@@ -60,7 +68,11 @@ object BlurHashDecoder {
         }
     }
 
-    private fun decode83(str: String, start: Int, end: Int): Int {
+    private fun decode83(
+        str: String,
+        start: Int,
+        end: Int,
+    ): Int {
         var value = 0
         for (i in start until end) {
             val c = str[i]
@@ -77,14 +89,17 @@ object BlurHashDecoder {
         return floatArrayOf(srgbToLinear(r / 255f), srgbToLinear(g / 255f), srgbToLinear(b / 255f))
     }
 
-    private fun decodeAc(value: Int, maxAc: Float): FloatArray {
+    private fun decodeAc(
+        value: Int,
+        maxAc: Float,
+    ): FloatArray {
         val r = value / (19 * 19)
         val g = (value / 19) % 19
         val b = value % 19
         return floatArrayOf(
             signedPower3((r - 9) / 9f) * maxAc,
             signedPower3((g - 9) / 9f) * maxAc,
-            signedPower3((b - 9) / 9f) * maxAc
+            signedPower3((b - 9) / 9f) * maxAc,
         )
     }
 
@@ -98,11 +113,7 @@ object BlurHashDecoder {
         return if (v <= 0.0031308f) v * 12.92f else 1.055f * v.pow(1f / 2.4f) - 0.055f
     }
 
-    private fun signedPower3(value: Float): Float {
-        return value.pow(3f).withSign(value)
-    }
+    private fun signedPower3(value: Float): Float = value.pow(3f).withSign(value)
 
-    private fun clamp(value: Int): Int {
-        return value.coerceIn(0, 255)
-    }
+    private fun clamp(value: Int): Int = value.coerceIn(0, 255)
 }

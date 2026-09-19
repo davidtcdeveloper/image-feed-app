@@ -2,53 +2,127 @@ import shared
 import SwiftUI
 
 struct CollectionsFeedView: View {
+    #if os(iOS)
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    #endif
+
     @State private var viewModel = CollectionsFeedViewModel()
     let onCollectionSelect: (String) -> Void
     let onSearchClick: () -> Void
 
+    private var columnCount: Int {
+        #if os(iOS)
+        return AdaptiveLayoutHelper.getCollectionColumnCount(sizeClass: sizeClass)
+        #else
+        return AdaptiveLayoutHelper.getCollectionColumnCount()
+        #endif
+    }
+
     var body: some View {
-        ZStack {
-            Color(hex: "0F0F11")
-                .ignoresSafeArea()
+        GeometryReader { geometry in
+            let containerWidth = geometry.size.width
+            let totalSpacing = CGFloat((columnCount - 1) * 16 + 24)
+            let cardWidth = max(200, (containerWidth - totalSpacing) / CGFloat(max(1, columnCount)))
 
-            if viewModel.collections.isEmpty, viewModel.isLoading {
-                ScrollView {
-                    VStack(spacing: 16) {
-                        ForEach(0..<4, id: \.self) { _ in
-                            CollectionMosaicCardSkeleton()
-                        }
-                    }
-                    .padding(.horizontal, 12)
-                    .padding(.top, 10)
-                }
-            } else if viewModel.collections.isEmpty, viewModel.error != nil {
-                ErrorView(error: viewModel.error ?? "Failed to load collections", onRetry: {
-                    viewModel.refresh()
-                })
-            } else {
-                ScrollView {
-                    LazyVStack(spacing: 16) {
-                        ForEach(Array(viewModel.collections.enumerated()), id: \.element.id) { index, collection in
-                            Button(action: {
-                                onCollectionSelect(collection.id)
-                            }) {
-                                CollectionMosaicCard(collection: collection, viewModel: viewModel, onTap: {})
-                                    .staggeredReveal(index: index)
+            ZStack {
+                Color(hex: "0F0F11")
+                    .ignoresSafeArea()
+
+                if viewModel.collections.isEmpty, viewModel.isLoading {
+                    ScrollView {
+                        if columnCount > 1 {
+                            HStack(alignment: .top, spacing: 16) {
+                                ForEach(0..<columnCount, id: \.self) { _ in
+                                    LazyVStack(spacing: 16) {
+                                        ForEach(0..<2, id: \.self) { _ in
+                                            CollectionMosaicCardSkeleton()
+                                        }
+                                    }
+                                }
                             }
-                            .buttonStyle(SpringCardButtonStyle())
-                        }
-
-                        if viewModel.isLoading {
-                            ProgressView()
-                                .tint(.white)
-                                .padding(.vertical, 16)
+                            .padding(.horizontal, 12)
+                            .padding(.top, 10)
+                        } else {
+                            VStack(spacing: 16) {
+                                ForEach(0..<4, id: \.self) { _ in
+                                    CollectionMosaicCardSkeleton()
+                                }
+                            }
+                            .padding(.horizontal, 12)
+                            .padding(.top, 10)
                         }
                     }
-                    .padding(.horizontal, 12)
-                    .padding(.top, 10)
-                }
-                .refreshable {
-                    viewModel.refresh()
+                } else if viewModel.collections.isEmpty, viewModel.error != nil {
+                    ErrorView(error: viewModel.error ?? "Failed to load collections", onRetry: {
+                        viewModel.refresh()
+                    })
+                } else {
+                    ScrollView {
+                        if columnCount > 1 {
+                            HStack(alignment: .top, spacing: 16) {
+                                ForEach(0..<columnCount, id: \.self) { colIndex in
+                                    let columnCollections = AdaptiveLayoutHelper.itemsForColumn(
+                                        index: colIndex,
+                                        totalColumns: columnCount,
+                                        from: viewModel.collections
+                                    )
+                                    LazyVStack(spacing: 16) {
+                                        ForEach(columnCollections, id: \.id) { collection in
+                                            Button(action: {
+                                                onCollectionSelect(collection.id)
+                                            }) {
+                                                CollectionMosaicCard(
+                                                    collection: collection,
+                                                    viewModel: viewModel,
+                                                    cardWidth: cardWidth,
+                                                    columnCount: columnCount,
+                                                    onTap: {}
+                                                )
+                                            }
+                                            .buttonStyle(SpringCardButtonStyle())
+                                        }
+                                    }
+                                }
+                            }
+                            .padding(.horizontal, 12)
+                            .padding(.top, 10)
+
+                            if viewModel.isLoading {
+                                ProgressView()
+                                    .tint(.white)
+                                    .padding(.vertical, 16)
+                            }
+                        } else {
+                            LazyVStack(spacing: 16) {
+                                ForEach(Array(viewModel.collections.enumerated()), id: \.element.id) { index, collection in
+                                    Button(action: {
+                                        onCollectionSelect(collection.id)
+                                    }) {
+                                        CollectionMosaicCard(
+                                            collection: collection,
+                                            viewModel: viewModel,
+                                            cardWidth: cardWidth,
+                                            columnCount: 1,
+                                            onTap: {}
+                                        )
+                                        .staggeredReveal(index: index)
+                                    }
+                                    .buttonStyle(SpringCardButtonStyle())
+                                }
+
+                                if viewModel.isLoading {
+                                    ProgressView()
+                                        .tint(.white)
+                                        .padding(.vertical, 16)
+                                }
+                            }
+                            .padding(.horizontal, 12)
+                            .padding(.top, 10)
+                        }
+                    }
+                    .refreshable {
+                        viewModel.refresh()
+                    }
                 }
             }
         }
@@ -79,18 +153,19 @@ struct CollectionsFeedView: View {
 struct CollectionMosaicCard: View {
     let collection: PhotoCollection
     let viewModel: CollectionsFeedViewModel
+    var cardWidth: CGFloat? = nil
+    var columnCount: Int = 1
     let onTap: () -> Void
 
     var body: some View {
-        let screenWidth = AdaptiveLayoutHelper.getScreenWidth()
-        let cardWidth = Int(screenWidth - 24)
-        let sideWidth = cardWidth / 3
+        let width = Int(cardWidth ?? max(200, (AdaptiveLayoutHelper.getScreenWidth() - 24)))
+        let sideWidth = width / 3
 
         VStack(alignment: .leading, spacing: 0) {
             // Mosaic previews: Left 2/3 and Right two 1/3s stacked
             HStack(spacing: 4) {
                 // Large Cover Photo (Left)
-                let coverUrl = (collection.coverPhoto?.urls.raw ?? "") + "&w=\(cardWidth * 2 / 3)&q=80&auto=format"
+                let coverUrl = (collection.coverPhoto?.urls.raw ?? "") + "&w=\(width * 2 / 3)&q=80&auto=format"
                 KFImage(URL(string: coverUrl))
                     .placeholder {
                         RoundedRectangle(cornerRadius: 0)
@@ -212,7 +287,8 @@ struct CollectionMosaicCard: View {
         }
         .background(Color(hex: "0F0F11"))
         .onAppear {
-            if collection.id == viewModel.collections.last?.id {
+            if let lastIndex = viewModel.collections.lastIndex(where: { $0.id == collection.id }),
+               lastIndex >= viewModel.collections.count - max(4, columnCount * 2) {
                 viewModel.loadNextPage()
             }
         }

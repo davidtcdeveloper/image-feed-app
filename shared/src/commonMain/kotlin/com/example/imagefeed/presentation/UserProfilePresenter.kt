@@ -40,9 +40,10 @@ data class UserProfileState(
 class UserProfilePresenter(
     private val repository: UnsplashRepository,
     @Assisted private val username: String,
-    private val presenterScopeFactory: PresenterScopeFactory,
+    presenterScopeFactory: PresenterScopeFactory,
 ) {
     private val presenterScope: PresenterScope = presenterScopeFactory.create()
+
     @AssistedFactory
     interface Factory {
         fun create(username: String): UserProfilePresenter
@@ -50,6 +51,7 @@ class UserProfilePresenter(
 
     private val _state = MutableStateFlow(UserProfileState())
     val state: StateFlow<UserProfileState> = _state.asStateFlow()
+    @Suppress("unused")// Invoked on Swift code
     val iosState: CommonFlow<UserProfileState> = CommonFlow(state)
 
     init {
@@ -70,7 +72,10 @@ class UserProfilePresenter(
                 val profile = repository.getUserProfile(username)
                 if (!_state.updateIfActive(coroutineContext) {
                         it.copy(user = profile, isHeaderLoading = false)
-                    }) return@launch
+                    }
+                ) {
+                    return@launch
+                }
                 // Fetch the default tab's first page of content
                 loadNextPage()
             } catch (e: Exception) {
@@ -79,7 +84,10 @@ class UserProfilePresenter(
                             isHeaderLoading = false,
                             error = e.message ?: "Failed to load user profile",
                         )
-                    }) return@launch
+                    }
+                ) {
+                    return@launch
+                }
             }
         }
     }
@@ -129,14 +137,20 @@ class UserProfilePresenter(
                             stats = userStats,
                             isLoadingStats = false,
                         )
-                    }) return@launch
+                    }
+                ) {
+                    return@launch
+                }
             } catch (e: Exception) {
                 if (!_state.updateIfActive(coroutineContext) {
                         it.copy(
                             isLoadingStats = false,
                             error = e.message ?: "Failed to load stats",
                         )
-                    }) return@launch
+                    }
+                ) {
+                    return@launch
+                }
             }
         }
     }
@@ -161,14 +175,20 @@ class UserProfilePresenter(
                                     portfolioReachedEnd = items.size < 15,
                                     isLoadingContent = false,
                                 )
-                            }) return@launch
+                            }
+                        ) {
+                            return@launch
+                        }
                     } catch (e: Exception) {
                         if (!_state.updateIfActive(coroutineContext) {
                                 it.copy(
                                     isLoadingContent = false,
                                     error = e.message ?: "Failed to load uploaded photos",
                                 )
-                            }) return@launch
+                            }
+                        ) {
+                            return@launch
+                        }
                     }
                 }
             }
@@ -187,14 +207,20 @@ class UserProfilePresenter(
                                     likesReachedEnd = items.size < 15,
                                     isLoadingContent = false,
                                 )
-                            }) return@launch
+                            }
+                        ) {
+                            return@launch
+                        }
                     } catch (e: Exception) {
                         if (!_state.updateIfActive(coroutineContext) {
                                 it.copy(
                                     isLoadingContent = false,
                                     error = e.message ?: "Failed to load liked photos",
                                 )
-                            }) return@launch
+                            }
+                        ) {
+                            return@launch
+                        }
                     }
                 }
             }
@@ -213,14 +239,20 @@ class UserProfilePresenter(
                                     collectionsReachedEnd = items.size < 15,
                                     isLoadingContent = false,
                                 )
-                            }) return@launch
+                            }
+                        ) {
+                            return@launch
+                        }
                     } catch (e: Exception) {
                         if (!_state.updateIfActive(coroutineContext) {
                                 it.copy(
                                     isLoadingContent = false,
                                     error = e.message ?: "Failed to load user collections",
                                 )
-                            }) return@launch
+                            }
+                        ) {
+                            return@launch
+                        }
                     }
                 }
             }
@@ -230,6 +262,7 @@ class UserProfilePresenter(
         }
     }
 
+    @Suppress("unused") // Invoked on swift code
     fun refresh() {
         _state.update {
             it.copy(

@@ -24,9 +24,10 @@ data class PhotoDetailsState(
 class PhotoDetailsPresenter(
     private val repository: UnsplashRepository,
     @Assisted private val photoId: String,
-    private val presenterScopeFactory: PresenterScopeFactory,
+    presenterScopeFactory: PresenterScopeFactory,
 ) {
     private val presenterScope: PresenterScope = presenterScopeFactory.create()
+
     @AssistedFactory
     interface Factory {
         fun create(photoId: String): PhotoDetailsPresenter
