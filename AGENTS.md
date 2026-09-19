@@ -14,6 +14,9 @@ Load the relevant rule files on demand instead of dumping the full rule set into
 *   `ai-rules/specs-and-commits.md` — specs, planning, and commit-message guidance.
 *   `ai-rules/testing.md` — integration/package-level test strategy, fake-repository patterns, and verification commands.
 *   `ai-rules/git-guidelines.md` — commit hygiene and traceability for commit-time tasks.
+*   `ai-rules/design-principles.md` — cross-platform UI/UX principles, design token discipline, accessibility, attribution, and sensory guidelines.
+*   `ai-rules/material-design.md` — Android Material 3 design tokens, typography, shapes, and component standards.
+*   `ai-rules/apple-design.md` — Apple Human Interface Guidelines (HIG), SwiftUI materials, glassmorphism, translucency, and modern iOS 17/18 interactions.
 
 ## Repository Overview
 
@@ -129,6 +132,7 @@ Every change must be accompanied by a planning artifact in the `specs/` folder.
 *   If the current work matches an existing implementation/spec document, update that existing plan instead of creating a duplicate.
 *   Any new or updated plan must also be referenced from `specs/steps.md` so the implementation path stays traceable.
 *   When working on a feature, bug fix, or refactor, confirm which spec file applies before starting, then update that spec and the related step notes together.
+*   **Implementation Status Tracking**: All specification files must track an explicit implementation status header (e.g. `**Status:** New / Not Implemented`). Upon successfully completing and verifying an implementation, the model MUST update the spec's status property to `**Status:** Implemented` and mark the corresponding step in `specs/steps.md` as `(Completed)`.
 
 This keeps implementation, planning, and execution aligned.
 

@@ -221,7 +221,7 @@ image-feed-app/
 4. **Web/Shared**: Export optimized flat PNG/SVG format for branding and shared targets.
 
 ### Phase 11: macOS Entry Point Integration
-1. **Objective & Design Philosophy:** Create a native macOS desktop application target by reusing 100% of the existing iOS SwiftUI views, models, and shared KMP presenter state with minimal platform divergence.
+1. **Objective & Design Philosophy:** Create a native macOS desktop application target by reusing 100% of the existing iOS SwiftUI views, models, and shared KMP presenter state with minimal platform divergence (`specs/11_macos_entry_point_integration.md`).
 2. **Shared Kotlin Core Configuration:**
    * Configure native macOS compilation targets in `shared/build.gradle.kts` (such as `macosArm64()` and `macosX64()`).
    * Introduce a common `appleMain` source set that both `iosMain` and `macosMain` depend on, ensuring Darwin Ktor and serialization configurations are shared without duplication.
@@ -229,12 +229,23 @@ image-feed-app/
    * Update XcodeGen configurations in `iosApp/project.yml` to define a new `macosApp` target compiled for macOS 14.0+ using the same source code paths.
    * Attach the KMP shared framework pre-build script to compile the macOS native library dynamically.
 4. **Isolating Platform Dependencies:**
-   * Replace or wrap iOS UIKit-specific elements (like `UITabBar`, `UIImpactFeedbackGenerator`, or `UIBezierPath`) inside `#if os(iOS)` or `#if os(macOS)` preprocessor directives, or adopt multiplatform SwiftUI equivalents (such as `UnevenRoundedRectangle`).
-   * Refactor screen width calculations (`UIScreen.main.bounds.width` inside `PhotoCard`) to use `GeometryReader` or layout properties for responsive image resolution tuning.
+   * Replace or wrap iOS UIKit-specific elements inside `#if canImport(UIKit)` or adopt multiplatform SwiftUI equivalents.
+   * Refactor screen width calculations to use `GeometryReader` or layout properties for responsive image resolution tuning.
 5. **Responsive Desktop Layout & Sidebar:**
    * In the macOS entry point, substitute the bottom-aligned `TabView` with a native `NavigationSplitView` sidebar layout.
    * Configure the adaptive staggered grid layout helper to scale column counts dynamically based on window width.
-   * Provide window-level keyboard shortcuts (e.g. `Cmd + S` / `Cmd + R`), menu items, and a prominent toolbar button as alternatives to physical shake gestures.
+
+### Phase 12: Android Material 3 Design & Modernization
+1. **Design System & Tokens Foundation**: Establish `com.example.imagefeed.android.theme` with full M3 color palettes, typography scale, shape hierarchy, dynamic color support (Android 12+), and root `enableEdgeToEdge()` integration (`specs/24_material_3_design_foundation.md`).
+2. **Screen Tokenization**: Replace all hardcoded hex values, text sizes, and custom boxes across all Android screens with semantic tokens (`surfaceContainer`, `typography.titleMedium`, `SuggestionChip`) (`specs/25_material_3_screen_tokenization.md`).
+3. **UX Modernization**: Implement Material 3 `SearchBar`/`DockedSearchBar`, native `PullToRefreshBox` across feeds, app bar scroll behaviors, and haptic feedback (`specs/26_material_3_ux_modernization.md`).
+
+### Phase 13: iOS Modern Apple Interfaces & Glassmorphism
+1. **Glass Foundation & Material System**: Establish `GlassTheme.swift` with reusable materials, specular edge lighting gradients, and accessibility fallback for Reduce Transparency (`specs/27_ios_glass_design_foundation.md`).
+2. **Translucent Navigation & Floating Category Bar**: Eliminate opaque `UITabBarAppearance` overrides, implement `.toolbarBackground(.ultraThinMaterial)` for navigation and tab bars, and turn the category selector into a floating frosted glass pill bar (`specs/28_ios_chrome_navigation_modernization.md`).
+3. **Attribution & Card Modernization**: Replace dark linear gradient scrims in `PhotoCard` with inset floating glass attribution capsules, and modernize metric cards and mosaic badges with glass depth (`specs/29_ios_cards_attribution_glass_redesign.md`).
+4. **Interactive Photo Detents & Sensory Experience**: Refactor photo inspection into a full-canvas image viewer with an interactive detented frosted glass bottom sheet, native iOS 17 `.scrollTransition` physics, and declarative `.sensoryFeedback` (`specs/30_ios_interactive_sheet_and_sensory_experience.md`).
+
 
 
 

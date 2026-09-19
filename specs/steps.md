@@ -46,13 +46,23 @@ The `specs/` folder currently contains the following implementation and design d
 *   `specs/13_macos_back_button_duplication_fix.md`
 *   `specs/14_dependency_updates.md`
 *   `specs/15_gradle_dsl_modernization.md`
+*   `specs/16_clickable_image_labels.md`
 *   `specs/17_build_warnings_resolution.md`
 *   `specs/18_linting_tooling_plan.md`
 *   `specs/19_koin_to_metro_migration_plan.md`
 *   `specs/20_testing_strategy.md`
+*   `specs/21_google_maps_android_integration.md`
 *   `specs/21_android_fluid_animations_plan.md`
 *   `specs/21_ios_fluid_animations_plan.md`
 *   `specs/22_coroutine_lifecycle_scope_management.md`
+*   `specs/23_adaptive_layout_tablets_foldables.md`
+*   `specs/24_material_3_design_foundation.md`
+*   `specs/25_material_3_screen_tokenization.md`
+*   `specs/26_material_3_ux_modernization.md`
+*   `specs/27_ios_glass_design_foundation.md`
+*   `specs/28_ios_chrome_navigation_modernization.md`
+*   `specs/29_ios_cards_attribution_glass_redesign.md`
+*   `specs/30_ios_interactive_sheet_and_sensory_experience.md`
 *   `specs/implementation_plan.md`
 *   `specs/steps.md`
 
@@ -329,6 +339,14 @@ These are the spec files that the implementation notes and planning references s
     *   Add shared tests with a test dispatcher to confirm that in-flight work is cancelled and state emissions stop once the presenter is cleared.
     *   Track the implementation plan in `specs/22_coroutine_lifecycle_scope_management.md`.
 
+### Step 24: July 2026 Dependency Assessment & Update Plan
+1.  **Dependency Audit:**
+    *   Compare currently declared versions catalog against latest stable versions in July 2026.
+2.  **Define Mitigation & Integration Risks:**
+    *   Assess impact of upgrading Gradle 9.6.1, AGP 9.3.0, Ktor 3.5.1, and Google Maps dependencies.
+3.  **Reference Specification:**
+    *   Track the assessment table and step-by-step update plan in `specs/14_dependency_updates.md`.
+
 ### Step 25: Android Tablets & Foldables Adaptive Layout
 1.  **Define Window Size & Posture Infrastructure:**
     *   Introduce `AdaptiveLayoutInfo` observing `WindowWidthSizeClass` (Compact, Medium, Expanded) and Jetpack WindowManager `FoldingFeature` (Book, TableTop, Flat).
@@ -346,6 +364,84 @@ These are the spec files that the implementation notes and planning references s
     *   Hinge bounds avoidance to prevent crease bisecting.
 5.  **Reference Specification:**
     *   Track the detailed layout blueprint and checklist in `specs/23_adaptive_layout_tablets_foldables.md`.
+
+### Step 26: Material 3 Design Foundation
+1.  **Introduce Theme Architecture Package:**
+    *   Create package `com.example.imagefeed.android.theme` containing `Color.kt`, `Type.kt`, `Shape.kt`, and `Theme.kt`.
+    *   Define full Material 3 tonal palettes for Dark and Light modes including multi-tiered surface containers (`surfaceContainerLowest` through `surfaceContainerHighest`).
+    *   Configure `Typography` using official Material 3 typography scale tokens (`display*`, `headline*`, `title*`, `body*`, `label*`).
+    *   Configure `Shapes` scale (`extraSmall` to `extraLarge`).
+2.  **Enable Dynamic Color & System Theme Switching:**
+    *   Implement `ImageFeedTheme` composable with dynamic color support for Android 12+ (`dynamicDarkColorScheme`/`dynamicLightColorScheme`) and `isSystemInDarkTheme()` resolution.
+3.  **Root Activity Setup:**
+    *   Call `enableEdgeToEdge()` in `MainActivity.onCreate()` for transparent system bars and consistent status/navigation bar insets.
+    *   Replace inline `MaterialTheme` in `MainActivity.kt` with `ImageFeedTheme`.
+4.  **Reference Specification:**
+    *   Track blueprint in `specs/24_material_3_design_foundation.md`.
+
+### Step 27: Material 3 Screen Tokenization
+1.  **Refactor Design Tokens Across Screens:**
+    *   Systematically eliminate hardcoded hex colors (`Color(0xFF0F0F11)`, `Color(0xFF1E1E24)`, `Color(0xFF2C2C35)`) across `MainActivity.kt`, `SearchScreen.kt`, `PhotoDetailsScreen.kt`, `UserProfileScreen.kt`, `CollectionsFeedScreen.kt`, and `CollectionDetailScreen.kt`.
+    *   Bind cards and surfaces to semantic tokens (`MaterialTheme.colorScheme.surfaceContainer`, etc.).
+2.  **Standardize Typography & Shapes:**
+    *   Replace hardcoded `fontSize = ...sp` with `MaterialTheme.typography.*` to support system dynamic font scaling.
+    *   Replace ad-hoc `RoundedCornerShape(...)` with `MaterialTheme.shapes.*`.
+3.  **Standardize Component Variants:**
+    *   Replace custom tag boxes in `PhotoDetailsScreen.kt` with Material 3 `SuggestionChip`.
+    *   Align filter chips in `SearchScreen.kt` to M3 `FilterChipDefaults` with semantic container tokens.
+    *   Replace hardcoded button colors with `FilledTonalButton` or `ButtonDefaults.buttonColors` referencing theme tokens.
+4.  **Reference Specification:**
+    *   Track blueprint in `specs/25_material_3_screen_tokenization.md`.
+
+### Step 28: Material 3 UX Modernization
+1.  **Implement Modern SearchBar:**
+    *   Replace ad-hoc `TextField` in `SearchScreen.kt` with Material 3 `SearchBar` on compact screens and `DockedSearchBar` on medium/expanded screens.
+2.  **Implement Native Pull-to-Refresh:**
+    *   Add Material 3 `PullToRefreshBox` with `PullToRefreshDefaults` on Editorial Feed (`MainActivity`), Collections Feed, and Search Results.
+3.  **Configure App Bar Scroll Behaviors:**
+    *   Attach `TopAppBarDefaults.enterAlwaysScrollBehavior()` or `pinnedScrollBehavior()` to feed scroll states.
+4.  **Haptic & Motion Enhancements:**
+    *   Add tactile haptic feedback on pull-to-refresh activation, filter toggling, and photo downloads.
+5.  **Reference Specification:**
+    *   Track blueprint in `specs/26_material_3_ux_modernization.md`.
+
+### Step 29: iOS Glass Design Foundation & SwiftUI Material System
+1.  **Implement Reusable Glass Primitives:**
+    *   Create `GlassTheme.swift` with `GlassBackgroundModifier`, semantic convenience extensions (`.glassBackground(...)`, `.glassCapsule()`, `.glassCard()`).
+    *   Configure specular edge gradients (`LinearGradient` with `0.5pt` stroke) and soft ambient shadows.
+2.  **Accessibility & Fallbacks:**
+    *   Add `@Environment(\.accessibilityReduceTransparency)` fallback support to degrade gracefully to high-contrast opaque semantic colors when enabled.
+3.  **Reference Specification:**
+    *   Track blueprint in `specs/27_ios_glass_design_foundation.md`.
+
+### Step 30: iOS Translucent Chrome & Floating Category Bar
+1.  **Modernize Navigation and Tab Chrome:**
+    *   Remove legacy `UITabBarAppearance.configureWithOpaqueBackground()` from `ContentView.swift`.
+    *   Apply `.toolbarBackground(.ultraThinMaterial, for: .navigationBar, .tabBar)` across feed tabs.
+2.  **Floating Frosted Glass Category Bar:**
+    *   Turn the horizontal category picker into a floating frosted glass capsule strip allowing content to blur underneath.
+3.  **Glass Action Controls:**
+    *   Refactor toolbar icons into circular ultra-thin glass buttons with specular borders.
+4.  **Reference Specification:**
+    *   Track blueprint in `specs/28_ios_chrome_navigation_modernization.md`.
+
+### Step 31: iOS Cards Attribution & Glass Redesign
+1.  **Floating Glass Attribution Capsule:**
+    *   Replace full-width `LinearGradient` bottom scrim in `PhotoCard` with a compact, inset floating glass capsule attribution pill.
+2.  **Glassmorphic Metric & Info Cards:**
+    *   Refactor `MetricCard`, `CollectionMosaicCard` badges, and profile headers with subtle glass depth and specular outlines.
+3.  **Reference Specification:**
+    *   Track blueprint in `specs/29_ios_cards_attribution_glass_redesign.md`.
+
+### Step 32: iOS Interactive Inspector Sheet & Sensory Experience
+1.  **Full-Canvas Image View & Detented Sheet:**
+    *   Refactor iPhone `PhotoDetailsView` to maintain full-canvas photo presentation with interactive detented glass inspector sheet (`.presentationDetents([.fraction(0.35), .fraction(0.7), .large])`).
+2.  **iOS 17 Motion & Sensory Feedback:**
+    *   Implement `.scrollTransition` on grid cards for fluid scaling and opacity entrance.
+    *   Replace imperative `UIImpactFeedbackGenerator` calls with declarative `.sensoryFeedback`.
+3.  **Reference Specification:**
+    *   Track blueprint in `specs/30_ios_interactive_sheet_and_sensory_experience.md`.
+
 
 
 

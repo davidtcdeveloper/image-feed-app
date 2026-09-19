@@ -5,6 +5,7 @@
 - Match the task to the nearest real spec in `specs/` before changing code.
 - If a current spec already covers the work, update that spec instead of creating a duplicate.
 - Update `specs/steps.md` when the implementation path, tooling, or architecture guidance changes.
+- Track implementation status in each spec header (e.g. `**Status:** New / Not Implemented`). Upon successfully completing and verifying an implementation, update the spec's status to `**Status:** Implemented` and mark the corresponding step in `specs/steps.md` as `(Completed)`.
 
 ## Documentation-Only Changes
 
