@@ -365,7 +365,7 @@ These are the spec files that the implementation notes and planning references s
 5.  **Reference Specification:**
     *   Track the detailed layout blueprint and checklist in `specs/23_adaptive_layout_tablets_foldables.md`.
 
-### Step 26: Material 3 Design Foundation
+### Step 26: Material 3 Design Foundation (Completed)
 1.  **Introduce Theme Architecture Package:**
     *   Create package `com.example.imagefeed.android.theme` containing `Color.kt`, `Type.kt`, `Shape.kt`, and `Theme.kt`.
     *   Define full Material 3 tonal palettes for Dark and Light modes including multi-tiered surface containers (`surfaceContainerLowest` through `surfaceContainerHighest`).
@@ -379,7 +379,7 @@ These are the spec files that the implementation notes and planning references s
 4.  **Reference Specification:**
     *   Track blueprint in `specs/24_material_3_design_foundation.md`.
 
-### Step 27: Material 3 Screen Tokenization
+### Step 27: Material 3 Screen Tokenization (Completed)
 1.  **Refactor Design Tokens Across Screens:**
     *   Systematically eliminate hardcoded hex colors (`Color(0xFF0F0F11)`, `Color(0xFF1E1E24)`, `Color(0xFF2C2C35)`) across `MainActivity.kt`, `SearchScreen.kt`, `PhotoDetailsScreen.kt`, `UserProfileScreen.kt`, `CollectionsFeedScreen.kt`, and `CollectionDetailScreen.kt`.
     *   Bind cards and surfaces to semantic tokens (`MaterialTheme.colorScheme.surfaceContainer`, etc.).

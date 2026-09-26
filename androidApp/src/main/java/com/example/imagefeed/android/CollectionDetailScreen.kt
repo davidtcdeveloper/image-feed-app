@@ -31,12 +31,16 @@ import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
@@ -131,9 +135,11 @@ fun CollectionDetailScreen(
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
                                 text = state.collection?.title ?: "Collection",
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 15.sp,
-                                color = Color.White,
+                                style =
+                                    MaterialTheme.typography.titleMedium.copy(
+                                        fontWeight = FontWeight.Bold,
+                                    ),
+                                color = MaterialTheme.colorScheme.onSurface,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                                 modifier = Modifier.widthIn(max = 200.dp),
@@ -141,8 +147,8 @@ fun CollectionDetailScreen(
                             state.collection?.let {
                                 Text(
                                     text = "${it.totalPhotos} Photos",
-                                    fontSize = 11.sp,
-                                    color = Color.LightGray,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
                         }
@@ -150,16 +156,22 @@ fun CollectionDetailScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Image(
-                            painter = rememberAsyncImagePainter(model = android.R.drawable.ic_media_previous),
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back",
-                            modifier = Modifier.size(24.dp),
                         )
                     }
                 },
                 colors =
                     TopAppBarDefaults.topAppBarColors(
-                        containerColor = if (showCollapsedTitle.value) Color(0xEE0F0F11) else Color.Transparent,
+                        containerColor =
+                            if (showCollapsedTitle.value) {
+                                MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)
+                            } else {
+                                Color.Transparent
+                            },
+                        titleContentColor = MaterialTheme.colorScheme.onSurface,
+                        navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
                     ),
             )
         },
@@ -168,12 +180,12 @@ fun CollectionDetailScreen(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .background(Color(0xFF0F0F11))
+                    .background(MaterialTheme.colorScheme.surface)
                     .padding(bottom = paddingValues.calculateBottomPadding()), // top is drawn fully behind transparent top bar
         ) {
             if (state.photos.isEmpty() && state.isLoadingPhotos && state.isHeaderLoading) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = Color.White)
+                    CircularProgressIndicator()
                 }
             } else {
                 LazyVerticalStaggeredGrid(
@@ -208,9 +220,8 @@ fun CollectionDetailScreen(
                         item(span = StaggeredGridItemSpan.FullLine) {
                             Text(
                                 text = "Photos",
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 18.sp,
-                                color = Color.White,
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colorScheme.onSurface,
                                 modifier = Modifier.padding(start = 12.dp, top = 16.dp, bottom = 8.dp),
                             )
                         }
@@ -244,7 +255,7 @@ fun CollectionDetailScreen(
                                         .padding(24.dp),
                                 contentAlignment = Alignment.Center,
                             ) {
-                                CircularProgressIndicator(color = Color.White)
+                                CircularProgressIndicator()
                             }
                         }
                     }
@@ -268,7 +279,7 @@ fun CollectionDetailHeader(
                 Modifier
                     .fillMaxWidth()
                     .height(300.dp)
-                    .background(Color(0xFF1E1E24)),
+                    .background(MaterialTheme.colorScheme.surfaceContainer),
         )
         return
     }
@@ -314,6 +325,7 @@ fun CollectionDetailHeader(
         }
 
         // Overlay Gradient for contrast
+        val surfaceColor = MaterialTheme.colorScheme.surface
         Box(
             modifier =
                 Modifier
@@ -323,8 +335,8 @@ fun CollectionDetailHeader(
                             colors =
                                 listOf(
                                     Color.Black.copy(alpha = 0.5f),
-                                    Color(0xFF0F0F11).copy(alpha = 0.85f),
-                                    Color(0xFF0F0F11),
+                                    surfaceColor.copy(alpha = 0.85f),
+                                    surfaceColor,
                                 ),
                         ),
                     ),
@@ -363,14 +375,13 @@ fun CollectionDetailHeader(
                 Column {
                     Text(
                         text = "Curated by",
-                        fontSize = 11.sp,
-                        color = Color.LightGray,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Text(
                         text = collection.user.name,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White,
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                 }
             }
@@ -378,17 +389,15 @@ fun CollectionDetailHeader(
             // Collection Title & Count
             Text(
                 text = collection.title,
-                fontSize = 24.sp,
-                fontWeight = FontWeight.ExtraBold,
-                color = Color.White,
+                style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.ExtraBold),
+                color = MaterialTheme.colorScheme.onSurface,
                 lineHeight = 28.sp,
             )
 
             Text(
                 text = "${collection.totalPhotos} Photos",
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Medium,
-                color = Color.Gray,
+                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 4.dp, bottom = 8.dp),
             )
 
@@ -397,8 +406,8 @@ fun CollectionDetailHeader(
             if (!description.isNullOrBlank()) {
                 Text(
                     text = description,
-                    fontSize = 14.sp,
-                    color = Color.LightGray,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 3,
                     overflow = TextOverflow.Ellipsis,
                     lineHeight = 20.sp,
@@ -421,9 +430,8 @@ fun RelatedCollectionsCarousel(
     ) {
         Text(
             text = "Related Collections",
-            fontWeight = FontWeight.Bold,
-            fontSize = 16.sp,
-            color = Color.White,
+            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+            color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(start = 12.dp, bottom = 10.dp),
         )
 
@@ -449,7 +457,8 @@ fun RelatedCollectionCard(
 ) {
     val context = LocalPlatformContext.current
     Card(
-        shape = RoundedCornerShape(12.dp),
+        shape = MaterialTheme.shapes.medium,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
         modifier =
             Modifier
                 .width(180.dp)

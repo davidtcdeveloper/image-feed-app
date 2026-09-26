@@ -31,6 +31,7 @@ import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -41,7 +42,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
@@ -142,11 +142,13 @@ fun Modifier.shimmerEffect(): Modifier {
         label = "shimmerTranslate",
     )
 
+    val baseColor = MaterialTheme.colorScheme.surfaceContainerLow
+    val highlightColor = MaterialTheme.colorScheme.surfaceContainerHigh
     val shimmerColors =
         listOf(
-            Color(0xFF16161B),
-            Color(0xFF25252F),
-            Color(0xFF16161B),
+            baseColor,
+            highlightColor,
+            baseColor,
         )
 
     val brush =

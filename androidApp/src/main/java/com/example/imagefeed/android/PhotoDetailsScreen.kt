@@ -40,7 +40,6 @@ import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -48,7 +47,10 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SuggestionChip
+import androidx.compose.material3.SuggestionChipDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -156,14 +158,16 @@ fun PhotoDetailsScreen(
                             Icon(
                                 imageVector = Icons.Default.Share,
                                 contentDescription = "Open in Web",
-                                tint = Color.White,
                             )
                         }
                     }
                 },
                 colors =
                     TopAppBarDefaults.topAppBarColors(
-                        containerColor = Color(0xFF0F0F11),
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        titleContentColor = MaterialTheme.colorScheme.onSurface,
+                        navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
+                        actionIconContentColor = MaterialTheme.colorScheme.onSurface,
                     ),
             )
         },
@@ -173,11 +177,11 @@ fun PhotoDetailsScreen(
                 Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
-                    .background(Color(0xFF0F0F11)),
+                    .background(MaterialTheme.colorScheme.surface),
         ) {
             if (state.isLoading && state.photo == null) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = Color.White)
+                    CircularProgressIndicator()
                 }
             } else if (state.error != null && state.photo == null) {
                 Column(
@@ -190,21 +194,21 @@ fun PhotoDetailsScreen(
                 ) {
                     Text(
                         text = "Failed to load photo",
-                        color = Color.White,
-                        fontSize = 16.sp,
+                        style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = state.error ?: "",
-                        color = Color.Gray,
-                        fontSize = 14.sp,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center,
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Button(
                         onClick = { presenter.loadDetails() },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color.Black),
+                        shape = MaterialTheme.shapes.small,
                     ) {
                         Text("Retry")
                     }
@@ -309,7 +313,7 @@ fun PhotoDetailsContent(
                     Modifier
                         .weight(1f)
                         .fillMaxWidth()
-                        .background(Color(0xFF0F0F11)),
+                        .background(MaterialTheme.colorScheme.surface),
             ) {
                 PhotoInspectorPane(
                     modifier =
@@ -364,7 +368,7 @@ fun PhotoDetailsContent(
                     Modifier
                         .weight(DUAL_PANE_INSPECTOR_WEIGHT)
                         .fillMaxHeight()
-                        .background(Color(0xFF0F0F11)),
+                        .background(MaterialTheme.colorScheme.surface),
             ) {
                 PhotoInspectorPane(
                     modifier =
@@ -441,7 +445,7 @@ fun PhotoCanvasPane(
             modifier =
                 modifier
                     .fillMaxSize()
-                    .background(Color(0xFF070709))
+                    .background(MaterialTheme.colorScheme.surfaceContainerLowest)
                     .clipToBounds(),
             contentAlignment = Alignment.Center,
         ) {
@@ -651,8 +655,8 @@ fun PhotoInspectorPane(
         // Optional photographer header in dual-pane sidebar
         if (showPhotographerHeader) {
             Card(
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E24)),
-                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+                shape = MaterialTheme.shapes.medium,
                 modifier =
                     Modifier
                         .fillMaxWidth()
@@ -679,7 +683,7 @@ fun PhotoInspectorPane(
                             Modifier
                                 .size(44.dp)
                                 .clip(CircleShape)
-                                .border(1.5.dp, Color.White.copy(alpha = 0.7f), CircleShape),
+                                .border(1.5.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape),
                     )
 
                     Spacer(modifier = Modifier.width(12.dp))
@@ -687,15 +691,15 @@ fun PhotoInspectorPane(
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = photo.user.name,
-                            color = Color.White,
-                            fontSize = 15.sp,
+                            style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface,
                         )
                         if (photo.user.username.isNotEmpty()) {
                             Text(
                                 text = "@${photo.user.username}",
-                                color = Color.LightGray,
-                                fontSize = 12.sp,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                     }
@@ -703,7 +707,7 @@ fun PhotoInspectorPane(
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                         contentDescription = "View Profile",
-                        tint = Color.LightGray,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(18.dp),
                     )
                 }
@@ -716,8 +720,8 @@ fun PhotoInspectorPane(
         if (!caption.isNullOrEmpty()) {
             Text(
                 text = caption,
-                color = Color.White,
-                fontSize = 15.sp,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
                 lineHeight = 22.sp,
                 modifier = Modifier.padding(bottom = 16.dp),
             )
@@ -753,9 +757,9 @@ fun PhotoInspectorPane(
             Spacer(modifier = Modifier.height(16.dp))
             Text(
                 text = "HISTORICAL VIEWS (LAST 30 DAYS)",
-                color = Color.White.copy(alpha = 0.6f),
-                fontSize = 11.sp,
+                style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 letterSpacing = 1.sp,
             )
             Spacer(modifier = Modifier.height(8.dp))
@@ -763,8 +767,8 @@ fun PhotoInspectorPane(
             stats.views.historical?.values?.let { historicalList ->
                 if (historicalList.isNotEmpty()) {
                     Card(
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E24)),
-                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+                        shape = MaterialTheme.shapes.medium,
                     ) {
                         Box(modifier = Modifier.padding(16.dp)) {
                             StatisticsLineChart(
@@ -792,12 +796,11 @@ fun PhotoInspectorPane(
                 Modifier
                     .fillMaxWidth()
                     .height(50.dp),
-            shape = RoundedCornerShape(8.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color.Black),
+            shape = MaterialTheme.shapes.small,
         ) {
             Icon(imageVector = Icons.Default.Done, contentDescription = "Download")
             Spacer(modifier = Modifier.width(8.dp))
-            Text(text = "Download High Resolution Image", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+            Text(text = "Download High Resolution Image", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
         }
 
         // EXIF Camera Information
@@ -806,16 +809,16 @@ fun PhotoInspectorPane(
                 Spacer(modifier = Modifier.height(24.dp))
                 Text(
                     text = "CAMERA & LENS SPECS",
-                    color = Color.White.copy(alpha = 0.6f),
-                    fontSize = 11.sp,
+                    style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     letterSpacing = 1.sp,
                 )
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Card(
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E24)),
-                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+                    shape = MaterialTheme.shapes.medium,
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
@@ -838,16 +841,16 @@ fun PhotoInspectorPane(
                 Spacer(modifier = Modifier.height(24.dp))
                 Text(
                     text = "LOCATION",
-                    color = Color.White.copy(alpha = 0.6f),
-                    fontSize = 11.sp,
+                    style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     letterSpacing = 1.sp,
                 )
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Card(
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E24)),
-                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+                    shape = MaterialTheme.shapes.medium,
                     modifier =
                         Modifier
                             .fillMaxWidth()
@@ -883,16 +886,16 @@ fun PhotoInspectorPane(
                             Icon(
                                 imageVector = Icons.Default.LocationOn,
                                 contentDescription = "Location Pin",
-                                tint = Color.White,
+                                tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(28.dp),
                             )
                             Spacer(modifier = Modifier.width(16.dp))
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
                                     text = location.name ?: "Unknown Coordinates",
-                                    color = Color.White,
-                                    fontSize = 14.sp,
+                                    style = MaterialTheme.typography.titleSmall,
                                     fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface,
                                 )
                                 val latStr =
                                     location.position
@@ -911,14 +914,14 @@ fun PhotoInspectorPane(
                                         } else {
                                             "Open in Google Maps"
                                         },
-                                    color = Color.LightGray,
-                                    fontSize = 12.sp,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
                             Icon(
                                 imageVector = Icons.Default.PlayArrow,
                                 contentDescription = "Map Launcher",
-                                tint = Color.LightGray,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(16.dp),
                             )
                         }
@@ -935,7 +938,7 @@ fun PhotoInspectorPane(
                                     Modifier
                                         .fillMaxWidth()
                                         .height(180.dp)
-                                        .clip(RoundedCornerShape(8.dp)),
+                                        .clip(MaterialTheme.shapes.small),
                             ) {
                                 GoogleMap(
                                     modifier = Modifier.fillMaxSize(),
@@ -977,9 +980,9 @@ fun PhotoInspectorPane(
                 Spacer(modifier = Modifier.height(24.dp))
                 Text(
                     text = "RELATED TAGS",
-                    color = Color.White.copy(alpha = 0.6f),
-                    fontSize = 11.sp,
+                    style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     letterSpacing = 1.sp,
                 )
                 Spacer(modifier = Modifier.height(8.dp))
@@ -990,21 +993,22 @@ fun PhotoInspectorPane(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     tags.forEach { tag ->
-                        Box(
-                            modifier =
-                                Modifier
-                                    .background(Color(0xFF22222A), RoundedCornerShape(16.dp))
-                                    .clickable { onTagClick(tag.title) }
-                                    .padding(horizontal = 12.dp, vertical = 6.dp),
-                        ) {
-                            Text(
-                                text = tag.title.uppercase(),
-                                color = Color.White,
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.Bold,
-                                letterSpacing = 0.5.sp,
-                            )
-                        }
+                        SuggestionChip(
+                            onClick = { onTagClick(tag.title) },
+                            label = {
+                                Text(
+                                    text = tag.title.uppercase(),
+                                    style = MaterialTheme.typography.labelSmall,
+                                )
+                            },
+                            shape = MaterialTheme.shapes.small,
+                            colors =
+                                SuggestionChipDefaults.suggestionChipColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                    labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                ),
+                            border = null,
+                        )
                     }
                 }
             }
@@ -1021,8 +1025,8 @@ fun StatItem(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
 ) {
     Card(
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E24)),
-        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+        shape = MaterialTheme.shapes.medium,
         modifier =
             Modifier
                 .width(105.dp),
@@ -1037,13 +1041,23 @@ fun StatItem(
             Icon(
                 imageVector = icon,
                 contentDescription = label,
-                tint = Color.White.copy(alpha = 0.8f),
+                tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(20.dp),
             )
             Spacer(modifier = Modifier.height(8.dp))
-            Text(text = value, fontWeight = FontWeight.Bold, color = Color.White, fontSize = 14.sp)
+            Text(
+                text = value,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
             Spacer(modifier = Modifier.height(4.dp))
-            Text(text = label, color = Color.Gray, fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontWeight = FontWeight.SemiBold,
+            )
         }
     }
 }
@@ -1061,8 +1075,13 @@ fun ExifRow(
                     .padding(vertical = 6.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            Text(text = label, color = Color.Gray, fontSize = 13.sp)
-            Text(text = value, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+            Text(text = label, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                text = value,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                fontWeight = FontWeight.SemiBold,
+            )
         }
     }
 }
@@ -1072,6 +1091,8 @@ fun StatisticsLineChart(
     data: List<Float>,
     modifier: Modifier = Modifier,
 ) {
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val surfaceColor = MaterialTheme.colorScheme.surfaceContainer
     Canvas(modifier = modifier.clipToBounds()) {
         if (data.isEmpty()) return@Canvas
 
@@ -1105,7 +1126,7 @@ fun StatisticsLineChart(
             path = fillPath,
             brush =
                 Brush.verticalGradient(
-                    colors = listOf(Color.White.copy(alpha = 0.25f), Color.Transparent),
+                    colors = listOf(primaryColor.copy(alpha = 0.25f), Color.Transparent),
                     startY = 0f,
                     endY = height,
                 ),
@@ -1124,7 +1145,7 @@ fun StatisticsLineChart(
             }
         drawPath(
             path = strokePath,
-            color = Color.White,
+            color = primaryColor,
             style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round),
         )
 
@@ -1132,12 +1153,12 @@ fun StatisticsLineChart(
         points.forEachIndexed { idx, point ->
             if (idx == 0 || idx == points.size - 1 || idx % (data.size / 4).coerceAtLeast(1) == 0) {
                 drawCircle(
-                    color = Color.White,
+                    color = primaryColor,
                     radius = 4.dp.toPx(),
                     center = point,
                 )
                 drawCircle(
-                    color = Color(0xFF1E1E24),
+                    color = surfaceColor,
                     radius = 2.dp.toPx(),
                     center = point,
                 )

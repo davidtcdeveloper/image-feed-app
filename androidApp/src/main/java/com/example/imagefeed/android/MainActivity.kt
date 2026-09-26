@@ -8,6 +8,7 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
@@ -24,7 +25,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -35,15 +38,14 @@ import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -52,17 +54,14 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
-import androidx.compose.material3.NavigationRailItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SecondaryScrollableTabRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -95,6 +94,7 @@ import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.example.imagefeed.android.adaptive.LocalAdaptiveLayoutInfo
 import com.example.imagefeed.android.adaptive.ProvideAdaptiveLayoutInfo
+import com.example.imagefeed.android.theme.ImageFeedTheme
 import com.example.imagefeed.android.util.BlurHashDecoder
 import com.example.imagefeed.android.util.PhotoGridSkeleton
 import com.example.imagefeed.android.util.bounceClick
@@ -150,6 +150,7 @@ class MainActivity : ComponentActivity() {
     private var isFetchingRandom = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
         // Setup shake sensor
@@ -160,14 +161,7 @@ class MainActivity : ComponentActivity() {
             }
 
         setContent {
-            MaterialTheme(
-                colorScheme =
-                    darkColorScheme(
-                        primary = Color(0xFF111111),
-                        background = Color(0xFF0F0F11),
-                        surface = Color(0xFF1E1E24),
-                    ),
-            ) {
+            ImageFeedTheme {
                 ProvideAdaptiveLayoutInfo(activity = this@MainActivity) {
                     val adaptiveLayoutInfo = LocalAdaptiveLayoutInfo.current
                     Surface(
@@ -222,8 +216,6 @@ class MainActivity : ComponentActivity() {
                         Row(modifier = Modifier.fillMaxSize()) {
                             if (useRail) {
                                 NavigationRail(
-                                    containerColor = Color(0xFF0F0F11),
-                                    contentColor = Color.White,
                                     header = {
                                         IconButton(
                                             onClick = { handleShake() },
@@ -232,7 +224,7 @@ class MainActivity : ComponentActivity() {
                                             Icon(
                                                 imageVector = Icons.Default.Refresh,
                                                 contentDescription = "Randomize",
-                                                tint = Color.White,
+                                                tint = MaterialTheme.colorScheme.onSurface,
                                             )
                                         }
                                     },
@@ -252,14 +244,6 @@ class MainActivity : ComponentActivity() {
                                             )
                                         },
                                         label = { Text("Photos") },
-                                        colors =
-                                            NavigationRailItemDefaults.colors(
-                                                selectedIconColor = Color.Black,
-                                                selectedTextColor = Color.White,
-                                                unselectedIconColor = Color.Gray,
-                                                unselectedTextColor = Color.Gray,
-                                                indicatorColor = Color.White,
-                                            ),
                                     )
 
                                     NavigationRailItem(
@@ -276,14 +260,6 @@ class MainActivity : ComponentActivity() {
                                             )
                                         },
                                         label = { Text("Collections") },
-                                        colors =
-                                            NavigationRailItemDefaults.colors(
-                                                selectedIconColor = Color.Black,
-                                                selectedTextColor = Color.White,
-                                                unselectedIconColor = Color.Gray,
-                                                unselectedTextColor = Color.Gray,
-                                                indicatorColor = Color.White,
-                                            ),
                                     )
 
                                     NavigationRailItem(
@@ -300,26 +276,16 @@ class MainActivity : ComponentActivity() {
                                             )
                                         },
                                         label = { Text("Search") },
-                                        colors =
-                                            NavigationRailItemDefaults.colors(
-                                                selectedIconColor = Color.Black,
-                                                selectedTextColor = Color.White,
-                                                unselectedIconColor = Color.Gray,
-                                                unselectedTextColor = Color.Gray,
-                                                indicatorColor = Color.White,
-                                            ),
                                     )
                                 }
                             }
 
                             Scaffold(
                                 modifier = Modifier.weight(1f),
+                                contentWindowInsets = WindowInsets(0, 0, 0, 0),
                                 bottomBar = {
                                     if (useBottomBar) {
-                                        NavigationBar(
-                                            containerColor = Color(0xFF0F0F11),
-                                            contentColor = Color.White,
-                                        ) {
+                                        NavigationBar {
                                             NavigationBarItem(
                                                 selected = currentScreen is Screen.Feed,
                                                 onClick = {
@@ -334,14 +300,6 @@ class MainActivity : ComponentActivity() {
                                                     )
                                                 },
                                                 label = { Text("Photos") },
-                                                colors =
-                                                    NavigationBarItemDefaults.colors(
-                                                        selectedIconColor = Color.Black,
-                                                        selectedTextColor = Color.White,
-                                                        unselectedIconColor = Color.Gray,
-                                                        unselectedTextColor = Color.Gray,
-                                                        indicatorColor = Color.White,
-                                                    ),
                                             )
 
                                             NavigationBarItem(
@@ -358,14 +316,6 @@ class MainActivity : ComponentActivity() {
                                                     )
                                                 },
                                                 label = { Text("Collections") },
-                                                colors =
-                                                    NavigationBarItemDefaults.colors(
-                                                        selectedIconColor = Color.Black,
-                                                        selectedTextColor = Color.White,
-                                                        unselectedIconColor = Color.Gray,
-                                                        unselectedTextColor = Color.Gray,
-                                                        indicatorColor = Color.White,
-                                                    ),
                                             )
 
                                             NavigationBarItem(
@@ -382,14 +332,6 @@ class MainActivity : ComponentActivity() {
                                                     )
                                                 },
                                                 label = { Text("Search") },
-                                                colors =
-                                                    NavigationBarItemDefaults.colors(
-                                                        selectedIconColor = Color.Black,
-                                                        selectedTextColor = Color.White,
-                                                        unselectedIconColor = Color.Gray,
-                                                        unselectedTextColor = Color.Gray,
-                                                        indicatorColor = Color.White,
-                                                    ),
                                             )
                                         }
                                     }
@@ -406,7 +348,10 @@ class MainActivity : ComponentActivity() {
                                                 finish()
                                             }
                                         },
-                                        modifier = Modifier.padding(innerPadding),
+                                        modifier =
+                                            Modifier
+                                                .padding(innerPadding)
+                                                .consumeWindowInsets(innerPadding),
                                         entryProvider = { navKey ->
                                             when (val key = navKey as Screen) {
                                                 is Screen.Feed ->
@@ -689,10 +634,9 @@ fun FeedScreen(
                     title = {
                         Text(
                             "FEED",
+                            style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 2.sp,
-                            fontSize = 18.sp,
-                            color = Color.White,
                         )
                     },
                     actions = {
@@ -700,20 +644,20 @@ fun FeedScreen(
                             Icon(
                                 imageVector = Icons.Default.Search,
                                 contentDescription = "Search",
-                                tint = Color.White,
                             )
                         }
                         IconButton(onClick = onRandomClick) {
                             Icon(
                                 imageVector = Icons.Default.Refresh,
                                 contentDescription = "Randomize",
-                                tint = Color.White,
                             )
                         }
                     },
                     colors =
                         TopAppBarDefaults.topAppBarColors(
-                            containerColor = Color(0xFF0F0F11),
+                            containerColor = MaterialTheme.colorScheme.surface,
+                            titleContentColor = MaterialTheme.colorScheme.onSurface,
+                            actionIconContentColor = MaterialTheme.colorScheme.onSurface,
                         ),
                 )
 
@@ -727,8 +671,8 @@ fun FeedScreen(
 
                 SecondaryScrollableTabRow(
                     selectedTabIndex = activeIndex,
-                    containerColor = Color(0xFF0F0F11),
-                    contentColor = Color.White,
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    contentColor = MaterialTheme.colorScheme.primary,
                     edgePadding = 12.dp,
                 ) {
                     Tab(
@@ -737,8 +681,8 @@ fun FeedScreen(
                         text = {
                             Text(
                                 "Editorial",
+                                style = MaterialTheme.typography.labelLarge,
                                 fontWeight = if (state.selectedTopicSlug == "editorial") FontWeight.Bold else FontWeight.Normal,
-                                fontSize = 13.sp,
                             )
                         },
                     )
@@ -750,8 +694,8 @@ fun FeedScreen(
                             text = {
                                 Text(
                                     topic.title,
+                                    style = MaterialTheme.typography.labelLarge,
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                    fontSize = 13.sp,
                                 )
                             },
                         )
@@ -805,7 +749,7 @@ fun FeedScreen(
                                         .padding(16.dp),
                                 contentAlignment = Alignment.Center,
                             ) {
-                                CircularProgressIndicator(color = Color.White)
+                                CircularProgressIndicator()
                             }
                         }
                     }
@@ -846,7 +790,8 @@ fun PhotoCard(
         )
 
     Card(
-        shape = RoundedCornerShape(12.dp),
+        shape = MaterialTheme.shapes.medium,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
         modifier =
             Modifier
                 .fillMaxWidth()
@@ -915,8 +860,7 @@ fun PhotoCard(
                     Text(
                         text = photo.user.name,
                         color = Color.White,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Medium,
+                        style = MaterialTheme.typography.labelMedium,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f),
@@ -942,20 +886,20 @@ fun ErrorView(
     ) {
         Text(
             text = "Error Loading Feed",
+            style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
-            color = Color.White,
-            fontSize = 18.sp,
+            color = MaterialTheme.colorScheme.onSurface,
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = error,
-            color = Color.LightGray,
-            fontSize = 14.sp,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(modifier = Modifier.height(16.dp))
         Button(
             onClick = onRetry,
-            colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color.Black),
+            shape = MaterialTheme.shapes.small,
         ) {
             Text("Retry")
         }

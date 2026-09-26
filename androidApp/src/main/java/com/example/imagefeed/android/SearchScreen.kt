@@ -31,7 +31,6 @@ import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -41,7 +40,6 @@ import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -50,9 +48,12 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SecondaryTabRow
+import androidx.compose.material3.SuggestionChip
+import androidx.compose.material3.SuggestionChipDefaults
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.Text
@@ -114,7 +115,7 @@ fun SearchScreen(
 
     Scaffold(
         topBar = {
-            Column(modifier = Modifier.background(Color(0xFF0F0F11))) {
+            Column(modifier = Modifier.background(MaterialTheme.colorScheme.surface)) {
                 Row(
                     modifier =
                         Modifier
@@ -126,33 +127,42 @@ fun SearchScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back",
-                            tint = Color.White,
                         )
                     }
 
                     TextField(
                         value = state.query,
                         onValueChange = { presenter.updateQuery(it) },
-                        placeholder = { Text("Search Photos, Collections, Users...", color = Color.Gray, fontSize = 14.sp) },
+                        placeholder = {
+                            Text(
+                                "Search Photos, Collections, Users...",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        },
                         modifier =
                             Modifier
                                 .weight(1f)
                                 .height(52.dp),
                         colors =
                             TextFieldDefaults.colors(
-                                focusedContainerColor = Color(0xFF1E1E24),
-                                unfocusedContainerColor = Color(0xFF1E1E24),
+                                focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
                                 focusedIndicatorColor = Color.Transparent,
                                 unfocusedIndicatorColor = Color.Transparent,
-                                focusedTextColor = Color.White,
-                                unfocusedTextColor = Color.White,
+                                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                             ),
-                        shape = RoundedCornerShape(26.dp),
+                        shape = MaterialTheme.shapes.extraLarge,
                         singleLine = true,
                         trailingIcon = {
                             if (state.query.isNotEmpty()) {
                                 IconButton(onClick = { presenter.updateQuery("") }) {
-                                    Icon(Icons.Default.Clear, contentDescription = "Clear", tint = Color.LightGray)
+                                    Icon(
+                                        Icons.Default.Clear,
+                                        contentDescription = "Clear",
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
                                 }
                             }
                         },
@@ -162,9 +172,17 @@ fun SearchScreen(
 
                     IconButton(onClick = { showFiltersSheet = true }) {
                         Icon(
-                            imageVector = Icons.AutoMirrored.Filled.List, // Standard List serves as an elegant filter icon
+                            // Standard List serves as an elegant filter icon
+                            imageVector = Icons.AutoMirrored.Filled.List,
                             contentDescription = "Filters",
-                            tint = if (state.filters != SearchFilters()) Color.White else Color.Gray,
+                            tint =
+                                if (state.filters !=
+                                    SearchFilters()
+                                ) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                },
                         )
                     }
                 }
@@ -172,12 +190,12 @@ fun SearchScreen(
                 // Search Category Tabs
                 SecondaryTabRow(
                     selectedTabIndex = state.activeTab.ordinal,
-                    containerColor = Color(0xFF0F0F11),
-                    contentColor = Color.White,
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    contentColor = MaterialTheme.colorScheme.primary,
                     indicator = {
                         TabRowDefaults.SecondaryIndicator(
                             modifier = Modifier.tabIndicatorOffset(state.activeTab.ordinal),
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.primary,
                         )
                     },
                 ) {
@@ -185,9 +203,15 @@ fun SearchScreen(
                         Tab(
                             selected = state.activeTab == tab,
                             onClick = { presenter.setTab(tab) },
-                            text = { Text(tab.name, fontWeight = FontWeight.Bold, fontSize = 13.sp) },
-                            selectedContentColor = Color.White,
-                            unselectedContentColor = Color.Gray,
+                            text = {
+                                Text(
+                                    text = tab.name,
+                                    style = MaterialTheme.typography.labelLarge,
+                                    fontWeight = FontWeight.Bold,
+                                )
+                            },
+                            selectedContentColor = MaterialTheme.colorScheme.primary,
+                            unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }
@@ -199,7 +223,7 @@ fun SearchScreen(
                 Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
-                    .background(Color(0xFF0F0F11)),
+                    .background(MaterialTheme.colorScheme.surface),
         ) {
             if (state.query.isBlank()) {
                 // Show search suggestions and history
@@ -230,7 +254,7 @@ fun SearchScreen(
                     }
                     SearchTab.USERS -> {
                         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            CircularProgressIndicator(color = Color.White)
+                            CircularProgressIndicator()
                         }
                     }
                 }
@@ -243,9 +267,18 @@ fun SearchScreen(
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    Text("Search failed", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                    Text(
+                        "Search failed",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text(state.error ?: "", color = Color.Gray, fontSize = 14.sp)
+                    Text(
+                        text = state.error ?: "",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             } else {
                 // Display content depending on selected Tab
@@ -309,7 +342,17 @@ fun SearchSuggestionsAndHistory(
     onDeleteClick: (String) -> Unit,
     onClearAll: () -> Unit,
 ) {
-    val suggestions = listOf("nature", "travel", "architecture", "wallpapers", "neon", "minimalist", "urban", "textures")
+    val suggestions =
+        listOf(
+            "nature",
+            "travel",
+            "architecture",
+            "wallpapers",
+            "neon",
+            "minimalist",
+            "urban",
+            "textures",
+        )
 
     Column(
         modifier =
@@ -324,11 +367,17 @@ fun SearchSuggestionsAndHistory(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text("RECENTS", color = Color.Gray, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                Text(
+                    "RECENTS",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.sp,
+                )
                 Text(
                     "CLEAR ALL",
-                    color = Color.White.copy(alpha = 0.6f),
-                    fontSize = 11.sp,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.bounceClick { onClearAll() },
                 )
@@ -347,11 +396,15 @@ fun SearchSuggestionsAndHistory(
                     Icon(
                         imageVector = Icons.Default.Refresh,
                         contentDescription = "History",
-                        tint = Color.Gray,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(16.dp),
                     )
                     Spacer(modifier = Modifier.width(16.dp))
-                    Text(text = item, color = Color.White, fontSize = 14.sp)
+                    Text(
+                        text = item,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
                     Spacer(modifier = Modifier.weight(1f))
                     IconButton(
                         onClick = { onDeleteClick(item) },
@@ -360,7 +413,7 @@ fun SearchSuggestionsAndHistory(
                         Icon(
                             imageVector = Icons.Default.Clear,
                             contentDescription = "Delete",
-                            tint = Color.Gray,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(16.dp),
                         )
                     }
@@ -370,7 +423,13 @@ fun SearchSuggestionsAndHistory(
             Spacer(modifier = Modifier.height(24.dp))
         }
 
-        Text("POPULAR TOPICS", color = Color.Gray, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+        Text(
+            "POPULAR TOPICS",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 1.sp,
+        )
         Spacer(modifier = Modifier.height(12.dp))
 
         @OptIn(ExperimentalLayoutApi::class)
@@ -380,15 +439,23 @@ fun SearchSuggestionsAndHistory(
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             suggestions.forEach { topic ->
-                Box(
-                    modifier =
-                        Modifier
-                            .background(Color(0xFF1E1E24), RoundedCornerShape(18.dp))
-                            .bounceClick { onItemClick(topic) }
-                            .padding(horizontal = 14.dp, vertical = 8.dp),
-                ) {
-                    Text(text = topic, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                }
+                SuggestionChip(
+                    onClick = { onItemClick(topic) },
+                    label = {
+                        Text(
+                            text = topic,
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Medium,
+                        )
+                    },
+                    shape = MaterialTheme.shapes.small,
+                    colors =
+                        SuggestionChipDefaults.suggestionChipColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        ),
+                    border = null,
+                )
             }
         }
     }
@@ -456,7 +523,7 @@ fun PhotosResultGrid(
                             .padding(16.dp),
                     contentAlignment = Alignment.Center,
                 ) {
-                    CircularProgressIndicator(color = Color.White)
+                    CircularProgressIndicator()
                 }
             }
         }
@@ -506,7 +573,8 @@ fun CollectionsResultList(
                 modifier = Modifier.staggeredEntrance(index),
                 onClick = {
                     collection.links?.html?.let { link ->
-                        val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse("$link?utm_source=ImageFeedApp&utm_medium=referral"))
+                        val url = "$link?utm_source=ImageFeedApp&utm_medium=referral"
+                        val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
                         context.startActivity(browserIntent)
                     }
                 },
@@ -522,7 +590,7 @@ fun CollectionsResultList(
                             .padding(16.dp),
                     contentAlignment = Alignment.Center,
                 ) {
-                    CircularProgressIndicator(color = Color.White)
+                    CircularProgressIndicator()
                 }
             }
         }
@@ -536,12 +604,13 @@ fun CollectionRowCard(
     onClick: () -> Unit,
 ) {
     Card(
-        shape = RoundedCornerShape(12.dp),
+        shape = MaterialTheme.shapes.medium,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
         modifier =
             modifier
                 .fillMaxWidth()
                 .height(200.dp)
-                .clip(RoundedCornerShape(12.dp))
+                .clip(MaterialTheme.shapes.medium)
                 .bounceClick { onClick() },
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
@@ -554,7 +623,7 @@ fun CollectionRowCard(
                     contentScale = ContentScale.Crop,
                 )
             } else {
-                Box(modifier = Modifier.fillMaxSize().background(Color(0xFF1E1E24)))
+                Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceContainerHighest))
             }
 
             Box(
@@ -641,7 +710,7 @@ fun UsersResultList(
                             .padding(16.dp),
                     contentAlignment = Alignment.Center,
                 ) {
-                    CircularProgressIndicator(color = Color.White)
+                    CircularProgressIndicator()
                 }
             }
         }
@@ -655,8 +724,8 @@ fun UserRowCard(
     onClick: () -> Unit,
 ) {
     Card(
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E24)),
+        shape = MaterialTheme.shapes.medium,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
         modifier =
             modifier
                 .fillMaxWidth()
@@ -676,7 +745,7 @@ fun UserRowCard(
                     Modifier
                         .size(54.dp)
                         .clip(CircleShape)
-                        .background(Color.Gray),
+                        .background(MaterialTheme.colorScheme.surfaceContainerHighest),
                 contentScale = ContentScale.Crop,
             )
 
@@ -685,21 +754,21 @@ fun UserRowCard(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = user.name,
-                    color = Color.White,
+                    style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 15.sp,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
                     text = "@${user.username}",
-                    color = Color.Gray,
-                    fontSize = 12.sp,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
 
             Icon(
                 imageVector = Icons.Default.PlayArrow,
                 contentDescription = "View Profile",
-                tint = Color.LightGray,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(16.dp),
             )
         }
@@ -712,7 +781,11 @@ fun NoResultsView() {
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center,
     ) {
-        Text("No results found.", color = Color.Gray, fontSize = 14.sp)
+        Text(
+            "No results found.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 
@@ -759,8 +832,8 @@ fun SearchFiltersSheet(
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = Color(0xFF1E1E24),
-        contentColor = Color.White,
+        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        contentColor = MaterialTheme.colorScheme.onSurface,
     ) {
         Column(
             modifier =
@@ -775,12 +848,17 @@ fun SearchFiltersSheet(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text("FILTERS", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                Text(
+                    "FILTERS",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
                 Text(
                     "RESET",
-                    fontSize = 13.sp,
+                    style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.Bold,
-                    color = Color.LightGray,
+                    color = MaterialTheme.colorScheme.primary,
                     modifier =
                         Modifier.clickable {
                             selectedOrderBy = "relevant"
@@ -793,7 +871,13 @@ fun SearchFiltersSheet(
             Spacer(modifier = Modifier.height(20.dp))
 
             // Sort Order Section
-            Text("SORT BY", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.Gray, letterSpacing = 1.sp)
+            Text(
+                "SORT BY",
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                letterSpacing = 1.sp,
+            )
             Spacer(modifier = Modifier.height(8.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 FilterChip(
@@ -802,10 +886,10 @@ fun SearchFiltersSheet(
                     label = { Text("RELEVANT") },
                     colors =
                         FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = Color.White,
-                            selectedLabelColor = Color.Black,
-                            containerColor = Color(0xFF2C2C35),
-                            labelColor = Color.White,
+                            selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
                         ),
                 )
                 FilterChip(
@@ -814,10 +898,10 @@ fun SearchFiltersSheet(
                     label = { Text("LATEST") },
                     colors =
                         FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = Color.White,
-                            selectedLabelColor = Color.Black,
-                            containerColor = Color(0xFF2C2C35),
-                            labelColor = Color.White,
+                            selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
                         ),
                 )
             }
@@ -825,7 +909,13 @@ fun SearchFiltersSheet(
             Spacer(modifier = Modifier.height(20.dp))
 
             // Orientation Section
-            Text("ORIENTATION", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.Gray, letterSpacing = 1.sp)
+            Text(
+                "ORIENTATION",
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                letterSpacing = 1.sp,
+            )
             Spacer(modifier = Modifier.height(8.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 FilterChip(
@@ -834,10 +924,10 @@ fun SearchFiltersSheet(
                     label = { Text("ALL") },
                     colors =
                         FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = Color.White,
-                            selectedLabelColor = Color.Black,
-                            containerColor = Color(0xFF2C2C35),
-                            labelColor = Color.White,
+                            selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
                         ),
                 )
                 FilterChip(
@@ -846,10 +936,10 @@ fun SearchFiltersSheet(
                     label = { Text("LANDSCAPE") },
                     colors =
                         FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = Color.White,
-                            selectedLabelColor = Color.Black,
-                            containerColor = Color(0xFF2C2C35),
-                            labelColor = Color.White,
+                            selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
                         ),
                 )
                 FilterChip(
@@ -858,10 +948,10 @@ fun SearchFiltersSheet(
                     label = { Text("PORTRAIT") },
                     colors =
                         FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = Color.White,
-                            selectedLabelColor = Color.Black,
-                            containerColor = Color(0xFF2C2C35),
-                            labelColor = Color.White,
+                            selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
                         ),
                 )
             }
@@ -869,7 +959,13 @@ fun SearchFiltersSheet(
             Spacer(modifier = Modifier.height(20.dp))
 
             // Color Section
-            Text("COLOR TONE", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.Gray, letterSpacing = 1.sp)
+            Text(
+                "COLOR TONE",
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                letterSpacing = 1.sp,
+            )
             Spacer(modifier = Modifier.height(8.dp))
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -892,11 +988,16 @@ fun SearchFiltersSheet(
                                         if (value == "black_and_white") {
                                             Color.Gray
                                         } else {
-                                            colorHexes[value] ?: Color(0xFF2C2C35)
+                                            colorHexes[value] ?: MaterialTheme.colorScheme.surfaceContainerHighest
                                         },
                                     ).border(
                                         width = if (selectedColor == value) 2.dp else 1.dp,
-                                        color = if (selectedColor == value) Color.White else Color.Transparent,
+                                        color =
+                                            if (selectedColor == value) {
+                                                MaterialTheme.colorScheme.primary
+                                            } else {
+                                                Color.Transparent
+                                            },
                                         shape = CircleShape,
                                     ),
                             contentAlignment = Alignment.Center,
@@ -911,7 +1012,11 @@ fun SearchFiltersSheet(
                             }
                         }
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text(text = name, color = Color.LightGray, fontSize = 10.sp)
+                        Text(
+                            text = name,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.labelSmall,
+                        )
                     }
                 }
             }
@@ -933,10 +1038,9 @@ fun SearchFiltersSheet(
                     Modifier
                         .fillMaxWidth()
                         .height(48.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color.Black),
-                shape = RoundedCornerShape(8.dp),
+                shape = MaterialTheme.shapes.small,
             ) {
-                Text("APPLY FILTERS", fontWeight = FontWeight.Bold)
+                Text("APPLY FILTERS", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
             }
 
             Spacer(modifier = Modifier.height(24.dp))

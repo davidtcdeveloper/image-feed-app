@@ -26,13 +26,16 @@ import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
@@ -45,7 +48,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.layout.ContentScale
@@ -105,25 +107,27 @@ fun CollectionsFeedScreen(
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        "CURATED COLLECTIONS",
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 2.sp,
-                        fontSize = 18.sp,
-                        color = Color.White,
+                        text = "CURATED COLLECTIONS",
+                        style =
+                            MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 2.sp,
+                            ),
                     )
                 },
                 actions = {
                     IconButton(onClick = onSearchClick) {
-                        Image(
-                            painter = rememberAsyncImagePainter(model = android.R.drawable.ic_menu_search),
+                        Icon(
+                            imageVector = Icons.Default.Search,
                             contentDescription = "Search",
-                            modifier = Modifier.size(24.dp),
                         )
                     }
                 },
                 colors =
                     TopAppBarDefaults.topAppBarColors(
-                        containerColor = Color(0xFF0F0F11),
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        titleContentColor = MaterialTheme.colorScheme.onSurface,
+                        actionIconContentColor = MaterialTheme.colorScheme.onSurface,
                     ),
             )
         },
@@ -132,6 +136,7 @@ fun CollectionsFeedScreen(
             modifier =
                 Modifier
                     .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.surface)
                     .padding(paddingValues),
         ) {
             if (state.collections.isEmpty() && state.isLoading) {
@@ -177,7 +182,7 @@ fun CollectionsFeedScreen(
                                         .padding(16.dp),
                                 contentAlignment = Alignment.Center,
                             ) {
-                                CircularProgressIndicator(color = Color.White)
+                                CircularProgressIndicator()
                             }
                         }
                     }
@@ -214,13 +219,13 @@ fun CollectionMosaicCard(
     }
 
     Card(
-        shape = RoundedCornerShape(16.dp),
+        shape = MaterialTheme.shapes.medium,
         modifier =
             Modifier
                 .fillMaxWidth()
                 .staggeredEntrance(index = index)
                 .bounceClick(onClick = onClick),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E24)),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
             // Mosaic Grid: Left large cover, right two smaller thumbnails
@@ -246,7 +251,7 @@ fun CollectionMosaicCard(
                         Modifier
                             .weight(2f)
                             .fillMaxHeight()
-                            .background(Color(0xFF2C2C35)),
+                            .background(MaterialTheme.colorScheme.surfaceContainerHighest),
                 ) {
                     if (coverUrl != null) {
                         with(sharedTransitionScope) {
@@ -302,7 +307,7 @@ fun CollectionMosaicCard(
                             Modifier
                                 .weight(1f)
                                 .fillMaxWidth()
-                                .background(Color(0xFF2C2C35)),
+                                .background(MaterialTheme.colorScheme.surfaceContainerHighest),
                     ) {
                         if (topThumbUrl != null) {
                             Image(
@@ -339,7 +344,7 @@ fun CollectionMosaicCard(
                             Modifier
                                 .weight(1f)
                                 .fillMaxWidth()
-                                .background(Color(0xFF2C2C35)),
+                                .background(MaterialTheme.colorScheme.surfaceContainerHighest),
                     ) {
                         if (bottomThumbUrl != null) {
                             Image(
@@ -370,9 +375,8 @@ fun CollectionMosaicCard(
             ) {
                 Text(
                     text = collection.title,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp,
-                    color = Color.White,
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -382,8 +386,8 @@ fun CollectionMosaicCard(
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = description,
-                        fontSize = 13.sp,
-                        color = Color.LightGray,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
                     )
@@ -432,14 +436,13 @@ fun CollectionMosaicCard(
                         Column {
                             Text(
                                 text = "Curated by",
-                                fontSize = 10.sp,
-                                color = Color.Gray,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                             Text(
                                 text = collection.user.name,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = Color.White,
+                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                                color = MaterialTheme.colorScheme.onSurface,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                             )
@@ -450,14 +453,13 @@ fun CollectionMosaicCard(
                     Box(
                         modifier =
                             Modifier
-                                .background(Color.White.copy(alpha = 0.12f), RoundedCornerShape(12.dp))
+                                .background(MaterialTheme.colorScheme.surfaceContainerHighest, MaterialTheme.shapes.small)
                                 .padding(horizontal = 10.dp, vertical = 4.dp),
                     ) {
                         Text(
                             text = "${collection.totalPhotos} Photos",
-                            color = Color.White,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                         )
                     }
                 }

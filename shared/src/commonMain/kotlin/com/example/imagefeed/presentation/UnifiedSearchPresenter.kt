@@ -4,6 +4,7 @@ import com.example.imagefeed.model.CollectionSummary
 import com.example.imagefeed.model.Photo
 import com.example.imagefeed.model.User
 import com.example.imagefeed.repository.UnsplashRepository
+import com.example.imagefeed.util.CommonFlow
 import dev.zacsweers.metro.Inject
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -50,6 +51,9 @@ class UnifiedSearchPresenter(
     private val presenterScope: PresenterScope = presenterScopeFactory.create()
     private val _state = MutableStateFlow(SearchState())
     val state: StateFlow<SearchState> = _state.asStateFlow()
+
+    @Suppress("unused") // Invoked on Swift code
+    val iosState: CommonFlow<SearchState> = CommonFlow(state)
 
     private var searchJob: Job? = null
 

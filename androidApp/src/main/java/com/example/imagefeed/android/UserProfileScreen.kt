@@ -36,7 +36,6 @@ import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -44,7 +43,6 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -52,6 +50,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SecondaryTabRow
 import androidx.compose.material3.Tab
@@ -125,10 +124,11 @@ fun UserProfileScreen(
                 title = {
                     Text(
                         text = state.user?.name?.uppercase() ?: "PHOTOGRAPHER",
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.5.sp,
-                        fontSize = 15.sp,
-                        color = Color.White,
+                        style =
+                            MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 1.5.sp,
+                            ),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
@@ -138,7 +138,6 @@ fun UserProfileScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back",
-                            tint = Color.White,
                         )
                     }
                 },
@@ -152,14 +151,16 @@ fun UserProfileScreen(
                             Icon(
                                 imageVector = Icons.Default.Share,
                                 contentDescription = "Open in Browser",
-                                tint = Color.White,
                             )
                         }
                     }
                 },
                 colors =
                     TopAppBarDefaults.topAppBarColors(
-                        containerColor = Color(0xFF0F0F11),
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        titleContentColor = MaterialTheme.colorScheme.onSurface,
+                        navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
+                        actionIconContentColor = MaterialTheme.colorScheme.onSurface,
                     ),
             )
         },
@@ -169,7 +170,7 @@ fun UserProfileScreen(
                 Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
-                    .background(Color(0xFF0F0F11)),
+                    .background(MaterialTheme.colorScheme.surface),
         ) {
             if (state.isHeaderLoading && state.user == null) {
                 UserProfileHeaderSkeleton()
@@ -182,13 +183,21 @@ fun UserProfileScreen(
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    Text(text = "Failed to load profile", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                    Text(
+                        text = "Failed to load profile",
+                        color = MaterialTheme.colorScheme.onSurface,
+                        style = MaterialTheme.typography.titleMedium,
+                    )
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text(text = state.error ?: "", color = Color.Gray, fontSize = 14.sp, textAlign = TextAlign.Center)
+                    Text(
+                        text = state.error ?: "",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodyMedium,
+                        textAlign = TextAlign.Center,
+                    )
                     Spacer(modifier = Modifier.height(16.dp))
                     Button(
                         onClick = { presenter.loadProfile() },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color.Black),
                     ) {
                         Text("Retry")
                     }
@@ -312,7 +321,7 @@ fun ProfileHeaderSection(user: User) {
                 Modifier
                     .size(88.dp)
                     .clip(CircleShape)
-                    .border(2.dp, Color.White.copy(alpha = 0.8f), CircleShape),
+                    .border(2.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape),
             contentScale = ContentScale.Crop,
         )
 
@@ -320,16 +329,15 @@ fun ProfileHeaderSection(user: User) {
 
         Text(
             text = user.name,
-            color = Color.White,
-            fontWeight = FontWeight.Bold,
-            fontSize = 20.sp,
+            color = MaterialTheme.colorScheme.onSurface,
+            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
             textAlign = TextAlign.Center,
         )
 
         Text(
             text = "@${user.username}",
-            color = Color.Gray,
-            fontSize = 13.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.bodyMedium,
             textAlign = TextAlign.Center,
         )
 
@@ -342,14 +350,14 @@ fun ProfileHeaderSection(user: User) {
                 Icon(
                     imageVector = Icons.Default.LocationOn,
                     contentDescription = "Location",
-                    tint = Color.LightGray,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(14.dp),
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
                     text = user.location ?: "",
-                    color = Color.LightGray,
-                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall,
                 )
             }
         }
@@ -358,8 +366,8 @@ fun ProfileHeaderSection(user: User) {
             Spacer(modifier = Modifier.height(12.dp))
             Text(
                 text = user.bio ?: "",
-                color = Color.White.copy(alpha = 0.85f),
-                fontSize = 13.sp,
+                color = MaterialTheme.colorScheme.onSurface,
+                style = MaterialTheme.typography.bodyMedium,
                 lineHeight = 18.sp,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(horizontal = 16.dp),
@@ -427,16 +435,18 @@ fun SocialBadge(
     Box(
         modifier =
             Modifier
-                .background(Color(0xFF1E1E24), RoundedCornerShape(16.dp))
+                .background(MaterialTheme.colorScheme.surfaceContainer, MaterialTheme.shapes.small)
                 .bounceClick { onClick() }
                 .padding(horizontal = 12.dp, vertical = 6.dp),
     ) {
         Text(
             text = "$label: @$handle".uppercase(),
-            color = Color.White,
-            fontWeight = FontWeight.Bold,
-            fontSize = 9.sp,
-            letterSpacing = 0.5.sp,
+            color = MaterialTheme.colorScheme.onSurface,
+            style =
+                MaterialTheme.typography.labelSmall.copy(
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 0.5.sp,
+                ),
         )
     }
 }
@@ -449,12 +459,12 @@ fun ProfileTabSelector(
 ) {
     SecondaryTabRow(
         selectedTabIndex = activeTab.ordinal,
-        containerColor = Color(0xFF0F0F11),
-        contentColor = Color.White,
+        containerColor = MaterialTheme.colorScheme.surface,
+        contentColor = MaterialTheme.colorScheme.primary,
         indicator = {
             TabRowDefaults.SecondaryIndicator(
                 modifier = Modifier.tabIndicatorOffset(activeTab.ordinal),
-                color = Color.White,
+                color = MaterialTheme.colorScheme.primary,
             )
         },
     ) {
@@ -473,12 +483,16 @@ fun ProfileTabSelector(
                 text = {
                     Text(
                         text = tabLabel,
-                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                        fontSize = 11.sp,
+                        style =
+                            if (isSelected) {
+                                MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold)
+                            } else {
+                                MaterialTheme.typography.labelMedium
+                            },
                     )
                 },
-                selectedContentColor = Color.White,
-                unselectedContentColor = Color.Gray,
+                selectedContentColor = MaterialTheme.colorScheme.primary,
+                unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
@@ -525,7 +539,11 @@ fun PortfolioTabContent(
                         .padding(48.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                Text("No photos found.", color = Color.Gray, fontSize = 14.sp)
+                Text(
+                    text = "No photos found.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodyMedium,
+                )
             }
         } else {
             LazyVerticalStaggeredGrid(
@@ -561,7 +579,7 @@ fun PortfolioTabContent(
                                     .padding(16.dp),
                             contentAlignment = Alignment.Center,
                         ) {
-                            CircularProgressIndicator(color = Color.White)
+                            CircularProgressIndicator()
                         }
                     }
                 }
@@ -618,7 +636,11 @@ fun CollectionsTabContent(
                         .padding(48.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                Text("No collections found.", color = Color.Gray, fontSize = 14.sp)
+                Text(
+                    text = "No collections found.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodyMedium,
+                )
             }
         } else {
             LazyVerticalStaggeredGrid(
@@ -651,7 +673,7 @@ fun CollectionsTabContent(
                                     .padding(16.dp),
                             contentAlignment = Alignment.Center,
                         ) {
-                            CircularProgressIndicator(color = Color.White)
+                            CircularProgressIndicator()
                         }
                     }
                 }
@@ -667,7 +689,8 @@ fun CollectionRowLayout(
     onClick: () -> Unit,
 ) {
     Card(
-        shape = RoundedCornerShape(12.dp),
+        shape = MaterialTheme.shapes.medium,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
         modifier =
             modifier
                 .fillMaxWidth()
@@ -684,7 +707,12 @@ fun CollectionRowLayout(
                     contentScale = ContentScale.Crop,
                 )
             } else {
-                Box(modifier = Modifier.fillMaxSize().background(Color(0xFF1E1E24)))
+                Box(
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+                )
             }
 
             Box(
@@ -730,7 +758,7 @@ fun InsightsTabContent(
                         .padding(48.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                CircularProgressIndicator(color = Color.White)
+                CircularProgressIndicator()
             }
         } else if (error != null && stats == null) {
             Box(
@@ -740,7 +768,11 @@ fun InsightsTabContent(
                         .padding(48.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                Text("Failed to load insights.", color = Color.Gray, fontSize = 14.sp)
+                Text(
+                    text = "Failed to load insights.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodyMedium,
+                )
             }
         } else if (stats != null) {
             Column(
@@ -774,15 +806,17 @@ fun InsightsTabContent(
                     if (viewsList.isNotEmpty()) {
                         Text(
                             text = "VIEWS TRENDS (LAST 30 DAYS)",
-                            color = Color.White.copy(alpha = 0.6f),
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 1.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style =
+                                MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    letterSpacing = 1.sp,
+                                ),
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Card(
-                            colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E24)),
-                            shape = RoundedCornerShape(12.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+                            shape = MaterialTheme.shapes.medium,
                             modifier = Modifier.fillMaxWidth(),
                         ) {
                             Box(modifier = Modifier.padding(16.dp)) {
@@ -806,15 +840,17 @@ fun InsightsTabContent(
                     if (downloadsList.isNotEmpty()) {
                         Text(
                             text = "DOWNLOADS TRENDS (LAST 30 DAYS)",
-                            color = Color.White.copy(alpha = 0.6f),
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 1.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style =
+                                MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    letterSpacing = 1.sp,
+                                ),
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Card(
-                            colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E24)),
-                            shape = RoundedCornerShape(12.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+                            shape = MaterialTheme.shapes.medium,
                             modifier = Modifier.fillMaxWidth(),
                         ) {
                             Box(modifier = Modifier.padding(16.dp)) {
@@ -843,6 +879,10 @@ fun InteractiveTimelineChart(
 ) {
     var dragX by remember { mutableStateOf<Float?>(null) }
     val context = LocalContext.current
+    val chartColor = MaterialTheme.colorScheme.primary
+    val surfaceColor = MaterialTheme.colorScheme.surfaceContainer
+    val onSurfaceColor = MaterialTheme.colorScheme.onSurface
+    val onSurfaceVariantColor = MaterialTheme.colorScheme.onSurfaceVariant
 
     val maxVal = data.maxOrNull() ?: 1f
     val minVal = data.minOrNull() ?: 0f
@@ -871,15 +911,13 @@ fun InteractiveTimelineChart(
             ) {
                 Text(
                     text = dates[index],
-                    color = Color.LightGray,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold,
+                    color = onSurfaceVariantColor,
+                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                 )
                 Text(
                     text = "${data[index].toInt()} units",
-                    color = Color.White,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.ExtraBold,
+                    color = onSurfaceColor,
+                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.ExtraBold),
                 )
             }
         } else {
@@ -890,8 +928,16 @@ fun InteractiveTimelineChart(
                         .padding(bottom = 8.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                Text("Drag curve to inspect daily stats", color = Color.Gray, fontSize = 11.sp)
-                Text("Peak: ${maxVal.toInt()}", color = Color.LightGray, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                Text(
+                    text = "Drag curve to inspect daily stats",
+                    color = onSurfaceVariantColor,
+                    style = MaterialTheme.typography.labelSmall,
+                )
+                Text(
+                    text = "Peak: ${maxVal.toInt()}",
+                    color = onSurfaceColor,
+                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                )
             }
         }
 
@@ -958,7 +1004,7 @@ fun InteractiveTimelineChart(
                 path = fillPath,
                 brush =
                     Brush.verticalGradient(
-                        colors = listOf(Color.White.copy(alpha = 0.22f), Color.Transparent),
+                        colors = listOf(chartColor.copy(alpha = 0.22f), Color.Transparent),
                         startY = 0f,
                         endY = height,
                     ),
@@ -977,7 +1023,7 @@ fun InteractiveTimelineChart(
                 }
             drawPath(
                 path = strokePath,
-                color = Color.White,
+                color = chartColor,
                 style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round),
             )
 
@@ -988,7 +1034,7 @@ fun InteractiveTimelineChart(
 
                 // Draw vertical indicator line
                 drawLine(
-                    color = Color.White.copy(alpha = 0.4f),
+                    color = chartColor.copy(alpha = 0.4f),
                     start = Offset(hoverPoint.x, 0f),
                     end = Offset(hoverPoint.x, height),
                     strokeWidth = 1.dp.toPx(),
@@ -996,12 +1042,12 @@ fun InteractiveTimelineChart(
 
                 // Highlighted interaction dot
                 drawCircle(
-                    color = Color.White,
+                    color = chartColor,
                     radius = 7.dp.toPx(),
                     center = hoverPoint,
                 )
                 drawCircle(
-                    color = Color(0xFF1E1E24),
+                    color = surfaceColor,
                     radius = 3.dp.toPx(),
                     center = hoverPoint,
                 )

@@ -51,7 +51,8 @@ class UserProfilePresenter(
 
     private val _state = MutableStateFlow(UserProfileState())
     val state: StateFlow<UserProfileState> = _state.asStateFlow()
-    @Suppress("unused")// Invoked on Swift code
+
+    @Suppress("unused") // Invoked on Swift code
     val iosState: CommonFlow<UserProfileState> = CommonFlow(state)
 
     init {
