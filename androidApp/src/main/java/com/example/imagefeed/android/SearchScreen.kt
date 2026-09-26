@@ -637,16 +637,16 @@ fun CollectionRowCard(
                 Column {
                     Text(
                         text = collection.title.uppercase(),
+                        style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = Color.White,
-                        fontSize = 16.sp,
                         letterSpacing = 1.sp,
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = "${collection.totalPhotos} Photos  ·  Curated by ${collection.user.name}",
-                        color = Color.LightGray,
-                        fontSize = 12.sp,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.White.copy(alpha = 0.8f),
                     )
                 }
             }
@@ -818,6 +818,7 @@ fun SearchFiltersSheet(
 
     val colorHexes =
         mapOf(
+            "black_and_white" to Color.Gray,
             "black" to Color.Black,
             "white" to Color.White,
             "yellow" to Color(0xFFFFEB3B),
@@ -884,25 +885,13 @@ fun SearchFiltersSheet(
                     selected = selectedOrderBy == "relevant",
                     onClick = { selectedOrderBy = "relevant" },
                     label = { Text("RELEVANT") },
-                    colors =
-                        FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
-                            selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                            labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                        ),
+                    colors = FilterChipDefaults.filterChipColors(),
                 )
                 FilterChip(
                     selected = selectedOrderBy == "latest",
                     onClick = { selectedOrderBy = "latest" },
                     label = { Text("LATEST") },
-                    colors =
-                        FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
-                            selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                            labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                        ),
+                    colors = FilterChipDefaults.filterChipColors(),
                 )
             }
 
@@ -922,37 +911,19 @@ fun SearchFiltersSheet(
                     selected = selectedOrientation == null,
                     onClick = { selectedOrientation = null },
                     label = { Text("ALL") },
-                    colors =
-                        FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
-                            selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                            labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                        ),
+                    colors = FilterChipDefaults.filterChipColors(),
                 )
                 FilterChip(
                     selected = selectedOrientation == "landscape",
                     onClick = { selectedOrientation = "landscape" },
                     label = { Text("LANDSCAPE") },
-                    colors =
-                        FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
-                            selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                            labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                        ),
+                    colors = FilterChipDefaults.filterChipColors(),
                 )
                 FilterChip(
                     selected = selectedOrientation == "portrait",
                     onClick = { selectedOrientation = "portrait" },
                     label = { Text("PORTRAIT") },
-                    colors =
-                        FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
-                            selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                            labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                        ),
+                    colors = FilterChipDefaults.filterChipColors(),
                 )
             }
 
@@ -984,19 +955,14 @@ fun SearchFiltersSheet(
                                 Modifier
                                     .size(36.dp)
                                     .clip(CircleShape)
-                                    .background(
-                                        if (value == "black_and_white") {
-                                            Color.Gray
-                                        } else {
-                                            colorHexes[value] ?: MaterialTheme.colorScheme.surfaceContainerHighest
-                                        },
-                                    ).border(
+                                    .background(colorHexes[value] ?: MaterialTheme.colorScheme.surfaceContainerHighest)
+                                    .border(
                                         width = if (selectedColor == value) 2.dp else 1.dp,
                                         color =
                                             if (selectedColor == value) {
                                                 MaterialTheme.colorScheme.primary
                                             } else {
-                                                Color.Transparent
+                                                MaterialTheme.colorScheme.outlineVariant
                                             },
                                         shape = CircleShape,
                                     ),

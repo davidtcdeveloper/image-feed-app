@@ -30,7 +30,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -116,7 +116,7 @@ fun Modifier.bounceClick(
     return this
         .shadow(
             elevation = elevation.dp,
-            shape = RoundedCornerShape(12.dp),
+            shape = MaterialTheme.shapes.medium,
         ).graphicsLayer(
             scaleX = scale,
             scaleY = scale,
@@ -167,7 +167,7 @@ fun PhotoCardSkeleton(aspectRatio: Float) {
         modifier =
             Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(12.dp))
+                .clip(MaterialTheme.shapes.medium)
                 .shimmerEffect()
                 .padding(12.dp),
     ) {
@@ -176,7 +176,7 @@ fun PhotoCardSkeleton(aspectRatio: Float) {
                 Modifier
                     .fillMaxWidth()
                     .aspectRatio(aspectRatio)
-                    .clip(RoundedCornerShape(8.dp))
+                    .clip(MaterialTheme.shapes.small)
                     .shimmerEffect(),
         )
         Spacer(modifier = Modifier.height(8.dp))
@@ -196,7 +196,7 @@ fun PhotoCardSkeleton(aspectRatio: Float) {
                     Modifier
                         .width(80.dp)
                         .height(12.dp)
-                        .clip(RoundedCornerShape(4.dp))
+                        .clip(MaterialTheme.shapes.extraSmall)
                         .shimmerEffect(),
             )
         }
@@ -225,7 +225,7 @@ fun CollectionMosaicCardSkeleton() {
         modifier =
             Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(12.dp))
+                .clip(MaterialTheme.shapes.medium)
                 .shimmerEffect()
                 .padding(12.dp),
     ) {
@@ -236,12 +236,13 @@ fun CollectionMosaicCardSkeleton() {
                     .height(180.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
+            val smallShape = MaterialTheme.shapes.small
             Box(
                 modifier =
                     Modifier
                         .weight(1f)
                         .fillMaxSize()
-                        .clip(RoundedCornerShape(topStart = 8.dp, bottomStart = 8.dp))
+                        .clip(smallShape.copy(topEnd = CornerSize(0.dp), bottomEnd = CornerSize(0.dp)))
                         .shimmerEffect(),
             )
             Column(
@@ -256,16 +257,26 @@ fun CollectionMosaicCardSkeleton() {
                         Modifier
                             .weight(1f)
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(topEnd = 8.dp))
-                            .shimmerEffect(),
+                            .clip(
+                                smallShape.copy(
+                                    topStart = CornerSize(0.dp),
+                                    bottomStart = CornerSize(0.dp),
+                                    bottomEnd = CornerSize(0.dp),
+                                ),
+                            ).shimmerEffect(),
                 )
                 Box(
                     modifier =
                         Modifier
                             .weight(1f)
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(bottomEnd = 8.dp))
-                            .shimmerEffect(),
+                            .clip(
+                                smallShape.copy(
+                                    topStart = CornerSize(0.dp),
+                                    bottomStart = CornerSize(0.dp),
+                                    topEnd = CornerSize(0.dp),
+                                ),
+                            ).shimmerEffect(),
                 )
             }
         }
@@ -275,7 +286,7 @@ fun CollectionMosaicCardSkeleton() {
                 Modifier
                     .width(180.dp)
                     .height(16.dp)
-                    .clip(RoundedCornerShape(4.dp))
+                    .clip(MaterialTheme.shapes.extraSmall)
                     .shimmerEffect(),
         )
         Spacer(modifier = Modifier.height(4.dp))
@@ -284,7 +295,7 @@ fun CollectionMosaicCardSkeleton() {
                 Modifier
                     .width(260.dp)
                     .height(12.dp)
-                    .clip(RoundedCornerShape(4.dp))
+                    .clip(MaterialTheme.shapes.extraSmall)
                     .shimmerEffect(),
         )
     }
@@ -312,7 +323,7 @@ fun UserProfileHeaderSkeleton() {
                 Modifier
                     .width(140.dp)
                     .height(18.dp)
-                    .clip(RoundedCornerShape(4.dp))
+                    .clip(MaterialTheme.shapes.extraSmall)
                     .shimmerEffect(),
         )
         Spacer(modifier = Modifier.height(8.dp))
@@ -321,7 +332,7 @@ fun UserProfileHeaderSkeleton() {
                 Modifier
                     .width(90.dp)
                     .height(12.dp)
-                    .clip(RoundedCornerShape(4.dp))
+                    .clip(MaterialTheme.shapes.extraSmall)
                     .shimmerEffect(),
         )
         Spacer(modifier = Modifier.height(8.dp))
@@ -330,7 +341,7 @@ fun UserProfileHeaderSkeleton() {
                 Modifier
                     .width(240.dp)
                     .height(12.dp)
-                    .clip(RoundedCornerShape(4.dp))
+                    .clip(MaterialTheme.shapes.extraSmall)
                     .shimmerEffect(),
         )
     }

@@ -330,7 +330,7 @@ fun ProfileHeaderSection(user: User) {
         Text(
             text = user.name,
             color = MaterialTheme.colorScheme.onSurface,
-            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+            style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
             textAlign = TextAlign.Center,
         )
 
@@ -368,7 +368,6 @@ fun ProfileHeaderSection(user: User) {
                 text = user.bio ?: "",
                 color = MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.bodyMedium,
-                lineHeight = 18.sp,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(horizontal = 16.dp),
             )
@@ -726,16 +725,16 @@ fun CollectionRowLayout(
                 Column {
                     Text(
                         text = collection.title.uppercase(),
+                        style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = Color.White,
-                        fontSize = 16.sp,
                         letterSpacing = 1.sp,
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = "${collection.totalPhotos} Photos  ·  Curated by ${collection.user.name}",
-                        color = Color.LightGray,
-                        fontSize = 12.sp,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.White.copy(alpha = 0.8f),
                     )
                 }
             }
@@ -787,17 +786,23 @@ fun InsightsTabContent(
                         Modifier
                             .fillMaxWidth()
                             .padding(bottom = 24.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     StatItem(
+                        modifier = Modifier.weight(1f),
                         label = "Total Views",
                         value = formatStatValue(stats.views.total),
                         icon = Icons.Default.Info,
+                        valueStyle = MaterialTheme.typography.titleMedium,
+                        labelStyle = MaterialTheme.typography.bodySmall,
                     )
                     StatItem(
+                        modifier = Modifier.weight(1f),
                         label = "Total Downloads",
                         value = formatStatValue(stats.downloads.total),
                         icon = Icons.Default.LocationOn, // placeholder icon
+                        valueStyle = MaterialTheme.typography.titleMedium,
+                        labelStyle = MaterialTheme.typography.bodySmall,
                     )
                 }
 

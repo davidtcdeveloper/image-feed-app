@@ -60,10 +60,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.LocalPlatformContext
 import coil3.compose.rememberAsyncImagePainter
@@ -171,7 +171,12 @@ fun CollectionDetailScreen(
                                 Color.Transparent
                             },
                         titleContentColor = MaterialTheme.colorScheme.onSurface,
-                        navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
+                        navigationIconContentColor =
+                            if (showCollapsedTitle.value) {
+                                MaterialTheme.colorScheme.onSurface
+                            } else {
+                                Color.White
+                            },
                     ),
             )
         },
@@ -387,11 +392,17 @@ fun CollectionDetailHeader(
             }
 
             // Collection Title & Count
+            val isExpandedScreen = LocalConfiguration.current.screenWidthDp >= 600
+            val titleStyle =
+                if (isExpandedScreen) {
+                    MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.ExtraBold)
+                } else {
+                    MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.ExtraBold)
+                }
             Text(
                 text = collection.title,
-                style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.ExtraBold),
+                style = titleStyle,
                 color = MaterialTheme.colorScheme.onSurface,
-                lineHeight = 28.sp,
             )
 
             Text(
@@ -410,7 +421,6 @@ fun CollectionDetailHeader(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 3,
                     overflow = TextOverflow.Ellipsis,
-                    lineHeight = 20.sp,
                 )
             }
         }
@@ -457,7 +467,7 @@ fun RelatedCollectionCard(
 ) {
     val context = LocalPlatformContext.current
     Card(
-        shape = MaterialTheme.shapes.medium,
+        shape = MaterialTheme.shapes.small,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
         modifier =
             Modifier
@@ -506,16 +516,16 @@ fun RelatedCollectionCard(
             ) {
                 Text(
                     text = collection.title,
+                    style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 12.sp,
                     color = Color.White,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
                     text = "${collection.totalPhotos} Photos",
-                    fontSize = 10.sp,
-                    color = Color.LightGray,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color.White.copy(alpha = 0.8f),
                 )
             }
         }

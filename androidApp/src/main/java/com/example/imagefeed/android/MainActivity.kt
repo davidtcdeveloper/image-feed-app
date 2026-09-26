@@ -860,7 +860,7 @@ fun PhotoCard(
                     Text(
                         text = photo.user.name,
                         color = Color.White,
-                        style = MaterialTheme.typography.labelMedium,
+                        style = MaterialTheme.typography.titleSmall,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f),

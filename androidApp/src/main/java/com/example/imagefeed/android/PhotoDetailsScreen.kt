@@ -28,7 +28,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -133,10 +132,10 @@ fun PhotoDetailsScreen(
                 title = {
                     Text(
                         text = "DETAILS",
+                        style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 2.sp,
-                        fontSize = 16.sp,
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                 },
                 navigationIcon = {
@@ -144,7 +143,7 @@ fun PhotoDetailsScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back",
-                            tint = Color.White,
+                            tint = MaterialTheme.colorScheme.onSurface,
                         )
                     }
                 },
@@ -305,7 +304,7 @@ fun PhotoDetailsContent(
                         Modifier
                             .height(hingeHeightDp)
                             .fillMaxWidth()
-                            .background(Color.Black),
+                            .background(MaterialTheme.colorScheme.surfaceContainerLowest),
                 )
             }
             Box(
@@ -360,7 +359,7 @@ fun PhotoDetailsContent(
                         Modifier
                             .width(hingeWidthDp)
                             .fillMaxHeight()
-                            .background(Color.Black),
+                            .background(MaterialTheme.colorScheme.surfaceContainerLowest),
                 )
             }
             Box(
@@ -486,7 +485,7 @@ fun PhotoCanvasPane(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier =
                         Modifier
-                            .clip(RoundedCornerShape(24.dp))
+                            .clip(MaterialTheme.shapes.extraLarge)
                             .background(Color.Black.copy(alpha = 0.6f))
                             .clickable { onUserClick(photo.user.username) }
                             .padding(horizontal = 12.dp, vertical = 8.dp),
@@ -517,14 +516,14 @@ fun PhotoCanvasPane(
                         Text(
                             text = photo.user.name,
                             color = Color.White,
-                            fontSize = 14.sp,
+                            style = MaterialTheme.typography.labelLarge,
                             fontWeight = FontWeight.Bold,
                         )
                         if (photo.user.username.isNotEmpty()) {
                             Text(
                                 text = "@${photo.user.username}",
-                                color = Color.LightGray.copy(alpha = 0.8f),
-                                fontSize = 11.sp,
+                                color = Color.White.copy(alpha = 0.8f),
+                                style = MaterialTheme.typography.labelSmall,
                             )
                         }
                     }
@@ -610,14 +609,14 @@ fun PhotoCanvasPane(
                         Text(
                             text = photo.user.name,
                             color = Color.White,
-                            fontSize = 15.sp,
+                            style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Bold,
                         )
                         if (photo.user.username.isNotEmpty()) {
                             Text(
                                 text = "@${photo.user.username}",
-                                color = Color.LightGray.copy(alpha = 0.8f),
-                                fontSize = 12.sp,
+                                color = Color.White.copy(alpha = 0.8f),
+                                style = MaterialTheme.typography.bodySmall,
                             )
                         }
                     }
@@ -722,7 +721,6 @@ fun PhotoInspectorPane(
                 text = caption,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface,
-                lineHeight = 22.sp,
                 modifier = Modifier.padding(bottom = 16.dp),
             )
         }
@@ -733,19 +731,22 @@ fun PhotoInspectorPane(
                 Modifier
                     .fillMaxWidth()
                     .padding(vertical = 12.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             StatItem(
+                modifier = Modifier.weight(1f),
                 label = "Views",
                 value = stats?.views?.total?.let { formatStatValue(it) } ?: "--",
                 icon = Icons.Default.Info,
             )
             StatItem(
+                modifier = Modifier.weight(1f),
                 label = "Downloads",
                 value = stats?.downloads?.total?.let { formatStatValue(it) } ?: "--",
                 icon = Icons.Default.PlayArrow,
             )
             StatItem(
+                modifier = Modifier.weight(1f),
                 label = "Likes",
                 value = stats?.likes?.total?.let { formatStatValue(it) } ?: "--",
                 icon = Icons.Default.Favorite,
@@ -1023,13 +1024,14 @@ fun StatItem(
     label: String,
     value: String,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
+    modifier: Modifier = Modifier,
+    valueStyle: androidx.compose.ui.text.TextStyle = MaterialTheme.typography.headlineSmall,
+    labelStyle: androidx.compose.ui.text.TextStyle = MaterialTheme.typography.labelMedium,
 ) {
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
         shape = MaterialTheme.shapes.medium,
-        modifier =
-            Modifier
-                .width(105.dp),
+        modifier = modifier,
     ) {
         Column(
             modifier =
@@ -1047,14 +1049,14 @@ fun StatItem(
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = value,
-                style = MaterialTheme.typography.titleMedium,
+                style = valueStyle,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface,
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = label,
-                style = MaterialTheme.typography.labelSmall,
+                style = labelStyle,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontWeight = FontWeight.SemiBold,
             )

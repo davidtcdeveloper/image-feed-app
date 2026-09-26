@@ -381,15 +381,17 @@ These are the spec files that the implementation notes and planning references s
 
 ### Step 27: Material 3 Screen Tokenization (Completed)
 1.  **Refactor Design Tokens Across Screens:**
-    *   Systematically eliminate hardcoded hex colors (`Color(0xFF0F0F11)`, `Color(0xFF1E1E24)`, `Color(0xFF2C2C35)`) across `MainActivity.kt`, `SearchScreen.kt`, `PhotoDetailsScreen.kt`, `UserProfileScreen.kt`, `CollectionsFeedScreen.kt`, and `CollectionDetailScreen.kt`.
+    *   Systematically eliminate hardcoded hex colors (`Color(0xFF0F0F11)`, `Color(0xFF1E1E24)`, `Color(0xFF2C2C35)`) and ad-hoc `fontSize` across `MainActivity.kt`, `SearchScreen.kt`, `PhotoDetailsScreen.kt`, `UserProfileScreen.kt`, `CollectionsFeedScreen.kt`, and `CollectionDetailScreen.kt`.
     *   Bind cards and surfaces to semantic tokens (`MaterialTheme.colorScheme.surfaceContainer`, etc.).
 2.  **Standardize Typography & Shapes:**
-    *   Replace hardcoded `fontSize = ...sp` with `MaterialTheme.typography.*` to support system dynamic font scaling.
+    *   Replace hardcoded `fontSize = ...sp` with `MaterialTheme.typography.*` to support system dynamic font scaling across all 6 screens.
     *   Replace ad-hoc `RoundedCornerShape(...)` with `MaterialTheme.shapes.*`.
-3.  **Standardize Component Variants:**
+    *   Standardize photographer attribution names to `MaterialTheme.typography.titleSmall`.
+3.  **Standardize Component Variants & Scrim Policies:**
     *   Replace custom tag boxes in `PhotoDetailsScreen.kt` with Material 3 `SuggestionChip`.
-    *   Align filter chips in `SearchScreen.kt` to M3 `FilterChipDefaults` with semantic container tokens.
-    *   Replace hardcoded button colors with `FilledTonalButton` or `ButtonDefaults.buttonColors` referencing theme tokens.
+    *   Align filter chips in `SearchScreen.kt` to standard outlined M3 `FilterChipDefaults.filterChipColors()`.
+    *   Establish explicit on-media scrim typography policy (`Color.White` primary / `Color.White.copy(alpha = 0.8f)` secondary) and domain color swatch exemption.
+    *   Standardize TopAppBars and cards to ensure full light/dark theme contrast.
 4.  **Reference Specification:**
     *   Track blueprint in `specs/25_material_3_screen_tokenization.md`.
 
