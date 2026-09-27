@@ -13,12 +13,19 @@
 - Keep platform code responsible for rendering, input handling, and navigation shell behavior.
 - Preserve the existing KMP/SwiftUI/Compose separation instead of moving logic into the UI layers.
 
+## Compile-Time Dependency Injection (Metro)
+
+- Use **Metro** (`dev.zacsweers.metro`) for shared dependency injection at compile time.
+- Define application-level bindings in `AppModule` using `@BindingContainer`, `@Provides`, and `@SingleIn(AppScope::class)`.
+- Expose factories and singletons through `@DependencyGraph interface ApplicationGraph` and access them via `MetroHelper.graph` in `shared/commonMain/kotlin/com/example/imagefeed/di/Metro.kt`.
+- Do not use dynamic or reflection-based DI libraries like Koin.
+
 ## Coroutine Lifecycle Standards
 
-- Shared presenters should use lifecycle-aware scopes supplied by DI instead of creating unmanaged coroutine scopes internally.
+- Shared presenters should use lifecycle-aware scopes supplied by DI (`PresenterScope` / `PresenterScopeFactory`) instead of creating unmanaged coroutine scopes internally.
 - Cancel in-flight work in teardown hooks such as `clear()`/`close()` and avoid leaving work running after a screen is dismissed.
 - Centralize cancellation-aware state updates with shared helpers like `CoroutineContext.isActive()` and `MutableStateFlow.updateIfActive(...)` or `ensureActive()` rather than repeating ad-hoc active checks in every presenter.
-- Platform wrappers remain responsible for presenter creation and cleanup so the UI lifecycle owns the boundary.
+- Platform wrappers remain responsible for presenter creation and cleanup so the UI lifecycle owns the boundary (e.g. Swift ViewModels invoke `presenter.clear()` in `deinit` or view dismissals).
 
 ## Image and API Compliance
 
@@ -28,5 +35,5 @@
 
 ## Platform Notes
 
-- Android work should stay aligned with Compose-based screens and existing shared state collection.
-- iOS/macOS work should keep SwiftUI integration lightweight and avoid reintroducing duplicated platform logic.
+- Android work should stay aligned with Compose-based screens, existing shared state collection, and **Jetpack Navigation 3** (`NavBackStack`, `NavDisplay`, `NavKey`). Avoid legacy Compose Navigation 2.x `NavController` patterns.
+- iOS/macOS work should keep SwiftUI integration lightweight, use native Swift ViewModels to bridge `CommonFlow` / `StateFlow` to `@Published` properties, and avoid reintroducing duplicated platform logic.

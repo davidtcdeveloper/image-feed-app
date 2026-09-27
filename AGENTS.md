@@ -29,11 +29,11 @@ Use the existing project tooling for verification and build work:
 *   `./gradlew :shared:allTests` — run the shared integration/package-level test suite.
 *   `./gradlew :androidApp:assembleDebug` — build Android debug application.
 *   `./gradlew :shared:compileKotlinIosSimulatorArm64` — verify Kotlin Native framework compilation for iOS.
-*   `cd iosApp && xcodegen && xcodebuild -project iosApp.xcodeproj -scheme iosApp -destination 'generic/platform=iOS Simulator' build CODE_SIGNING_ALLOWED=NO` — verify full iOS app build and Swift compilation.
+*   `xcodegen generate --spec iosApp/project.yml && xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp -destination 'generic/platform=iOS Simulator' build CODE_SIGNING_ALLOWED=NO` — verify full iOS app build and Swift compilation.
 *   `./gradlew ktlintFormat` — format Kotlin files automatically according to project rules.
 *   `./gradlew ktlintCheck detekt` — run Kotlin linting and static analysis (detecting unused properties/parameters).
 *   `swiftlint lint iosApp/iosApp` — run SwiftLint on iOS source code.
-*   `swiftformat --lint .` (if SwiftFormat is configured)
+*   `swiftformat --lint .` — run SwiftFormat lint checks against project sources.
 
 ## Workflow
 
@@ -63,13 +63,16 @@ Welcome! If you are an AI developer agent working on this codebase, please adher
 
 ### 1. Kotlin Multiplatform (KMP) Architecture
 *   All business logic, data models, network client configuration, and UI state-management/pagination MUST reside in the `shared` module under `commonMain`.
-*   Platform modules (`androidApp` and `iosApp`) MUST remain thin, declarative view shells (Jetpack Compose and SwiftUI). Do not implement duplicate data parsing or page offset calculations.
+*   Platform modules (`androidApp`, `iosApp`, and `macosApp`) MUST remain thin, declarative view shells (Jetpack Compose and SwiftUI). Do not implement duplicate data parsing or page offset calculations.
 
-### 2. State & Presenters
+### 2. State, Navigation & Presenters
 *   Use the **Shared Presenter** pattern. All states (loading, paging, error) are represented by Kotlin data classes and streamed via `StateFlow` from `shared`.
-*   Platform UIs must simply bind to these states (with Compose state collection on Android, and a Swift ViewModel mapping flows to SwiftUI variables on iOS).
+*   Platform UIs must simply bind to these states (with Compose state collection on Android, and a Swift ViewModel mapping flows to SwiftUI variables on iOS/macOS).
+*   **Android Navigation**: Use **Jetpack Navigation 3** (`androidx.navigation3.runtime.NavBackStack`, `NavDisplay`, `NavKey`). Do not use legacy `NavController` or Navigation 2 XML / Compose graph setups.
+*   **Swift Presenter Ownership**: Platform wrappers (such as Swift `ObservableObject` ViewModels) own presenter lifecycle and must trigger `presenter.clear()` upon dismissal or `deinit`.
 
-### 3. Coroutine Lifecycle Standards
+### 3. Dependency Injection & Coroutine Lifecycle Standards
+*   **Compile-Time DI with Metro**: Dependency injection is handled at compile time using **Metro** (`dev.zacsweers.metro`). Presenters are registered in `AppModule` and accessed via `MetroHelper.graph` (`ApplicationGraph`). Do not use Koin or manual reflection-based DI.
 *   Presenter coroutines must be lifecycle-aware. Do not create unmanaged `CoroutineScope` instances inside shared presenters or other state holders.
 *   Prefer injected presenter-scoped dependencies (for example `PresenterScope`/`PresenterScopeFactory`) and cancel work in `clear()`/`close()` when a screen is dismissed.
 *   Keep presenter creation and teardown aligned with DI and platform lifecycle boundaries; avoid turning UI presenters into long-lived app singletons.
@@ -96,9 +99,11 @@ You MUST follow the Unsplash API developer guidelines when editing the applicati
 
 ## UI/UX & Performance Guidelines
 
+*   **Zero Hardcoded Design Tokens**: Never hardcode colors (`Color(0xFF...)`, `Color.White`, `Color(hex: ...)`), ad-hoc font sizes, or ad-hoc corner radii in view code. Always reference platform semantic tokens (`MaterialTheme.*` on Android, `GlassTheme` and native semantic materials on iOS). Consult `ai-rules/design-principles.md`, `ai-rules/material-design.md`, and `ai-rules/apple-design.md`.
 *   **Dynamic Resizing:** Do not download original full-sized images. Read the screen or container width, and append query parameters to the raw image URL (`&w=calculatedWidth&q=80&auto=format`).
 *   **BlurHash Placeholders:** Use the `blur_hash` string associated with each image to display a blurred placeholder during load transitions.
-*   **Fluid Scrolling:** Infinite scrolling pagination must trigger pre-fetching of the next page before the user reaches the end of the scroll container to ensure frictionless layout updates.
+*   **Fluid Scrolling & Motion:** Infinite scrolling pagination must trigger pre-fetching of the next page before the user reaches the end of the scroll container to ensure frictionless layout updates. Leverage native iOS 17 `.scrollTransition` and Android `SharedTransitionLayout` hero animations where specified.
+*   **Sensory Feedback:** Integrate subtle, purposeful haptic feedback (`LocalHapticFeedback` on Android, `.sensoryFeedback` on iOS) for filter selection, pull-to-refresh activation, and download completion.
 *   **Adaptive Layout for Tablets/iPads:** View layouts must adapt dynamically to screen sizes. Grid displays should use auto-calculating adaptive columns (e.g., `StaggeredGridCells.Adaptive` on Compose, or flexible grid layout columns on SwiftUI) to scale column count gracefully on tablets/iPads instead of using hardcoded column counts. Side-by-side split panes should be used for detailed views on large screens.
 
 ---
@@ -140,5 +145,18 @@ This keeps implementation, planning, and execution aligned.
 
 ## Reference Specs Directory
 Refer to the `specs/` folder for detailed implementation details:
-*   [Implementation Plan](file:///Users/davidtiagoconceicao/Developer/image-feed-app/specs/implementation_plan.md)
 *   [Step-by-Step Guide](file:///Users/davidtiagoconceicao/Developer/image-feed-app/specs/steps.md)
+*   [Implementation Plan](file:///Users/davidtiagoconceicao/Developer/image-feed-app/specs/implementation_plan.md)
+*   [Metro DI Migration](file:///Users/davidtiagoconceicao/Developer/image-feed-app/specs/19_koin_to_metro_migration_plan.md)
+*   [Navigation 3 Upgrade](file:///Users/davidtiagoconceicao/Developer/image-feed-app/specs/10_navigation_3_upgrade_spec.md)
+*   [Adaptive Layouts for Tablets & Foldables](file:///Users/davidtiagoconceicao/Developer/image-feed-app/specs/23_adaptive_layout_tablets_foldables.md)
+*   [Material 3 Design Foundation](file:///Users/davidtiagoconceicao/Developer/image-feed-app/specs/24_material_3_design_foundation.md)
+*   [Material 3 Screen Tokenization](file:///Users/davidtiagoconceicao/Developer/image-feed-app/specs/25_material_3_screen_tokenization.md)
+*   [Material 3 UX Modernization](file:///Users/davidtiagoconceicao/Developer/image-feed-app/specs/26_material_3_ux_modernization.md)
+*   [iOS Glass Design Foundation](file:///Users/davidtiagoconceicao/Developer/image-feed-app/specs/27_ios_glass_design_foundation.md)
+*   [iOS Chrome Navigation Modernization](file:///Users/davidtiagoconceicao/Developer/image-feed-app/specs/28_ios_chrome_navigation_modernization.md)
+*   [iOS Cards Attribution Glass Redesign](file:///Users/davidtiagoconceicao/Developer/image-feed-app/specs/29_ios_cards_attribution_glass_redesign.md)
+*   [iOS Interactive Sheet & Sensory Experience](file:///Users/davidtiagoconceicao/Developer/image-feed-app/specs/30_ios_interactive_sheet_and_sensory_experience.md)
+*   [README & Navigation Architecture](file:///Users/davidtiagoconceicao/Developer/image-feed-app/specs/31_readme_and_navigation_documentation.md)
+*   [Agent Rules Modernization](file:///Users/davidtiagoconceicao/Developer/image-feed-app/specs/32_agent_rules_modernization.md)
+

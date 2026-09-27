@@ -84,4 +84,13 @@ Enforce modern Apple Human Interface Guidelines (HIG) and Glassmorphic interface
 ## 6. Full-Canvas & Interactive Detents
 
 *   **Photo Inspection**: Large media content must take center stage. Avoid rigid vertical lists where the image scrolls away.
-*   Use native `.sheet(isPresented:)` with `.presentationDetents([.fraction(0.35), .fraction(0.7), .large])` and `.presentationBackground(.ultraThinMaterial)` for photo metadata, EXIF, and interactive charts on iPhone.
+*   **Interactive Detented Sheets (iPhone)**:
+    *   Use native `.sheet(isPresented:)` with `.presentationDetents([.fraction(0.35), .fraction(0.70), .large])`.
+    *   Pair with `.presentationBackgroundInteraction(.enabled(upThrough: .fraction(0.70)))` to allow simultaneous full-canvas pinch-to-zoom (1.0x to 4.0x) and pan gestures behind the sheet.
+    *   Set `.presentationDragIndicator(.visible)` and `.presentationCornerRadius(24)`.
+*   **Dual-Pane Adaptive Layout (iPad & macOS)**:
+    *   On regular width sizes (`horizontalSizeClass == .regular` on iOS, or native macOS), present photo and metadata side-by-side rather than in a detented bottom sheet.
+*   **Contrast & Light Mode Compliance**:
+    *   To prevent white-on-white collisions and meet WCAG AAA contrast ($\ge 7:1$) over bright imagery in Light Mode, layer a dark scrim (`Color(hex: "0A0A0C").opacity(0.82)`) over `.regularMaterial` for inspection sheets, anchor text with `.glassVibrancy(.primary)` / `.secondary`, and apply `.environment(\.colorScheme, .dark)`.
+    *   Always provide an `@Environment(\.accessibilityReduceTransparency)` fallback (e.g. solid opaque background).
+

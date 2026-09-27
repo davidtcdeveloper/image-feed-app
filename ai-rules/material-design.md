@@ -61,6 +61,9 @@ Material 3 uses tonal surface elevation instead of drop shadows or arbitrary sha
 
 ## 5. Platform Integration & Modern UX
 
+*   **Jetpack Navigation 3**: Use `androidx.navigation3` (`NavBackStack`, `NavDisplay`, `NavKey`, `NavEntry`) for all screen navigation. Manage navigation states immutably via `rememberNavBackStack`. Do not introduce legacy `NavController` or Navigation 2 XML / Compose graph setups.
+*   **Predictive Back & Motion**: Enable predictive back in `AndroidManifest.xml` (`android:enableOnBackInvokedCallback="true"`). For search bars or overlay dialogs, bind `BackHandler(enabled = state.isSearchActive)` to collapse inputs prior to popping the navigation stack.
+*   **Shared Transitions**: Use Compose `SharedTransitionLayout`, `SharedTransitionScope`, and `AnimatedVisibilityScope` for hero image transitions across feed cards and detail screens.
 *   **Edge-to-Edge**: The app must call `enableEdgeToEdge()` in `MainActivity.onCreate()`. All screens must respect `WindowInsets.safeDrawing`, `Scaffold` inner padding, or status/navigation bar insets.
 *   **Dynamic Color**: The UI must render legibly and with high contrast under both Dynamic Color (Android 12+ wallpaper palettes) and fallback custom palettes.
 *   **Light & Dark Theme**: Never force dark mode unconditionally. Support `isSystemInDarkTheme()` and verify that light theme maintains proper text/surface contrast ratios.

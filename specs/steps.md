@@ -64,6 +64,7 @@ The `specs/` folder currently contains the following implementation and design d
 *   `specs/29_ios_cards_attribution_glass_redesign.md`
 *   `specs/30_ios_interactive_sheet_and_sensory_experience.md`
 *   `specs/31_readme_and_navigation_documentation.md`
+*   `specs/32_agent_rules_modernization.md`
 *   `specs/implementation_plan.md`
 *   `specs/steps.md`
 
@@ -471,3 +472,17 @@ These are the spec files that the implementation notes and planning references s
     *   Detail deep cross-screen interaction paths: hero animations, tag searches, attribution taps, related collections, and shake-to-randomize.
 4.  **Reference Specification:**
     *   Track blueprint in `specs/31_readme_and_navigation_documentation.md`.
+
+### Step 34: Agent Guidelines & Rule Modernization (Completed)
+1.  **Modernize AGENTS.md & ai-rules:**
+    *   Replace obsolete Koin references with Metro DI (`dev.zacsweers.metro`, `ApplicationGraph`, `MetroHelper`).
+    *   Document Jetpack Navigation 3 (`androidx.navigation3`, `NavBackStack`, `NavDisplay`, `NavKey`) on Android.
+    *   Explicitly include `macosApp` as a declarative UI shell target.
+    *   Replace `cd` command patterns with non-`cd` commands for XcodeGen/xcodebuild.
+    *   Clarify active `.swiftformat` configuration.
+    *   Document `.presentationBackgroundInteraction` and high-contrast dark scrims in `apple-design.md`.
+2.  **Synchronize XcodeGen Configuration:**
+    *   Update `iosApp/project.yml` pre-build scripts for `iosApp` and `macosApp` to include `OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED` shell check, aligning with `project.pbxproj`.
+3.  **Reference Specification:**
+    *   Track blueprint in `specs/32_agent_rules_modernization.md`.
+

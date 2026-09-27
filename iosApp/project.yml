@@ -26,6 +26,10 @@ targets:
       - name: Compile Kotlin Shared Framework
         alwaysRun: true
         script: |
+          if [ "YES" = "$OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED" ]; then
+            echo "Skipping Gradle build task invocation due to OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED environment variable set to \"YES\""
+            exit 0
+          fi
           if [ -z "$JAVA_HOME" ] || [ ! -d "$JAVA_HOME" ]; then
             USER_JDK=$(find "$HOME/Library/Java/JavaVirtualMachines" -maxdepth 2 -name "Home" 2>/dev/null | head -n 1)
             if [ -n "$USER_JDK" ] && [ -d "$USER_JDK" ]; then
@@ -64,6 +68,10 @@ targets:
       - name: Compile Kotlin Shared Framework
         alwaysRun: true
         script: |
+          if [ "YES" = "$OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED" ]; then
+            echo "Skipping Gradle build task invocation due to OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED environment variable set to \"YES\""
+            exit 0
+          fi
           if [ -z "$JAVA_HOME" ] || [ ! -d "$JAVA_HOME" ]; then
             USER_JDK=$(find "$HOME/Library/Java/JavaVirtualMachines" -maxdepth 2 -name "Home" 2>/dev/null | head -n 1)
             if [ -n "$USER_JDK" ] && [ -d "$USER_JDK" ]; then
