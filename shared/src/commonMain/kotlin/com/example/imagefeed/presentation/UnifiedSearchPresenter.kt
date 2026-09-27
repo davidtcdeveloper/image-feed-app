@@ -28,6 +28,8 @@ data class SearchFilters(
 
 data class SearchState(
     val query: String = "",
+    val isSearchActive: Boolean = false,
+    val isRefreshing: Boolean = false,
     val activeTab: SearchTab = SearchTab.PHOTOS,
     val filters: SearchFilters = SearchFilters(),
     val photos: List<Photo> = emptyList(),
@@ -63,6 +65,16 @@ class UnifiedSearchPresenter(
     }
 
     private fun isActive(): Boolean = presenterScope.coroutineContext.isActive()
+
+    fun setSearchActive(active: Boolean) {
+        if (_state.value.isSearchActive == active) return
+        _state.update { it.copy(isSearchActive = active) }
+    }
+
+    fun submitSearch(query: String) {
+        _state.update { it.copy(isSearchActive = false) }
+        updateQuery(query)
+    }
 
     fun updateQuery(newQuery: String) {
         _state.update { it.copy(query = newQuery) }
@@ -119,7 +131,14 @@ class UnifiedSearchPresenter(
 
     fun loadNextPage() {
         val currentState = _state.value
-        if (currentState.isLoading || currentState.isLoadingMore || currentState.hasReachedEnd || currentState.query.isBlank()) return
+        if (currentState.isLoading ||
+            currentState.isLoadingMore ||
+            currentState.isRefreshing ||
+            currentState.hasReachedEnd ||
+            currentState.query.isBlank()
+        ) {
+            return
+        }
 
         _state.update { it.copy(isLoadingMore = true) }
 
@@ -213,6 +232,77 @@ class UnifiedSearchPresenter(
 
     fun clearHistory() {
         _state.update { it.copy(searchHistory = emptyList()) }
+    }
+
+    fun refresh() {
+        val currentState = _state.value
+        val query = currentState.query
+        if (query.isBlank() || currentState.isRefreshing || currentState.isLoading || currentState.isLoadingMore) return
+
+        _state.update { it.copy(isRefreshing = true, error = null) }
+
+        presenterScope.launch {
+            if (!isActive()) return@launch
+            try {
+                when (_state.value.activeTab) {
+                    SearchTab.PHOTOS -> {
+                        val response =
+                            repository.searchPhotos(
+                                query = query,
+                                page = 1,
+                                perPage = 15,
+                                orderBy = _state.value.filters.orderBy,
+                                color = _state.value.filters.color,
+                                orientation = _state.value.filters.orientation,
+                                contentFilter = _state.value.filters.contentFilter,
+                            )
+                        _state.updateIfActive(coroutineContext) { current ->
+                            if (current.query != query) return@updateIfActive current.copy(isRefreshing = false)
+                            current.copy(
+                                photos = response.results,
+                                photoPage = 1,
+                                hasReachedEnd = response.results.isEmpty() || response.totalPages <= 1,
+                                isRefreshing = false,
+                                error = null,
+                            )
+                        }
+                    }
+                    SearchTab.COLLECTIONS -> {
+                        val response = repository.searchCollections(query, 1, 15)
+                        _state.updateIfActive(coroutineContext) { current ->
+                            if (current.query != query) return@updateIfActive current.copy(isRefreshing = false)
+                            current.copy(
+                                collections = response.results,
+                                collectionPage = 1,
+                                hasReachedEnd = response.results.isEmpty() || response.totalPages <= 1,
+                                isRefreshing = false,
+                                error = null,
+                            )
+                        }
+                    }
+                    SearchTab.USERS -> {
+                        val response = repository.searchUsers(query, 1, 15)
+                        _state.updateIfActive(coroutineContext) { current ->
+                            if (current.query != query) return@updateIfActive current.copy(isRefreshing = false)
+                            current.copy(
+                                users = response.results,
+                                userPage = 1,
+                                hasReachedEnd = response.results.isEmpty() || response.totalPages <= 1,
+                                isRefreshing = false,
+                                error = null,
+                            )
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                _state.updateIfActive(coroutineContext) {
+                    it.copy(
+                        isRefreshing = false,
+                        error = e.message ?: "Failed to refresh search",
+                    )
+                }
+            }
+        }
     }
 
     private fun performSearch(

@@ -11,6 +11,8 @@ class SearchViewModel {
     var users: [User] = []
     var isLoading = false
     var isLoadingMore = false
+    var isSearchActive = false
+    var isRefreshing = false
     var error: String?
     var searchHistory: [String] = []
     var hasReachedEnd = false
@@ -29,6 +31,8 @@ class SearchViewModel {
         self.closeable = presenter.iosState.watch { [weak self] state in
             guard let self, let state else { return }
             self.query = state.query
+            self.isSearchActive = state.isSearchActive
+            self.isRefreshing = state.isRefreshing
             self.activeTab = state.activeTab
             self.filters = state.filters
             self.photos = state.photos
@@ -44,6 +48,18 @@ class SearchViewModel {
 
     func updateQuery(newQuery: String) {
         presenter.updateQuery(newQuery: newQuery)
+    }
+
+    func setSearchActive(active: Bool) {
+        presenter.setSearchActive(active: active)
+    }
+
+    func submitSearch(query: String) {
+        presenter.submitSearch(query: query)
+    }
+
+    func refresh() {
+        presenter.refresh()
     }
 
     func setTab(tab: SearchTab) {

@@ -84,6 +84,83 @@ class UnifiedSearchPresenterTest {
             assertEquals(1, presenter.state.value.collections.size)
         }
 
+    @Test
+    fun searchActiveStateTransitionsDeterministically() =
+        runTest {
+            val dispatcher = StandardTestDispatcher(testScheduler)
+            val repository =
+                FakeUnsplashRepository(
+                    photosResponse = SearchResponse(1, 1, listOf(photo("p-active-1"))),
+                )
+            val presenter = UnifiedSearchPresenter(repository, TestPresenterScopeFactory(dispatcher))
+
+            assertEquals(false, presenter.state.value.isSearchActive)
+
+            presenter.setSearchActive(true)
+            assertEquals(true, presenter.state.value.isSearchActive)
+
+            presenter.submitSearch("mountains")
+            assertEquals(false, presenter.state.value.isSearchActive)
+            assertEquals("mountains", presenter.state.value.query)
+
+            testScheduler.advanceTimeBy(350)
+            advanceUntilIdle()
+
+            assertEquals(1, presenter.state.value.photos.size)
+        }
+
+    @Test
+    fun refreshReQueriesWithoutClearingExistingResultsPrematurely() =
+        runTest {
+            val dispatcher = StandardTestDispatcher(testScheduler)
+            var returnCount = 1
+            val repository =
+                object : UnsplashRepository by FakeUnsplashRepository() {
+                    override suspend fun searchPhotos(
+                        query: String,
+                        page: Int,
+                        perPage: Int,
+                        orderBy: String?,
+                        color: String?,
+                        orientation: String?,
+                        contentFilter: String?,
+                    ): SearchResponse<Photo> =
+                        if (returnCount == 1) {
+                            SearchResponse(1, 1, listOf(photo("p-initial")))
+                        } else {
+                            SearchResponse(2, 1, listOf(photo("p-fresh-1"), photo("p-fresh-2")))
+                        }
+                }
+
+            val presenter = UnifiedSearchPresenter(repository, TestPresenterScopeFactory(dispatcher))
+            presenter.updateQuery("ocean")
+            testScheduler.advanceTimeBy(350)
+            advanceUntilIdle()
+
+            assertEquals(
+                listOf("p-initial"),
+                presenter.state.value.photos
+                    .map { it.id },
+            )
+
+            returnCount = 2
+            presenter.refresh()
+            assertEquals(true, presenter.state.value.isRefreshing)
+            assertEquals(
+                listOf("p-initial"),
+                presenter.state.value.photos
+                    .map { it.id },
+            )
+
+            advanceUntilIdle()
+            assertEquals(false, presenter.state.value.isRefreshing)
+            assertEquals(
+                listOf("p-fresh-1", "p-fresh-2"),
+                presenter.state.value.photos
+                    .map { it.id },
+            )
+        }
+
     private fun photo(id: String) =
         Photo(
             id = id,

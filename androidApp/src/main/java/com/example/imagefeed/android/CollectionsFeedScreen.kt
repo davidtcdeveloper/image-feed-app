@@ -39,6 +39,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -50,9 +52,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -81,6 +86,15 @@ fun CollectionsFeedScreen(
 ) {
     val state by presenter.state.collectAsStateWithLifecycle(initialValue = CollectionsFeedState())
     val listState = rememberLazyStaggeredGridState()
+    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
+    val pullToRefreshState = rememberPullToRefreshState()
+    val haptic = LocalHapticFeedback.current
+
+    LaunchedEffect(pullToRefreshState.distanceFraction) {
+        if (pullToRefreshState.distanceFraction >= 1f) {
+            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+        }
+    }
 
     // Infinite scrolling logic
     val shouldLoadMore =
@@ -103,6 +117,7 @@ fun CollectionsFeedScreen(
     }
 
     Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
@@ -126,13 +141,21 @@ fun CollectionsFeedScreen(
                 colors =
                     TopAppBarDefaults.topAppBarColors(
                         containerColor = MaterialTheme.colorScheme.surface,
+                        scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainer,
                         titleContentColor = MaterialTheme.colorScheme.onSurface,
                         actionIconContentColor = MaterialTheme.colorScheme.onSurface,
                     ),
+                scrollBehavior = scrollBehavior,
             )
         },
     ) { paddingValues ->
-        Box(
+        PullToRefreshBox(
+            isRefreshing = state.isRefreshing,
+            onRefresh = {
+                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                presenter.refresh()
+            },
+            state = pullToRefreshState,
             modifier =
                 Modifier
                     .fillMaxSize()

@@ -62,6 +62,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -76,7 +78,10 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -606,6 +611,15 @@ fun FeedScreen(
 ) {
     val state by presenter.state.collectAsStateWithLifecycle(initialValue = FeedState())
     val listState = rememberLazyStaggeredGridState()
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
+    val pullToRefreshState = rememberPullToRefreshState()
+    val haptic = LocalHapticFeedback.current
+
+    LaunchedEffect(pullToRefreshState.distanceFraction) {
+        if (pullToRefreshState.distanceFraction >= 1f) {
+            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+        }
+    }
 
     // Infinite scrolling logic
     val shouldLoadMore =
@@ -628,6 +642,7 @@ fun FeedScreen(
     }
 
     Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             Column {
                 CenterAlignedTopAppBar(
@@ -656,9 +671,11 @@ fun FeedScreen(
                     colors =
                         TopAppBarDefaults.topAppBarColors(
                             containerColor = MaterialTheme.colorScheme.surface,
+                            scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainer,
                             titleContentColor = MaterialTheme.colorScheme.onSurface,
                             actionIconContentColor = MaterialTheme.colorScheme.onSurface,
                         ),
+                    scrollBehavior = scrollBehavior,
                 )
 
                 val activeIndex =
@@ -671,7 +688,12 @@ fun FeedScreen(
 
                 SecondaryScrollableTabRow(
                     selectedTabIndex = activeIndex,
-                    containerColor = MaterialTheme.colorScheme.surface,
+                    containerColor =
+                        if (scrollBehavior.state.contentOffset < 0f) {
+                            MaterialTheme.colorScheme.surfaceContainer
+                        } else {
+                            MaterialTheme.colorScheme.surface
+                        },
                     contentColor = MaterialTheme.colorScheme.primary,
                     edgePadding = 12.dp,
                 ) {
@@ -704,7 +726,13 @@ fun FeedScreen(
             }
         },
     ) { paddingValues ->
-        Box(
+        PullToRefreshBox(
+            isRefreshing = state.isRefreshing,
+            onRefresh = {
+                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                presenter.refresh()
+            },
+            state = pullToRefreshState,
             modifier =
                 Modifier
                     .fillMaxSize()

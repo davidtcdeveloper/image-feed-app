@@ -1,15 +1,16 @@
 # Specification: Material 3 Modern UX Capabilities (SearchBar, PullToRefresh, Motion & Haptics)
 
-**Status:** New / Not Implemented
+**Status:** Implemented
 
 ## Overview
 This specification delivers modern Material 3 user experience capabilities to the Android application, building upon the foundational theme (`specs/24_material_3_design_foundation.md`) and screen tokenization (`specs/25_material_3_screen_tokenization.md`). 
 
 The primary goals are:
-1. Elevate search with Material 3 `SearchBar` / `DockedSearchBar` featuring smooth expand/collapse transitions and integrated suggestions.
-2. Introduce native Material 3 `PullToRefreshBox` across all main feeds, removing the need for manual app bar refresh buttons.
-3. Integrate TopAppBar scroll behaviors (`pinnedScrollBehavior` / `enterAlwaysScrollBehavior`) for responsive scrolling surfaces.
-4. Implement Material 3 haptic feedback and motion patterns.
+1. Elevate search with Material 3 `SearchBar` (compact) and `DockedSearchBar` (medium/expanded) using a **single source of truth** in `UnifiedSearchPresenter` / `SearchState`—strictly avoiding local `remember` state variables for search expansion or active modes.
+2. Introduce native Material 3 `PullToRefreshBox` across all main feeds, extending `UnifiedSearchPresenter` with `refresh()` and `isRefreshing` to maintain consistent KMP state across platforms.
+3. Integrate TopAppBar scroll behaviors (`pinnedScrollBehavior` for tabbed feeds; `enterAlwaysScrollBehavior` for photo collection grids) with dynamic tonal elevation.
+4. Implement refined Material 3 haptic feedback distinguishing subtle tactile ticks from heavier confirmation/download actions.
+5. Enable system predictive back gesture readiness on Android 14+ (API 34/35+) via `AndroidManifest.xml` and coordinated `BackHandler` routing.
 
 ---
 
@@ -17,44 +18,110 @@ The primary goals are:
 
 ### 1. Modern Material 3 SearchBar & DockedSearchBar (`SearchScreen.kt`)
 *   **Problem**: Currently, search is an ad-hoc `Row` containing a `TextField` with hardcoded `52.dp` height and manual trailing clear icons. It does not leverage Material 3's animated search transitions or responsive docked behaviors.
-*   **Solution**:
-    *   On Compact screens (< 600dp width): Implement M3 `SearchBar` which expands smoothly to take over the screen when focused, displaying search history and suggestions seamlessly.
-    *   On Medium / Expanded screens (tablets & foldables): Implement M3 `DockedSearchBar` anchored at the top, allowing results or dual-pane grids to stay visible underneath while typing.
-    *   Retain the filter drawer action inside the trailing icon slot of the `SearchBar`.
+*   **State Architecture (Single Source of Truth in Shared Presenter)**:
+    *   Do NOT maintain separated local UI properties like `var isSearchActive by remember { mutableStateOf(...) }`.
+    *   Update [`SearchState`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/src/commonMain/kotlin/com/example/imagefeed/presentation/UnifiedSearchPresenter.kt) in `shared/commonMain` to include:
+        ```kotlin
+        data class SearchState(
+            val query: String = "",
+            val isSearchActive: Boolean = false,
+            val isRefreshing: Boolean = false,
+            // ... remaining fields
+        )
+        ```
+    *   Expose explicit transition functions on [`UnifiedSearchPresenter`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/src/commonMain/kotlin/com/example/imagefeed/presentation/UnifiedSearchPresenter.kt):
+        *   `fun setSearchActive(active: Boolean)`: Toggles search expansion/focus state.
+        *   `fun submitSearch(query: String)`: Updates query, collapses `isSearchActive = false`, and executes the search.
+    *   When navigating to search via a clicked tag (`initialQuery.isNotEmpty()`), `isSearchActive` remains `false` so photo results display immediately without hijacking the screen with suggestions.
+*   **Predictive Back & Collapse Navigation**:
+    *   Bind a Compose `BackHandler` directly to the presenter state:
+        ```kotlin
+        BackHandler(enabled = state.isSearchActive) {
+            presenter.setSearchActive(false)
+        }
+        ```
+    *   When active, pressing the system back gesture or tapping the leading back icon collapses the search bar via `presenter.setSearchActive(false)`.
+    *   When inactive (`state.isSearchActive == false`), back navigation pops back to the previous screen via the root `onBack()` callback.
+*   **Adaptive Layout Behavior**:
+    *   Observe `LocalAdaptiveLayoutInfo.current.windowSizeClass.windowWidthSizeClass`.
+    *   **Compact Screens (< 600dp width)**: Render M3 `SearchBar` which expands smoothly to full screen when `state.isSearchActive` is true, hosting `SearchSuggestionsAndHistory` inside the expanded content slot.
+    *   **Medium & Expanded Screens (≥ 600dp width)**: Render M3 `DockedSearchBar` anchored at the top, allowing the results grid underneath to remain visible while typing and displaying suggestions in an anchored floating surface.
+*   **Trailing Icons & Filter Sheet**:
+    *   The trailing icon slot renders a `Row` accommodating:
+        1. Clear icon (`Icons.Default.Clear`): Visible when `state.query.isNotEmpty()`, invoking `presenter.updateQuery("")`.
+        2. Filter icon (`Icons.AutoMirrored.Filled.List`): Opens the existing `ModalBottomSheet` filter menu (`showFiltersSheet = true`), highlighted with `MaterialTheme.colorScheme.primary` when non-default filters are active.
+*   **Category Tabs Placement**:
+    *   `SecondaryTabRow` (Photos, Collections, Users) displays beneath the search bar when `state.isSearchActive` is false, switching view modes over search results.
+
+---
 
 ### 2. Standard Material 3 Pull-to-Refresh (`PullToRefreshBox`)
-*   **Problem**: Users currently cannot pull down to refresh feeds. They must tap a small refresh icon in the top app bar or hit retry on error states.
-*   **Solution**:
-    *   Integrate `androidx.compose.material3.pulltorefresh.PullToRefreshBox` and `rememberPullToRefreshState()` in:
-        1. **Editorial Feed** (`MainActivity.kt`): Pulling reloads the initial page of the feed via `presenter.refresh()`.
-        2. **Collections Feed** (`CollectionsFeedScreen.kt`): Pulling refreshes curated and featured collections via `collectionsPresenter.refresh()`.
-        3. **Search Results** (`SearchScreen.kt`): Pulling re-executes current query and active filters via `presenter.refresh()`.
-    *   Deprecate or demote the redundant refresh `IconButton` in the TopAppBar to declutter the header.
+*   **Problem**: Users currently cannot pull down to refresh feeds and search results.
+*   **Shared Presenter Support**:
+    *   `FeedPresenter` and `CollectionsFeedPresenter` already expose `refresh()` and `isRefreshing`.
+    *   Add `fun refresh()` to `UnifiedSearchPresenter` and `isRefreshing: Boolean` to `SearchState` so pulling search results re-queries active filters without resetting existing items or showing disruptive skeleton loaders.
+*   **Integration Targets**:
+    1. **Feed Screen (`MainActivity.kt`)**: Wrap `LazyVerticalStaggeredGrid` with `PullToRefreshBox(isRefreshing = state.isRefreshing, onRefresh = { presenter.refresh() })`. Pulling refreshes the currently active topic or editorial feed.
+    2. **Collections Feed (`CollectionsFeedScreen.kt`)**: Wrap collection grid with `PullToRefreshBox(isRefreshing = state.isRefreshing, onRefresh = { presenter.refresh() })`.
+    3. **Search Results (`SearchScreen.kt`)**: Wrap results container with `PullToRefreshBox(isRefreshing = state.isRefreshing, onRefresh = { presenter.refresh() })` when not in suggestions mode.
+*   **App Bar Actions Distinction**:
+    *   Retain the `IconButton` in `FeedScreen`'s top app bar with `contentDescription = "Randomize"` and action `{ handleShake() }`. It serves as the accessible desktop and UI fallback for the physical shake gesture. To prevent confusion with feed refresh, use `Icons.Default.Shuffle` or `Icons.Default.Refresh` with unambiguous labeling.
 
-### 3. TopAppBar Scroll Behaviors
-*   **Problem**: `CenterAlignedTopAppBar` currently sits statically with fixed background color, never reacting to list scroll offset or showing elevation changes.
-*   **Solution**:
-    *   Connect `TopAppBarDefaults.enterAlwaysScrollBehavior()` or `pinnedScrollBehavior()` to the `LazyVerticalStaggeredGrid` or `LazyColumn` scroll state.
-    *   As users scroll down through photo feeds, the app bar gently elevates, shifting to `surfaceContainer` tint or tucking away to maximize screen canvas for photography.
+---
 
-### 4. Haptic Feedback & Tactile Feedback
-*   **Integration**:
-    *   Add `LocalHapticFeedback.current.performHapticFeedback(HapticFeedbackType.LongPress)` or `TextHandleMove` when:
-        *   A pull-to-refresh gesture hits the trigger threshold.
-        *   A search filter chip is toggled on or off.
-        *   A photo download is initiated.
+### 3. TopAppBar Scroll Behaviors & Elevation
+*   **Problem**: Top app bars currently sit statically with fixed container colors and lack dynamic elevation or reactive scroll behaviors.
+*   **Target Implementations**:
+    1. **Feed Screen (`MainActivity.kt`)**:
+       * Use `TopAppBarDefaults.pinnedScrollBehavior()`.
+       * **Rationale**: Because `FeedScreen` features a sticky `SecondaryScrollableTabRow` directly below `CenterAlignedTopAppBar`, `pinnedScrollBehavior` keeps the category navigation pinned while smoothly elevating the app bar container to `MaterialTheme.colorScheme.surfaceContainer` tint as photos scroll beneath.
+    2. **Curated Collections (`CollectionsFeedScreen.kt`)**:
+       * Use `TopAppBarDefaults.enterAlwaysScrollBehavior()`.
+       * **Rationale**: Collections has a single header with no sub-tabs. Scrolling down gently tucks the header away to maximize visual canvas for collection covers, returning immediately on upward scroll.
+    3. **Nested Scroll Coordination**:
+       * Apply `Modifier.nestedScroll(scrollBehavior.nestedScrollConnection)` to the outer `Scaffold` container, ensuring seamless cooperation between list fling gestures, app bar reactions, and `PullToRefreshBox`.
+
+---
+
+### 4. Haptic Feedback & Tactile Standards
+*   **Tactile Classification**:
+    *   **Light Sensory Ticks (`HapticFeedbackType.TextHandleMove`)**:
+        *   **Pull-to-Refresh Activation**: Fire haptic tick when the pull gesture crosses the refresh threshold (using threshold state edge detection).
+        *   **Filter Chip Toggles**: Fire haptic tick whenever a `FilterChip` in `SearchScreen`'s filter sheet is selected or toggled.
+    *   **Strong Confirmation Feedback (`HapticFeedbackType.LongPress` / `VibrationEffect`)**:
+        *   **Photo Download Trigger**: Fire when the user clicks the "Download High Resolution Image" button in `PhotoDetailsScreen.kt`, providing clear tactile confirmation before delegating to the browser/download manager.
+
+---
 
 ### 5. Predictive Back Gesture Readiness
-*   **Integration**:
-    *   Ensure back navigation smoothly cooperates with Navigation 3's `NavDisplay` and predictive back transitions on Android 14+ (API 34/35+), utilizing predictive back progress where supported by the Navigation 3 runtime.
+*   **Android Manifest Opt-In**:
+    *   Add `android:enableOnBackInvokedCallback="true"` to `<application>` in [`androidApp/src/main/AndroidManifest.xml`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/androidApp/src/main/AndroidManifest.xml).
+*   **Navigation 3 Interoperability**:
+    *   Ensure back navigation smoothly cooperates with Navigation 3's `NavDisplay`.
+    *   `BackHandler(enabled = state.isSearchActive)` takes precedence, collapsing the active search before system back reaches the navigation backstack.
 
 ---
 
 ## Verification & Acceptance Criteria
-1. **Interactive Search**: Search bar smoothly expands on mobile and anchors as docked search bar on tablets/foldables.
-2. **Pull to Refresh**: Pulling the top of the photo grid triggers the Material 3 refresh spinner indicator and refreshes the data without layout jank.
-3. **Scroll Elevation**: TopAppBars display subtle tonal elevation when list content scrolls underneath them.
-4. **Haptics**: Subtle haptic feedback fires on filter toggles and pull-to-refresh triggers on physical devices.
-5. **Quality & Compilation**:
-   * `./gradlew :androidApp:assembleDebug` builds cleanly.
+
+1. **State & Architecture**:
+   * Search active state and refresh flags originate solely from `UnifiedSearchPresenter` and `SearchState`. No local `remember` state variables govern search expansion.
+   * `SearchState` changes compile cleanly on both Android and iOS (`SearchViewModel.swift`).
+2. **Interactive Search**:
+   * Compact screens smoothly expand `SearchBar` on focus and collapse on back press.
+   * Wide screens display `DockedSearchBar` anchored at the top with suggestions in a floating panel.
+   * Tag search navigation (`initialQuery`) immediately shows results without launching suggestions.
+3. **Pull-to-Refresh**:
+   * Pulling triggers M3 refresh indicators across Feed, Collections, and Search Results.
+   * Feeds reload data seamlessly without jumping or resetting to skeleton states during refresh.
+4. **Scroll Dynamics**:
+   * `FeedScreen` app bar shows subtle tonal elevation tint on scroll while tabs remain pinned.
+   * `CollectionsFeedScreen` app bar collapses smoothly on downward scroll and reappears on upward scroll.
+5. **Tactile Feedback**:
+   * Light haptic feedback fires on pull-to-refresh trigger and filter chip toggles.
+   * Confirmation haptic fires on photo download trigger.
+6. **Quality & Dual-Platform Verification**:
+   * `./gradlew :shared:allTests` passes all unit and integration tests.
+   * `./gradlew :androidApp:assembleDebug` builds cleanly without warnings.
+   * `cd iosApp && xcodegen && xcodebuild -project iosApp.xcodeproj -scheme iosApp -destination 'generic/platform=iOS Simulator' build CODE_SIGNING_ALLOWED=NO` builds successfully.
    * `./gradlew ktlintCheck detekt` passes without warnings.

@@ -2,6 +2,7 @@ package com.example.imagefeed.android
 
 import android.content.Intent
 import android.net.Uri
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
@@ -43,6 +44,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DockedSearchBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -51,14 +53,16 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SearchBar
+import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.SecondaryTabRow
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.SuggestionChipDefaults
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -71,13 +75,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.LocalPlatformContext
 import coil3.compose.rememberAsyncImagePainter
+import com.example.imagefeed.android.adaptive.LocalAdaptiveLayoutInfo
 import com.example.imagefeed.android.util.CollectionMosaicCardSkeleton
 import com.example.imagefeed.android.util.PhotoGridSkeleton
 import com.example.imagefeed.android.util.bounceClick
@@ -106,6 +113,20 @@ fun SearchScreen(
     }
     val state by presenter.state.collectAsStateWithLifecycle(initialValue = SearchState())
     var showFiltersSheet by remember { mutableStateOf(false) }
+    val pullToRefreshState = rememberPullToRefreshState()
+    val haptic = LocalHapticFeedback.current
+    val adaptiveLayoutInfo = LocalAdaptiveLayoutInfo.current
+    val isCompact = adaptiveLayoutInfo.isCompactWidth
+
+    LaunchedEffect(pullToRefreshState.distanceFraction) {
+        if (pullToRefreshState.distanceFraction >= 1f) {
+            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+        }
+    }
+
+    BackHandler(enabled = state.isSearchActive) {
+        presenter.setSearchActive(false)
+    }
 
     LaunchedEffect(initialQuery) {
         if (initialQuery.isNotEmpty()) {
@@ -113,63 +134,48 @@ fun SearchScreen(
         }
     }
 
-    Scaffold(
-        topBar = {
-            Column(modifier = Modifier.background(MaterialTheme.colorScheme.surface)) {
-                Row(
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 8.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
+    val searchInputField = @Composable {
+        SearchBarDefaults.InputField(
+            query = state.query,
+            onQueryChange = { presenter.updateQuery(it) },
+            onSearch = { presenter.submitSearch(it) },
+            expanded = state.isSearchActive,
+            onExpandedChange = { presenter.setSearchActive(it) },
+            placeholder = {
+                Text(
+                    "Search Photos, Collections, Users...",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            },
+            leadingIcon = {
+                if (state.isSearchActive) {
+                    IconButton(onClick = { presenter.setSearchActive(false) }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Collapse Search",
+                        )
+                    }
+                } else {
                     IconButton(onClick = onBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back",
                         )
                     }
-
-                    TextField(
-                        value = state.query,
-                        onValueChange = { presenter.updateQuery(it) },
-                        placeholder = {
-                            Text(
-                                "Search Photos, Collections, Users...",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                }
+            },
+            trailingIcon = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (state.query.isNotEmpty()) {
+                        IconButton(onClick = { presenter.updateQuery("") }) {
+                            Icon(
+                                Icons.Default.Clear,
+                                contentDescription = "Clear",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
-                        },
-                        modifier =
-                            Modifier
-                                .weight(1f)
-                                .height(52.dp),
-                        colors =
-                            TextFieldDefaults.colors(
-                                focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                                focusedIndicatorColor = Color.Transparent,
-                                unfocusedIndicatorColor = Color.Transparent,
-                                focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                            ),
-                        shape = MaterialTheme.shapes.extraLarge,
-                        singleLine = true,
-                        trailingIcon = {
-                            if (state.query.isNotEmpty()) {
-                                IconButton(onClick = { presenter.updateQuery("") }) {
-                                    Icon(
-                                        Icons.Default.Clear,
-                                        contentDescription = "Clear",
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
-                                }
-                            }
-                        },
-                    )
-
-                    Spacer(modifier = Modifier.width(4.dp))
-
+                        }
+                    }
                     IconButton(onClick = { showFiltersSheet = true }) {
                         Icon(
                             // Standard List serves as an elegant filter icon
@@ -186,33 +192,80 @@ fun SearchScreen(
                         )
                     }
                 }
+            },
+        )
+    }
 
-                // Search Category Tabs
-                SecondaryTabRow(
-                    selectedTabIndex = state.activeTab.ordinal,
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    contentColor = MaterialTheme.colorScheme.primary,
-                    indicator = {
-                        TabRowDefaults.SecondaryIndicator(
-                            modifier = Modifier.tabIndicatorOffset(state.activeTab.ordinal),
-                            color = MaterialTheme.colorScheme.primary,
+    Scaffold(
+        topBar = {
+            Column(modifier = Modifier.background(MaterialTheme.colorScheme.surface)) {
+                if (isCompact) {
+                    SearchBar(
+                        inputField = searchInputField,
+                        expanded = state.isSearchActive,
+                        onExpandedChange = { presenter.setSearchActive(it) },
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(
+                                    horizontal = if (state.isSearchActive) 0.dp else 12.dp,
+                                    vertical = if (state.isSearchActive) 0.dp else 8.dp,
+                                ),
+                    ) {
+                        SearchSuggestionsAndHistory(
+                            history = state.searchHistory,
+                            onItemClick = { suggestion -> presenter.submitSearch(suggestion) },
+                            onDeleteClick = { presenter.removeHistoryEntry(it) },
+                            onClearAll = { presenter.clearHistory() },
                         )
-                    },
-                ) {
-                    SearchTab.entries.forEach { tab ->
-                        Tab(
-                            selected = state.activeTab == tab,
-                            onClick = { presenter.setTab(tab) },
-                            text = {
-                                Text(
-                                    text = tab.name,
-                                    style = MaterialTheme.typography.labelLarge,
-                                    fontWeight = FontWeight.Bold,
-                                )
-                            },
-                            selectedContentColor = MaterialTheme.colorScheme.primary,
-                            unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    }
+                } else {
+                    DockedSearchBar(
+                        inputField = searchInputField,
+                        expanded = state.isSearchActive,
+                        onExpandedChange = { presenter.setSearchActive(it) },
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                    ) {
+                        SearchSuggestionsAndHistory(
+                            history = state.searchHistory,
+                            onItemClick = { suggestion -> presenter.submitSearch(suggestion) },
+                            onDeleteClick = { presenter.removeHistoryEntry(it) },
+                            onClearAll = { presenter.clearHistory() },
                         )
+                    }
+                }
+
+                if (!state.isSearchActive) {
+                    // Search Category Tabs
+                    SecondaryTabRow(
+                        selectedTabIndex = state.activeTab.ordinal,
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        contentColor = MaterialTheme.colorScheme.primary,
+                        indicator = {
+                            TabRowDefaults.SecondaryIndicator(
+                                modifier = Modifier.tabIndicatorOffset(state.activeTab.ordinal),
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                        },
+                    ) {
+                        SearchTab.entries.forEach { tab ->
+                            Tab(
+                                selected = state.activeTab == tab,
+                                onClick = { presenter.setTab(tab) },
+                                text = {
+                                    Text(
+                                        text = tab.name,
+                                        style = MaterialTheme.typography.labelLarge,
+                                        fontWeight = FontWeight.Bold,
+                                    )
+                                },
+                                selectedContentColor = MaterialTheme.colorScheme.primary,
+                                unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
                     }
                 }
             }
@@ -226,98 +279,111 @@ fun SearchScreen(
                     .background(MaterialTheme.colorScheme.surface),
         ) {
             if (state.query.isBlank()) {
-                // Show search suggestions and history
-                SearchSuggestionsAndHistory(
-                    history = state.searchHistory,
-                    onItemClick = { presenter.updateQuery(it) },
-                    onDeleteClick = { presenter.removeHistoryEntry(it) },
-                    onClearAll = { presenter.clearHistory() },
-                )
-            } else if (state.isLoading) {
-                when (state.activeTab) {
-                    SearchTab.PHOTOS -> {
-                        PhotoGridSkeleton()
-                    }
-                    SearchTab.COLLECTIONS -> {
+                if (!state.isSearchActive) {
+                    SearchSuggestionsAndHistory(
+                        history = state.searchHistory,
+                        onItemClick = { presenter.submitSearch(it) },
+                        onDeleteClick = { presenter.removeHistoryEntry(it) },
+                        onClearAll = { presenter.clearHistory() },
+                    )
+                }
+            } else {
+                PullToRefreshBox(
+                    isRefreshing = state.isRefreshing,
+                    onRefresh = {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        presenter.refresh()
+                    },
+                    state = pullToRefreshState,
+                    modifier = Modifier.fillMaxSize(),
+                ) {
+                    if (state.isLoading) {
+                        when (state.activeTab) {
+                            SearchTab.PHOTOS -> {
+                                PhotoGridSkeleton()
+                            }
+                            SearchTab.COLLECTIONS -> {
+                                Column(
+                                    modifier =
+                                        Modifier
+                                            .fillMaxSize()
+                                            .padding(12.dp)
+                                            .verticalScroll(rememberScrollState()),
+                                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                                ) {
+                                    repeat(SKELETON_COLLECTION_COUNT) {
+                                        CollectionMosaicCardSkeleton()
+                                    }
+                                }
+                            }
+                            SearchTab.USERS -> {
+                                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                    CircularProgressIndicator()
+                                }
+                            }
+                        }
+                    } else if (state.error != null) {
                         Column(
                             modifier =
                                 Modifier
                                     .fillMaxSize()
-                                    .padding(12.dp)
-                                    .verticalScroll(rememberScrollState()),
-                            verticalArrangement = Arrangement.spacedBy(16.dp),
+                                    .padding(24.dp),
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally,
                         ) {
-                            repeat(4) {
-                                CollectionMosaicCardSkeleton()
+                            Text(
+                                "Search failed",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = state.error ?: "",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    } else {
+                        // Display content depending on selected Tab
+                        when (state.activeTab) {
+                            SearchTab.PHOTOS -> {
+                                if (state.photos.isEmpty()) {
+                                    NoResultsView()
+                                } else {
+                                    PhotosResultGrid(
+                                        sharedTransitionScope = sharedTransitionScope,
+                                        animatedVisibilityScope = animatedVisibilityScope,
+                                        photos = state.photos,
+                                        isLoadingMore = state.isLoadingMore,
+                                        onLoadMore = { presenter.loadNextPage() },
+                                        onPhotoClick = onPhotoClick,
+                                    )
+                                }
                             }
-                        }
-                    }
-                    SearchTab.USERS -> {
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            CircularProgressIndicator()
-                        }
-                    }
-                }
-            } else if (state.error != null) {
-                Column(
-                    modifier =
-                        Modifier
-                            .fillMaxSize()
-                            .padding(24.dp),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Text(
-                        "Search failed",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = state.error ?: "",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            } else {
-                // Display content depending on selected Tab
-                when (state.activeTab) {
-                    SearchTab.PHOTOS -> {
-                        if (state.photos.isEmpty()) {
-                            NoResultsView()
-                        } else {
-                            PhotosResultGrid(
-                                sharedTransitionScope = sharedTransitionScope,
-                                animatedVisibilityScope = animatedVisibilityScope,
-                                photos = state.photos,
-                                isLoadingMore = state.isLoadingMore,
-                                onLoadMore = { presenter.loadNextPage() },
-                                onPhotoClick = onPhotoClick,
-                            )
-                        }
-                    }
-                    SearchTab.COLLECTIONS -> {
-                        if (state.collections.isEmpty()) {
-                            NoResultsView()
-                        } else {
-                            CollectionsResultList(
-                                collections = state.collections,
-                                isLoadingMore = state.isLoadingMore,
-                                onLoadMore = { presenter.loadNextPage() },
-                            )
-                        }
-                    }
-                    SearchTab.USERS -> {
-                        if (state.users.isEmpty()) {
-                            NoResultsView()
-                        } else {
-                            UsersResultList(
-                                users = state.users,
-                                isLoadingMore = state.isLoadingMore,
-                                onLoadMore = { presenter.loadNextPage() },
-                                onUserClick = onUserClick,
-                            )
+                            SearchTab.COLLECTIONS -> {
+                                if (state.collections.isEmpty()) {
+                                    NoResultsView()
+                                } else {
+                                    CollectionsResultList(
+                                        collections = state.collections,
+                                        isLoadingMore = state.isLoadingMore,
+                                        onLoadMore = { presenter.loadNextPage() },
+                                    )
+                                }
+                            }
+                            SearchTab.USERS -> {
+                                if (state.users.isEmpty()) {
+                                    NoResultsView()
+                                } else {
+                                    UsersResultList(
+                                        users = state.users,
+                                        isLoadingMore = state.isLoadingMore,
+                                        onLoadMore = { presenter.loadNextPage() },
+                                        onUserClick = onUserClick,
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -799,6 +865,7 @@ fun SearchFiltersSheet(
     var selectedOrderBy by remember { mutableStateOf(filters.orderBy) }
     var selectedOrientation by remember { mutableStateOf(filters.orientation) }
     var selectedColor by remember { mutableStateOf(filters.color) }
+    val haptic = LocalHapticFeedback.current
 
     val colors =
         listOf(
@@ -862,6 +929,7 @@ fun SearchFiltersSheet(
                     color = MaterialTheme.colorScheme.primary,
                     modifier =
                         Modifier.clickable {
+                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                             selectedOrderBy = "relevant"
                             selectedOrientation = null
                             selectedColor = null
@@ -883,13 +951,19 @@ fun SearchFiltersSheet(
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 FilterChip(
                     selected = selectedOrderBy == "relevant",
-                    onClick = { selectedOrderBy = "relevant" },
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        selectedOrderBy = "relevant"
+                    },
                     label = { Text("RELEVANT") },
                     colors = FilterChipDefaults.filterChipColors(),
                 )
                 FilterChip(
                     selected = selectedOrderBy == "latest",
-                    onClick = { selectedOrderBy = "latest" },
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        selectedOrderBy = "latest"
+                    },
                     label = { Text("LATEST") },
                     colors = FilterChipDefaults.filterChipColors(),
                 )
@@ -909,19 +983,28 @@ fun SearchFiltersSheet(
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 FilterChip(
                     selected = selectedOrientation == null,
-                    onClick = { selectedOrientation = null },
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        selectedOrientation = null
+                    },
                     label = { Text("ALL") },
                     colors = FilterChipDefaults.filterChipColors(),
                 )
                 FilterChip(
                     selected = selectedOrientation == "landscape",
-                    onClick = { selectedOrientation = "landscape" },
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        selectedOrientation = "landscape"
+                    },
                     label = { Text("LANDSCAPE") },
                     colors = FilterChipDefaults.filterChipColors(),
                 )
                 FilterChip(
                     selected = selectedOrientation == "portrait",
-                    onClick = { selectedOrientation = "portrait" },
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        selectedOrientation = "portrait"
+                    },
                     label = { Text("PORTRAIT") },
                     colors = FilterChipDefaults.filterChipColors(),
                 )
@@ -948,7 +1031,11 @@ fun SearchFiltersSheet(
 
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.clickable { selectedColor = value },
+                        modifier =
+                            Modifier.clickable {
+                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                selectedColor = value
+                            },
                     ) {
                         Box(
                             modifier =
@@ -1013,3 +1100,5 @@ fun SearchFiltersSheet(
         }
     }
 }
+
+private const val SKELETON_COLLECTION_COUNT = 4

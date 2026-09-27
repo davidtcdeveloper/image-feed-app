@@ -395,15 +395,20 @@ These are the spec files that the implementation notes and planning references s
 4.  **Reference Specification:**
     *   Track blueprint in `specs/25_material_3_screen_tokenization.md`.
 
-### Step 28: Material 3 UX Modernization
-1.  **Implement Modern SearchBar:**
+### Step 28: Material 3 UX Modernization (Completed)
+1.  **Implement Modern SearchBar (Single Source of Truth):**
+    *   Extend `SearchState` and `UnifiedSearchPresenter` with `isSearchActive: Boolean = false`, avoiding local `remember` variables in Compose.
     *   Replace ad-hoc `TextField` in `SearchScreen.kt` with Material 3 `SearchBar` on compact screens and `DockedSearchBar` on medium/expanded screens.
+    *   Bind `BackHandler(enabled = state.isSearchActive)` to collapse search before navigation pops.
 2.  **Implement Native Pull-to-Refresh:**
-    *   Add Material 3 `PullToRefreshBox` with `PullToRefreshDefaults` on Editorial Feed (`MainActivity`), Collections Feed, and Search Results.
+    *   Add `fun refresh()` and `isRefreshing` to `UnifiedSearchPresenter`.
+    *   Add Material 3 `PullToRefreshBox` with `PullToRefreshDefaults` on Feed (`MainActivity`), Collections Feed, and Search Results.
 3.  **Configure App Bar Scroll Behaviors:**
-    *   Attach `TopAppBarDefaults.enterAlwaysScrollBehavior()` or `pinnedScrollBehavior()` to feed scroll states.
+    *   Attach `TopAppBarDefaults.pinnedScrollBehavior()` to Feed (`FeedScreen`) to maintain sticky category tabs while elevating with surfaceContainer tint.
+    *   Attach `TopAppBarDefaults.enterAlwaysScrollBehavior()` to Collections (`CollectionsFeedScreen`).
 4.  **Haptic & Motion Enhancements:**
     *   Add tactile haptic feedback on pull-to-refresh activation, filter toggling, and photo downloads.
+    *   Opt-in to predictive back gestures via `android:enableOnBackInvokedCallback="true"` in `AndroidManifest.xml`.
 5.  **Reference Specification:**
     *   Track blueprint in `specs/26_material_3_ux_modernization.md`.
 

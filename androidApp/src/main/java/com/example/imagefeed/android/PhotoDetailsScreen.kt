@@ -74,9 +74,11 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -645,6 +647,7 @@ fun PhotoInspectorPane(
     onTagClick: (String) -> Unit,
 ) {
     val context = LocalPlatformContext.current
+    val haptic = LocalHapticFeedback.current
 
     Column(
         modifier =
@@ -789,6 +792,7 @@ fun PhotoInspectorPane(
         Spacer(modifier = Modifier.height(16.dp))
         Button(
             onClick = {
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                 onTrackDownload()
                 val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(photo.urls.full))
                 context.startActivity(browserIntent)
