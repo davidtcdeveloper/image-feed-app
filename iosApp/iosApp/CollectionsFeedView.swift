@@ -129,20 +129,21 @@ struct CollectionsFeedView: View {
         .navigationTitle("COLLECTIONS")
         #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
         #endif
             .toolbar {
                 #if os(iOS)
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button(action: onSearchClick) {
-                        Image(systemName: "magnifyingglass")
-                            .foregroundColor(.white)
+                    GlassToolbarButton(systemName: "magnifyingglass", accessibilityLabel: "Search") {
+                        onSearchClick()
                     }
                 }
                 #else
                 ToolbarItem(placement: .navigation) {
-                    Button(action: onSearchClick) {
-                        Image(systemName: "magnifyingglass")
-                            .foregroundColor(.white)
+                    GlassToolbarButton(systemName: "magnifyingglass", accessibilityLabel: "Search") {
+                        onSearchClick()
                     }
                 }
                 #endif

@@ -46,7 +46,7 @@ struct SearchView: View {
                 .pickerStyle(.segmented)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
-                .background(Color(hex: "0F0F11"))
+                .background(.ultraThinMaterial)
 
                 if searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                     // Suggestions & History View
@@ -219,20 +219,21 @@ struct SearchView: View {
         .navigationTitle("SEARCH")
         #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
         #endif
             .toolbar {
                 #if os(iOS)
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: { showFilters = true }) {
-                        Image(systemName: "line.3.horizontal.decrease.circle")
-                            .foregroundColor(.white)
+                    GlassToolbarButton(systemName: "line.3.horizontal.decrease", accessibilityLabel: "Filter") {
+                        showFilters = true
                     }
                 }
                 #else
                 ToolbarItem(placement: .primaryAction) {
-                    Button(action: { showFilters = true }) {
-                        Image(systemName: "line.3.horizontal.decrease.circle")
-                            .foregroundColor(.white)
+                    GlassToolbarButton(systemName: "line.3.horizontal.decrease", accessibilityLabel: "Filter") {
+                        showFilters = true
                     }
                 }
                 #endif

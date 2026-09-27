@@ -176,38 +176,29 @@ struct PhotoDetailsView: View {
         .navigationBarBackButtonHidden(true)
         .overlay(alignment: .topLeading) {
             if onDismiss != nil {
-                Button(action: {
+                GlassToolbarButton(systemName: "chevron.left", accessibilityLabel: "Back") {
                     onDismiss?()
-                }) {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(.white)
-                        .padding(8)
-                        .background(Circle().fill(Color.black.opacity(0.4)))
                 }
                 .padding(.top, 60)
                 .padding(.leading, 16)
             }
         }
+        #if os(iOS)
+        .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
+        .toolbarColorScheme(.dark, for: .navigationBar)
+        #endif
         .toolbar {
             #if os(iOS)
             ToolbarItem(placement: .navigationBarLeading) {
-                Button(action: { dismiss() }) {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(.white)
-                        .padding(8)
-                        .background(Circle().fill(Color.black.opacity(0.4)))
+                GlassToolbarButton(systemName: "chevron.left", accessibilityLabel: "Back") {
+                    dismiss()
                 }
             }
             #else
             ToolbarItem(placement: .navigation) {
-                Button(action: { dismiss() }) {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(.white)
-                        .padding(8)
-                        .background(Circle().fill(Color.black.opacity(0.4)))
+                GlassToolbarButton(systemName: "chevron.left", accessibilityLabel: "Back") {
+                    dismiss()
                 }
             }
             #endif
@@ -330,8 +321,7 @@ struct PhotoInspectorView: View {
 
                         HistoricalStatsChart(values: viewsHist.values)
                             .padding(16)
-                            .background(.ultraThinMaterial)
-                            .cornerRadius(12)
+                            .glassCard(cornerRadius: 12, style: .ultraThin)
                     }
                 }
 
@@ -371,8 +361,7 @@ struct PhotoInspectorView: View {
                             ExifRowView(label: "ISO", value: exif.iso != nil ? "\(exif.iso!)" : nil)
                         }
                         .padding(16)
-                        .background(.ultraThinMaterial)
-                        .cornerRadius(12)
+                        .glassCard(cornerRadius: 12, style: .ultraThin)
                     }
                 }
 
@@ -404,8 +393,7 @@ struct PhotoInspectorView: View {
                             }
                         }
                         .padding(16)
-                        .background(.ultraThinMaterial)
-                        .cornerRadius(12)
+                        .glassCard(cornerRadius: 12, style: .ultraThin)
                     }
                 }
 

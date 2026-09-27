@@ -232,25 +232,22 @@ struct CollectionDetailView: View {
             }
         }
         .navigationBarBackButtonHidden(true)
+        #if os(iOS)
+        .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
+        .toolbarColorScheme(.dark, for: .navigationBar)
+        #endif
         .toolbar {
             #if os(iOS)
             ToolbarItem(placement: .navigationBarLeading) {
-                Button(action: { dismiss() }) {
-                    HStack(spacing: 4) {
-                        Image(systemName: "chevron.left")
-                        Text("Back")
-                    }
-                    .foregroundColor(.white)
+                GlassToolbarButton(systemName: "chevron.left", accessibilityLabel: "Back") {
+                    dismiss()
                 }
             }
             #else
             ToolbarItem(placement: .navigation) {
-                Button(action: { dismiss() }) {
-                    HStack(spacing: 4) {
-                        Image(systemName: "chevron.left")
-                        Text("Back")
-                    }
-                    .foregroundColor(.white)
+                GlassToolbarButton(systemName: "chevron.left", accessibilityLabel: "Back") {
+                    dismiss()
                 }
             }
             #endif

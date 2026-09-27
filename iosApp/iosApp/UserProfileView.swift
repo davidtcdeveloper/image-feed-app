@@ -99,24 +99,21 @@ struct UserProfileView: View {
         .navigationTitle(viewModel.user?.name ?? "Profile")
         #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(Color(hex: "0F0F11"), for: .navigationBar)
+            .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
             .toolbarColorScheme(.dark, for: .navigationBar)
         #endif
             .toolbar {
                 #if os(iOS)
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button(action: { dismiss() }) {
-                        Image(systemName: "chevron.left")
-                            .foregroundColor(.white)
-                            .fontWeight(.semibold)
+                    GlassToolbarButton(systemName: "chevron.left", accessibilityLabel: "Back") {
+                        dismiss()
                     }
                 }
                 #else
                 ToolbarItem(placement: .navigation) {
-                    Button(action: { dismiss() }) {
-                        Image(systemName: "chevron.left")
-                            .foregroundColor(.white)
-                            .fontWeight(.semibold)
+                    GlassToolbarButton(systemName: "chevron.left", accessibilityLabel: "Back") {
+                        dismiss()
                     }
                 }
                 #endif
@@ -124,26 +121,20 @@ struct UserProfileView: View {
                 if let user = viewModel.user {
                     #if os(iOS)
                     ToolbarItem(placement: .navigationBarTrailing) {
-                        Button(action: {
+                        GlassToolbarButton(systemName: "safari", accessibilityLabel: "Open Profile in Browser") {
                             let utmProfile = "\(user.links.html)?utm_source=ImageFeedApp&utm_medium=referral"
                             if let url = URL(string: utmProfile) {
                                 URLHelper.open(url)
                             }
-                        }) {
-                            Image(systemName: "safari")
-                                .foregroundColor(.white)
                         }
                     }
                     #else
                     ToolbarItem(placement: .primaryAction) {
-                        Button(action: {
+                        GlassToolbarButton(systemName: "safari", accessibilityLabel: "Open Profile in Browser") {
                             let utmProfile = "\(user.links.html)?utm_source=ImageFeedApp&utm_medium=referral"
                             if let url = URL(string: utmProfile) {
                                 URLHelper.open(url)
                             }
-                        }) {
-                            Image(systemName: "safari")
-                                .foregroundColor(.white)
                         }
                     }
                     #endif
@@ -476,16 +467,14 @@ struct InsightsView: View {
                     if let viewsHist = stats.views.historical, !viewsHist.values.isEmpty {
                         InteractiveTimelineChart(title: "VIEWS TRENDS", values: viewsHist.values)
                             .padding(16)
-                            .background(.ultraThinMaterial)
-                            .cornerRadius(12)
+                            .glassCard(cornerRadius: 12, style: .ultraThin)
                     }
 
                     // Interactive Downloads Chart
                     if let downHist = stats.downloads.historical, !downHist.values.isEmpty {
                         InteractiveTimelineChart(title: "DOWNLOADS TRENDS", values: downHist.values)
                             .padding(16)
-                            .background(.ultraThinMaterial)
-                            .cornerRadius(12)
+                            .glassCard(cornerRadius: 12, style: .ultraThin)
                     }
                 }
                 .padding(.horizontal, 16)

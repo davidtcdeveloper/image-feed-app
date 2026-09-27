@@ -302,6 +302,36 @@ public extension View {
     }
 }
 
+// MARK: - Glass Toolbar Controls
+
+public struct GlassToolbarButton: View {
+    public let systemName: String
+    public let accessibilityLabel: String?
+    public let action: () -> Void
+
+    public init(
+        systemName: String,
+        accessibilityLabel: String? = nil,
+        action: @escaping () -> Void
+    ) {
+        self.systemName = systemName
+        self.accessibilityLabel = accessibilityLabel
+        self.action = action
+    }
+
+    public var body: some View {
+        Button(action: action) {
+            Image(systemName: systemName)
+                .font(.system(size: 14, weight: .semibold))
+                .glassVibrancy(.primary)
+                .frame(width: 34, height: 34)
+                .glassBackground(style: .ultraThin, shape: Circle(), showBorder: true, hasShadow: true)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text(accessibilityLabel ?? systemName))
+    }
+}
+
 // MARK: - Previews
 
 #Preview("Glass Design Tokens & Hierarchy") {

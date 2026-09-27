@@ -421,14 +421,15 @@ These are the spec files that the implementation notes and planning references s
 3.  **Reference Specification:**
     *   Track blueprint in `specs/27_ios_glass_design_foundation.md`.
 
-### Step 30: iOS Translucent Chrome & Floating Category Bar
+### Step 30: iOS Translucent Chrome & Floating Category Bar (Completed)
 1.  **Modernize Navigation and Tab Chrome:**
     *   Remove legacy `UITabBarAppearance.configureWithOpaqueBackground()` from `ContentView.swift`.
-    *   Apply `.toolbarBackground(.ultraThinMaterial, for: .navigationBar, .tabBar)` across feed tabs.
-2.  **Floating Frosted Glass Category Bar:**
-    *   Turn the horizontal category picker into a floating frosted glass capsule strip allowing content to blur underneath.
+    *   Apply `.toolbarBackground(.ultraThinMaterial, for: .navigationBar, .tabBar)` with `.toolbarBackground(.visible)` across feed tabs, collections, and search.
+2.  **Edge-to-Edge Layout & Floating Frosted Glass Category Bar:**
+    *   Promote feed photo `ScrollView` to full-bleed with top content margins so imagery scrolls fluidly under the top chrome.
+    *   Elevate the category picker into a floating frosted glass capsule strip backed by `GlassTheme` with edge fade masking and declarative `.sensoryFeedback`.
 3.  **Glass Action Controls:**
-    *   Refactor toolbar icons into circular ultra-thin glass buttons with specular borders.
+    *   Refactor toolbar icons and custom back buttons into circular glass controls conforming to `GlassTheme` with specular borders and macOS platform guards.
 4.  **Reference Specification:**
     *   Track blueprint in `specs/28_ios_chrome_navigation_modernization.md`.
 

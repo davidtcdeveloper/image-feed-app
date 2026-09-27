@@ -6,10 +6,8 @@ struct ContentView: View {
 
     init() {
         #if os(iOS)
-        // Style the tab bar with dark-mode compliance
         let appearance = UITabBarAppearance()
-        appearance.configureWithOpaqueBackground()
-        appearance.backgroundColor = UIColor(red: 15 / 255, green: 15 / 255, blue: 17 / 255, alpha: 1.0)
+        appearance.configureWithDefaultBackground()
         UITabBar.appearance().standardAppearance = appearance
         UITabBar.appearance().scrollEdgeAppearance = appearance
         #endif
@@ -30,6 +28,11 @@ struct ContentView: View {
                 .tag(1)
         }
         .tint(.white)
+        #if os(iOS)
+        .toolbarBackground(.ultraThinMaterial, for: .tabBar)
+        .toolbarBackground(.visible, for: .tabBar)
+        .toolbarColorScheme(.dark, for: .tabBar)
+        #endif
     }
 }
 
@@ -140,127 +143,82 @@ struct PhotosFeedTabView: View {
                 Color(hex: "0F0F11")
                     .ignoresSafeArea()
 
-                VStack(spacing: 0) {
-                    // Sliding horizontal category bar
-                ScrollView(.horizontal, showsIndicators: false) {
-                    LazyHStack(spacing: 12) {
-                        CategoryTabButton(
-                            title: "Editorial",
-                            isSelected: viewModel.selectedTopicSlug == "editorial",
-                            namespace: categoryNamespace)
-                        {
-                            #if os(iOS)
-                            let generator = UIImpactFeedbackGenerator(style: .light)
-                            generator.impactOccurred()
-                            #endif
-                            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                                viewModel.selectTopic(slug: "editorial")
-                            }
-                        }
-
-                        if viewModel.topics.isEmpty, viewModel.isLoadingTopics {
-                            ForEach(0..<6, id: \.self) { _ in
-                                Capsule()
-                                    .fill(Color.white.opacity(0.08))
-                                    .frame(width: 80, height: 32)
-                                    .opacity(0.5)
-                            }
-                        } else {
-                            ForEach(viewModel.topics, id: \.slug) { topic in
-                                CategoryTabButton(
-                                    title: topic.title,
-                                    isSelected: viewModel.selectedTopicSlug == topic.slug,
-                                    namespace: categoryNamespace)
-                                {
-                                    #if os(iOS)
-                                    let generator = UIImpactFeedbackGenerator(style: .light)
-                                    generator.impactOccurred()
-                                    #endif
-                                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                                        viewModel.selectTopic(slug: topic.slug)
-                                    }
-                                }
-                            }
-                        }
+                if viewModel.photos.isEmpty, viewModel.isLoading {
+                    VStack(spacing: 0) {
+                        categoryBar
+                        Spacer()
+                        ProgressView()
+                            .tint(.white)
+                        Spacer()
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
-                }
-                .frame(height: 50)
-                .background(Color(hex: "0F0F11"))
-
-                ZStack {
-                    Color(hex: "0F0F11")
-                        .ignoresSafeArea()
-
-                    if viewModel.photos.isEmpty, viewModel.isLoading {
-                        VStack {
-                            Spacer()
-                            ProgressView()
-                                .tint(.white)
-                            Spacer()
-                        }
-                    } else if viewModel.photos.isEmpty, viewModel.error != nil {
+                } else if viewModel.photos.isEmpty, viewModel.error != nil {
+                    VStack(spacing: 0) {
+                        categoryBar
+                        Spacer()
                         ErrorView(error: viewModel.error ?? "Unknown error", onRetry: {
                             viewModel.refresh()
                         })
-                    } else {
-                        ScrollView {
-                            LazyVStack(spacing: 8) {
-                                HStack(alignment: .top, spacing: 8) {
-                                    ForEach(0..<columnCount, id: \.self) { colIndex in
-                                        LazyVStack(spacing: 8) {
-                                            ForEach(
-                                                AdaptiveLayoutHelper.photosForColumn(index: colIndex, totalColumns: columnCount, from: viewModel.photos),
-                                                id: \.id)
-                                            { photo in
-                                                PhotoCard(
-                                                    photo: photo,
-                                                    viewModel: viewModel,
-                                                    heroNamespace: heroNamespace,
-                                                    onSelect: { photoId in
-                                                        withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
-                                                            selectedPhotoForHero = photo
-                                                        }
-                                                    },
-                                                    onUserSelect: { username in
-                                                        path.append(FeedPathItem(id: username, type: .user))
-                                                    })
-                                            }
+                        Spacer()
+                    }
+                } else {
+                    ScrollView {
+                        LazyVStack(spacing: 8) {
+                            HStack(alignment: .top, spacing: 8) {
+                                ForEach(0..<columnCount, id: \.self) { colIndex in
+                                    LazyVStack(spacing: 8) {
+                                        ForEach(
+                                            AdaptiveLayoutHelper.photosForColumn(index: colIndex, totalColumns: columnCount, from: viewModel.photos),
+                                            id: \.id)
+                                        { photo in
+                                            PhotoCard(
+                                                photo: photo,
+                                                viewModel: viewModel,
+                                                heroNamespace: heroNamespace,
+                                                onSelect: { photoId in
+                                                    withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
+                                                        selectedPhotoForHero = photo
+                                                    }
+                                                },
+                                                onUserSelect: { username in
+                                                    path.append(FeedPathItem(id: username, type: .user))
+                                                })
                                         }
                                     }
                                 }
-                                .padding(.horizontal, 8)
-
-                                // Bottom Loading Indicator
-                                if viewModel.isLoading {
-                                    ProgressView()
-                                        .tint(.white)
-                                        .padding(.vertical, 16)
-                                }
                             }
-                        }
-                        .refreshable {
-                            viewModel.refresh()
+                            .padding(.horizontal, 8)
+                            .padding(.top, 4)
+
+                            // Bottom Loading Indicator
+                            if viewModel.isLoading {
+                                ProgressView()
+                                    .tint(.white)
+                                    .padding(.vertical, 16)
+                            }
                         }
                     }
-
-                    if isShaking {
-                        Color.black.opacity(0.4)
-                            .ignoresSafeArea()
-                            .overlay {
-                                VStack(spacing: 16) {
-                                    ProgressView()
-                                        .tint(.white)
-                                        .controlSize(.large)
-                                    Text("🎲 Shaking up a random photo...")
-                                        .foregroundColor(.white)
-                                        .font(.headline)
-                                }
-                            }
+                    .refreshable {
+                        viewModel.refresh()
+                    }
+                    .safeAreaInset(edge: .top, spacing: 0) {
+                        categoryBar
                     }
                 }
-            }
+
+                if isShaking {
+                    Color.black.opacity(0.4)
+                        .ignoresSafeArea()
+                        .overlay {
+                            VStack(spacing: 16) {
+                                ProgressView()
+                                    .tint(.white)
+                                    .controlSize(.large)
+                                Text("🎲 Shaking up a random photo...")
+                                    .foregroundColor(.white)
+                                    .font(.headline)
+                            }
+                        }
+                }
 
                 if let photo = selectedPhotoForHero {
                     PhotoDetailsView(
@@ -290,7 +248,8 @@ struct PhotosFeedTabView: View {
             .navigationTitle("FEED")
             #if os(iOS)
                 .navigationBarTitleDisplayMode(.inline)
-                .toolbarBackground(Color(hex: "0F0F11"), for: .navigationBar)
+                .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
+                .toolbarBackground(.visible, for: .navigationBar)
                 .toolbarColorScheme(.dark, for: .navigationBar)
                 .toolbar(selectedPhotoForHero != nil ? .hidden : .visible, for: .navigationBar)
                 .toolbar(selectedPhotoForHero != nil ? .hidden : .automatic, for: .tabBar)
@@ -298,40 +257,33 @@ struct PhotosFeedTabView: View {
                 .toolbar {
                     #if os(iOS)
                     ToolbarItem(placement: .navigationBarLeading) {
-                        Button(action: {
+                        GlassToolbarButton(systemName: "magnifyingglass", accessibilityLabel: "Search") {
                             path.append(FeedPathItem(id: "", type: .search))
-                        }) {
-                            Image(systemName: "magnifyingglass")
-                                .foregroundColor(.white)
                         }
                         .keyboardShortcut("f", modifiers: .command)
                     }
                     ToolbarItem(placement: .navigationBarTrailing) {
-                        Button(action: handleShake) {
-                            Image(systemName: "shuffle")
-                                .foregroundColor(.white)
+                        GlassToolbarButton(systemName: "shuffle", accessibilityLabel: "Shuffle") {
+                            handleShake()
                         }
                         .keyboardShortcut("s", modifiers: .command)
                     }
                     #else
                     ToolbarItem(placement: .navigation) {
-                        Button(action: {
+                        GlassToolbarButton(systemName: "magnifyingglass", accessibilityLabel: "Search") {
                             path.append(FeedPathItem(id: "", type: .search))
-                        }) {
-                            Image(systemName: "magnifyingglass")
-                                .foregroundColor(.white)
                         }
                         .keyboardShortcut("f", modifiers: .command)
                     }
                     ToolbarItem(placement: .primaryAction) {
-                        Button(action: handleShake) {
-                            Image(systemName: "shuffle")
-                                .foregroundColor(.white)
+                        GlassToolbarButton(systemName: "shuffle", accessibilityLabel: "Shuffle") {
+                            handleShake()
                         }
                         .keyboardShortcut("s", modifiers: .command)
                     }
                     #endif
                 }
+                .sensoryFeedback(.selection, trigger: viewModel.selectedTopicSlug)
                 .navigationDestination(for: FeedPathItem.self) { item in
                     switch item.type {
                     case .photo:
@@ -379,6 +331,62 @@ struct PhotosFeedTabView: View {
         }
     }
 
+    private var categoryBar: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            LazyHStack(spacing: 8) {
+                CategoryTabButton(
+                    title: "Editorial",
+                    isSelected: viewModel.selectedTopicSlug == "editorial",
+                    namespace: categoryNamespace
+                ) {
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                        viewModel.selectTopic(slug: "editorial")
+                    }
+                }
+
+                if viewModel.topics.isEmpty, viewModel.isLoadingTopics {
+                    ForEach(0..<6, id: \.self) { _ in
+                        Capsule()
+                            .fill(Color.white.opacity(0.08))
+                            .frame(width: 80, height: 32)
+                            .opacity(0.5)
+                    }
+                } else {
+                    ForEach(viewModel.topics, id: \.slug) { topic in
+                        CategoryTabButton(
+                            title: topic.title,
+                            isSelected: viewModel.selectedTopicSlug == topic.slug,
+                            namespace: categoryNamespace
+                        ) {
+                            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                                viewModel.selectTopic(slug: topic.slug)
+                            }
+                        }
+                    }
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 5)
+        }
+        .frame(height: 44)
+        .mask {
+            LinearGradient(
+                stops: [
+                    .init(color: .clear, location: 0),
+                    .init(color: .black, location: 0.04),
+                    .init(color: .black, location: 0.96),
+                    .init(color: .clear, location: 1.0)
+                ],
+                startPoint: .leading,
+                endPoint: .trailing
+            )
+        }
+        .glassBackground(style: .ultraThin, shape: Capsule(), showBorder: true, hasShadow: true)
+        .padding(.horizontal, 12)
+        .padding(.top, 4)
+        .padding(.bottom, 6)
+    }
+
     private func handleShake() {
         guard !isShaking else { return }
         isShaking = true
@@ -399,22 +407,22 @@ struct CategoryTabButton: View {
         Button(action: action) {
             Text(title)
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundColor(isSelected ? .black : .white.opacity(0.6))
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-                .background(
-                    ZStack {
-                        if isSelected {
-                            Capsule()
-                                .fill(Color.white)
-                                .matchedGeometryEffect(id: "activeCategoryCapsule", in: namespace)
-                        } else {
-                            Capsule()
-                                .fill(Color.white.opacity(0.08))
-                        }
-                    })
+                .foregroundColor(isSelected ? .black : nil)
+                .glassVibrancy(isSelected ? .primary : .secondary)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 6)
+                .background {
+                    if isSelected {
+                        Capsule()
+                            .fill(Color.white)
+                            .matchedGeometryEffect(id: "activeCategoryCapsule", in: namespace)
+                    } else {
+                        Capsule()
+                            .fill(Color.white.opacity(0.08))
+                    }
+                }
         }
-        .buttonStyle(PlainButtonStyle())
+        .buttonStyle(.plain)
     }
 }
 
