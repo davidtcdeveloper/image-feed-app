@@ -412,7 +412,7 @@ These are the spec files that the implementation notes and planning references s
 5.  **Reference Specification:**
     *   Track blueprint in `specs/26_material_3_ux_modernization.md`.
 
-### Step 29: iOS Glass Design Foundation & SwiftUI Material System
+### Step 29: iOS Glass Design Foundation & SwiftUI Material System (Completed)
 1.  **Implement Reusable Glass Primitives:**
     *   Create `GlassTheme.swift` with `GlassBackgroundModifier`, semantic convenience extensions (`.glassBackground(...)`, `.glassCapsule()`, `.glassCard()`).
     *   Configure specular edge gradients (`LinearGradient` with `0.5pt` stroke) and soft ambient shadows.

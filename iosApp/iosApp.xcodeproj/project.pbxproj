@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		07B8E34E75830CF9EAF7FA86 /* GlassTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 881A8EF7998B7CE0AC9F96B6 /* GlassTheme.swift */; };
 		104E088C972964D876F30E3C /* PhotoDetailsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C936ADD93402EB34AACD70F /* PhotoDetailsViewModel.swift */; };
 		182025D08B87193AC4AFA3C3 /* SearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7BE4AACAB34743ADF91B179 /* SearchView.swift */; };
 		22EA1CB33A17DCC6FC82406D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F543015C899423D4B01CEB2E /* Assets.xcassets */; };
@@ -35,6 +36,7 @@
 		B34E2807677D3669B3707E6C /* PhotoDetailsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBF5C6096F912EC4B7851517 /* PhotoDetailsView.swift */; };
 		BF1A6987C043125A0E0FA03A /* CollectionDetailViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A45CA5093D791064865721B /* CollectionDetailViewModel.swift */; };
 		C8338E785E10A7C23055A9A5 /* CollectionsFeedViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3172037528BC5F82E8C06F5D /* CollectionsFeedViewModel.swift */; };
+		D3C505798F194088FEA62D69 /* GlassTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 881A8EF7998B7CE0AC9F96B6 /* GlassTheme.swift */; };
 		D6144E75806493D442FB3F80 /* MacOSContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD16CAACFB678079A24E49D4 /* MacOSContentView.swift */; };
 		DE245D9F88A15119AC57206F /* MacOSContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD16CAACFB678079A24E49D4 /* MacOSContentView.swift */; };
 		E73E1BB01DC9A07D73B5EE81 /* CollectionDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 500FCC73158DBC28123C57D0 /* CollectionDetailView.swift */; };
@@ -55,6 +57,7 @@
 		668CECA83ACC03A83C85A623 /* iOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSApp.swift; sourceTree = "<group>"; };
 		6A45CA5093D791064865721B /* CollectionDetailViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionDetailViewModel.swift; sourceTree = "<group>"; };
 		86038AE1032E284E79B32AD6 /* iosApp.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = iosApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		881A8EF7998B7CE0AC9F96B6 /* GlassTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassTheme.swift; sourceTree = "<group>"; };
 		8C936ADD93402EB34AACD70F /* PhotoDetailsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoDetailsViewModel.swift; sourceTree = "<group>"; };
 		8E1949CA4CC0721B37ED3C17 /* SearchViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchViewModel.swift; sourceTree = "<group>"; };
 		A52E766EFBC2CFA8C9E3063F /* KFImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KFImage.swift; sourceTree = "<group>"; };
@@ -81,6 +84,7 @@
 				3172037528BC5F82E8C06F5D /* CollectionsFeedViewModel.swift */,
 				CE8509E5A49E4A5CAAEB3ADB /* ContentView.swift */,
 				BBBF03DE24E6E4B163090C57 /* FeedViewModel.swift */,
+				881A8EF7998B7CE0AC9F96B6 /* GlassTheme.swift */,
 				668CECA83ACC03A83C85A623 /* iOSApp.swift */,
 				A52E766EFBC2CFA8C9E3063F /* KFImage.swift */,
 				FD16CAACFB678079A24E49D4 /* MacOSContentView.swift */,
@@ -225,7 +229,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "if [ -z \"$KOTLIN_BUILD_INVOKED\" ]; then\n  export KOTLIN_BUILD_INVOKED=1\n  \"$SRCROOT/../gradlew\" -p \"$SRCROOT/..\" :shared:embedAndSignAppleFrameworkForXcode\nfi\n";
+			shellScript = "if [ -z \"$JAVA_HOME\" ] || [ ! -d \"$JAVA_HOME\" ]; then\n  USER_JDK=$(find \"$HOME/Library/Java/JavaVirtualMachines\" -maxdepth 2 -name \"Home\" 2>/dev/null | head -n 1)\n  if [ -n \"$USER_JDK\" ] && [ -d \"$USER_JDK\" ]; then\n    export JAVA_HOME=\"$USER_JDK\"\n  elif [ -x \"/usr/libexec/java_home\" ]; then\n    export JAVA_HOME=\"$(/usr/libexec/java_home 2>/dev/null || true)\"\n  fi\nfi\nif [ -n \"$JAVA_HOME\" ]; then\n  export PATH=\"$JAVA_HOME/bin:$PATH:/opt/homebrew/bin:/usr/local/bin\"\nfi\nif [ -z \"$KOTLIN_BUILD_INVOKED\" ]; then\n  export KOTLIN_BUILD_INVOKED=1\n  \"$SRCROOT/../gradlew\" -p \"$SRCROOT/..\" :shared:embedAndSignAppleFrameworkForXcode\nfi\n";
 		};
 		FE6189B836B2F5614841F754 /* Compile Kotlin Shared Framework */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -243,7 +247,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "if [ -z \"$KOTLIN_BUILD_INVOKED\" ]; then\n  export KOTLIN_BUILD_INVOKED=1\n  \"$SRCROOT/../gradlew\" -p \"$SRCROOT/..\" :shared:embedAndSignAppleFrameworkForXcode\nfi\n";
+			shellScript = "if [ -z \"$JAVA_HOME\" ] || [ ! -d \"$JAVA_HOME\" ]; then\n  USER_JDK=$(find \"$HOME/Library/Java/JavaVirtualMachines\" -maxdepth 2 -name \"Home\" 2>/dev/null | head -n 1)\n  if [ -n \"$USER_JDK\" ] && [ -d \"$USER_JDK\" ]; then\n    export JAVA_HOME=\"$USER_JDK\"\n  elif [ -x \"/usr/libexec/java_home\" ]; then\n    export JAVA_HOME=\"$(/usr/libexec/java_home 2>/dev/null || true)\"\n  fi\nfi\nif [ -n \"$JAVA_HOME\" ]; then\n  export PATH=\"$JAVA_HOME/bin:$PATH:/opt/homebrew/bin:/usr/local/bin\"\nfi\nif [ -z \"$KOTLIN_BUILD_INVOKED\" ]; then\n  export KOTLIN_BUILD_INVOKED=1\n  \"$SRCROOT/../gradlew\" -p \"$SRCROOT/..\" :shared:embedAndSignAppleFrameworkForXcode\nfi\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -260,6 +264,7 @@
 				C8338E785E10A7C23055A9A5 /* CollectionsFeedViewModel.swift in Sources */,
 				56B0305B5D3847FC6B326502 /* ContentView.swift in Sources */,
 				48D2067C19A3A08946282DC5 /* FeedViewModel.swift in Sources */,
+				07B8E34E75830CF9EAF7FA86 /* GlassTheme.swift in Sources */,
 				ECAF30CCE7441589DD2986F7 /* KFImage.swift in Sources */,
 				D6144E75806493D442FB3F80 /* MacOSContentView.swift in Sources */,
 				83B0F700070C5C256B69CA4D /* PhotoDetailsView.swift in Sources */,
@@ -284,6 +289,7 @@
 				9DAB73DFA5032976F17A73E1 /* CollectionsFeedViewModel.swift in Sources */,
 				7F1E257E25AF8707D7A5C639 /* ContentView.swift in Sources */,
 				F9FC4D46C2489345C4F5A30E /* FeedViewModel.swift in Sources */,
+				D3C505798F194088FEA62D69 /* GlassTheme.swift in Sources */,
 				EE2E6F06824C1F3FBF2D40B9 /* KFImage.swift in Sources */,
 				DE245D9F88A15119AC57206F /* MacOSContentView.swift in Sources */,
 				B34E2807677D3669B3707E6C /* PhotoDetailsView.swift in Sources */,
@@ -357,8 +363,12 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
+				CODE_SIGN_IDENTITY = "";
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_TEAM = "";
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				"EXCLUDED_ARCHS[sdk=macosx*]" = x86_64;
 				GENERATE_INFOPLIST_FILE = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -436,8 +446,11 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
+				CODE_SIGN_IDENTITY = "";
 				DEVELOPMENT_TEAM = "";
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = x86_64;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -458,8 +471,11 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
+				CODE_SIGN_IDENTITY = "";
 				DEVELOPMENT_TEAM = "";
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = x86_64;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -480,8 +496,12 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
+				CODE_SIGN_IDENTITY = "";
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_TEAM = "";
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				"EXCLUDED_ARCHS[sdk=macosx*]" = x86_64;
 				GENERATE_INFOPLIST_FILE = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
