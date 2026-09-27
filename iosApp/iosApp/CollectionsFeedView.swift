@@ -68,16 +68,16 @@ struct CollectionsFeedView: View {
                                     )
                                     LazyVStack(spacing: 16) {
                                         ForEach(columnCollections, id: \.id) { collection in
-                                            Button(action: {
+                                            Button {
                                                 onCollectionSelect(collection.id)
-                                            }) {
+                                            } label: {
                                                 CollectionMosaicCard(
                                                     collection: collection,
                                                     viewModel: viewModel,
                                                     cardWidth: cardWidth,
-                                                    columnCount: columnCount,
-                                                    onTap: {}
+                                                    columnCount: columnCount
                                                 )
+                                                .feedScrollTransition()
                                             }
                                             .buttonStyle(SpringCardButtonStyle())
                                         }
@@ -95,17 +95,17 @@ struct CollectionsFeedView: View {
                         } else {
                             LazyVStack(spacing: 16) {
                                 ForEach(Array(viewModel.collections.enumerated()), id: \.element.id) { index, collection in
-                                    Button(action: {
+                                    Button {
                                         onCollectionSelect(collection.id)
-                                    }) {
+                                    } label: {
                                         CollectionMosaicCard(
                                             collection: collection,
                                             viewModel: viewModel,
                                             cardWidth: cardWidth,
-                                            columnCount: 1,
-                                            onTap: {}
+                                            columnCount: 1
                                         )
                                         .staggeredReveal(index: index)
+                                        .feedScrollTransition()
                                     }
                                     .buttonStyle(SpringCardButtonStyle())
                                 }
@@ -154,9 +154,8 @@ struct CollectionsFeedView: View {
 struct CollectionMosaicCard: View {
     let collection: PhotoCollection
     let viewModel: CollectionsFeedViewModel
-    var cardWidth: CGFloat? = nil
+    var cardWidth: CGFloat?
     var columnCount: Int = 1
-    let onTap: () -> Void
 
     var body: some View {
         let width = Int(cardWidth ?? max(200, (AdaptiveLayoutHelper.getScreenWidth() - 24)))
@@ -180,7 +179,7 @@ struct CollectionMosaicCard: View {
                     }
                     .fade(duration: 0.25)
                     .resizable()
-                    .aspectRatio(contentMode: .fill)
+                    .scaledToFill()
                     .frame(height: 180)
                     .clipped()
 
@@ -192,7 +191,7 @@ struct CollectionMosaicCard: View {
                         KFImage(URL(string: topPreview.urls.small + "&w=\(sideWidth)&q=80&auto=format"))
                             .fade(duration: 0.25)
                             .resizable()
-                            .aspectRatio(contentMode: .fill)
+                            .scaledToFill()
                             .frame(height: 88)
                             .clipped()
                     } else if let previewPhotos = collection.previewPhotos, previewPhotos.count > 0 {
@@ -200,7 +199,7 @@ struct CollectionMosaicCard: View {
                         KFImage(URL(string: topPreview.urls.small + "&w=\(sideWidth)&q=80&auto=format"))
                             .fade(duration: 0.25)
                             .resizable()
-                            .aspectRatio(contentMode: .fill)
+                            .scaledToFill()
                             .frame(height: 88)
                             .clipped()
                     } else {
@@ -215,7 +214,7 @@ struct CollectionMosaicCard: View {
                         KFImage(URL(string: bottomPreview.urls.small + "&w=\(sideWidth)&q=80&auto=format"))
                             .fade(duration: 0.25)
                             .resizable()
-                            .aspectRatio(contentMode: .fill)
+                            .scaledToFill()
                             .frame(height: 88)
                             .clipped()
                     } else if let previewPhotos = collection.previewPhotos, previewPhotos.count > 1 {
@@ -223,7 +222,7 @@ struct CollectionMosaicCard: View {
                         KFImage(URL(string: bottomPreview.urls.small + "&w=\(sideWidth)&q=80&auto=format"))
                             .fade(duration: 0.25)
                             .resizable()
-                            .aspectRatio(contentMode: .fill)
+                            .scaledToFill()
                             .frame(height: 88)
                             .clipped()
                     } else {
@@ -236,9 +235,6 @@ struct CollectionMosaicCard: View {
             }
             .frame(height: 180)
             .clipShape(RoundedRectangle(cornerRadius: 12))
-            .onTapGesture {
-                onTap()
-            }
 
             // Collection Details
             VStack(alignment: .leading, spacing: 6) {

@@ -28,6 +28,7 @@ struct ContentView: View {
                 .tag(1)
         }
         .tint(.white)
+        .sensoryFeedback(.selection, trigger: selectedTab)
         #if os(iOS)
         .toolbarBackground(.ultraThinMaterial, for: .tabBar)
         .toolbarBackground(.visible, for: .tabBar)
@@ -125,9 +126,10 @@ struct PhotosFeedTabView: View {
     @State private var viewModel = FeedViewModel()
     @State private var path = NavigationPath()
     @State private var isShaking = false
+    @State private var shakeFeedbackTrigger = 0
     @Namespace private var categoryNamespace
     @Namespace private var heroNamespace
-    @State private var selectedPhotoForHero: Photo? = nil
+    @State private var selectedPhotoForHero: Photo?
 
     private var columnCount: Int {
         #if os(iOS)
@@ -168,13 +170,14 @@ struct PhotosFeedTabView: View {
                                     LazyVStack(spacing: 8) {
                                         ForEach(
                                             AdaptiveLayoutHelper.photosForColumn(index: colIndex, totalColumns: columnCount, from: viewModel.photos),
-                                            id: \.id)
-                                        { photo in
+                                            id: \.id
+                                        ) { photo in
                                             PhotoCard(
                                                 photo: photo,
                                                 viewModel: viewModel,
                                                 heroNamespace: heroNamespace,
-                                                onSelect: { photoId in
+                                                isHeroSource: selectedPhotoForHero?.id != photo.id,
+                                                onSelect: { _ in
                                                     withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
                                                         selectedPhotoForHero = photo
                                                     }
@@ -284,6 +287,7 @@ struct PhotosFeedTabView: View {
                     #endif
                 }
                 .sensoryFeedback(.selection, trigger: viewModel.selectedTopicSlug)
+                .sensoryFeedback(.impact(weight: .medium), trigger: shakeFeedbackTrigger)
                 .navigationDestination(for: FeedPathItem.self) { item in
                     switch item.type {
                     case .photo:
@@ -389,6 +393,7 @@ struct PhotosFeedTabView: View {
 
     private func handleShake() {
         guard !isShaking else { return }
+        shakeFeedbackTrigger += 1
         isShaking = true
         viewModel.fetchRandomPhotoId { photoId in
             isShaking = false
@@ -430,6 +435,7 @@ struct PhotoCard: View {
     let photo: Photo
     let viewModel: FeedViewModel
     let heroNamespace: Namespace.ID
+    var isHeroSource: Bool = true
     let onSelect: (String) -> Void
     let onUserSelect: (String) -> Void
 
@@ -458,7 +464,7 @@ struct PhotoCard: View {
                 .fade(duration: 0.25)
                 .resizable()
                 .aspectRatio(contentRatio(photoWidth: Int(photo.width), photoHeight: Int(photo.height)), contentMode: .fit)
-                .matchedGeometryEffect(id: "photo-img-\(photo.id)", in: heroNamespace)
+                .matchedGeometryEffect(id: "photo-img-\(photo.id)", in: heroNamespace, isSource: isHeroSource)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 .contentShape(Rectangle())
                 .onTapGesture {
@@ -490,6 +496,7 @@ struct PhotoCard: View {
             .contentShape(Capsule())
             .padding(8)
         }
+        .feedScrollTransition()
         .onAppear {
             // Infinite pagination load trigger
             if photo.id == viewModel.photos.last?.id {

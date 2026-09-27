@@ -15,6 +15,14 @@ struct PhotoDetailsView: View {
     #if os(iOS)
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     #endif
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+
+    @State private var showInspector = true
+    @State private var currentScale: CGFloat = 1.0
+    @State private var finalScale: CGFloat = 1.0
+    @State private var currentOffset: CGSize = .zero
+    @State private var finalOffset: CGSize = .zero
+    @State private var downloadFeedbackTrigger = 0
 
     private var isDualPane: Bool {
         #if os(iOS)
@@ -24,7 +32,28 @@ struct PhotoDetailsView: View {
         #endif
     }
 
-    init(photoId: String, heroNamespace: Namespace.ID, onDismiss: (() -> Void)? = nil, onUserSelect: @escaping (String) -> Void, onTagSelect: @escaping (String) -> Void) {
+    private func handleDismiss() {
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+            currentScale = 1.0
+            finalScale = 1.0
+            currentOffset = .zero
+            finalOffset = .zero
+        }
+        showInspector = false
+        if let onDismiss = onDismiss {
+            onDismiss()
+        } else {
+            dismiss()
+        }
+    }
+
+    init(
+        photoId: String,
+        heroNamespace: Namespace.ID,
+        onDismiss: (() -> Void)? = nil,
+        onUserSelect: @escaping (String) -> Void,
+        onTagSelect: @escaping (String) -> Void
+    ) {
         self.photoId = photoId
         self.heroNamespace = heroNamespace
         self.onDismiss = onDismiss
@@ -63,107 +92,9 @@ struct PhotoDetailsView: View {
                 }
             } else if let photo = viewModel.photo {
                 if isDualPane {
-                    GeometryReader { totalGeo in
-                        let inspectorWidth = max(320, min(420, totalGeo.size.width * 0.42))
-
-                        HStack(spacing: 0) {
-                            // Left: Photo Canvas
-                            ZStack(alignment: .bottomLeading) {
-                                Color(hex: "070709")
-                                    .ignoresSafeArea()
-
-                                GeometryReader { geo in
-                                    let aspectRatio = CGFloat(photo.width) / CGFloat(photo.height)
-                                    let imageUrl = photo.urls.raw + "&w=\(Int(geo.size.width))&q=85&auto=format"
-
-                                    KFImage(URL(string: imageUrl))
-                                        .resizable()
-                                        .aspectRatio(aspectRatio, contentMode: .fit)
-                                        .matchedGeometryEffect(id: "photo-img-\(photoId)", in: heroNamespace, isSource: false)
-                                        .frame(width: geo.size.width, height: geo.size.height)
-                                }
-
-                                // Photographer floating attribution
-                                HStack(spacing: 10) {
-                                    KFImage(URL(string: photo.user.profileImage.medium))
-                                        .resizable()
-                                        .aspectRatio(contentMode: .fill)
-                                        .frame(width: 36, height: 36)
-                                        .clipShape(Circle())
-                                        .overlay(Circle().stroke(.white.opacity(0.4), lineWidth: 1.5))
-
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text(photo.user.name)
-                                            .font(.system(size: 14, weight: .bold))
-                                            .foregroundColor(.white)
-                                        Text("@\(photo.user.username)")
-                                            .font(.system(size: 11))
-                                            .foregroundColor(.gray)
-                                    }
-
-                                    Spacer()
-
-                                    Button(action: {
-                                        onUserSelect(photo.user.username)
-                                    }) {
-                                        Image(systemName: "arrow.up.right")
-                                            .font(.system(size: 12, weight: .bold))
-                                            .foregroundColor(.white)
-                                    }
-                                }
-                                .padding(12)
-                                .glassCapsule(style: .ultraThin, showBorder: true, hasShadow: true)
-                                .padding(16)
-                            }
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-                            // Right: Inspector Pane
-                            ScrollView {
-                                PhotoInspectorView(
-                                    photo: photo,
-                                    viewModel: viewModel,
-                                    showPhotographerHeader: true,
-                                    onUserSelect: onUserSelect,
-                                    onTagSelect: onTagSelect
-                                )
-                                .padding(20)
-                                .padding(.bottom, 32)
-                            }
-                            .frame(width: inspectorWidth)
-                            .background(Color(hex: "0F0F11"))
-                        }
-                    }
-                    .ignoresSafeArea(edges: .top)
+                    dualPaneLayout(photo: photo)
                 } else {
-                    ScrollView {
-                        VStack(alignment: .leading, spacing: 20) {
-                            // High resolution image section
-                            GeometryReader { geo in
-                                let aspectRatio = CGFloat(photo.width) / CGFloat(photo.height)
-                                let imageUrl = photo.urls.raw + "&w=\(Int(geo.size.width))&q=85&auto=format"
-
-                                KFImage(URL(string: imageUrl))
-                                    .resizable()
-                                    .aspectRatio(aspectRatio, contentMode: .fill)
-                                    .matchedGeometryEffect(id: "photo-img-\(photoId)", in: heroNamespace, isSource: false)
-                                    .frame(width: geo.size.width, height: geo.size.height)
-                                    .clipped()
-                            }
-                            .aspectRatio(CGFloat(photo.width) / CGFloat(photo.height), contentMode: .fit)
-                            .clipped()
-
-                            PhotoInspectorView(
-                                photo: photo,
-                                viewModel: viewModel,
-                                showPhotographerHeader: false,
-                                onUserSelect: onUserSelect,
-                                onTagSelect: onTagSelect
-                            )
-                            .padding(.horizontal, 16)
-                        }
-                        .padding(.bottom, 32)
-                    }
-                    .ignoresSafeArea(edges: .top)
+                    compactPhotoLayout(photo: photo)
                 }
             }
         }
@@ -171,120 +102,418 @@ struct PhotoDetailsView: View {
         .overlay(alignment: .topLeading) {
             if onDismiss != nil {
                 GlassToolbarButton(systemName: "chevron.left", accessibilityLabel: "Back") {
-                    onDismiss?()
+                    handleDismiss()
                 }
                 .padding(.top, 60)
                 .padding(.leading, 16)
             }
         }
+        .overlay(alignment: .topTrailing) {
+            if onDismiss != nil && !isDualPane {
+                GlassToolbarButton(
+                    systemName: showInspector ? "info.circle.fill" : "info.circle",
+                    accessibilityLabel: "Photo Details"
+                ) {
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                        showInspector.toggle()
+                    }
+                }
+                .padding(.top, 60)
+                .padding(.trailing, 16)
+            }
+        }
+        .sensoryFeedback(.success, trigger: downloadFeedbackTrigger)
         #if os(iOS)
         .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
+        .sheet(isPresented: Binding(
+            get: { showInspector && !isDualPane && viewModel.photo != nil },
+            set: { showInspector = $0 }
+        )) {
+            if let photo = viewModel.photo {
+                ScrollView {
+                    PhotoInspectorView(
+                        photo: photo,
+                        viewModel: viewModel,
+                        onUserSelect: { username in
+                            showInspector = false
+                            onUserSelect(username)
+                        },
+                        onTagSelect: { tag in
+                            showInspector = false
+                            onTagSelect(tag)
+                        },
+                        onDownload: {
+                            downloadFeedbackTrigger += 1
+                        }
+                    )
+                    .padding(20)
+                    .padding(.bottom, 32)
+                }
+                .environment(\.colorScheme, .dark)
+                .preferredColorScheme(.dark)
+                .presentationDetents([.fraction(0.35), .fraction(0.70), .large])
+                .presentationBackgroundInteraction(.enabled(upThrough: .fraction(0.70)))
+                .presentationDragIndicator(.visible)
+                .presentationCornerRadius(24)
+                .presentationBackground {
+                    if reduceTransparency {
+                        Color(hex: "0F0F11")
+                    } else {
+                        ZStack {
+                            Color(hex: "0A0A0C").opacity(0.82)
+                            Rectangle().fill(.regularMaterial)
+                        }
+                    }
+                }
+            }
+        }
         #endif
         .toolbar {
             #if os(iOS)
             ToolbarItem(placement: .navigationBarLeading) {
                 GlassToolbarButton(systemName: "chevron.left", accessibilityLabel: "Back") {
-                    dismiss()
+                    handleDismiss()
+                }
+            }
+            if !isDualPane {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    GlassToolbarButton(
+                        systemName: showInspector ? "info.circle.fill" : "info.circle",
+                        accessibilityLabel: "Photo Details"
+                    ) {
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                            showInspector.toggle()
+                        }
+                    }
                 }
             }
             #else
             ToolbarItem(placement: .navigation) {
                 GlassToolbarButton(systemName: "chevron.left", accessibilityLabel: "Back") {
-                    dismiss()
+                    handleDismiss()
                 }
             }
             #endif
         }
+        .onDisappear {
+            currentScale = 1.0
+            finalScale = 1.0
+            currentOffset = .zero
+            finalOffset = .zero
+            showInspector = false
+        }
+    }
+}
+
+// MARK: - PhotoDetailsView Layout Helpers
+
+private extension PhotoDetailsView {
+    @ViewBuilder
+    func dualPaneLayout(photo: Photo) -> some View {
+        GeometryReader { totalGeo in
+            let inspectorWidth = max(320, min(420, totalGeo.size.width * 0.42))
+
+            HStack(spacing: 0) {
+                // Left: Photo Canvas
+                ZStack(alignment: .bottomLeading) {
+                    Color(hex: "070709")
+                        .ignoresSafeArea()
+
+                    GeometryReader { geo in
+                        let aspectRatio = max(0.1, CGFloat(photo.width) / CGFloat(photo.height))
+                        let imageUrl = photo.urls.raw + "&w=\(Int(geo.size.width * 2))&q=85&auto=format"
+
+                        KFImage(URL(string: imageUrl))
+                            .placeholder {
+                                Rectangle()
+                                    .fill(Color(hex: photo.color ?? "1E1E24"))
+                            }
+                            .resizable()
+                            .aspectRatio(aspectRatio, contentMode: .fit)
+                            .matchedGeometryEffect(id: "photo-img-\(photoId)", in: heroNamespace)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    }
+
+                    // Photographer floating attribution
+                    HStack(spacing: 10) {
+                        KFImage(URL(string: photo.user.profileImage.medium))
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: 36, height: 36)
+                            .clipShape(Circle())
+                            .overlay(Circle().stroke(.white.opacity(0.4), lineWidth: 1.5))
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(photo.user.name)
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundColor(.white)
+                            Text("@\(photo.user.username)")
+                                .font(.system(size: 11))
+                                .foregroundColor(.gray)
+                        }
+
+                        Spacer()
+
+                        Button(action: {
+                            onUserSelect(photo.user.username)
+                        }) {
+                            Image(systemName: "arrow.up.right")
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundColor(.white)
+                        }
+                    }
+                    .padding(12)
+                    .background {
+                        Capsule()
+                            .fill(Color.black.opacity(0.42))
+                    }
+                    .glassCapsule(style: .ultraThin, showBorder: true, hasShadow: true)
+                    .padding(16)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                // Right: Inspector Pane
+                ScrollView {
+                    PhotoInspectorView(
+                        photo: photo,
+                        viewModel: viewModel,
+                        onUserSelect: onUserSelect,
+                        onTagSelect: onTagSelect,
+                        onDownload: {
+                            downloadFeedbackTrigger += 1
+                        }
+                    )
+                    .padding(20)
+                    .padding(.bottom, 32)
+                }
+                .frame(width: inspectorWidth)
+                .background(Color(hex: "0F0F11"))
+            }
+        }
+        .ignoresSafeArea(edges: .top)
+    }
+
+    @ViewBuilder
+    func compactPhotoLayout(photo: Photo) -> some View {
+        GeometryReader { geo in
+            let containerWidth = geo.size.width
+            let aspectRatio = max(0.1, CGFloat(photo.width) / CGFloat(photo.height))
+            let calculatedHeight = containerWidth / aspectRatio
+            let imageUrl = photo.urls.raw + "&w=\(Int(containerWidth * 2))&q=85&auto=format"
+
+            ZStack(alignment: .bottom) {
+                Color(hex: "070709")
+                    .ignoresSafeArea()
+
+                ZStack {
+                    KFImage(URL(string: imageUrl))
+                        .placeholder {
+                            Rectangle()
+                                .fill(Color(hex: photo.color ?? "1E1E24"))
+                        }
+                        .resizable()
+                        .aspectRatio(aspectRatio, contentMode: .fit)
+                        .frame(width: containerWidth, height: calculatedHeight)
+                        .matchedGeometryEffect(id: "photo-img-\(photoId)", in: heroNamespace)
+                        .scaleEffect(currentScale)
+                        .offset(currentOffset)
+                        .contentShape(Rectangle())
+                        .gesture(
+                            MagnificationGesture()
+                                .onChanged { value in
+                                    let newScale = finalScale * value
+                                    currentScale = max(1.0, min(4.0, newScale))
+                                }
+                                .onEnded { _ in
+                                    finalScale = currentScale
+                                    if finalScale <= 1.0 {
+                                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                            currentScale = 1.0
+                                            finalScale = 1.0
+                                            currentOffset = .zero
+                                            finalOffset = .zero
+                                        }
+                                    } else {
+                                        let maxOffsetX = max(0, (containerWidth * (finalScale - 1)) / 2)
+                                        let maxOffsetY = max(0, (calculatedHeight * finalScale - geo.size.height) / 2)
+                                        let clampedX = max(-maxOffsetX, min(maxOffsetX, finalOffset.width))
+                                        let clampedY = max(-maxOffsetY, min(maxOffsetY, finalOffset.height))
+                                        if clampedX != finalOffset.width || clampedY != finalOffset.height {
+                                            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                                currentOffset = CGSize(width: clampedX, height: clampedY)
+                                                finalOffset = currentOffset
+                                            }
+                                        }
+                                    }
+                                }
+                        )
+                        .simultaneousGesture(
+                            DragGesture()
+                                .onChanged { value in
+                                    guard currentScale > 1.05 else { return }
+                                    let maxOffsetX = max(0, (containerWidth * (currentScale - 1)) / 2)
+                                    let maxOffsetY = max(0, (calculatedHeight * currentScale - geo.size.height) / 2)
+                                    let newX = finalOffset.width + value.translation.width
+                                    let newY = finalOffset.height + value.translation.height
+                                    currentOffset = CGSize(
+                                        width: max(-maxOffsetX, min(maxOffsetX, newX)),
+                                        height: max(-maxOffsetY, min(maxOffsetY, newY))
+                                    )
+                                }
+                                .onEnded { _ in
+                                    guard currentScale > 1.05 else {
+                                        finalOffset = .zero
+                                        currentOffset = .zero
+                                        return
+                                    }
+                                    finalOffset = currentOffset
+                                }
+                        )
+                        .onTapGesture(count: 2) {
+                            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                                if currentScale > 1.05 {
+                                    currentScale = 1.0
+                                    finalScale = 1.0
+                                    currentOffset = .zero
+                                    finalOffset = .zero
+                                } else {
+                                    currentScale = 2.5
+                                    finalScale = 2.5
+                                }
+                            }
+                        }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                // Floating action bar when inspector is dismissed
+                if !showInspector {
+                    compactFloatingBar(photo: photo)
+                }
+            }
+        }
+        .ignoresSafeArea()
+    }
+
+    @ViewBuilder
+    private func compactFloatingBar(photo: Photo) -> some View {
+        HStack(spacing: 12) {
+            // Photographer attribution button
+            Button(action: {
+                onUserSelect(photo.user.username)
+            }) {
+                HStack(spacing: 8) {
+                    KFImage(URL(string: photo.user.profileImage.medium))
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 32, height: 32)
+                        .clipShape(Circle())
+                        .overlay(Circle().stroke(.white.opacity(0.4), lineWidth: 1.5))
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(photo.user.name)
+                            .font(.system(size: 13, weight: .bold))
+                            .glassVibrancy(.primary)
+                            .lineLimit(1)
+                        Text("@\(photo.user.username)")
+                            .font(.system(size: 11))
+                            .glassVibrancy(.secondary)
+                            .lineLimit(1)
+                    }
+                }
+            }
+            .buttonStyle(.plain)
+
+            Spacer()
+
+            // Download Action
+            Button(action: {
+                downloadFeedbackTrigger += 1
+                viewModel.trackDownload()
+                if let url = URL(string: photo.urls.full) {
+                    URLHelper.open(url)
+                }
+            }) {
+                Image(systemName: "arrow.down.to.line")
+                    .font(.system(size: 14, weight: .semibold))
+                    .glassVibrancy(.primary)
+                    .frame(width: 34, height: 34)
+                    .background(Circle().fill(.white.opacity(0.12)))
+            }
+
+            // Toggle Inspector Button
+            Button(action: {
+                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                    showInspector = true
+                }
+            }) {
+                Image(systemName: "info.circle")
+                    .font(.system(size: 15, weight: .semibold))
+                    .glassVibrancy(.primary)
+                    .frame(width: 34, height: 34)
+                    .background(Circle().fill(.white.opacity(0.12)))
+            }
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 8)
+        .background {
+            Capsule()
+                .fill(Color.black.opacity(0.42))
+        }
+        .glassCapsule(style: .ultraThin, showBorder: true, hasShadow: true)
+        .padding(.horizontal, 16)
+        .padding(.bottom, 24)
+        .transition(.move(edge: .bottom).combined(with: .opacity))
     }
 }
 
 struct PhotoInspectorView: View {
     let photo: Photo
     let viewModel: PhotoDetailsViewModel
-    let showPhotographerHeader: Bool
     let onUserSelect: (String) -> Void
     let onTagSelect: (String) -> Void
+    var onDownload: (() -> Void)?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             // Photographer Info Row
-            if showPhotographerHeader {
-                HStack(spacing: 12) {
-                    KFImage(URL(string: photo.user.profileImage.medium))
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(width: 44, height: 44)
-                        .clipShape(Circle())
-                        .overlay(Circle().stroke(.white.opacity(0.4), lineWidth: 1.5))
+            HStack(spacing: 12) {
+                KFImage(URL(string: photo.user.profileImage.medium))
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 44, height: 44)
+                    .clipShape(Circle())
+                    .overlay(Circle().stroke(.white.opacity(0.4), lineWidth: 1.5))
 
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(photo.user.name)
-                            .font(.system(size: 15, weight: .bold))
-                            .foregroundColor(.white)
-                        Text("@\(photo.user.username)")
-                            .font(.system(size: 12))
-                            .foregroundColor(.gray)
-                    }
-
-                    Spacer()
-
-                    Button(action: {
-                        onUserSelect(photo.user.username)
-                    }) {
-                        HStack(spacing: 4) {
-                            Text("Profile")
-                                .font(.caption.weight(.semibold))
-                            Image(systemName: "arrow.up.right")
-                                .font(.caption2.weight(.bold))
-                        }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(photo.user.name)
+                        .font(.system(size: 15, weight: .bold))
                         .glassVibrancy(.primary)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .glassCapsule(style: .ultraThin)
-                    }
+                    Text("@\(photo.user.username)")
+                        .font(.system(size: 12))
+                        .glassVibrancy(.secondary)
                 }
-                .padding(14)
-                .glassCard(cornerRadius: 12, style: .ultraThin)
-            } else {
-                HStack(spacing: 12) {
-                    KFImage(URL(string: photo.user.profileImage.medium))
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(width: 44, height: 44)
-                        .clipShape(Circle())
-                        .overlay(Circle().stroke(.white.opacity(0.4), lineWidth: 1.5))
 
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(photo.user.name)
-                            .font(.system(size: 15, weight: .bold))
-                            .foregroundColor(.white)
-                        Text("@\(photo.user.username)")
-                            .font(.system(size: 12))
-                            .foregroundColor(.gray)
+                Spacer()
+
+                Button(action: {
+                    onUserSelect(photo.user.username)
+                }) {
+                    HStack(spacing: 4) {
+                        Text("Profile")
+                            .font(.caption.weight(.semibold))
+                        Image(systemName: "arrow.up.right")
+                            .font(.caption2.weight(.bold))
                     }
-
-                    Spacer()
-
-                    Button(action: {
-                        onUserSelect(photo.user.username)
-                    }) {
-                        HStack(spacing: 4) {
-                            Text("Profile")
-                                .font(.caption.weight(.semibold))
-                            Image(systemName: "arrow.up.right")
-                                .font(.caption2.weight(.bold))
-                        }
-                        .glassVibrancy(.primary)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .glassCapsule(style: .ultraThin)
-                    }
+                    .glassVibrancy(.primary)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .glassCapsule(style: .ultraThin)
                 }
-                .padding(.top, -30)
-                .padding(.horizontal, 16)
             }
+            .padding(14)
+            .glassCard(cornerRadius: 12, style: .ultraThin)
 
             VStack(alignment: .leading, spacing: 16) {
                 // Title / Description
@@ -292,7 +521,7 @@ struct PhotoInspectorView: View {
                     Text(description)
                         .font(.system(size: 15))
                         .lineSpacing(4)
-                        .foregroundColor(.white)
+                        .glassVibrancy(.primary)
                 }
 
                 // Metrics Grid
@@ -307,7 +536,7 @@ struct PhotoInspectorView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("HISTORICAL VIEWS (LAST 30 DAYS)")
                             .font(.system(size: 11, weight: .bold))
-                            .foregroundColor(.gray)
+                            .glassVibrancy(.secondary)
                             .tracking(1)
 
                         HistoricalStatsChart(values: viewsHist.values)
@@ -318,6 +547,7 @@ struct PhotoInspectorView: View {
 
                 // Action Download button
                 Button(action: {
+                    onDownload?()
                     viewModel.trackDownload()
                     if let url = URL(string: photo.urls.full) {
                         URLHelper.open(url)
@@ -341,7 +571,7 @@ struct PhotoInspectorView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("CAMERA & LENS SPECS")
                             .font(.system(size: 11, weight: .bold))
-                            .foregroundColor(.gray)
+                            .glassVibrancy(.secondary)
                             .tracking(1)
 
                         VStack(spacing: 12) {
@@ -361,14 +591,14 @@ struct PhotoInspectorView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("LOCATION")
                             .font(.system(size: 11, weight: .bold))
-                            .foregroundColor(.gray)
+                            .glassVibrancy(.secondary)
                             .tracking(1)
 
                         VStack(alignment: .leading, spacing: 10) {
                             if let name = location.name {
                                 Text(name)
                                     .font(.system(size: 14, weight: .bold))
-                                    .foregroundColor(.white)
+                                    .glassVibrancy(.primary)
                             }
 
                             if let latValue = location.position?.latitude, let lonValue = location.position?.longitude {
@@ -376,7 +606,8 @@ struct PhotoInspectorView: View {
                                 let lon = Double(truncating: lonValue)
                                 MapCardView(latitude: lat, longitude: lon, name: location.name)
                                     .onTapGesture {
-                                        let urlString = "maps://?q=\(location.name?.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")&ll=\(lat),\(lon)"
+                                        let encodedName = location.name?.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+                                        let urlString = "maps://?q=\(encodedName)&ll=\(lat),\(lon)"
                                         if let url = URL(string: urlString) {
                                             URLHelper.open(url)
                                         }
@@ -393,7 +624,7 @@ struct PhotoInspectorView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("RELATED TAGS")
                             .font(.system(size: 11, weight: .bold))
-                            .foregroundColor(.gray)
+                            .glassVibrancy(.secondary)
                             .tracking(1)
 
                         FlowLayout(spacing: 8) {
@@ -414,7 +645,6 @@ struct PhotoInspectorView: View {
                     }
                 }
             }
-            .padding(.horizontal, showPhotographerHeader ? 0 : 16)
         }
     }
 
@@ -483,11 +713,11 @@ struct ExifRowView: View {
             HStack {
                 Text(label)
                     .font(.system(size: 13))
-                    .foregroundColor(.gray)
+                    .glassVibrancy(.secondary)
                 Spacer()
                 Text(value)
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(.white)
+                    .glassVibrancy(.primary)
             }
         }
     }

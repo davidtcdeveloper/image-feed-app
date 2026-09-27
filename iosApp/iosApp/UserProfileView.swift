@@ -343,6 +343,7 @@ struct GridPhotosList: View {
                                         .aspectRatio(CGFloat(photo.width) / CGFloat(photo.height), contentMode: .fit)
                                         .clipShape(RoundedRectangle(cornerRadius: 12))
                                         .staggeredReveal(index: flatIndex)
+                                        .feedScrollTransition()
                                 }
                                 .buttonStyle(SpringCardButtonStyle())
                                 .onAppear {
@@ -424,6 +425,7 @@ struct GridCollectionsList: View {
                             .cornerRadius(12)
                             .clipped()
                             .staggeredReveal(index: index)
+                            .feedScrollTransition()
                         }
                         .buttonStyle(SpringCardButtonStyle())
                         .onAppear {

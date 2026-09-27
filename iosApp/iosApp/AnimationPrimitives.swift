@@ -98,7 +98,7 @@ struct PhotoCardSkeleton: View {
             RoundedRectangle(cornerRadius: 12)
                 .fill(Color.white.opacity(0.06))
                 .frame(height: height)
-            
+
             HStack(spacing: 6) {
                 Circle()
                     .fill(Color.white.opacity(0.06))
@@ -134,11 +134,11 @@ struct CollectionMosaicCardSkeleton: View {
                 .frame(width: 110)
             }
             .clipShape(RoundedRectangle(cornerRadius: 12))
-            
+
             RoundedRectangle(cornerRadius: 4)
                 .fill(Color.white.opacity(0.06))
                 .frame(width: 180, height: 16)
-            
+
             RoundedRectangle(cornerRadius: 4)
                 .fill(Color.white.opacity(0.06))
                 .frame(width: 260, height: 12)
@@ -156,20 +156,33 @@ struct UserProfileHeaderSkeleton: View {
             Circle()
                 .fill(Color.white.opacity(0.06))
                 .frame(width: 88, height: 88)
-            
+
             RoundedRectangle(cornerRadius: 4)
                 .fill(Color.white.opacity(0.06))
                 .frame(width: 140, height: 18)
-            
+
             RoundedRectangle(cornerRadius: 4)
                 .fill(Color.white.opacity(0.06))
                 .frame(width: 90, height: 12)
-            
+
             RoundedRectangle(cornerRadius: 4)
                 .fill(Color.white.opacity(0.06))
                 .frame(width: 240, height: 12)
                 .padding(.top, 4)
         }
         .shimmer()
+    }
+}
+
+// MARK: - FeedCardScrollTransition
+
+extension View {
+    /// Applies native iOS 17 / macOS 14 scroll transition with subtle depth scaling and opacity fade.
+    func feedScrollTransition() -> some View {
+        self.scrollTransition(topLeading: .interactive, bottomTrailing: .interactive) { content, phase in
+            content
+                .scaleEffect(phase.isIdentity ? 1.0 : 0.96)
+                .opacity(phase.isIdentity ? 1.0 : 0.85)
+        }
     }
 }

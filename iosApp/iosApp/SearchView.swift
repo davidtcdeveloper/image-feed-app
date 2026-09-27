@@ -161,6 +161,7 @@ struct SearchView: View {
                                                             .aspectRatio(CGFloat(photo.width) / CGFloat(photo.height), contentMode: .fit)
                                                             .cornerRadius(12)
                                                             .staggeredReveal(index: flatIndex)
+                                                            .feedScrollTransition()
                                                     }
                                                     .buttonStyle(SpringCardButtonStyle())
                                                 }
@@ -185,6 +186,7 @@ struct SearchView: View {
                                         }) {
                                             CollectionCardView(collection: collection)
                                                 .staggeredReveal(index: index)
+                                                .feedScrollTransition()
                                         }
                                         .buttonStyle(SpringCardButtonStyle())
                                     }
@@ -201,6 +203,7 @@ struct SearchView: View {
                                         }) {
                                             UserCardView(user: user)
                                                 .staggeredReveal(index: index)
+                                                .feedScrollTransition()
                                         }
                                         .buttonStyle(SpringCardButtonStyle())
                                     }

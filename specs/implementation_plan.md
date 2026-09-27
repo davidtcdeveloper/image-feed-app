@@ -246,7 +246,6 @@ image-feed-app/
 3. **Attribution & Card Modernization**: Replace dark linear gradient scrims in `PhotoCard` with inset floating glass attribution capsules, and modernize metric cards and mosaic badges with glass depth (`specs/29_ios_cards_attribution_glass_redesign.md`).
 4. **Interactive Photo Detents & Sensory Experience**: Refactor photo inspection into a full-canvas image viewer with an interactive detented frosted glass bottom sheet, native iOS 17 `.scrollTransition` physics, and declarative `.sensoryFeedback` (`specs/30_ios_interactive_sheet_and_sensory_experience.md`).
 
-
-
-
-
+### Phase 14: Documentation, Feature Catalog & Screen Navigation Architecture
+1. **README.md Modernization**: Overhaul `README.md` to reflect recent technical upgrades, compile-time Metro DI, PresenterScope lifecycle safety, Android Jetpack Navigation 3, and cross-platform design architectures.
+2. **Features Overview & Screen Navigation**: Document user-facing capabilities across all six screen destinations and illustrate end-to-end screen navigation and cross-linking using Mermaid diagrams (`specs/31_readme_and_navigation_documentation.md`).

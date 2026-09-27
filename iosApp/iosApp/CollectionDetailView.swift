@@ -40,14 +40,14 @@ struct CollectionDetailView: View {
                             .fill(Color.white.opacity(0.06))
                             .frame(height: 300)
                             .shimmer()
-                        
+
                         // Related collections label skeleton
                         RoundedRectangle(cornerRadius: 4)
                             .fill(Color.white.opacity(0.06))
                             .frame(width: 150, height: 20)
                             .padding(.horizontal, 16)
                             .shimmer()
-                        
+
                         // Related collections placeholder
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 12) {
@@ -96,7 +96,7 @@ struct CollectionDetailView: View {
                                 if let coverPhoto = viewModel.collection?.coverPhoto {
                                     KFImage(URL(string: coverPhoto.urls.regular))
                                         .resizable()
-                                        .aspectRatio(contentMode: .fill)
+                                        .scaledToFill()
                                         .frame(width: geo.size.width, height: stretchedHeight)
                                         .blur(radius: 12)
                                         .clipped()
@@ -121,7 +121,7 @@ struct CollectionDetailView: View {
                                         HStack(spacing: 8) {
                                             KFImage(URL(string: collection.user.profileImage.medium))
                                                 .resizable()
-                                                .aspectRatio(contentMode: .fill)
+                                                .scaledToFill()
                                                 .frame(width: 32, height: 32)
                                                 .clipShape(Circle())
 
@@ -203,14 +203,15 @@ struct CollectionDetailView: View {
                                         LazyVStack(spacing: 8) {
                                             ForEach(
                                                 AdaptiveLayoutHelper.photosForColumn(index: colIndex, totalColumns: columnCount, from: viewModel.photos),
-                                                id: \.id)
-                                            { photo in
+                                                id: \.id
+                                            ) { photo in
                                                 let flatIndex = viewModel.photos.firstIndex(where: { $0.id == photo.id }) ?? 0
-                                                Button(action: {
+                                                Button {
                                                     onPhotoSelect(photo.id)
-                                                }) {
-                                                    CollectionPhotoGridCard(photo: photo, viewModel: viewModel, onSelect: {})
+                                                } label: {
+                                                    CollectionPhotoGridCard(photo: photo, viewModel: viewModel)
                                                         .staggeredReveal(index: flatIndex)
+                                                        .feedScrollTransition()
                                                 }
                                                 .buttonStyle(SpringCardButtonStyle())
                                             }
@@ -265,7 +266,7 @@ struct RelatedCollectionCard: View {
                 if let coverPhoto = collection.coverPhoto {
                     KFImage(URL(string: coverPhoto.urls.small))
                         .resizable()
-                        .aspectRatio(contentMode: .fill)
+                        .scaledToFill()
                         .frame(width: 160, height: 110)
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                 } else {
@@ -300,7 +301,6 @@ struct RelatedCollectionCard: View {
 struct CollectionPhotoGridCard: View {
     let photo: Photo
     let viewModel: CollectionDetailViewModel
-    let onSelect: () -> Void
 
     var body: some View {
         let screenWidth = AdaptiveLayoutHelper.getScreenWidth()
@@ -325,10 +325,6 @@ struct CollectionPhotoGridCard: View {
                 .resizable()
                 .aspectRatio(aspectRatio, contentMode: .fit)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    onSelect()
-                }
 
             Button {
                 let utmProfile = "\(photo.user.links.html)?utm_source=ImageFeedApp&utm_medium=referral"

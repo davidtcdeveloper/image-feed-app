@@ -63,6 +63,7 @@ The `specs/` folder currently contains the following implementation and design d
 *   `specs/28_ios_chrome_navigation_modernization.md`
 *   `specs/29_ios_cards_attribution_glass_redesign.md`
 *   `specs/30_ios_interactive_sheet_and_sensory_experience.md`
+*   `specs/31_readme_and_navigation_documentation.md`
 *   `specs/implementation_plan.md`
 *   `specs/steps.md`
 
@@ -441,15 +442,32 @@ These are the spec files that the implementation notes and planning references s
 3.  **Reference Specification:**
     *   Track blueprint in `specs/29_ios_cards_attribution_glass_redesign.md`.
 
-### Step 32: iOS Interactive Inspector Sheet & Sensory Experience
+### Step 32: iOS Interactive Inspector Sheet & Sensory Experience (Completed)
 1.  **Full-Canvas Image View & Detented Sheet:**
-    *   Refactor iPhone `PhotoDetailsView` to maintain full-canvas photo presentation with interactive detented glass inspector sheet (`.presentationDetents([.fraction(0.35), .fraction(0.7), .large])`).
-2.  **iOS 17 Motion & Sensory Feedback:**
-    *   Implement `.scrollTransition` on grid cards for fluid scaling and opacity entrance.
-    *   Replace imperative `UIImpactFeedbackGenerator` calls with declarative `.sensoryFeedback`.
-3.  **Reference Specification:**
+    *   Refactor compact-width `PhotoDetailsView` to maintain full-canvas photo presentation fitting the exact screen width with proportional height (`containerWidth / aspectRatio`), pinch/pan zoom (1.0x-4.0x), and double-tap toggle.
+    *   Configure `matchedGeometryEffect` hero geometry source ownership (`PhotoDetailsView` as active source, `PhotoCard` yielding during presentation) to prevent thumbnail-scale shrinkage.
+    *   Implement interactive non-modal frosted glass inspector sheet (`.presentationDetents([.fraction(0.35), .fraction(0.70), .large])` and `.presentationBackgroundInteraction(.enabled(upThrough: .fraction(0.70)))`).
+    *   Add floating glass action bar with photographer attribution, download trigger, and inspector toggle button.
+    *   Ensure sheet dismisses prior to navigation push for tag and profile clicks.
+2.  **Contrast & Accessibility Hardening:**
+    *   Layer `.regularMaterial` with `Color(hex: "0A0A0C").opacity(0.82)` dark scrim in `.presentationBackground` for $\ge 7:1$ WCAG AAA contrast over bright images.
+    *   Anchor sheet in `.preferredColorScheme(.dark)` and `.environment(\.colorScheme, .dark)` to fix Light Mode white-on-white collision.
+    *   Replace static white/gray colors across `PhotoInspectorView` and `ExifRowView` with semantic `.glassVibrancy(.primary)` and `.glassVibrancy(.secondary)`.
+    *   Add `@Environment(\.accessibilityReduceTransparency)` fallback for sheet background.
+    *   Wrap iOS-specific sheet modifiers and size class queries in `#if os(iOS)` guards for macOS compatibility.
+3.  **iOS 17 Motion & Sensory Feedback:**
+    *   Implement native `.scrollTransition` (scale `0.96`, opacity `0.85`) across feed cards (`PhotoCard`, `CollectionMosaicCard`) and grid views.
+    *   Add declarative `.sensoryFeedback` for tab switching, download completion, and random shuffle actions.
+4.  **Reference Specification:**
     *   Track blueprint in `specs/30_ios_interactive_sheet_and_sensory_experience.md`.
 
-
-
-
+### Step 33: README Modernization, Feature Catalog & Screen Navigation Architecture (Completed)
+1.  **Audit & Modernize Project Documentation:**
+    *   Update `README.md` to reflect recent cross-platform developments, including compile-time Metro DI (`@DependencyGraph`), lifecycle-aware `PresenterScope` (`updateIfActive`), Android Jetpack Navigation 3, Material 3 design tokens with dynamic color, and iOS frosted glass foundations (`GlassTheme`).
+2.  **Add Structured Features Catalog:**
+    *   Document all user-facing capabilities across the six core destinations: Photo Discovery & Topics, Unified Multi-Facet Search, Photo Details & EXIF & Maps, Curated Collections, Photographer Profiles & Insights, and macOS native desktop support.
+3.  **Document Screen Navigation Architecture & Hierarchy:**
+    *   Diagram the application's navigation flows using Mermaid, visualizing transitions between root shells (NavigationRail, NavigationBar, TabView, SplitView) and primary/detail destinations.
+    *   Detail deep cross-screen interaction paths: hero animations, tag searches, attribution taps, related collections, and shake-to-randomize.
+4.  **Reference Specification:**
+    *   Track blueprint in `specs/31_readme_and_navigation_documentation.md`.
