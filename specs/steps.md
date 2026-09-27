@@ -433,11 +433,11 @@ These are the spec files that the implementation notes and planning references s
 4.  **Reference Specification:**
     *   Track blueprint in `specs/28_ios_chrome_navigation_modernization.md`.
 
-### Step 31: iOS Cards Attribution & Glass Redesign
+### Step 31: iOS Cards Attribution & Glass Redesign (Completed)
 1.  **Floating Glass Attribution Capsule:**
-    *   Replace full-width `LinearGradient` bottom scrim in `PhotoCard` with a compact, inset floating glass capsule attribution pill.
+    *   Replace full-width `LinearGradient` bottom scrim in `PhotoCard` and `CollectionPhotoGridCard` with an inset floating glass attribution capsule using `GlassTheme` with isolated tap routing.
 2.  **Glassmorphic Metric & Info Cards:**
-    *   Refactor `MetricCard`, `CollectionMosaicCard` badges, and profile headers with subtle glass depth and specular outlines.
+    *   Refactor `MetricCard`, `CollectionMosaicCard` badges/curator info, and profile header social chips with `GlassTheme` tokens and Dynamic Type vibrancy.
 3.  **Reference Specification:**
     *   Track blueprint in `specs/29_ios_cards_attribution_glass_redesign.md`.
 

@@ -169,8 +169,14 @@ struct CollectionMosaicCard: View {
                 let coverUrl = (collection.coverPhoto?.urls.raw ?? "") + "&w=\(width * 2 / 3)&q=80&auto=format"
                 KFImage(URL(string: coverUrl))
                     .placeholder {
-                        RoundedRectangle(cornerRadius: 0)
-                            .fill(Color(hex: collection.coverPhoto?.color ?? "1E1E24"))
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 0)
+                                .fill(Color(hex: collection.coverPhoto?.color ?? "1E1E24"))
+                            Rectangle()
+                                .fill(.ultraThinMaterial)
+                            ProgressView()
+                                .tint(.primary.opacity(0.6))
+                        }
                     }
                     .fade(duration: 0.25)
                     .resizable()
@@ -198,7 +204,8 @@ struct CollectionMosaicCard: View {
                             .frame(height: 88)
                             .clipped()
                     } else {
-                        Color(hex: "1E1E24")
+                        Rectangle()
+                            .fill(.ultraThinMaterial)
                             .frame(height: 88)
                     }
 
@@ -220,7 +227,8 @@ struct CollectionMosaicCard: View {
                             .frame(height: 88)
                             .clipped()
                     } else {
-                        Color(hex: "1E1E24")
+                        Rectangle()
+                            .fill(.ultraThinMaterial)
                             .frame(height: 88)
                     }
                 }
@@ -236,13 +244,13 @@ struct CollectionMosaicCard: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text(collection.title)
                     .font(.headline)
-                    .foregroundColor(.white)
+                    .glassVibrancy(.primary)
                     .lineLimit(1)
 
                 if let desc = collection.description_, !desc.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                     Text(desc)
                         .font(.subheadline)
-                        .foregroundColor(.gray)
+                        .glassVibrancy(.secondary)
                         .lineLimit(2)
                 }
 
@@ -251,19 +259,20 @@ struct CollectionMosaicCard: View {
                     HStack(spacing: 6) {
                         KFImage(URL(string: collection.user.profileImage.small))
                             .resizable()
-                            .aspectRatio(contentMode: .fill)
+                            .scaledToFill()
                             .frame(width: 24, height: 24)
                             .clipShape(Circle())
 
                         VStack(alignment: .leading, spacing: 1) {
                             Text("Curated by")
-                                .font(.system(size: 8))
-                                .foregroundColor(.gray)
+                                .font(.caption2)
+                                .glassVibrancy(.secondary)
                             Text(collection.user.name)
-                                .font(.system(size: 11, weight: .semibold))
-                                .foregroundColor(.white)
+                                .font(.caption.weight(.semibold))
+                                .glassVibrancy(.primary)
                         }
                     }
+                    .contentShape(Rectangle())
                     .onTapGesture {
                         let utmProfile = "\(collection.user.links.html)?utm_source=ImageFeedApp&utm_medium=referral"
                         if let url = URL(string: utmProfile) {
@@ -275,18 +284,16 @@ struct CollectionMosaicCard: View {
 
                     // Photos count label
                     Text("\(collection.totalPhotos) Photos")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundColor(.white)
+                        .font(.caption2.weight(.bold))
+                        .glassVibrancy(.primary)
                         .padding(.horizontal, 10)
                         .padding(.vertical, 4)
-                        .background(Color.white.opacity(0.12))
-                        .clipShape(Capsule())
+                        .glassCapsule(style: .ultraThin)
                 }
                 .padding(.top, 6)
             }
             .padding(.vertical, 12)
         }
-        .background(Color(hex: "0F0F11"))
         .onAppear {
             if let lastIndex = viewModel.collections.lastIndex(where: { $0.id == collection.id }),
                lastIndex >= viewModel.collections.count - max(4, columnCount * 2) {

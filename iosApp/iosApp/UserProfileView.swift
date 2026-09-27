@@ -159,29 +159,29 @@ struct ProfileHeaderView: View {
 
             VStack(spacing: 4) {
                 Text(user.name)
-                    .font(.system(size: 20, weight: .bold))
-                    .foregroundColor(.white)
+                    .font(.title2.weight(.bold))
+                    .glassVibrancy(.primary)
 
                 Text("@\(user.username)")
-                    .font(.system(size: 13))
-                    .foregroundColor(.gray)
+                    .font(.subheadline)
+                    .glassVibrancy(.secondary)
             }
 
             if let location = user.location, !location.isEmpty {
                 HStack(spacing: 4) {
                     Image(systemName: "mappin.and.ellipse")
-                        .font(.system(size: 12))
-                        .foregroundColor(.gray)
+                        .font(.caption)
+                        .glassVibrancy(.secondary)
                     Text(location)
-                        .font(.system(size: 12))
-                        .foregroundColor(.gray)
+                        .font(.caption)
+                        .glassVibrancy(.secondary)
                 }
             }
 
             if let bio = user.bio, !bio.isEmpty {
                 Text(bio)
-                    .font(.system(size: 13))
-                    .foregroundColor(.white.opacity(0.85))
+                    .font(.subheadline)
+                    .glassVibrancy(.primary)
                     .lineSpacing(3)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 24)
@@ -229,13 +229,13 @@ struct SocialButton: View {
     var body: some View {
         Button(action: action) {
             Text("\(title): @\(handle)".uppercased())
-                .font(.system(size: 9, weight: .bold))
-                .foregroundColor(.white)
+                .font(.caption2.weight(.bold))
+                .glassVibrancy(.primary)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
-                .background(Color.white.opacity(0.1))
-                .cornerRadius(12)
+                .glassCapsule(style: .ultraThin)
         }
+        .buttonStyle(.plain)
     }
 }
 
@@ -251,19 +251,19 @@ struct ProfileTabPicker: View {
                 Button(action: { onSelect(tab) }) {
                     VStack(spacing: 6) {
                         Text(tabLabel(for: tab))
-                            .font(.system(size: 10, weight: isSelected ? .bold : .medium))
-                            .foregroundColor(isSelected ? .white : .gray)
+                            .font(.caption2.weight(isSelected ? .bold : .medium))
+                            .glassVibrancy(isSelected ? .primary : .secondary)
                             .frame(maxWidth: .infinity)
 
                         Rectangle()
-                            .fill(isSelected ? Color.white : Color.clear)
+                            .fill(isSelected ? Color.primary : Color.clear)
                             .frame(height: 2)
                     }
                 }
                 .buttonStyle(PlainButtonStyle())
             }
         }
-        .background(Color(hex: "0F0F11"))
+        .glassBackground(material: .ultraThinMaterial, shape: Rectangle(), showBorder: false)
     }
 
     private func tabLabel(for tab: ProfileTab) -> String {
@@ -329,9 +329,15 @@ struct GridPhotosList: View {
                                 }) {
                                     KFImage(URL(string: photo.urls.small))
                                         .placeholder {
-                                            RoundedRectangle(cornerRadius: 12)
-                                                .fill(Color(hex: photo.color ?? "1E1E24"))
-                                                .aspectRatio(CGFloat(photo.width) / CGFloat(photo.height), contentMode: .fit)
+                                            ZStack {
+                                                RoundedRectangle(cornerRadius: 12)
+                                                    .fill(Color(hex: photo.color ?? "1E1E24"))
+                                                RoundedRectangle(cornerRadius: 12)
+                                                    .fill(.ultraThinMaterial)
+                                                ProgressView()
+                                                    .tint(.primary.opacity(0.6))
+                                            }
+                                            .aspectRatio(CGFloat(photo.width) / CGFloat(photo.height), contentMode: .fit)
                                         }
                                         .resizable()
                                         .aspectRatio(CGFloat(photo.width) / CGFloat(photo.height), contentMode: .fit)

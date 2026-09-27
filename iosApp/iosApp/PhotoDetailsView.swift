@@ -112,8 +112,7 @@ struct PhotoDetailsView: View {
                                     }
                                 }
                                 .padding(12)
-                                .background(Color.black.opacity(0.65))
-                                .cornerRadius(24)
+                                .glassCapsule(style: .ultraThin, showBorder: true, hasShadow: true)
                                 .padding(16)
                             }
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -149,11 +148,6 @@ struct PhotoDetailsView: View {
                                     .matchedGeometryEffect(id: "photo-img-\(photoId)", in: heroNamespace, isSource: false)
                                     .frame(width: geo.size.width, height: geo.size.height)
                                     .clipped()
-                                    .overlay(
-                                        LinearGradient(
-                                            colors: [.clear, .black.opacity(0.85)],
-                                            startPoint: .top,
-                                            endPoint: .bottom))
                             }
                             .aspectRatio(CGFloat(photo.width) / CGFloat(photo.height), contentMode: .fit)
                             .clipped()
@@ -241,20 +235,18 @@ struct PhotoInspectorView: View {
                     }) {
                         HStack(spacing: 4) {
                             Text("Profile")
-                                .font(.system(size: 12, weight: .semibold))
+                                .font(.caption.weight(.semibold))
                             Image(systemName: "arrow.up.right")
-                                .font(.system(size: 10, weight: .bold))
+                                .font(.caption2.weight(.bold))
                         }
-                        .foregroundColor(.white)
+                        .glassVibrancy(.primary)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
-                        .background(Color.white.opacity(0.15))
-                        .cornerRadius(16)
+                        .glassCapsule(style: .ultraThin)
                     }
                 }
                 .padding(14)
-                .background(Color(hex: "1E1E24"))
-                .cornerRadius(12)
+                .glassCard(cornerRadius: 12, style: .ultraThin)
             } else {
                 HStack(spacing: 12) {
                     KFImage(URL(string: photo.user.profileImage.medium))
@@ -280,15 +272,14 @@ struct PhotoInspectorView: View {
                     }) {
                         HStack(spacing: 4) {
                             Text("Profile")
-                                .font(.system(size: 12, weight: .semibold))
+                                .font(.caption.weight(.semibold))
                             Image(systemName: "arrow.up.right")
-                                .font(.system(size: 10, weight: .bold))
+                                .font(.caption2.weight(.bold))
                         }
-                        .foregroundColor(.white)
+                        .glassVibrancy(.primary)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
-                        .background(Color.white.opacity(0.15))
-                        .cornerRadius(16)
+                        .glassCapsule(style: .ultraThin)
                     }
                 }
                 .padding(.top, -30)
@@ -411,12 +402,11 @@ struct PhotoInspectorView: View {
                                     onTagSelect(tag.title)
                                 }) {
                                     Text(tag.title.uppercased())
-                                        .font(.system(size: 10, weight: .bold))
-                                        .foregroundColor(.white)
+                                        .font(.caption2.weight(.bold))
+                                        .glassVibrancy(.primary)
                                         .padding(.horizontal, 10)
                                         .padding(.vertical, 6)
-                                        .background(Color.white.opacity(0.12))
-                                        .cornerRadius(14)
+                                        .glassCapsule(style: .ultraThin)
                                 }
                                 .buttonStyle(PlainButtonStyle())
                             }
@@ -470,18 +460,17 @@ struct MetricCard: View {
         VStack(spacing: 8) {
             Image(systemName: systemImage)
                 .font(.system(size: 18))
-                .foregroundColor(.white.opacity(0.8))
+                .glassVibrancy(.secondary)
             Text(value)
-                .font(.system(size: 14, weight: .bold))
-                .foregroundColor(.white)
+                .font(.subheadline.weight(.bold))
+                .glassVibrancy(.primary)
             Text(label)
-                .font(.system(size: 10, weight: .semibold))
-                .foregroundColor(.gray)
+                .font(.caption2.weight(.semibold))
+                .glassVibrancy(.secondary)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 12)
-        .background(Color(hex: "1E1E24"))
-        .cornerRadius(12)
+        .glassCard(cornerRadius: 12, style: .ultraThin)
     }
 }
 

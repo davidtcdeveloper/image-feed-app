@@ -146,6 +146,17 @@ struct SearchView: View {
                                                         onPhotoSelect(photo.id)
                                                     }) {
                                                         KFImage(URL(string: photo.urls.small))
+                                                            .placeholder {
+                                                                ZStack {
+                                                                    RoundedRectangle(cornerRadius: 12)
+                                                                        .fill(Color(hex: photo.color ?? "1E1E24"))
+                                                                    RoundedRectangle(cornerRadius: 12)
+                                                                        .fill(.ultraThinMaterial)
+                                                                    ProgressView()
+                                                                        .tint(.primary.opacity(0.6))
+                                                                }
+                                                                .aspectRatio(CGFloat(photo.width) / CGFloat(photo.height), contentMode: .fit)
+                                                            }
                                                             .resizable()
                                                             .aspectRatio(CGFloat(photo.width) / CGFloat(photo.height), contentMode: .fit)
                                                             .cornerRadius(12)

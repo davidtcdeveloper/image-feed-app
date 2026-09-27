@@ -441,17 +441,19 @@ struct PhotoCard: View {
         let imageUrl = photo.urls.raw + "&w=\(itemWidth)&q=80&auto=format"
         let aspectRatio = CGFloat(photo.width) / CGFloat(photo.height)
 
-        ZStack(alignment: .bottom) {
+        ZStack(alignment: .bottomLeading) {
             KFImage(URL(string: imageUrl))
                 .placeholder {
-                    // Display source-provided average hex color as placeholder before load
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color(hex: photo.color ?? "1E1E24"))
-                        .aspectRatio(aspectRatio, contentMode: .fit)
-                        .overlay {
-                            ProgressView()
-                                .tint(.white.opacity(0.5))
-                        }
+                    // Display source-provided average hex color with frosted glass depth
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color(hex: photo.color ?? "1E1E24"))
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(.ultraThinMaterial)
+                        ProgressView()
+                            .tint(.primary.opacity(0.6))
+                    }
+                    .aspectRatio(aspectRatio, contentMode: .fit)
                 }
                 .fade(duration: 0.25)
                 .resizable()
@@ -463,33 +465,30 @@ struct PhotoCard: View {
                     onSelect(photo.id)
                 }
 
-            // Translucent Bottom Overlay with photographer credentials to comply with terms
-            HStack(spacing: 6) {
-                KFImage(URL(string: photo.user.profileImage.small))
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .frame(width: 20, height: 20)
-                    .clipShape(Circle())
-
-                Text(photo.user.name)
-                    .font(.system(size: 10, weight: .medium))
-                    .foregroundColor(.white)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-
-                Spacer()
-            }
-            .padding(6)
-            .background(
-                LinearGradient(
-                    colors: [.clear, .black.opacity(0.75)],
-                    startPoint: .top,
-                    endPoint: .bottom))
-            .clipShape(UnevenRoundedRectangle(bottomLeadingRadius: 12, bottomTrailingRadius: 12))
-            .contentShape(Rectangle())
-            .onTapGesture {
+            // Inset Floating Glass Attribution Capsule
+            Button {
                 onUserSelect(photo.user.username)
+            } label: {
+                HStack(spacing: 6) {
+                    KFImage(URL(string: photo.user.profileImage.small))
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 20, height: 20)
+                        .clipShape(Circle())
+
+                    Text(photo.user.name)
+                        .font(.caption2.weight(.semibold))
+                        .glassVibrancy(.primary)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 5)
+                .glassCapsule(style: .ultraThin, showBorder: true, hasShadow: true)
             }
+            .buttonStyle(.plain)
+            .contentShape(Capsule())
+            .padding(8)
         }
         .onAppear {
             // Infinite pagination load trigger

@@ -306,18 +306,20 @@ struct CollectionPhotoGridCard: View {
         let screenWidth = AdaptiveLayoutHelper.getScreenWidth()
         let itemWidth = Int(screenWidth / 2)
         let imageUrl = photo.urls.raw + "&w=\(itemWidth)&q=80&auto=format"
-        let aspectRatio = CGFloat(photo.width) / CGFloat(photo.height)
+        let aspectRatio = photo.height > 0 ? CGFloat(photo.width) / CGFloat(photo.height) : 1.0
 
-        ZStack(alignment: .bottom) {
+        ZStack(alignment: .bottomLeading) {
             KFImage(URL(string: imageUrl))
                 .placeholder {
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color(hex: photo.color ?? "1E1E24"))
-                        .aspectRatio(aspectRatio, contentMode: .fit)
-                        .overlay {
-                            ProgressView()
-                                .tint(.white.opacity(0.5))
-                        }
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color(hex: photo.color ?? "1E1E24"))
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(.ultraThinMaterial)
+                        ProgressView()
+                            .tint(.primary.opacity(0.6))
+                    }
+                    .aspectRatio(aspectRatio, contentMode: .fit)
                 }
                 .fade(duration: 0.25)
                 .resizable()
@@ -328,35 +330,32 @@ struct CollectionPhotoGridCard: View {
                     onSelect()
                 }
 
-            HStack(spacing: 6) {
-                KFImage(URL(string: photo.user.profileImage.small))
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .frame(width: 20, height: 20)
-                    .clipShape(Circle())
-
-                Text(photo.user.name)
-                    .font(.system(size: 10, weight: .medium))
-                    .foregroundColor(.white)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-
-                Spacer()
-            }
-            .padding(6)
-            .background(
-                LinearGradient(
-                    colors: [.clear, .black.opacity(0.75)],
-                    startPoint: .top,
-                    endPoint: .bottom))
-            .clipShape(UnevenRoundedRectangle(bottomLeadingRadius: 12, bottomTrailingRadius: 12))
-            .contentShape(Rectangle())
-            .onTapGesture {
+            Button {
                 let utmProfile = "\(photo.user.links.html)?utm_source=ImageFeedApp&utm_medium=referral"
                 if let url = URL(string: utmProfile) {
                     URLHelper.open(url)
                 }
+            } label: {
+                HStack(spacing: 6) {
+                    KFImage(URL(string: photo.user.profileImage.small))
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 20, height: 20)
+                        .clipShape(Circle())
+
+                    Text(photo.user.name)
+                        .font(.caption2.weight(.semibold))
+                        .glassVibrancy(.primary)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 5)
+                .glassCapsule(style: .ultraThin, showBorder: true, hasShadow: true)
             }
+            .buttonStyle(.plain)
+            .contentShape(Capsule())
+            .padding(8)
         }
         .onAppear {
             if photo.id == viewModel.photos.last?.id {
