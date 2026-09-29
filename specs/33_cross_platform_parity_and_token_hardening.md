@@ -1,6 +1,6 @@
 # Specification: Cross-Platform Parity, Token Hardening & Navigation Reconciliation
 
-**Status:** Planned
+**Status:** Implemented
 
 ## 1. Overview & Context
 
@@ -149,7 +149,7 @@ This specification establishes a concrete, actionable plan to reconcile these di
 * In `PhotoDetailsView.swift`:
   * Replace the ad-hoc download and info buttons in `compactFloatingBar` with `GlassToolbarButton` or `.glassBackground(style: .ultraThin, shape: Circle(), showBorder: true, hasShadow: true)` to ensure specular catchlights and high-contrast accessibility borders.
 * In `SearchView.swift` and `CollectionDetailView.swift`:
-  * Provide `Namespace.ID` to photo cards and wire `matchedGeometryEffect` where compatible with navigation stacks.
+  * *Hero Zoom Architecture Note*: Hero zoom transitions via `matchedGeometryEffect` require source and destination views to reside within the same layout/view hierarchy, as implemented for root feed photos in `ContentView.swift` (`selectedPhotoForHero`). For secondary grid views (`SearchView` and `CollectionDetailView`), photo taps push onto `NavigationStack` via `NavigationPath`, where SwiftUI natively manages standard platform push/pop transitions rather than custom in-tree geometry matching.
 
 ---
 
@@ -170,31 +170,31 @@ To ensure project documentation and existing specifications remain coherent and 
 
 ## 5. Implementation Checklist
 
-- [ ] **Part 1: Search Navigation Reconciliation**:
-  - [ ] Add `onCollectionClick` callback to Android `SearchScreen.kt` and wire to `Screen.CollectionDetails` in `MainActivity.kt`.
-  - [ ] Add `onCollectionSelect` callback to iOS `SearchView.swift` and wire to `CollectionPathItem` in `ContentView.swift`.
-- [ ] **Part 2: iOS Search State & Pull-to-Refresh Parity**:
-  - [ ] Add `.refreshable { viewModel.refresh() }` to `SearchView.swift`.
-  - [ ] Connect search submission to `viewModel.submitSearch`.
-- [ ] **Part 3: iOS Design Token Hardening**:
-  - [ ] Remove all raw `Color(hex: "0F0F11")`, `Color(hex: "1E1E24")`, and `Color(hex: "2C2C35")` in `SearchView.swift`.
-  - [ ] Remove `Color(hex: "0F0F11")` in `CollectionsFeedView.swift`.
-  - [ ] Remove `Color(hex: "0F0F11")` and `Color(hex: "1E1E24")` in `UserProfileView.swift`.
-  - [ ] Remove `Color(hex: "0F0F11")` and `Color(hex: "1E1E24")` in `CollectionDetailView.swift`.
-  - [ ] Purge all `.font(.system(size: ...))` and static `.foregroundColor` in `PhotoDetailsView.swift` and `UserProfileView.swift`, replacing with Dynamic Type and `GlassVibrancy`.
-  - [ ] Replace `.foregroundColor(.gray)` in `MacOSContentView.swift` with `.foregroundStyle(.secondary)`.
-- [ ] **Part 4: Photo Card Attribution & Unsplash Compliance**:
-  - [ ] Add photographer attribution capsule to photo results in `SearchView.swift`.
-  - [ ] Wire photographer attribution click in `CollectionPhotoGridCard` to in-app `UserProfileView`.
-- [ ] **Part 5: Dynamic CDN Resizing on iOS**:
-  - [ ] Implement `calculateItemWidthPx` in `AdaptiveLayoutHelper.swift`.
-  - [ ] Apply dynamic `&w=` sizing in `PhotoCard`, `CollectionPhotoGridCard`, `SearchView.swift`, and `UserProfileView.swift`.
-- [ ] **Part 6: Action Controls & Hero Zoom Scope**:
-  - [ ] Modernize floating buttons in `PhotoDetailsView.swift` using `GlassToolbarButton` / `GlassTheme`.
-  - [ ] Wire hero animation namespace in `SearchView.swift` and `CollectionDetailView.swift`.
-- [ ] **Part 7: Spec & Rule Documentation Updates**:
-  - [ ] Update `specs/steps.md` with Step 35.
-  - [ ] Update `AGENTS.md` reference specs index.
+- [x] **Part 1: Search Navigation Reconciliation**:
+  - [x] Add `onCollectionClick` callback to Android `SearchScreen.kt` and wire to `Screen.CollectionDetails` in `MainActivity.kt`.
+  - [x] Add `onCollectionSelect` callback to iOS `SearchView.swift` and wire to `CollectionPathItem` in `ContentView.swift`.
+- [x] **Part 2: iOS Search State & Pull-to-Refresh Parity**:
+  - [x] Add `.refreshable { viewModel.refresh() }` to `SearchView.swift`.
+  - [x] Connect search submission to `viewModel.submitSearch`.
+- [x] **Part 3: iOS Design Token Hardening**:
+  - [x] Remove all raw `Color(hex: "0F0F11")`, `Color(hex: "1E1E24")`, and `Color(hex: "2C2C35")` in `SearchView.swift`.
+  - [x] Remove `Color(hex: "0F0F11")` in `CollectionsFeedView.swift`.
+  - [x] Remove `Color(hex: "0F0F11")` and `Color(hex: "1E1E24")` in `UserProfileView.swift`.
+  - [x] Remove `Color(hex: "0F0F11")` and `Color(hex: "1E1E24")` in `CollectionDetailView.swift`.
+  - [x] Purge all `.font(.system(size: ...))` and static `.foregroundColor` in `PhotoDetailsView.swift` and `UserProfileView.swift`, replacing with Dynamic Type and `GlassVibrancy`.
+  - [x] Replace `.foregroundColor(.gray)` in `MacOSContentView.swift` with `.foregroundStyle(.secondary)`.
+- [x] **Part 4: Photo Card Attribution & Unsplash Compliance**:
+  - [x] Add photographer attribution capsule to photo results in `SearchView.swift`.
+  - [x] Wire photographer attribution click in `CollectionPhotoGridCard` to in-app `UserProfileView`.
+- [x] **Part 5: Dynamic CDN Resizing on iOS**:
+  - [x] Implement `calculateItemWidthPx` in `AdaptiveLayoutHelper.swift` (incorporating display scale for Retina crispness).
+  - [x] Apply dynamic `&w=` sizing in `PhotoCard`, `CollectionPhotoGridCard`, `SearchView.swift`, and `UserProfileView.swift`.
+- [x] **Part 6: Action Controls & Hero Zoom Scope**:
+  - [x] Modernize floating buttons in `PhotoDetailsView.swift` using `GlassToolbarButton` / `GlassTheme`.
+  - [x] Document SwiftUI `NavigationStack` push transition architecture for secondary grids vs modal hero zoom.
+- [x] **Part 7: Spec & Rule Documentation Updates**:
+  - [x] Update `specs/steps.md` with Step 35.
+  - [x] Update `AGENTS.md` reference specs index.
 
 ---
 

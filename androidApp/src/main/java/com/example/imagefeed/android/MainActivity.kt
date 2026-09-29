@@ -456,6 +456,9 @@ class MainActivity : ComponentActivity() {
                                                                 onUserClick = { user ->
                                                                     backStackState.add(Screen.UserProfile(user.username))
                                                                 },
+                                                                onCollectionClick = { collection ->
+                                                                    backStackState.add(Screen.CollectionDetails(collection.id))
+                                                                },
                                                             )
                                                         }
                                                     }

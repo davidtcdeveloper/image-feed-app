@@ -488,7 +488,7 @@ These are the spec files that the implementation notes and planning references s
 3.  **Reference Specification:**
     *   Track blueprint in `specs/32_agent_rules_modernization.md`.
 
-### Step 35: Cross-Platform Parity, Token Hardening & Navigation Reconciliation (Planned)
+### Step 35: Cross-Platform Parity, Token Hardening & Navigation Reconciliation (Completed)
 1.  **Reconcile Search Navigation:**
     *   Wire in-app `CollectionDetails` navigation on both Android (`SearchScreen.kt` -> `Screen.CollectionDetails`) and iOS (`SearchView.swift` -> `CollectionPathItem`) instead of external browser links.
 2.  **Harmonize iOS Search State & Pull-to-Refresh:**

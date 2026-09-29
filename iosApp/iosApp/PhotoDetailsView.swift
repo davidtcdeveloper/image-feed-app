@@ -40,7 +40,7 @@ struct PhotoDetailsView: View {
             finalOffset = .zero
         }
         showInspector = false
-        if let onDismiss = onDismiss {
+        if let onDismiss {
             onDismiss()
         } else {
             dismiss()
@@ -52,8 +52,8 @@ struct PhotoDetailsView: View {
         heroNamespace: Namespace.ID,
         onDismiss: (() -> Void)? = nil,
         onUserSelect: @escaping (String) -> Void,
-        onTagSelect: @escaping (String) -> Void
-    ) {
+        onTagSelect: @escaping (String) -> Void)
+    {
         self.photoId = photoId
         self.heroNamespace = heroNamespace
         self.onDismiss = onDismiss
@@ -64,7 +64,7 @@ struct PhotoDetailsView: View {
 
     var body: some View {
         ZStack {
-            Color(hex: "0F0F11")
+            GlassTheme.canvasBackgroundColor
                 .ignoresSafeArea()
 
             if viewModel.isLoading, viewModel.photo == nil {
@@ -74,20 +74,19 @@ struct PhotoDetailsView: View {
                 VStack(spacing: 16) {
                     Text("Failed to load details")
                         .font(.headline)
-                        .foregroundColor(.white)
+                        .glassVibrancy(.primary)
                     Text(error)
                         .font(.subheadline)
-                        .foregroundColor(.gray)
+                        .glassVibrancy(.secondary)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 24)
                     Button(action: { viewModel.loadDetails() }) {
                         Text("Retry")
-                            .fontWeight(.medium)
-                            .foregroundColor(.black)
+                            .font(.subheadline.weight(.semibold))
+                            .glassVibrancy(.primary)
                             .padding(.horizontal, 24)
-                            .padding(.vertical, 8)
-                            .background(Color.white)
-                            .cornerRadius(20)
+                            .padding(.vertical, 10)
+                            .glassBackground(style: .thin, shape: Capsule(), showBorder: true)
                     }
                 }
             } else if let photo = viewModel.photo {
@@ -109,11 +108,11 @@ struct PhotoDetailsView: View {
             }
         }
         .overlay(alignment: .topTrailing) {
-            if onDismiss != nil && !isDualPane {
+            if onDismiss != nil, !isDualPane {
                 GlassToolbarButton(
                     systemName: showInspector ? "info.circle.fill" : "info.circle",
-                    accessibilityLabel: "Photo Details"
-                ) {
+                    accessibilityLabel: "Photo Details")
+                {
                     withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                         showInspector.toggle()
                     }
@@ -129,8 +128,8 @@ struct PhotoDetailsView: View {
         .toolbarColorScheme(.dark, for: .navigationBar)
         .sheet(isPresented: Binding(
             get: { showInspector && !isDualPane && viewModel.photo != nil },
-            set: { showInspector = $0 }
-        )) {
+            set: { showInspector = $0 }))
+        {
             if let photo = viewModel.photo {
                 ScrollView {
                     PhotoInspectorView(
@@ -146,10 +145,9 @@ struct PhotoDetailsView: View {
                         },
                         onDownload: {
                             downloadFeedbackTrigger += 1
-                        }
-                    )
-                    .padding(20)
-                    .padding(.bottom, 32)
+                        })
+                        .padding(20)
+                        .padding(.bottom, 32)
                 }
                 .environment(\.colorScheme, .dark)
                 .preferredColorScheme(.dark)
@@ -159,10 +157,10 @@ struct PhotoDetailsView: View {
                 .presentationCornerRadius(24)
                 .presentationBackground {
                     if reduceTransparency {
-                        Color(hex: "0F0F11")
+                        GlassTheme.fallbackBackgroundColor
                     } else {
                         ZStack {
-                            Color(hex: "0A0A0C").opacity(0.82)
+                            GlassTheme.highContrastScrimColor.opacity(0.82)
                             Rectangle().fill(.regularMaterial)
                         }
                     }
@@ -181,8 +179,8 @@ struct PhotoDetailsView: View {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     GlassToolbarButton(
                         systemName: showInspector ? "info.circle.fill" : "info.circle",
-                        accessibilityLabel: "Photo Details"
-                    ) {
+                        accessibilityLabel: "Photo Details")
+                    {
                         withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                             showInspector.toggle()
                         }
@@ -210,7 +208,6 @@ struct PhotoDetailsView: View {
 // MARK: - PhotoDetailsView Layout Helpers
 
 private extension PhotoDetailsView {
-    @ViewBuilder
     func dualPaneLayout(photo: Photo) -> some View {
         GeometryReader { totalGeo in
             let inspectorWidth = max(320, min(420, totalGeo.size.width * 0.42))
@@ -218,7 +215,7 @@ private extension PhotoDetailsView {
             HStack(spacing: 0) {
                 // Left: Photo Canvas
                 ZStack(alignment: .bottomLeading) {
-                    Color(hex: "070709")
+                    GlassTheme.canvasBackgroundColor
                         .ignoresSafeArea()
 
                     GeometryReader { geo in
@@ -247,11 +244,11 @@ private extension PhotoDetailsView {
 
                         VStack(alignment: .leading, spacing: 2) {
                             Text(photo.user.name)
-                                .font(.system(size: 14, weight: .bold))
-                                .foregroundColor(.white)
+                                .font(.subheadline.weight(.bold))
+                                .glassVibrancy(.primary)
                             Text("@\(photo.user.username)")
-                                .font(.system(size: 11))
-                                .foregroundColor(.gray)
+                                .font(.caption2)
+                                .glassVibrancy(.secondary)
                         }
 
                         Spacer()
@@ -260,8 +257,8 @@ private extension PhotoDetailsView {
                             onUserSelect(photo.user.username)
                         }) {
                             Image(systemName: "arrow.up.right")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundColor(.white)
+                                .font(.caption.weight(.bold))
+                                .glassVibrancy(.primary)
                         }
                     }
                     .padding(12)
@@ -283,19 +280,17 @@ private extension PhotoDetailsView {
                         onTagSelect: onTagSelect,
                         onDownload: {
                             downloadFeedbackTrigger += 1
-                        }
-                    )
-                    .padding(20)
-                    .padding(.bottom, 32)
+                        })
+                        .padding(20)
+                        .padding(.bottom, 32)
                 }
                 .frame(width: inspectorWidth)
-                .background(Color(hex: "0F0F11"))
+                .background(GlassTheme.canvasBackgroundColor)
             }
         }
         .ignoresSafeArea(edges: .top)
     }
 
-    @ViewBuilder
     func compactPhotoLayout(photo: Photo) -> some View {
         GeometryReader { geo in
             let containerWidth = geo.size.width
@@ -304,7 +299,7 @@ private extension PhotoDetailsView {
             let imageUrl = photo.urls.raw + "&w=\(Int(containerWidth * 2))&q=85&auto=format"
 
             ZStack(alignment: .bottom) {
-                Color(hex: "070709")
+                GlassTheme.canvasBackgroundColor
                     .ignoresSafeArea()
 
                 ZStack {
@@ -347,8 +342,7 @@ private extension PhotoDetailsView {
                                             }
                                         }
                                     }
-                                }
-                        )
+                                })
                         .simultaneousGesture(
                             DragGesture()
                                 .onChanged { value in
@@ -359,8 +353,7 @@ private extension PhotoDetailsView {
                                     let newY = finalOffset.height + value.translation.height
                                     currentOffset = CGSize(
                                         width: max(-maxOffsetX, min(maxOffsetX, newX)),
-                                        height: max(-maxOffsetY, min(maxOffsetY, newY))
-                                    )
+                                        height: max(-maxOffsetY, min(maxOffsetY, newY)))
                                 }
                                 .onEnded { _ in
                                     guard currentScale > 1.05 else {
@@ -369,8 +362,7 @@ private extension PhotoDetailsView {
                                         return
                                     }
                                     finalOffset = currentOffset
-                                }
-                        )
+                                })
                         .onTapGesture(count: 2) {
                             withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                                 if currentScale > 1.05 {
@@ -396,7 +388,6 @@ private extension PhotoDetailsView {
         .ignoresSafeArea()
     }
 
-    @ViewBuilder
     private func compactFloatingBar(photo: Photo) -> some View {
         HStack(spacing: 12) {
             // Photographer attribution button
@@ -409,15 +400,15 @@ private extension PhotoDetailsView {
                         .scaledToFill()
                         .frame(width: 32, height: 32)
                         .clipShape(Circle())
-                        .overlay(Circle().stroke(.white.opacity(0.4), lineWidth: 1.5))
+                        .overlay(Circle().stroke(GlassTheme.specularBorderGradient, lineWidth: 1.5))
 
                     VStack(alignment: .leading, spacing: 2) {
                         Text(photo.user.name)
-                            .font(.system(size: 13, weight: .bold))
+                            .font(.subheadline.weight(.bold))
                             .glassVibrancy(.primary)
                             .lineLimit(1)
                         Text("@\(photo.user.username)")
-                            .font(.system(size: 11))
+                            .font(.caption2)
                             .glassVibrancy(.secondary)
                             .lineLimit(1)
                     }
@@ -428,31 +419,25 @@ private extension PhotoDetailsView {
             Spacer()
 
             // Download Action
-            Button(action: {
+            GlassToolbarButton(
+                systemName: "arrow.down.to.line",
+                accessibilityLabel: "Download photo")
+            {
                 downloadFeedbackTrigger += 1
                 viewModel.trackDownload()
                 if let url = URL(string: photo.urls.full) {
                     URLHelper.open(url)
                 }
-            }) {
-                Image(systemName: "arrow.down.to.line")
-                    .font(.system(size: 14, weight: .semibold))
-                    .glassVibrancy(.primary)
-                    .frame(width: 34, height: 34)
-                    .background(Circle().fill(.white.opacity(0.12)))
             }
 
             // Toggle Inspector Button
-            Button(action: {
+            GlassToolbarButton(
+                systemName: "info.circle",
+                accessibilityLabel: "Inspect photo details")
+            {
                 withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                     showInspector = true
                 }
-            }) {
-                Image(systemName: "info.circle")
-                    .font(.system(size: 15, weight: .semibold))
-                    .glassVibrancy(.primary)
-                    .frame(width: 34, height: 34)
-                    .background(Circle().fill(.white.opacity(0.12)))
             }
         }
         .padding(.horizontal, 14)
@@ -488,10 +473,10 @@ struct PhotoInspectorView: View {
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(photo.user.name)
-                        .font(.system(size: 15, weight: .bold))
+                        .font(.subheadline.weight(.bold))
                         .glassVibrancy(.primary)
                     Text("@\(photo.user.username)")
-                        .font(.system(size: 12))
+                        .font(.caption)
                         .glassVibrancy(.secondary)
                 }
 
@@ -519,7 +504,7 @@ struct PhotoInspectorView: View {
                 // Title / Description
                 if let description = photo.description_ ?? photo.altDescription {
                     Text(description)
-                        .font(.system(size: 15))
+                        .font(.body)
                         .lineSpacing(4)
                         .glassVibrancy(.primary)
                 }
@@ -535,7 +520,7 @@ struct PhotoInspectorView: View {
                 if let viewsHist = viewModel.stats?.views.historical, !viewsHist.values.isEmpty {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("HISTORICAL VIEWS (LAST 30 DAYS)")
-                            .font(.system(size: 11, weight: .bold))
+                            .font(.caption.weight(.bold))
                             .glassVibrancy(.secondary)
                             .tracking(1)
 
@@ -557,20 +542,19 @@ struct PhotoInspectorView: View {
                         Spacer()
                         Image(systemName: "arrow.down.doc.fill")
                         Text("Download High Resolution")
-                            .fontWeight(.bold)
+                            .font(.subheadline.weight(.bold))
                         Spacer()
                     }
-                    .foregroundColor(.black)
+                    .glassVibrancy(.primary)
                     .padding(.vertical, 14)
-                    .background(Color.white)
-                    .cornerRadius(8)
+                    .glassBackground(style: .thin, shape: RoundedRectangle(cornerRadius: 12), showBorder: true)
                 }
 
                 // EXIF Glassmorphic Card
                 if let exif = photo.exif, hasExif(exif) {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("CAMERA & LENS SPECS")
-                            .font(.system(size: 11, weight: .bold))
+                            .font(.caption.weight(.bold))
                             .glassVibrancy(.secondary)
                             .tracking(1)
 
@@ -590,14 +574,14 @@ struct PhotoInspectorView: View {
                 if let location = photo.location, hasLocation(location) {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("LOCATION")
-                            .font(.system(size: 11, weight: .bold))
+                            .font(.caption.weight(.bold))
                             .glassVibrancy(.secondary)
                             .tracking(1)
 
                         VStack(alignment: .leading, spacing: 10) {
                             if let name = location.name {
                                 Text(name)
-                                    .font(.system(size: 14, weight: .bold))
+                                    .font(.subheadline.weight(.bold))
                                     .glassVibrancy(.primary)
                             }
 
@@ -623,7 +607,7 @@ struct PhotoInspectorView: View {
                 if let tags = photo.tags, !tags.isEmpty {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("RELATED TAGS")
-                            .font(.system(size: 11, weight: .bold))
+                            .font(.caption.weight(.bold))
                             .glassVibrancy(.secondary)
                             .tracking(1)
 
@@ -673,7 +657,7 @@ struct PhotoInspectorView: View {
         if let latValue = location.position?.latitude, let lonValue = location.position?.longitude {
             let lat = Double(truncating: latValue)
             let lon = Double(truncating: lonValue)
-            if lat == 0.0 && lon == 0.0 {
+            if lat == 0.0, lon == 0.0 {
                 return false
             }
         }
@@ -689,7 +673,7 @@ struct MetricCard: View {
     var body: some View {
         VStack(spacing: 8) {
             Image(systemName: systemImage)
-                .font(.system(size: 18))
+                .font(.title3)
                 .glassVibrancy(.secondary)
             Text(value)
                 .font(.subheadline.weight(.bold))
@@ -712,11 +696,11 @@ struct ExifRowView: View {
         if let value, !value.isEmpty {
             HStack {
                 Text(label)
-                    .font(.system(size: 13))
+                    .font(.footnote)
                     .glassVibrancy(.secondary)
                 Spacer()
                 Text(value)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.footnote.weight(.semibold))
                     .glassVibrancy(.primary)
             }
         }

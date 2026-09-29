@@ -11,12 +11,19 @@ struct CollectionDetailView: View {
 
     let onPhotoSelect: (String) -> Void
     let onCollectionSelect: (String) -> Void
+    let onUserSelect: (String) -> Void
 
-    init(collectionId: String, onPhotoSelect: @escaping (String) -> Void, onCollectionSelect: @escaping (String) -> Void) {
+    init(
+        collectionId: String,
+        onPhotoSelect: @escaping (String) -> Void,
+        onCollectionSelect: @escaping (String) -> Void,
+        onUserSelect: @escaping (String) -> Void)
+    {
         self.collectionId = collectionId
         self._viewModel = State(initialValue: CollectionDetailViewModel(collectionId: collectionId))
         self.onPhotoSelect = onPhotoSelect
         self.onCollectionSelect = onCollectionSelect
+        self.onUserSelect = onUserSelect
     }
 
     private var columnCount: Int {
@@ -29,7 +36,7 @@ struct CollectionDetailView: View {
 
     var body: some View {
         ZStack(alignment: .top) {
-            Color(hex: "0F0F11")
+            GlassTheme.canvasBackgroundColor
                 .ignoresSafeArea()
 
             if viewModel.photos.isEmpty, viewModel.isLoadingPhotos, viewModel.isHeaderLoading {
@@ -102,13 +109,13 @@ struct CollectionDetailView: View {
                                         .clipped()
                                         .offset(y: scrollOffset > 0 ? -scrollOffset : 0)
                                 } else {
-                                    Color(hex: "1E1E24")
+                                    GlassTheme.surfaceBackgroundColor
                                         .frame(width: geo.size.width, height: stretchedHeight)
                                 }
 
                                 // Dark overlay gradient for readability
                                 LinearGradient(
-                                    colors: [.clear, .black.opacity(0.4), .black.opacity(0.85), Color(hex: "0F0F11")],
+                                    colors: [.clear, .black.opacity(0.4), .black.opacity(0.85), GlassTheme.canvasBackgroundColor],
                                     startPoint: .top,
                                     endPoint: .bottom)
                                     .frame(width: geo.size.width, height: stretchedHeight)
@@ -127,33 +134,32 @@ struct CollectionDetailView: View {
 
                                             VStack(alignment: .leading, spacing: 1) {
                                                 Text("Curated by")
-                                                    .font(.system(size: 9))
-                                                    .foregroundColor(.gray)
+                                                    .font(.caption2)
+                                                    .glassVibrancy(.secondary)
                                                 Text(collection.user.name)
-                                                    .font(.system(size: 13, weight: .bold))
-                                                    .foregroundColor(.white)
+                                                    .font(.subheadline.weight(.bold))
+                                                    .glassVibrancy(.primary)
                                             }
                                         }
                                         .padding(.bottom, 6)
+                                        .contentShape(Rectangle())
                                         .onTapGesture {
-                                            let utmProfile = "\(collection.user.links.html)?utm_source=ImageFeedApp&utm_medium=referral"
-                                            if let url = URL(string: utmProfile) {
-                                                URLHelper.open(url)
-                                            }
+                                            onUserSelect(collection.user.username)
                                         }
 
                                         Text(collection.title)
-                                            .font(.system(size: 24, weight: .bold))
-                                            .foregroundColor(.white)
+                                            .font(.title2.weight(.bold))
+                                            .glassVibrancy(.primary)
 
                                         Text("\(collection.totalPhotos) Photos")
                                             .font(.subheadline)
-                                            .foregroundColor(.gray)
+                                            .glassVibrancy(.secondary)
 
                                         if let desc = collection.description_, !desc.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                                             Text(desc)
-                                                .font(.system(size: 13))
-                                                .foregroundColor(.white.opacity(0.8))
+                                                .font(.footnote)
+                                                .glassVibrancy(.primary)
+                                                .opacity(0.85)
                                                 .lineLimit(3)
                                                 .lineSpacing(3)
                                                 .padding(.top, 4)
@@ -172,7 +178,7 @@ struct CollectionDetailView: View {
                             VStack(alignment: .leading, spacing: 10) {
                                 Text("Related Collections")
                                     .font(.headline)
-                                    .foregroundColor(.white)
+                                    .glassVibrancy(.primary)
                                     .padding(.horizontal, 16)
                                     .padding(.top, 16)
 
@@ -194,7 +200,7 @@ struct CollectionDetailView: View {
                             VStack(alignment: .leading, spacing: 12) {
                                 Text("Photos")
                                     .font(.headline)
-                                    .foregroundColor(.white)
+                                    .glassVibrancy(.primary)
                                     .padding(.horizontal, 16)
                                     .padding(.top, 24)
 
@@ -203,17 +209,17 @@ struct CollectionDetailView: View {
                                         LazyVStack(spacing: 8) {
                                             ForEach(
                                                 AdaptiveLayoutHelper.photosForColumn(index: colIndex, totalColumns: columnCount, from: viewModel.photos),
-                                                id: \.id
-                                            ) { photo in
+                                                id: \.id)
+                                            { photo in
                                                 let flatIndex = viewModel.photos.firstIndex(where: { $0.id == photo.id }) ?? 0
-                                                Button {
-                                                    onPhotoSelect(photo.id)
-                                                } label: {
-                                                    CollectionPhotoGridCard(photo: photo, viewModel: viewModel)
-                                                        .staggeredReveal(index: flatIndex)
-                                                        .feedScrollTransition()
-                                                }
-                                                .buttonStyle(SpringCardButtonStyle())
+                                                CollectionPhotoGridCard(
+                                                    photo: photo,
+                                                    viewModel: viewModel,
+                                                    columnCount: columnCount,
+                                                    onPhotoSelect: { onPhotoSelect(photo.id) },
+                                                    onUserSelect: onUserSelect)
+                                                    .staggeredReveal(index: flatIndex)
+                                                    .feedScrollTransition()
                                             }
                                         }
                                     }
@@ -271,7 +277,7 @@ struct RelatedCollectionCard: View {
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                 } else {
                     RoundedRectangle(cornerRadius: 12)
-                        .fill(Color(hex: "1E1E24"))
+                        .fill(GlassTheme.surfaceBackgroundColor)
                         .frame(width: 160, height: 110)
                 }
 
@@ -283,12 +289,12 @@ struct RelatedCollectionCard: View {
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(collection.title)
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundColor(.white)
+                        .font(.caption.weight(.bold))
+                        .glassVibrancy(.primary)
                         .lineLimit(1)
                     Text("\(collection.totalPhotos) Photos")
-                        .font(.system(size: 9))
-                        .foregroundColor(.gray)
+                        .font(.caption2)
+                        .glassVibrancy(.secondary)
                 }
                 .padding(8)
             }
@@ -301,10 +307,13 @@ struct RelatedCollectionCard: View {
 struct CollectionPhotoGridCard: View {
     let photo: Photo
     let viewModel: CollectionDetailViewModel
+    let columnCount: Int
+    let onPhotoSelect: () -> Void
+    let onUserSelect: (String) -> Void
 
     var body: some View {
         let screenWidth = AdaptiveLayoutHelper.getScreenWidth()
-        let itemWidth = Int(screenWidth / 2)
+        let itemWidth = AdaptiveLayoutHelper.calculateItemWidthPx(screenWidth: screenWidth, columnCount: columnCount)
         let imageUrl = photo.urls.raw + "&w=\(itemWidth)&q=80&auto=format"
         let aspectRatio = photo.height > 0 ? CGFloat(photo.width) / CGFloat(photo.height) : 1.0
 
@@ -325,12 +334,13 @@ struct CollectionPhotoGridCard: View {
                 .resizable()
                 .aspectRatio(aspectRatio, contentMode: .fit)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    onPhotoSelect()
+                }
 
             Button {
-                let utmProfile = "\(photo.user.links.html)?utm_source=ImageFeedApp&utm_medium=referral"
-                if let url = URL(string: utmProfile) {
-                    URLHelper.open(url)
-                }
+                onUserSelect(photo.user.username)
             } label: {
                 HStack(spacing: 6) {
                     KFImage(URL(string: photo.user.profileImage.small))

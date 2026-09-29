@@ -19,7 +19,7 @@ struct UserProfileView: View {
 
     var body: some View {
         ZStack {
-            Color(hex: "0F0F11")
+            GlassTheme.canvasBackgroundColor
                 .ignoresSafeArea()
 
             if viewModel.isHeaderLoading, viewModel.user == nil {
@@ -29,20 +29,19 @@ struct UserProfileView: View {
                 VStack(spacing: 16) {
                     Text("Failed to load profile")
                         .font(.headline)
-                        .foregroundColor(.white)
+                        .glassVibrancy(.primary)
                     Text(error)
                         .font(.subheadline)
-                        .foregroundColor(.gray)
+                        .glassVibrancy(.secondary)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 24)
                     Button(action: { viewModel.refresh() }) {
                         Text("Retry")
-                            .fontWeight(.medium)
-                            .foregroundColor(.black)
+                            .font(.subheadline.weight(.semibold))
+                            .glassVibrancy(.primary)
                             .padding(.horizontal, 24)
-                            .padding(.vertical, 8)
-                            .background(Color.white)
-                            .cornerRadius(20)
+                            .padding(.vertical, 10)
+                            .glassBackground(style: .thin, shape: Capsule(), showBorder: true)
                     }
                 }
             } else if let user = viewModel.user {
@@ -98,49 +97,49 @@ struct UserProfileView: View {
         }
         .navigationTitle(viewModel.user?.name ?? "Profile")
         #if os(iOS)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
-            .toolbarBackground(.visible, for: .navigationBar)
-            .toolbarColorScheme(.dark, for: .navigationBar)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
+        .toolbarColorScheme(.dark, for: .navigationBar)
         #endif
-            .toolbar {
+        .toolbar {
+            #if os(iOS)
+            ToolbarItem(placement: .navigationBarLeading) {
+                GlassToolbarButton(systemName: "chevron.left", accessibilityLabel: "Back") {
+                    dismiss()
+                }
+            }
+            #else
+            ToolbarItem(placement: .navigation) {
+                GlassToolbarButton(systemName: "chevron.left", accessibilityLabel: "Back") {
+                    dismiss()
+                }
+            }
+            #endif
+
+            if let user = viewModel.user {
                 #if os(iOS)
-                ToolbarItem(placement: .navigationBarLeading) {
-                    GlassToolbarButton(systemName: "chevron.left", accessibilityLabel: "Back") {
-                        dismiss()
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    GlassToolbarButton(systemName: "safari", accessibilityLabel: "Open Profile in Browser") {
+                        let utmProfile = "\(user.links.html)?utm_source=ImageFeedApp&utm_medium=referral"
+                        if let url = URL(string: utmProfile) {
+                            URLHelper.open(url)
+                        }
                     }
                 }
                 #else
-                ToolbarItem(placement: .navigation) {
-                    GlassToolbarButton(systemName: "chevron.left", accessibilityLabel: "Back") {
-                        dismiss()
+                ToolbarItem(placement: .primaryAction) {
+                    GlassToolbarButton(systemName: "safari", accessibilityLabel: "Open Profile in Browser") {
+                        let utmProfile = "\(user.links.html)?utm_source=ImageFeedApp&utm_medium=referral"
+                        if let url = URL(string: utmProfile) {
+                            URLHelper.open(url)
+                        }
                     }
                 }
                 #endif
-
-                if let user = viewModel.user {
-                    #if os(iOS)
-                    ToolbarItem(placement: .navigationBarTrailing) {
-                        GlassToolbarButton(systemName: "safari", accessibilityLabel: "Open Profile in Browser") {
-                            let utmProfile = "\(user.links.html)?utm_source=ImageFeedApp&utm_medium=referral"
-                            if let url = URL(string: utmProfile) {
-                                URLHelper.open(url)
-                            }
-                        }
-                    }
-                    #else
-                    ToolbarItem(placement: .primaryAction) {
-                        GlassToolbarButton(systemName: "safari", accessibilityLabel: "Open Profile in Browser") {
-                            let utmProfile = "\(user.links.html)?utm_source=ImageFeedApp&utm_medium=referral"
-                            if let url = URL(string: utmProfile) {
-                                URLHelper.open(url)
-                            }
-                        }
-                    }
-                    #endif
-                }
             }
-            .navigationBarBackButtonHidden(true)
+        }
+        .navigationBarBackButtonHidden(true)
     }
 }
 
@@ -316,7 +315,7 @@ struct GridPhotosList: View {
             } else if photos.isEmpty {
                 Text("No photos to display.")
                     .font(.subheadline)
-                    .foregroundColor(.gray)
+                    .glassVibrancy(.secondary)
                     .padding(.top, 40)
             } else {
                 HStack(alignment: .top, spacing: 8) {
@@ -324,10 +323,13 @@ struct GridPhotosList: View {
                         LazyVStack(spacing: 8) {
                             ForEach(AdaptiveLayoutHelper.photosForColumn(index: colIndex, totalColumns: columnCount, from: photos), id: \.id) { photo in
                                 let flatIndex = photos.firstIndex(where: { $0.id == photo.id }) ?? 0
+                                let screenWidth = AdaptiveLayoutHelper.getScreenWidth()
+                                let itemWidth = AdaptiveLayoutHelper.calculateItemWidthPx(screenWidth: screenWidth, columnCount: columnCount)
+                                let imageUrl = photo.urls.raw + "&w=\(itemWidth)&q=80&auto=format"
                                 Button(action: {
                                     onSelect(photo.id)
                                 }) {
-                                    KFImage(URL(string: photo.urls.small))
+                                    KFImage(URL(string: imageUrl))
                                         .placeholder {
                                             ZStack {
                                                 RoundedRectangle(cornerRadius: 12)
@@ -386,7 +388,7 @@ struct GridCollectionsList: View {
             } else if collections.isEmpty {
                 Text("No collections to display.")
                     .font(.subheadline)
-                    .foregroundColor(.gray)
+                    .glassVibrancy(.secondary)
                     .padding(.top, 40)
             } else {
                 LazyVStack(spacing: 16) {
@@ -402,7 +404,7 @@ struct GridCollectionsList: View {
                                         .frame(height: 180)
                                         .clipped()
                                 } else {
-                                    Color(hex: "1E1E24")
+                                    GlassTheme.surfaceBackgroundColor
                                         .frame(height: 180)
                                 }
 
@@ -411,13 +413,13 @@ struct GridCollectionsList: View {
 
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text(col.title.uppercased())
-                                        .font(.system(size: 16, weight: .bold))
-                                        .foregroundColor(.white)
+                                        .font(.headline.weight(.bold))
+                                        .glassVibrancy(.primary)
                                         .tracking(1)
 
                                     Text("\(col.totalPhotos) Photos · Curated by \(col.user.name)")
-                                        .font(.system(size: 11))
-                                        .foregroundColor(.gray)
+                                        .font(.caption)
+                                        .glassVibrancy(.secondary)
                                 }
                                 .padding(16)
                             }
@@ -461,7 +463,7 @@ struct InsightsView: View {
             } else if error != nil, stats == nil {
                 Text("Failed to load insights.")
                     .font(.subheadline)
-                    .foregroundColor(.gray)
+                    .glassVibrancy(.secondary)
                     .padding(.top, 40)
             } else if let stats {
                 VStack(alignment: .leading, spacing: 24) {
@@ -512,18 +514,18 @@ struct InteractiveTimelineChart: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text(title)
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundColor(.gray)
+                    .font(.caption.weight(.bold))
+                    .glassVibrancy(.secondary)
                     .tracking(1)
                 Spacer()
                 if let selected = rawSelectedDate, let matched = values.first(where: { $0.date == selected }) {
                     Text("\(matched.date): \(matched.value)")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundColor(.white)
+                        .font(.caption.weight(.bold))
+                        .glassVibrancy(.primary)
                 } else {
                     Text("Drag curve to inspect daily stats")
-                        .font(.system(size: 10))
-                        .foregroundColor(.gray)
+                        .font(.caption2)
+                        .glassVibrancy(.secondary)
                 }
             }
 

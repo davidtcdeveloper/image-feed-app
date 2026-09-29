@@ -38,6 +38,18 @@ enum AdaptiveLayoutHelper {
         #endif
     }
 
+    static func calculateItemWidthPx(screenWidth: CGFloat, columnCount: Int) -> Int {
+        let spacing: CGFloat = 8 * CGFloat(columnCount + 1)
+        let availableWidth = max(200, screenWidth - spacing)
+        let widthPt = availableWidth / CGFloat(max(1, columnCount))
+        #if os(iOS)
+        let scale = UIScreen.main.scale
+        #else
+        let scale = NSScreen.main?.backingScaleFactor ?? 2.0
+        #endif
+        return Int(widthPt * scale)
+    }
+
     static func itemsForColumn<T>(index: Int, totalColumns: Int, from items: [T]) -> [T] {
         guard totalColumns > 0 else { return [] }
         return items.enumerated()

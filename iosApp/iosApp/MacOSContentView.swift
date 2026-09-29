@@ -35,7 +35,7 @@ struct MacOSContentView: View {
                 }
             } else {
                 Text("Select a category from the sidebar")
-                    .foregroundColor(.gray)
+                    .foregroundStyle(.secondary)
             }
         }
         .frame(minWidth: 800, minHeight: 600)

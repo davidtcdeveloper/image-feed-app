@@ -12,10 +12,17 @@ struct SearchView: View {
 
     let onPhotoSelect: (String) -> Void
     let onUserSelect: (String) -> Void
+    let onCollectionSelect: (String) -> Void
 
-    init(initialQuery: String = "", onPhotoSelect: @escaping (String) -> Void, onUserSelect: @escaping (String) -> Void) {
+    init(
+        initialQuery: String = "",
+        onPhotoSelect: @escaping (String) -> Void,
+        onUserSelect: @escaping (String) -> Void,
+        onCollectionSelect: @escaping (String) -> Void)
+    {
         self.onPhotoSelect = onPhotoSelect
         self.onUserSelect = onUserSelect
+        self.onCollectionSelect = onCollectionSelect
         self._searchText = State(initialValue: initialQuery)
         self._viewModel = State(initialValue: SearchViewModel(initialQuery: initialQuery))
     }
@@ -30,7 +37,7 @@ struct SearchView: View {
 
     var body: some View {
         ZStack {
-            Color(hex: "0F0F11")
+            GlassTheme.canvasBackgroundColor
                 .ignoresSafeArea()
 
             VStack(spacing: 0) {
@@ -102,7 +109,7 @@ struct SearchView: View {
                                             Spacer()
                                         }
                                         .padding(12)
-                                        .background(Color(hex: "1E1E24"))
+                                        .background(GlassTheme.surfaceBackgroundColor)
                                         .cornerRadius(12)
                                         .shimmer()
                                     }
@@ -119,10 +126,10 @@ struct SearchView: View {
                     VStack(spacing: 8) {
                         Text("Search Failed")
                             .font(.headline)
-                            .foregroundColor(.white)
+                            .glassVibrancy(.primary)
                         Text(error)
                             .font(.subheadline)
-                            .foregroundColor(.gray)
+                            .glassVibrancy(.secondary)
                     }
                     Spacer()
                 } else {
@@ -142,28 +149,13 @@ struct SearchView: View {
                                                     id: \.id)
                                                 { photo in
                                                     let flatIndex = viewModel.photos.firstIndex(where: { $0.id == photo.id }) ?? 0
-                                                    Button(action: {
-                                                        onPhotoSelect(photo.id)
-                                                    }) {
-                                                        KFImage(URL(string: photo.urls.small))
-                                                            .placeholder {
-                                                                ZStack {
-                                                                    RoundedRectangle(cornerRadius: 12)
-                                                                        .fill(Color(hex: photo.color ?? "1E1E24"))
-                                                                    RoundedRectangle(cornerRadius: 12)
-                                                                        .fill(.ultraThinMaterial)
-                                                                    ProgressView()
-                                                                        .tint(.primary.opacity(0.6))
-                                                                }
-                                                                .aspectRatio(CGFloat(photo.width) / CGFloat(photo.height), contentMode: .fit)
-                                                            }
-                                                            .resizable()
-                                                            .aspectRatio(CGFloat(photo.width) / CGFloat(photo.height), contentMode: .fit)
-                                                            .cornerRadius(12)
-                                                            .staggeredReveal(index: flatIndex)
-                                                            .feedScrollTransition()
-                                                    }
-                                                    .buttonStyle(SpringCardButtonStyle())
+                                                    SearchPhotoGridCard(
+                                                        photo: photo,
+                                                        columnCount: columnCount,
+                                                        onPhotoSelect: { onPhotoSelect(photo.id) },
+                                                        onUserSelect: onUserSelect)
+                                                        .staggeredReveal(index: flatIndex)
+                                                        .feedScrollTransition()
                                                 }
                                             }
                                         }
@@ -178,11 +170,7 @@ struct SearchView: View {
                                 } else {
                                     ForEach(Array(viewModel.collections.enumerated()), id: \.element.id) { index, collection in
                                         Button(action: {
-                                            if let links = collection.links,
-                                               let url = URL(string: "\(links.html)?utm_source=ImageFeedApp&utm_medium=referral")
-                                            {
-                                                URLHelper.open(url)
-                                            }
+                                            onCollectionSelect(collection.id)
                                         }) {
                                             CollectionCardView(collection: collection)
                                                 .staggeredReveal(index: index)
@@ -227,45 +215,112 @@ struct SearchView: View {
                             }
                         }
                     }
+                    .refreshable {
+                        viewModel.refresh()
+                    }
                 }
             }
         }
         .navigationTitle("SEARCH")
         #if os(iOS)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
-            .toolbarBackground(.visible, for: .navigationBar)
-            .toolbarColorScheme(.dark, for: .navigationBar)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
+        .toolbarColorScheme(.dark, for: .navigationBar)
         #endif
-            .toolbar {
-                #if os(iOS)
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    GlassToolbarButton(systemName: "line.3.horizontal.decrease", accessibilityLabel: "Filter") {
-                        showFilters = true
+        .toolbar {
+            #if os(iOS)
+            ToolbarItem(placement: .navigationBarTrailing) {
+                GlassToolbarButton(systemName: "line.3.horizontal.decrease", accessibilityLabel: "Filter") {
+                    showFilters = true
+                }
+            }
+            #else
+            ToolbarItem(placement: .primaryAction) {
+                GlassToolbarButton(systemName: "line.3.horizontal.decrease", accessibilityLabel: "Filter") {
+                    showFilters = true
+                }
+            }
+            #endif
+        }
+        .searchable(text: $searchText, prompt: "Photos, collections, or users")
+        .onSubmit(of: .search) {
+            viewModel.submitSearch(query: searchText)
+        }
+        .onChange(of: searchText) { _, newValue in
+            viewModel.updateQuery(newQuery: newValue)
+        }
+        .sheet(isPresented: $showFilters) {
+            SearchFiltersSheetView(filters: viewModel.filters) { newFilters in
+                viewModel.applyFilters(
+                    orderBy: newFilters.orderBy,
+                    color: newFilters.color,
+                    orientation: newFilters.orientation)
+            }
+            .presentationDetents([.medium])
+            .presentationDragIndicator(.visible)
+        }
+    }
+}
+
+struct SearchPhotoGridCard: View {
+    let photo: Photo
+    let columnCount: Int
+    let onPhotoSelect: () -> Void
+    let onUserSelect: (String) -> Void
+
+    var body: some View {
+        let screenWidth = AdaptiveLayoutHelper.getScreenWidth()
+        let itemWidth = AdaptiveLayoutHelper.calculateItemWidthPx(screenWidth: screenWidth, columnCount: columnCount)
+        let imageUrl = photo.urls.raw + "&w=\(itemWidth)&q=80&auto=format"
+        let aspectRatio = photo.height > 0 ? CGFloat(photo.width) / CGFloat(photo.height) : 1.0
+
+        ZStack(alignment: .bottomLeading) {
+            KFImage(URL(string: imageUrl))
+                .placeholder {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color(hex: photo.color ?? "1E1E24"))
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(.ultraThinMaterial)
+                        ProgressView()
+                            .tint(.primary.opacity(0.6))
                     }
+                    .aspectRatio(aspectRatio, contentMode: .fit)
                 }
-                #else
-                ToolbarItem(placement: .primaryAction) {
-                    GlassToolbarButton(systemName: "line.3.horizontal.decrease", accessibilityLabel: "Filter") {
-                        showFilters = true
-                    }
+                .resizable()
+                .aspectRatio(aspectRatio, contentMode: .fit)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    onPhotoSelect()
                 }
-                #endif
-            }
-            .searchable(text: $searchText, prompt: "Photos, collections, or users")
-            .onChange(of: searchText) { _, newValue in
-                viewModel.updateQuery(newQuery: newValue)
-            }
-            .sheet(isPresented: $showFilters) {
-                SearchFiltersSheetView(filters: viewModel.filters) { newFilters in
-                    viewModel.applyFilters(
-                        orderBy: newFilters.orderBy,
-                        color: newFilters.color,
-                        orientation: newFilters.orientation)
+
+            // Inset Floating Glass Attribution Capsule
+            Button {
+                onUserSelect(photo.user.username)
+            } label: {
+                HStack(spacing: 6) {
+                    KFImage(URL(string: photo.user.profileImage.small))
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 20, height: 20)
+                        .clipShape(Circle())
+
+                    Text(photo.user.name)
+                        .font(.caption2.weight(.semibold))
+                        .glassVibrancy(.primary)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
                 }
-                .presentationDetents([.medium])
-                .presentationDragIndicator(.visible)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 5)
+                .glassCapsule(style: .ultraThin, showBorder: true, hasShadow: true)
             }
+            .buttonStyle(.plain)
+            .contentShape(Capsule())
+            .padding(8)
+        }
     }
 }
 
@@ -284,30 +339,30 @@ struct SearchSuggestionsView: View {
                     VStack(alignment: .leading, spacing: 12) {
                         HStack {
                             Text("RECENTS")
-                                .font(.system(size: 11, weight: .bold))
-                                .foregroundColor(.gray)
+                                .font(.caption.weight(.bold))
+                                .glassVibrancy(.secondary)
                                 .tracking(1)
                             Spacer()
                             Button("CLEAR ALL", action: onClearAll)
-                                .font(.system(size: 11, weight: .bold))
-                                .foregroundColor(.white.opacity(0.6))
+                                .font(.caption.weight(.bold))
+                                .glassVibrancy(.primary)
                         }
 
                         ForEach(history, id: \.self) { item in
                             HStack {
                                 Image(systemName: "clock.arrow.circlepath")
-                                    .foregroundColor(.gray)
-                                    .font(.system(size: 14))
+                                    .glassVibrancy(.secondary)
+                                    .font(.subheadline)
                                 Button(item) {
                                     onSelect(item)
                                 }
-                                .foregroundColor(.white)
-                                .font(.system(size: 14))
+                                .glassVibrancy(.primary)
+                                .font(.subheadline)
                                 Spacer()
                                 Button(action: { onDelete(item) }) {
                                     Image(systemName: "xmark")
-                                        .foregroundColor(.gray)
-                                        .font(.system(size: 12))
+                                        .glassVibrancy(.secondary)
+                                        .font(.caption)
                                 }
                             }
                             .padding(.vertical, 8)
@@ -317,20 +372,19 @@ struct SearchSuggestionsView: View {
 
                 VStack(alignment: .leading, spacing: 12) {
                     Text("POPULAR TOPICS")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundColor(.gray)
+                        .font(.caption.weight(.bold))
+                        .glassVibrancy(.secondary)
                         .tracking(1)
 
                     FlowLayout(spacing: 8) {
                         ForEach(popularTopics, id: \.self) { topic in
                             Button(action: { onSelect(topic) }) {
                                 Text(topic)
-                                    .font(.system(size: 13, weight: .medium))
-                                    .foregroundColor(.white)
+                                    .font(.caption.weight(.medium))
+                                    .glassVibrancy(.primary)
                                     .padding(.horizontal, 14)
                                     .padding(.vertical, 8)
-                                    .background(Color(hex: "1E1E24"))
-                                    .cornerRadius(18)
+                                    .glassCapsule(style: .ultraThin, showBorder: true)
                             }
                         }
                     }
@@ -354,19 +408,19 @@ struct CollectionCardView: View {
                     .clipped()
                     .overlay(Color.black.opacity(0.45))
             } else {
-                Color(hex: "1E1E24")
+                GlassTheme.surfaceBackgroundColor
                     .frame(height: 180)
             }
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(collection.title.uppercased())
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundColor(.white)
+                    .font(.headline.weight(.bold))
+                    .glassVibrancy(.primary)
                     .tracking(1)
 
                 Text("\(collection.totalPhotos) Photos  ·  Curated by \(collection.user.name)")
-                    .font(.system(size: 12))
-                    .foregroundColor(.gray)
+                    .font(.caption)
+                    .glassVibrancy(.secondary)
             }
             .padding(16)
         }
@@ -388,22 +442,21 @@ struct UserCardView: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(user.name)
-                    .font(.system(size: 15, weight: .bold))
-                    .foregroundColor(.white)
+                    .font(.subheadline.weight(.bold))
+                    .glassVibrancy(.primary)
                 Text("@\(user.username)")
-                    .font(.system(size: 12))
-                    .foregroundColor(.gray)
+                    .font(.caption)
+                    .glassVibrancy(.secondary)
             }
 
             Spacer()
 
             Image(systemName: "arrow.up.right")
-                .foregroundColor(.gray)
-                .font(.system(size: 14))
+                .glassVibrancy(.secondary)
+                .font(.footnote.weight(.semibold))
         }
         .padding(12)
-        .background(Color(hex: "1E1E24"))
-        .cornerRadius(12)
+        .glassCard(cornerRadius: 12, style: .ultraThin)
     }
 }
 
@@ -413,7 +466,7 @@ struct NoSearchResultsView: View {
             Spacer().frame(height: 100)
             Text("No results found.")
                 .font(.subheadline)
-                .foregroundColor(.gray)
+                .glassVibrancy(.secondary)
         }
     }
 }
@@ -465,28 +518,28 @@ struct SearchFiltersSheetView: View {
 
     var body: some View {
         ZStack {
-            Color(hex: "1E1E24")
+            GlassTheme.surfaceBackgroundColor
                 .ignoresSafeArea()
 
             VStack(alignment: .leading, spacing: 20) {
                 HStack {
                     Text("FILTERS")
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundColor(.white)
+                        .font(.headline.weight(.bold))
+                        .glassVibrancy(.primary)
                     Spacer()
                     Button("RESET") {
                         orderBy = "relevant"
                         orientation = nil
                         color = nil
                     }
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundColor(.gray)
+                    .font(.subheadline.weight(.bold))
+                    .glassVibrancy(.secondary)
                 }
 
                 VStack(alignment: .leading, spacing: 8) {
                     Text("SORT BY")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundColor(.gray)
+                        .font(.caption.weight(.bold))
+                        .glassVibrancy(.secondary)
                         .tracking(1)
 
                     HStack(spacing: 8) {
@@ -501,8 +554,8 @@ struct SearchFiltersSheetView: View {
 
                 VStack(alignment: .leading, spacing: 8) {
                     Text("ORIENTATION")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundColor(.gray)
+                        .font(.caption.weight(.bold))
+                        .glassVibrancy(.secondary)
                         .tracking(1)
 
                     HStack(spacing: 8) {
@@ -520,8 +573,8 @@ struct SearchFiltersSheetView: View {
 
                 VStack(alignment: .leading, spacing: 8) {
                     Text("COLOR TONE")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundColor(.gray)
+                        .font(.caption.weight(.bold))
+                        .glassVibrancy(.secondary)
                         .tracking(1)
 
                     ScrollView(.horizontal, showsIndicators: false) {
@@ -537,15 +590,15 @@ struct SearchFiltersSheetView: View {
                                 }) {
                                     VStack(spacing: 4) {
                                         Circle()
-                                            .fill(val == "black_and_white" ? .gray : (colorMap[val ?? ""] ?? Color(hex: "2C2C35")))
+                                            .fill(val == "black_and_white" ? .gray : (colorMap[val ?? ""] ?? GlassTheme.surfaceBackgroundColor))
                                             .frame(width: 32, height: 32)
                                             .overlay(
                                                 Circle()
                                                     .stroke(.white, lineWidth: color == val ? 2 : 0))
                                             .scaleEffect(color == val ? 1.15 : 1.0)
                                         Text(name)
-                                            .font(.system(size: 10))
-                                            .foregroundColor(.gray)
+                                            .font(.caption2)
+                                            .glassVibrancy(.secondary)
                                     }
                                 }
                             }
@@ -567,12 +620,11 @@ struct SearchFiltersSheetView: View {
                     dismiss()
                 }) {
                     Text("APPLY FILTERS")
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundColor(.black)
+                        .font(.subheadline.weight(.bold))
+                        .glassVibrancy(.primary)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 14)
-                        .background(Color.white)
-                        .cornerRadius(8)
+                        .glassBackground(style: .thin, shape: RoundedRectangle(cornerRadius: 12), showBorder: true)
                 }
             }
             .padding(20)
@@ -588,12 +640,15 @@ struct FilterButtonView: View {
     var body: some View {
         Button(action: action) {
             Text(title)
-                .font(.system(size: 11, weight: .bold))
+                .font(.caption.weight(.bold))
                 .foregroundColor(isSelected ? .black : .white)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 8)
-                .background(isSelected ? .white : Color(hex: "2C2C35"))
-                .cornerRadius(16)
+                .background(isSelected ? Color.white : GlassTheme.surfaceBackgroundColor)
+                .clipShape(Capsule())
+                .overlay(
+                    Capsule()
+                        .stroke(isSelected ? Color.clear : GlassTheme.fallbackBorderColor, lineWidth: 0.5))
         }
     }
 }

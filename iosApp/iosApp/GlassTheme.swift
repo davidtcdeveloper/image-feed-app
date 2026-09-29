@@ -7,8 +7,7 @@ public enum GlassTheme {
     public static let specularBorderGradient = LinearGradient(
         colors: [Color.white.opacity(0.28), Color.white.opacity(0.06)],
         startPoint: .topLeading,
-        endPoint: .bottomTrailing
-    )
+        endPoint: .bottomTrailing)
 
     public static let specularBorderWidth: CGFloat = 0.5
     public static let fallbackBorderWidth: CGFloat = 1.0
@@ -40,6 +39,31 @@ public enum GlassTheme {
         return Color.secondary
         #endif
     }
+
+    /// Cross-platform semantic canvas background
+    public static var canvasBackgroundColor: Color {
+        #if os(iOS)
+        return Color(uiColor: .systemBackground)
+        #elseif os(macOS)
+        return Color(nsColor: .windowBackgroundColor)
+        #else
+        return Color.black
+        #endif
+    }
+
+    /// Cross-platform secondary surface background for cards, chips, skeletons
+    public static var surfaceBackgroundColor: Color {
+        #if os(iOS)
+        return Color(uiColor: .secondarySystemBackground)
+        #elseif os(macOS)
+        return Color(nsColor: .controlBackgroundColor)
+        #else
+        return Color.secondary.opacity(0.15)
+        #endif
+    }
+
+    /// High-contrast dark scrim color (0x0A, 0x0A, 0x0C) for WCAG AAA compliance over bright imagery
+    public static let highContrastScrimColor = Color(red: 10 / 255.0, green: 10 / 255.0, blue: 12 / 255.0)
 }
 
 // MARK: - GlassStyle Presets
@@ -49,11 +73,11 @@ public enum GlassStyle {
 
     public var material: Material {
         switch self {
-        case .ultraThin: return .ultraThinMaterial
-        case .thin: return .thinMaterial
-        case .regular: return .regularMaterial
-        case .thick: return .thickMaterial
-        case .ultraThick: return .ultraThickMaterial
+        case .ultraThin: .ultraThinMaterial
+        case .thin: .thinMaterial
+        case .regular: .regularMaterial
+        case .thick: .thickMaterial
+        case .ultraThick: .ultraThickMaterial
         }
     }
 }
@@ -73,8 +97,8 @@ public struct GlassBackgroundModifier<S: InsettableShape>: ViewModifier {
         material: Material = .ultraThinMaterial,
         shape: S,
         showBorder: Bool = true,
-        hasShadow: Bool = false
-    ) {
+        hasShadow: Bool = false)
+    {
         self.material = material
         self.shape = shape
         self.showBorder = showBorder
@@ -85,8 +109,8 @@ public struct GlassBackgroundModifier<S: InsettableShape>: ViewModifier {
         style: GlassStyle,
         shape: S,
         showBorder: Bool = true,
-        hasShadow: Bool = false
-    ) {
+        hasShadow: Bool = false)
+    {
         self.init(material: style.material, shape: shape, showBorder: showBorder, hasShadow: hasShadow)
     }
 
@@ -120,8 +144,7 @@ public struct GlassBackgroundModifier<S: InsettableShape>: ViewModifier {
                 color: GlassTheme.shadowColor,
                 radius: GlassTheme.shadowRadius,
                 x: GlassTheme.shadowX,
-                y: GlassTheme.shadowY
-            )
+                y: GlassTheme.shadowY)
         } else {
             base
         }
@@ -151,8 +174,8 @@ public struct GlassContainer<Content: View, S: InsettableShape>: View {
         material: Material = .ultraThinMaterial,
         showBorder: Bool = true,
         hasShadow: Bool = false,
-        @ViewBuilder content: () -> Content
-    ) {
+        @ViewBuilder content: () -> Content)
+    {
         self.shape = shape
         self.material = material
         self.showBorder = showBorder
@@ -165,8 +188,8 @@ public struct GlassContainer<Content: View, S: InsettableShape>: View {
         style: GlassStyle,
         showBorder: Bool = true,
         hasShadow: Bool = false,
-        @ViewBuilder content: () -> Content
-    ) {
+        @ViewBuilder content: () -> Content)
+    {
         self.init(shape: shape, material: style.material, showBorder: showBorder, hasShadow: hasShadow, content: content)
     }
 
@@ -176,9 +199,7 @@ public struct GlassContainer<Content: View, S: InsettableShape>: View {
                 material: material,
                 shape: shape,
                 showBorder: showBorder,
-                hasShadow: hasShadow
-            )
-        )
+                hasShadow: hasShadow))
     }
 }
 
@@ -188,15 +209,14 @@ public extension GlassContainer where S == RoundedRectangle {
         material: Material = .thinMaterial,
         showBorder: Bool = true,
         hasShadow: Bool = true,
-        @ViewBuilder content: () -> Content
-    ) {
+        @ViewBuilder content: () -> Content)
+    {
         self.init(
             shape: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous),
             material: material,
             showBorder: showBorder,
             hasShadow: hasShadow,
-            content: content
-        )
+            content: content)
     }
 
     init(
@@ -204,15 +224,14 @@ public extension GlassContainer where S == RoundedRectangle {
         style: GlassStyle,
         showBorder: Bool = true,
         hasShadow: Bool = true,
-        @ViewBuilder content: () -> Content
-    ) {
+        @ViewBuilder content: () -> Content)
+    {
         self.init(
             shape: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous),
             material: style.material,
             showBorder: showBorder,
             hasShadow: hasShadow,
-            content: content
-        )
+            content: content)
     }
 }
 
@@ -220,22 +239,22 @@ public extension GlassContainer where S == RoundedRectangle {
 
 public extension View {
     /// Applies a glass material background with specular border and accessibility fallbacks.
-    func glassBackground<S: InsettableShape>(
+    func glassBackground(
         material: Material = .ultraThinMaterial,
-        shape: S,
+        shape: some InsettableShape,
         showBorder: Bool = true,
-        hasShadow: Bool = false
-    ) -> some View {
+        hasShadow: Bool = false) -> some View
+    {
         modifier(GlassBackgroundModifier(material: material, shape: shape, showBorder: showBorder, hasShadow: hasShadow))
     }
 
     /// Applies a glass material background with specular border using a GlassStyle preset.
-    func glassBackground<S: InsettableShape>(
+    func glassBackground(
         style: GlassStyle,
-        shape: S,
+        shape: some InsettableShape,
         showBorder: Bool = true,
-        hasShadow: Bool = false
-    ) -> some View {
+        hasShadow: Bool = false) -> some View
+    {
         glassBackground(material: style.material, shape: shape, showBorder: showBorder, hasShadow: hasShadow)
     }
 
@@ -243,8 +262,8 @@ public extension View {
     func glassCapsule(
         material: Material = .ultraThinMaterial,
         showBorder: Bool = true,
-        hasShadow: Bool = false
-    ) -> some View {
+        hasShadow: Bool = false) -> some View
+    {
         glassBackground(material: material, shape: Capsule(), showBorder: showBorder, hasShadow: hasShadow)
     }
 
@@ -252,8 +271,8 @@ public extension View {
     func glassCapsule(
         style: GlassStyle,
         showBorder: Bool = true,
-        hasShadow: Bool = false
-    ) -> some View {
+        hasShadow: Bool = false) -> some View
+    {
         glassCapsule(material: style.material, showBorder: showBorder, hasShadow: hasShadow)
     }
 
@@ -262,14 +281,13 @@ public extension View {
         cornerRadius: CGFloat = 16,
         material: Material = .thinMaterial,
         showBorder: Bool = true,
-        hasShadow: Bool = true
-    ) -> some View {
+        hasShadow: Bool = true) -> some View
+    {
         glassBackground(
             material: material,
             shape: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous),
             showBorder: showBorder,
-            hasShadow: hasShadow
-        )
+            hasShadow: hasShadow)
     }
 
     /// Convenience modifier for rounded glass cards using a GlassStyle preset.
@@ -277,8 +295,8 @@ public extension View {
         cornerRadius: CGFloat = 16,
         style: GlassStyle,
         showBorder: Bool = true,
-        hasShadow: Bool = true
-    ) -> some View {
+        hasShadow: Bool = true) -> some View
+    {
         glassCard(cornerRadius: cornerRadius, material: style.material, showBorder: showBorder, hasShadow: hasShadow)
     }
 }
@@ -294,10 +312,10 @@ public extension View {
     @ViewBuilder
     func glassVibrancy(_ vibrancy: GlassVibrancy = .primary) -> some View {
         switch vibrancy {
-        case .primary: self.foregroundStyle(.primary)
-        case .secondary: self.foregroundStyle(.secondary)
-        case .tertiary: self.foregroundStyle(.tertiary)
-        case .quaternary: self.foregroundStyle(.quaternary)
+        case .primary: foregroundStyle(.primary)
+        case .secondary: foregroundStyle(.secondary)
+        case .tertiary: foregroundStyle(.tertiary)
+        case .quaternary: foregroundStyle(.quaternary)
         }
     }
 }
@@ -312,8 +330,8 @@ public struct GlassToolbarButton: View {
     public init(
         systemName: String,
         accessibilityLabel: String? = nil,
-        action: @escaping () -> Void
-    ) {
+        action: @escaping () -> Void)
+    {
         self.systemName = systemName
         self.accessibilityLabel = accessibilityLabel
         self.action = action
@@ -339,9 +357,8 @@ public struct GlassToolbarButton: View {
         LinearGradient(
             colors: [.indigo, .purple, .black],
             startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
-        .ignoresSafeArea()
+            endPoint: .bottomTrailing)
+            .ignoresSafeArea()
 
         VStack(spacing: 20) {
             // Capsule Demo
@@ -380,8 +397,7 @@ public struct GlassToolbarButton: View {
                         .glassVibrancy(.primary)
                         .padding(12)
                         .glassBackground(style: .ultraThin, shape: Circle())
-                }
-            )
+                })
         }
         .padding()
     }

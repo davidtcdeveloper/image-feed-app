@@ -42,6 +42,7 @@ Replace the full-width linear gradient bottom scrim in both `PhotoCard` (`Conten
 * **Design System Integration**: Use `.glassCapsule(style: .ultraThin, showBorder: true, hasShadow: true)` from `GlassTheme.swift` to automatically support specular gradient borders and high-contrast accessibility fallbacks.
 * **Typography & Dynamic Type**: Bind text to semantic typography scales (`.font(.caption2.weight(.semibold))`) and apply `.glassVibrancy(.primary)` conforming to Apple HIG.
 * **Touch Targets & Gesture Isolation**: Isolate capsule interaction using `.contentShape(Capsule())` and a dedicated `Button` so tapping photographer attribution consistently routes to their in-app profile (`onUserSelect(photo.user.username)`, per Spec 33) across all card grids rather than launching an external browser.
+* **Cross-Platform Attribution Parity Note**: While iOS/macOS leverages this inset floating translucent glass pill (`.glassCapsule`) per Apple HIG, Android uses the Material 3 dark gradient scrim (documented in Spec 25). Both platforms consistently fulfill Unsplash API attribution rules and navigate in-app to photographer profiles.
 * **Layout Blueprint**:
   ```swift
   ZStack(alignment: .bottomLeading) {

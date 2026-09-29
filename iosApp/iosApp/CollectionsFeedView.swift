@@ -25,7 +25,7 @@ struct CollectionsFeedView: View {
             let cardWidth = max(200, (containerWidth - totalSpacing) / CGFloat(max(1, columnCount)))
 
             ZStack {
-                Color(hex: "0F0F11")
+                GlassTheme.canvasBackgroundColor
                     .ignoresSafeArea()
 
                 if viewModel.collections.isEmpty, viewModel.isLoading {
@@ -64,8 +64,7 @@ struct CollectionsFeedView: View {
                                     let columnCollections = AdaptiveLayoutHelper.itemsForColumn(
                                         index: colIndex,
                                         totalColumns: columnCount,
-                                        from: viewModel.collections
-                                    )
+                                        from: viewModel.collections)
                                     LazyVStack(spacing: 16) {
                                         ForEach(columnCollections, id: \.id) { collection in
                                             Button {
@@ -75,9 +74,8 @@ struct CollectionsFeedView: View {
                                                     collection: collection,
                                                     viewModel: viewModel,
                                                     cardWidth: cardWidth,
-                                                    columnCount: columnCount
-                                                )
-                                                .feedScrollTransition()
+                                                    columnCount: columnCount)
+                                                    .feedScrollTransition()
                                             }
                                             .buttonStyle(SpringCardButtonStyle())
                                         }
@@ -102,10 +100,9 @@ struct CollectionsFeedView: View {
                                             collection: collection,
                                             viewModel: viewModel,
                                             cardWidth: cardWidth,
-                                            columnCount: 1
-                                        )
-                                        .staggeredReveal(index: index)
-                                        .feedScrollTransition()
+                                            columnCount: 1)
+                                            .staggeredReveal(index: index)
+                                            .feedScrollTransition()
                                     }
                                     .buttonStyle(SpringCardButtonStyle())
                                 }
@@ -128,26 +125,26 @@ struct CollectionsFeedView: View {
         }
         .navigationTitle("COLLECTIONS")
         #if os(iOS)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
-            .toolbarBackground(.visible, for: .navigationBar)
-            .toolbarColorScheme(.dark, for: .navigationBar)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
+        .toolbarColorScheme(.dark, for: .navigationBar)
         #endif
-            .toolbar {
-                #if os(iOS)
-                ToolbarItem(placement: .navigationBarLeading) {
-                    GlassToolbarButton(systemName: "magnifyingglass", accessibilityLabel: "Search") {
-                        onSearchClick()
-                    }
+        .toolbar {
+            #if os(iOS)
+            ToolbarItem(placement: .navigationBarLeading) {
+                GlassToolbarButton(systemName: "magnifyingglass", accessibilityLabel: "Search") {
+                    onSearchClick()
                 }
-                #else
-                ToolbarItem(placement: .navigation) {
-                    GlassToolbarButton(systemName: "magnifyingglass", accessibilityLabel: "Search") {
-                        onSearchClick()
-                    }
-                }
-                #endif
             }
+            #else
+            ToolbarItem(placement: .navigation) {
+                GlassToolbarButton(systemName: "magnifyingglass", accessibilityLabel: "Search") {
+                    onSearchClick()
+                }
+            }
+            #endif
+        }
     }
 }
 
@@ -158,7 +155,7 @@ struct CollectionMosaicCard: View {
     var columnCount: Int = 1
 
     var body: some View {
-        let width = Int(cardWidth ?? max(200, (AdaptiveLayoutHelper.getScreenWidth() - 24)))
+        let width = Int(cardWidth ?? max(200, AdaptiveLayoutHelper.getScreenWidth() - 24))
         let sideWidth = width / 3
 
         VStack(alignment: .leading, spacing: 0) {
@@ -292,7 +289,8 @@ struct CollectionMosaicCard: View {
         }
         .onAppear {
             if let lastIndex = viewModel.collections.lastIndex(where: { $0.id == collection.id }),
-               lastIndex >= viewModel.collections.count - max(4, columnCount * 2) {
+               lastIndex >= viewModel.collections.count - max(4, columnCount * 2)
+            {
                 viewModel.loadNextPage()
             }
         }

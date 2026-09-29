@@ -60,6 +60,9 @@ struct CollectionsFeedTabView: View {
                             },
                             onCollectionSelect: { relId in
                                 path.append(CollectionPathItem(id: relId, type: .collection))
+                            },
+                            onUserSelect: { username in
+                                path.append(CollectionPathItem(id: username, type: .user))
                             })
                     case .photo:
                         PhotoDetailsView(
@@ -88,6 +91,9 @@ struct CollectionsFeedTabView: View {
                             },
                             onUserSelect: { username in
                                 path.append(CollectionPathItem(id: username, type: .user))
+                            },
+                            onCollectionSelect: { colId in
+                                path.append(CollectionPathItem(id: colId, type: .collection))
                             })
                     }
                 }
@@ -142,7 +148,7 @@ struct PhotosFeedTabView: View {
     var body: some View {
         NavigationStack(path: $path) {
             ZStack {
-                Color(hex: "0F0F11")
+                GlassTheme.canvasBackgroundColor
                     .ignoresSafeArea()
 
                 if viewModel.photos.isEmpty, viewModel.isLoading {
@@ -170,8 +176,8 @@ struct PhotosFeedTabView: View {
                                     LazyVStack(spacing: 8) {
                                         ForEach(
                                             AdaptiveLayoutHelper.photosForColumn(index: colIndex, totalColumns: columnCount, from: viewModel.photos),
-                                            id: \.id
-                                        ) { photo in
+                                            id: \.id)
+                                        { photo in
                                             PhotoCard(
                                                 photo: photo,
                                                 viewModel: viewModel,
@@ -217,8 +223,8 @@ struct PhotosFeedTabView: View {
                                     .tint(.white)
                                     .controlSize(.large)
                                 Text("🎲 Shaking up a random photo...")
-                                    .foregroundColor(.white)
                                     .font(.headline)
+                                    .glassVibrancy(.primary)
                             }
                         }
                 }
@@ -250,88 +256,94 @@ struct PhotosFeedTabView: View {
             }
             .navigationTitle("FEED")
             #if os(iOS)
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
-                .toolbarBackground(.visible, for: .navigationBar)
-                .toolbarColorScheme(.dark, for: .navigationBar)
-                .toolbar(selectedPhotoForHero != nil ? .hidden : .visible, for: .navigationBar)
-                .toolbar(selectedPhotoForHero != nil ? .hidden : .automatic, for: .tabBar)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
+            .toolbar(selectedPhotoForHero != nil ? .hidden : .visible, for: .navigationBar)
+            .toolbar(selectedPhotoForHero != nil ? .hidden : .automatic, for: .tabBar)
             #endif
-                .toolbar {
-                    #if os(iOS)
-                    ToolbarItem(placement: .navigationBarLeading) {
-                        GlassToolbarButton(systemName: "magnifyingglass", accessibilityLabel: "Search") {
-                            path.append(FeedPathItem(id: "", type: .search))
-                        }
-                        .keyboardShortcut("f", modifiers: .command)
+            .toolbar {
+                #if os(iOS)
+                ToolbarItem(placement: .navigationBarLeading) {
+                    GlassToolbarButton(systemName: "magnifyingglass", accessibilityLabel: "Search") {
+                        path.append(FeedPathItem(id: "", type: .search))
                     }
-                    ToolbarItem(placement: .navigationBarTrailing) {
-                        GlassToolbarButton(systemName: "shuffle", accessibilityLabel: "Shuffle") {
-                            handleShake()
-                        }
-                        .keyboardShortcut("s", modifiers: .command)
-                    }
-                    #else
-                    ToolbarItem(placement: .navigation) {
-                        GlassToolbarButton(systemName: "magnifyingglass", accessibilityLabel: "Search") {
-                            path.append(FeedPathItem(id: "", type: .search))
-                        }
-                        .keyboardShortcut("f", modifiers: .command)
-                    }
-                    ToolbarItem(placement: .primaryAction) {
-                        GlassToolbarButton(systemName: "shuffle", accessibilityLabel: "Shuffle") {
-                            handleShake()
-                        }
-                        .keyboardShortcut("s", modifiers: .command)
-                    }
-                    #endif
+                    .keyboardShortcut("f", modifiers: .command)
                 }
-                .sensoryFeedback(.selection, trigger: viewModel.selectedTopicSlug)
-                .sensoryFeedback(.impact(weight: .medium), trigger: shakeFeedbackTrigger)
-                .navigationDestination(for: FeedPathItem.self) { item in
-                    switch item.type {
-                    case .photo:
-                        PhotoDetailsView(
-                            photoId: item.id,
-                            heroNamespace: heroNamespace,
-                            onUserSelect: { username in
-                                path.append(FeedPathItem(id: username, type: .user))
-                            },
-                            onTagSelect: { tag in
-                                path.append(FeedPathItem(id: tag, type: .search))
-                            })
-                    case .user:
-                        UserProfileView(
-                            username: item.id,
-                            onPhotoSelect: { photoId in
-                                path.append(FeedPathItem(id: photoId, type: .photo))
-                            },
-                            onCollectionSelect: { colId in
-                                path.append(FeedPathItem(id: colId, type: .collection))
-                            })
-                    case .collection:
-                        CollectionDetailView(
-                            collectionId: item.id,
-                            onPhotoSelect: { photoId in
-                                path.append(FeedPathItem(id: photoId, type: .photo))
-                            },
-                            onCollectionSelect: { colId in
-                                path.append(FeedPathItem(id: colId, type: .collection))
-                            })
-                    case .search:
-                        SearchView(
-                            initialQuery: item.id,
-                            onPhotoSelect: { photoId in
-                                path.append(FeedPathItem(id: photoId, type: .photo))
-                            },
-                            onUserSelect: { username in
-                                path.append(FeedPathItem(id: username, type: .user))
-                            })
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    GlassToolbarButton(systemName: "shuffle", accessibilityLabel: "Shuffle") {
+                        handleShake()
                     }
+                    .keyboardShortcut("s", modifiers: .command)
                 }
-                .onShake {
-                    handleShake()
+                #else
+                ToolbarItem(placement: .navigation) {
+                    GlassToolbarButton(systemName: "magnifyingglass", accessibilityLabel: "Search") {
+                        path.append(FeedPathItem(id: "", type: .search))
+                    }
+                    .keyboardShortcut("f", modifiers: .command)
                 }
+                ToolbarItem(placement: .primaryAction) {
+                    GlassToolbarButton(systemName: "shuffle", accessibilityLabel: "Shuffle") {
+                        handleShake()
+                    }
+                    .keyboardShortcut("s", modifiers: .command)
+                }
+                #endif
+            }
+            .sensoryFeedback(.selection, trigger: viewModel.selectedTopicSlug)
+            .sensoryFeedback(.impact(weight: .medium), trigger: shakeFeedbackTrigger)
+            .navigationDestination(for: FeedPathItem.self) { item in
+                switch item.type {
+                case .photo:
+                    PhotoDetailsView(
+                        photoId: item.id,
+                        heroNamespace: heroNamespace,
+                        onUserSelect: { username in
+                            path.append(FeedPathItem(id: username, type: .user))
+                        },
+                        onTagSelect: { tag in
+                            path.append(FeedPathItem(id: tag, type: .search))
+                        })
+                case .user:
+                    UserProfileView(
+                        username: item.id,
+                        onPhotoSelect: { photoId in
+                            path.append(FeedPathItem(id: photoId, type: .photo))
+                        },
+                        onCollectionSelect: { colId in
+                            path.append(FeedPathItem(id: colId, type: .collection))
+                        })
+                case .collection:
+                    CollectionDetailView(
+                        collectionId: item.id,
+                        onPhotoSelect: { photoId in
+                            path.append(FeedPathItem(id: photoId, type: .photo))
+                        },
+                        onCollectionSelect: { colId in
+                            path.append(FeedPathItem(id: colId, type: .collection))
+                        },
+                        onUserSelect: { username in
+                            path.append(FeedPathItem(id: username, type: .user))
+                        })
+                case .search:
+                    SearchView(
+                        initialQuery: item.id,
+                        onPhotoSelect: { photoId in
+                            path.append(FeedPathItem(id: photoId, type: .photo))
+                        },
+                        onUserSelect: { username in
+                            path.append(FeedPathItem(id: username, type: .user))
+                        },
+                        onCollectionSelect: { colId in
+                            path.append(FeedPathItem(id: colId, type: .collection))
+                        })
+                }
+            }
+            .onShake {
+                handleShake()
+            }
         }
     }
 
@@ -341,8 +353,8 @@ struct PhotosFeedTabView: View {
                 CategoryTabButton(
                     title: "Editorial",
                     isSelected: viewModel.selectedTopicSlug == "editorial",
-                    namespace: categoryNamespace
-                ) {
+                    namespace: categoryNamespace)
+                {
                     withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                         viewModel.selectTopic(slug: "editorial")
                     }
@@ -360,8 +372,8 @@ struct PhotosFeedTabView: View {
                         CategoryTabButton(
                             title: topic.title,
                             isSelected: viewModel.selectedTopicSlug == topic.slug,
-                            namespace: categoryNamespace
-                        ) {
+                            namespace: categoryNamespace)
+                        {
                             withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                                 viewModel.selectTopic(slug: topic.slug)
                             }
@@ -379,11 +391,10 @@ struct PhotosFeedTabView: View {
                     .init(color: .clear, location: 0),
                     .init(color: .black, location: 0.04),
                     .init(color: .black, location: 0.96),
-                    .init(color: .clear, location: 1.0)
+                    .init(color: .clear, location: 1.0),
                 ],
                 startPoint: .leading,
-                endPoint: .trailing
-            )
+                endPoint: .trailing)
         }
         .glassBackground(style: .ultraThin, shape: Capsule(), showBorder: true, hasShadow: true)
         .padding(.horizontal, 12)
@@ -432,6 +443,17 @@ struct CategoryTabButton: View {
 }
 
 struct PhotoCard: View {
+    #if os(iOS)
+    @Environment(\.horizontalSizeClass) var sizeClass
+    private var columnCount: Int {
+        AdaptiveLayoutHelper.getColumnCount(sizeClass: sizeClass)
+    }
+    #else
+    private var columnCount: Int {
+        AdaptiveLayoutHelper.getColumnCount()
+    }
+    #endif
+
     let photo: Photo
     let viewModel: FeedViewModel
     let heroNamespace: Namespace.ID
@@ -441,7 +463,7 @@ struct PhotoCard: View {
 
     var body: some View {
         let screenWidth = AdaptiveLayoutHelper.getScreenWidth()
-        let itemWidth = Int(screenWidth / 2)
+        let itemWidth = AdaptiveLayoutHelper.calculateItemWidthPx(screenWidth: screenWidth, columnCount: columnCount)
 
         // Dynamically resize image requesting only the resolution required by container
         let imageUrl = photo.urls.raw + "&w=\(itemWidth)&q=80&auto=format"
@@ -506,7 +528,9 @@ struct PhotoCard: View {
     }
 
     private func contentRatio(photoWidth: Int, photoHeight: Int) -> CGFloat {
-        if photoWidth <= 0 || photoHeight <= 0 { return 1.0 }
+        if photoWidth <= 0 || photoHeight <= 0 {
+            return 1.0
+        }
         return CGFloat(photoWidth) / CGFloat(photoHeight)
     }
 }
@@ -519,22 +543,21 @@ struct ErrorView: View {
         VStack(spacing: 12) {
             Text("Error Loading Feed")
                 .font(.headline)
-                .foregroundColor(.white)
+                .glassVibrancy(.primary)
 
             Text(error)
                 .font(.subheadline)
-                .foregroundColor(.gray)
+                .glassVibrancy(.secondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 24)
 
             Button(action: onRetry) {
                 Text("Retry")
-                    .fontWeight(.medium)
-                    .foregroundColor(.black)
+                    .font(.subheadline.weight(.semibold))
+                    .glassVibrancy(.primary)
                     .padding(.horizontal, 24)
-                    .padding(.vertical, 8)
-                    .background(Color.white)
-                    .cornerRadius(20)
+                    .padding(.vertical, 10)
+                    .glassBackground(style: .thin, shape: Capsule(), showBorder: true)
             }
         }
     }

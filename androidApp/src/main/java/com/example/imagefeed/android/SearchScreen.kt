@@ -1,7 +1,5 @@
 package com.example.imagefeed.android
 
-import android.content.Intent
-import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
@@ -82,7 +80,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil3.compose.LocalPlatformContext
 import coil3.compose.rememberAsyncImagePainter
 import com.example.imagefeed.android.adaptive.LocalAdaptiveLayoutInfo
 import com.example.imagefeed.android.util.CollectionMosaicCardSkeleton
@@ -106,6 +103,7 @@ fun SearchScreen(
     onBack: () -> Unit,
     onPhotoClick: (Photo) -> Unit,
     onUserClick: (User) -> Unit,
+    onCollectionClick: (CollectionSummary) -> Unit,
 ) {
     val presenter = remember { MetroHelper.getUnifiedSearchPresenter() }
     DisposableEffect(presenter) {
@@ -369,6 +367,7 @@ fun SearchScreen(
                                         collections = state.collections,
                                         isLoadingMore = state.isLoadingMore,
                                         onLoadMore = { presenter.loadNextPage() },
+                                        onCollectionClick = onCollectionClick,
                                     )
                                 }
                             }
@@ -601,8 +600,8 @@ fun CollectionsResultList(
     collections: List<CollectionSummary>,
     isLoadingMore: Boolean,
     onLoadMore: () -> Unit,
+    onCollectionClick: (CollectionSummary) -> Unit,
 ) {
-    val context = LocalPlatformContext.current
     val listState = rememberLazyStaggeredGridState() // staggered grid with 1 column as flexible list
 
     val shouldLoadMore =
@@ -637,13 +636,7 @@ fun CollectionsResultList(
             CollectionRowCard(
                 collection = collection,
                 modifier = Modifier.staggeredEntrance(index),
-                onClick = {
-                    collection.links?.html?.let { link ->
-                        val url = "$link?utm_source=ImageFeedApp&utm_medium=referral"
-                        val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-                        context.startActivity(browserIntent)
-                    }
-                },
+                onClick = { onCollectionClick(collection) },
             )
         }
 
