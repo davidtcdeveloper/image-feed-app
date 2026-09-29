@@ -65,6 +65,8 @@ The `specs/` folder currently contains the following implementation and design d
 *   `specs/30_ios_interactive_sheet_and_sensory_experience.md`
 *   `specs/31_readme_and_navigation_documentation.md`
 *   `specs/32_agent_rules_modernization.md`
+*   `specs/33_cross_platform_parity_and_token_hardening.md`
+*   `specs/34_agent_tooling_and_verification_rules.md`
 *   `specs/implementation_plan.md`
 *   `specs/steps.md`
 
@@ -485,4 +487,38 @@ These are the spec files that the implementation notes and planning references s
     *   Update `iosApp/project.yml` pre-build scripts for `iosApp` and `macosApp` to include `OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED` shell check, aligning with `project.pbxproj`.
 3.  **Reference Specification:**
     *   Track blueprint in `specs/32_agent_rules_modernization.md`.
+
+### Step 35: Cross-Platform Parity, Token Hardening & Navigation Reconciliation (Planned)
+1.  **Reconcile Search Navigation:**
+    *   Wire in-app `CollectionDetails` navigation on both Android (`SearchScreen.kt` -> `Screen.CollectionDetails`) and iOS (`SearchView.swift` -> `CollectionPathItem`) instead of external browser links.
+2.  **Harmonize iOS Search State & Pull-to-Refresh:**
+    *   Bind `viewModel.isRefreshing` to `.refreshable` in `SearchView.swift` and connect search query submission to `viewModel.submitSearch`.
+3.  **Harden iOS Design Tokens:**
+    *   Eliminate remaining raw hex values (`#0F0F11`, `#1E1E24`, `#2C2C35`) and ad-hoc `.font(.system(size: ...))` across `SearchView`, `CollectionsFeedView`, `UserProfileView`, `CollectionDetailView`, and `PhotoDetailsView`.
+4.  **Enforce Unsplash Attribution & Compliance Parity:**
+    *   Add floating attribution capsules to iOS photo search results and route photographer attribution clicks in `CollectionDetailView` to in-app `UserProfileView`.
+5.  **Dynamic CDN Resizing on iOS:**
+    *   Implement column-aware item width calculations across all iOS photo grids to match Android's dynamic sizing.
+6.  **Standardize Controls & Hero Animations:**
+    *   Adopt `GlassToolbarButton` / `GlassTheme` on `PhotoDetailsView` floating buttons and expand `matchedGeometryEffect` where applicable.
+7.  **Reference Specification:**
+    *   Track blueprint in `specs/33_cross_platform_parity_and_token_hardening.md`.
+
+### Step 36: Agent Tooling, Sandbox Execution & Verification Modernization (Planned)
+1.  **Sandbox Execution & Environment Permissions:**
+    *   Document the requirement for `BypassSandbox: true` when running host build/test/lint commands (`./gradlew`, `xcodebuild`, `xcodegen`, `swiftlint`, `swiftformat`) in `AGENTS.md` and `ai-rules/build-and-deps.md`.
+2.  **Diagnostics & Compiler Warning Resolution:**
+    *   Remove nonexistent `analyze_file` tool reference from `AGENTS.md` and replace with deterministic compiler verification sequences across Kotlin, Swift, and static analysis tools.
+3.  **Swift Formatting & Baseline Cleanup:**
+    *   Document `swiftformat .` as the primary Swift auto-formatting command in `AGENTS.md` and `ai-rules/build-and-deps.md`.
+    *   Format existing Swift sources across `iosApp/` to establish a clean zero-violation baseline for `swiftformat --lint .`.
+4.  **Dynamic Rule Loading Routing:**
+    *   Update `ai-rules/rule-loading.md` to include `build-and-deps.md` for iOS/macOS UI tasks, and add routing paths for build diagnostics, linting, and test authoring.
+5.  **Testing Strategy & Scaffolding Standards:**
+    *   Expand `ai-rules/testing.md` to document the canonical presenter test harness (`TestPresenterScopeFactory`, `TestDispatcherProvider`, `FakeUnsplashRepository`) and clarify platform test target boundaries.
+6.  **Tooling & MCP Integration Guidelines:**
+    *   Specify the requirement to run `xcodegen generate --spec iosApp/project.yml` prior to running Xcode CLI or Xcode MCP build tools whenever project files or settings are modified.
+7.  **Reference Specification:**
+    *   Track blueprint in `specs/34_agent_tooling_and_verification_rules.md`.
+
 
