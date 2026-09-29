@@ -18,6 +18,7 @@ This spec covers complete tokenization across all six primary Android screen fil
     *   On-scrim primary text (titles, photographer names) is standardized to `Color.White` (or dedicated on-media token).
     *   On-scrim secondary text (counts, handles, subtitles) is standardized to `Color.White.copy(alpha = 0.8f)` (or dedicated on-media variant token).
     *   This is documented as an approved media-overlay exception per Material 3 guidelines for full-bleed photography.
+    *   *Note on Cross-Platform Parity:* While Android uses this approved Material 3 photographic dark gradient scrim for feed cards, iOS/macOS utilizes an inset floating frosted glass capsule (`.glassCapsule(style: .ultraThin)` per Spec 29 & Spec 33) to adhere to Apple HIG translucency standards. Both platforms route photographer attribution to the in-app user profile.
 
 ### 2. Domain-Specific Content Color Exception
 *   **Search Filter Swatches:** In `SearchScreen.kt`, the `colorHexes` map defining Unsplash photo color filters (`"yellow"` -> `Color(0xFFFFEB3B)`, `"blue"` -> `Color(0xFF2196F3)`, etc.) represents photographic domain content rather than UI theme tokens.

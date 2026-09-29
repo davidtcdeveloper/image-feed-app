@@ -159,4 +159,7 @@ Refer to the `specs/` folder for detailed implementation details:
 *   [iOS Interactive Sheet & Sensory Experience](file:///Users/davidtiagoconceicao/Developer/image-feed-app/specs/30_ios_interactive_sheet_and_sensory_experience.md)
 *   [README & Navigation Architecture](file:///Users/davidtiagoconceicao/Developer/image-feed-app/specs/31_readme_and_navigation_documentation.md)
 *   [Agent Rules Modernization](file:///Users/davidtiagoconceicao/Developer/image-feed-app/specs/32_agent_rules_modernization.md)
+*   [Cross-Platform Parity & Token Hardening](file:///Users/davidtiagoconceicao/Developer/image-feed-app/specs/33_cross_platform_parity_and_token_hardening.md)
+*   [Agent Tooling & Verification Rules](file:///Users/davidtiagoconceicao/Developer/image-feed-app/specs/34_agent_tooling_and_verification_rules.md)
+
 
