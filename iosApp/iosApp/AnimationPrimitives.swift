@@ -57,17 +57,15 @@ struct ShimmerModifier: ViewModifier {
                         stops: [
                             .init(color: .clear, location: 0.3),
                             .init(color: .white.opacity(0.12), location: 0.5),
-                            .init(color: .clear, location: 0.7)
+                            .init(color: .clear, location: 0.7),
                         ],
                         startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                    .rotationEffect(.degrees(20))
-                    .offset(x: phase * geo.size.width * 1.5)
-                    .frame(width: geo.size.width, height: geo.size.height)
+                        endPoint: .bottomTrailing)
+                        .rotationEffect(.degrees(20))
+                        .offset(x: phase * geo.size.width * 1.5)
+                        .frame(width: geo.size.width, height: geo.size.height)
                 }
-                .mask(content)
-            )
+                .mask(content))
             .onAppear {
                 withAnimation(.linear(duration: duration).repeatForever(autoreverses: false)) {
                     phase = 1.0
@@ -179,7 +177,7 @@ struct UserProfileHeaderSkeleton: View {
 extension View {
     /// Applies native iOS 17 / macOS 14 scroll transition with subtle depth scaling and opacity fade.
     func feedScrollTransition() -> some View {
-        self.scrollTransition(topLeading: .interactive, bottomTrailing: .interactive) { content, phase in
+        scrollTransition(topLeading: .interactive, bottomTrailing: .interactive) { content, phase in
             content
                 .scaleEffect(phase.isIdentity ? 1.0 : 0.96)
                 .opacity(phase.isIdentity ? 1.0 : 0.85)

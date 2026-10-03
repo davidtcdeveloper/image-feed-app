@@ -3,8 +3,7 @@ import SwiftUI
 
 @main
 struct IOSApp: App {
-    init() {
-    }
+    init() {}
 
     var body: some Scene {
         WindowGroup {
