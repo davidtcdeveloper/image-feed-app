@@ -584,14 +584,15 @@ These are the spec files that the implementation notes and planning references s
 ### Step 41: Universal Agent Guidelines, Skills & Rules Migration (Completed)
 1.  **Skills Packaging & Multi-Harness Discovery:**
     *   Create dedicated workspace skills in `.agents/skills/` using the universal Agent Skills standard (`SKILL.md` with YAML frontmatter):
+        - `kmp-architecture/SKILL.md` (shared boundaries, Presenter pattern, Metro DI, coroutine scopes).
         - `verification-and-linting/SKILL.md` (build commands, toolchain verification, linting/formatting runbooks).
         - `kmp-testing/SKILL.md` (shared presenter test scaffolding, fake repositories, testing execution).
         - `android-m3-design/SKILL.md` (Material 3 tokens, Navigation 3, predictive back, adaptive layouts).
         - `ios-glass-design/SKILL.md` (GlassTheme tokens, materials, detented sheets, sensory feedback).
     *   Create root `GEMINI.md` pointer document directing Android Studio / Gemini to load `AGENTS.md`.
     *   Create `skills -> .agents/skills` symlink for OpenCode CLI and root-level scanning harnesses.
-2.  **Invariants Consolidation in `AGENTS.md`:**
-    *   Consolidate critical architecture, security, commit format, and hygiene policies directly into `AGENTS.md`.
+2.  **Invariants Consolidation & Context Optimization in `AGENTS.md`:**
+    *   Consolidate critical architecture boundaries, security, commit format, and hygiene policies directly into a lean `AGENTS.md` (< 70 lines) to eliminate prompt bloat.
     *   Embed a markdown-linked Skills Catalog in `AGENTS.md` as a universal fallback for harnesses without native dynamic skill discovery.
 3.  **Deprecation of `ai-rules/` & Routing Streamlining:**
     *   Remove `ai-rules/rule-loading.md` and completely delete the legacy `ai-rules/` directory to keep the project clean.

@@ -2,173 +2,59 @@
 
 ## Purpose
 
-Agents act as senior project collaborators for this Kotlin Multiplatform image-feed app. Keep responses concise, prefer the existing architecture and specs, and clarify uncertain decisions before changing behavior.
+Agents act as senior project collaborators for this Kotlin Multiplatform image-feed app. Keep responses concise, adhere to non-negotiable repository invariants, and consult domain skills on-demand for procedural runbooks.
+
+---
 
 ## Workspace Skills & Runbooks
 
-For detailed procedural instructions, consult the relevant skill:
+For detailed implementation runbooks and domain guidelines, consult the relevant skill:
+* [KMP Architecture & Lifecycle](.agents/skills/kmp-architecture/SKILL.md) — Shared boundaries, Presenter pattern, Metro DI, and coroutine scopes.
 * [Verification & Linting](.agents/skills/verification-and-linting/SKILL.md) — Build, test, lint, and formatting commands across Kotlin and Swift.
 * [KMP Testing Strategy](.agents/skills/kmp-testing/SKILL.md) — Shared presenter test harness, fake repositories, and coroutine testing.
 * [Android Material 3 & Navigation 3](.agents/skills/android-m3-design/SKILL.md) — Compose M3 tokens, Navigation 3 scenes, predictive back, adaptive layouts.
 * [Apple Glass Design & HIG](.agents/skills/ios-glass-design/SKILL.md) — SwiftUI GlassTheme, materials, detents, dark scrims, sensory feedback.
 
+---
 
-## Repository Overview
+## Core Invariants
 
-This repository combines a shared Kotlin module with Android Compose, iOS SwiftUI, and macOS integration. The existing `specs/` folder is the primary source of implementation intent, and `specs/steps.md` captures the current execution notes.
+These non-negotiable boundaries and policies must be observed on every change:
 
-## Commands
+1. **KMP Architecture Boundaries**:
+   * All business logic, models, networking, and presentation state reside in `shared/commonMain`.
+   * Platform modules (`androidApp`, `iosApp`, `macosApp`) remain thin, declarative view shells (Compose / SwiftUI).
+   * Dependency injection is handled at compile time using **Metro** (`dev.zacsweers.metro`). Do not use Koin or dynamic DI.
 
-Use the existing project tooling for verification and build work:
+2. **Dual-Platform Build Policy**:
+   * Whenever changes affect `shared/` or platform logic, verify **BOTH** Android (`./gradlew :androidApp:assembleDebug`) and iOS (`xcodegen generate --spec iosApp/project.yml && xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp -destination 'generic/platform=iOS Simulator' build CODE_SIGNING_ALLOWED=NO`).
+   * Never assume shared changes work in Swift just because Kotlin compiles.
 
-*   `./gradlew :shared:allTests` — run the shared integration/package-level test suite.
-*   `./gradlew :androidApp:assembleDebug` — build Android debug application.
-*   `./gradlew :shared:compileKotlinIosSimulatorArm64` — verify Kotlin Native framework compilation for iOS.
-*   `xcodegen generate --spec iosApp/project.yml && xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp -destination 'generic/platform=iOS Simulator' build CODE_SIGNING_ALLOWED=NO` — verify full iOS app build and Swift compilation.
-*   `./gradlew ktlintFormat` — format Kotlin files automatically according to project rules.
-*   `./gradlew ktlintCheck detekt` — run Kotlin linting and static analysis (detecting unused properties/parameters).
-*   `swiftlint lint iosApp/iosApp` — run SwiftLint on iOS source code.
-*   `swiftformat .` — format Swift files automatically according to project rules.
-*   `swiftformat --lint .` — run SwiftFormat lint checks against project sources.
+3. **Quality & Hygiene Standards**:
+   * **Zero Compiler Warning Policy**: Monitor and resolve compiler warnings immediately after significant changes.
+   * **Zero Dead Code Policy**: Eliminate obsolete properties, parameters, and imports in the same change set.
+   * **Host Permissions**: Build, test, and lint commands require host execution (`BypassSandbox: true` in sandboxed agents).
 
-## Workflow
-
-*   Match the task to the nearest real spec in `specs/` before changing code.
-*   When adding tests, prefer integration/package-level coverage in `shared/src/commonTest` over brittle class-by-class assertions.
-*   Drive tests through real presenter flows and fake repository boundaries, then assert observable outcomes instead of private internals.
-*   Update the relevant spec and `specs/steps.md` together when the implementation path changes.
-*   Prefer small, traceable changes and clarify ambiguous requirements before coding.
-*   **Zero Warning Policy**: Actively monitor and resolve compiler warnings. After every significant change, execute compiler verification commands (e.g. `./gradlew :shared:compileKotlinIosSimulatorArm64`, `./gradlew :androidApp:compileDebugKotlin`, or `xcodebuild`) to identify new warnings or deprecations. Fix them immediately to keep the codebase clean.
-*   **Sandbox Execution Policy**: Build, test, and code-analysis commands (`./gradlew`, `xcodebuild`, `xcodegen`, `swiftlint`, `swiftformat`) require host execution permissions (`BypassSandbox: true` in agent environments) because they interact with external system SDKs (JDK, Android SDK, Gradle cache in `~/.gradle`, and Xcode toolchain). Standard file reading/editing and git operations run in standard workspace mode.
-*   **Tooling & MCP Interaction Guidelines**: When modifying Apple project settings, target sources, or dependencies, run `xcodegen generate --spec iosApp/project.yml` prior to invoking Xcode CLI tools (`xcodebuild`) or Xcode MCP tools (`BuildProject`, `RunProject`, etc.) to guarantee that the Xcode project accurately reflects project YAML definitions.
-*   **Dual-Platform Build Policy**: Whenever changes affect `shared/` or `iosApp/`, verify BOTH the Android build (`:androidApp:assembleDebug`) AND the iOS build via `xcodebuild` (iOS Simulator). Never assume a shared change works in Swift just because Kotlin compiles.
-*   **Cross-Language Reference Auditing**: Before removing or refactoring any declaration in `shared/commonMain`, search both Kotlin files (`androidApp/`, `shared/`) AND Swift files (`iosApp/`). Keep in mind Swift interop name transformations (e.g., `description` -> `description_`, closure signatures). Code that must be invoked from Swift only and has no calls from Kotlin should be annotated with `@Suppress("unused") // Invoked on Swift code`.
-*   **Zero Dead Code Policy**: Do NOT create speculative, unused helper properties, functions, or parameters. When replacing a parameter, service, or pattern during refactoring, eliminate the old code, variables, and imports across all call sites in the same change set.
-*   **Lint and static-analysis policy**: After making code changes, run the relevant project linting/static-analysis tools and fix any issues they report before considering the work complete.
-*   **Toolchain feedback loop**: Use ktlint, detekt, SwiftLint, and SwiftFormat (when configured) to get consistent feedback on Kotlin and Swift code, then resolve the reported issues in the same change set whenever practical.
+4. **Security & Unsplash API Compliance**:
+   * **Never commit API keys or credentials**. Keys are loaded from `local.properties` via `BuildKonfig`.
+   * Hotlink exact Unsplash photo URLs; never cache image files locally or on third-party servers.
+   * Preserve the `ixid` parameter on all photo requests.
+   * Prominently display photographer attribution on all cards/screens and trigger download tracking on save.
 
 ---
 
-Welcome! If you are an AI developer agent working on this codebase, please adhere to these guidelines to ensure consistency, performance, and compliance with the project architecture.
+## Commit & Planning Conventions
 
-> [!IMPORTANT]
-> **Keep this file small:**
-> To ensure maximum readability and context efficiency, **do not make this `AGENTS.md` file too large.** If you need to add comprehensive rules, guidelines, or logs, break them out into separate files inside the `specs/` directory (e.g., `specs/concurrency_guidelines.md`) and link them here.
+Every commit message must follow this structure:
 
----
-
-## Core Architectural Rules
-
-### 1. Kotlin Multiplatform (KMP) Architecture
-*   All business logic, data models, network client configuration, and UI state-management/pagination MUST reside in the `shared` module under `commonMain`.
-*   Platform modules (`androidApp`, `iosApp`, and `macosApp`) MUST remain thin, declarative view shells (Jetpack Compose and SwiftUI). Do not implement duplicate data parsing or page offset calculations.
-
-### 2. State, Navigation & Presenters
-*   Use the **Shared Presenter** pattern. All states (loading, paging, error) are represented by Kotlin data classes and streamed via `StateFlow` from `shared`.
-*   Platform UIs must simply bind to these states (with Compose state collection on Android, and a Swift ViewModel mapping flows to SwiftUI variables on iOS/macOS).
-*   **Android Navigation**: Use **Jetpack Navigation 3** (`androidx.navigation3.runtime.NavBackStack`, `NavDisplay`, `NavKey`). Do not use legacy `NavController` or Navigation 2 XML / Compose graph setups.
-*   **Swift Presenter Ownership**: Platform wrappers (such as Swift `ObservableObject` ViewModels) own presenter lifecycle and must trigger `presenter.clear()` upon dismissal or `deinit`.
-
-### 3. Dependency Injection & Coroutine Lifecycle Standards
-*   **Compile-Time DI with Metro**: Dependency injection is handled at compile time using **Metro** (`dev.zacsweers.metro`). Presenters are registered in `AppModule` and accessed via `MetroHelper.graph` (`ApplicationGraph`). Do not use Koin or manual reflection-based DI.
-*   Presenter coroutines must be lifecycle-aware. Do not create unmanaged `CoroutineScope` instances inside shared presenters or other state holders.
-*   Prefer injected presenter-scoped dependencies (for example `PresenterScope`/`PresenterScopeFactory`) and cancel work in `clear()`/`close()` when a screen is dismissed.
-*   Keep presenter creation and teardown aligned with DI and platform lifecycle boundaries; avoid turning UI presenters into long-lived app singletons.
-*   Guard state updates with shared helpers such as `CoroutineContext.isActive()` and `MutableStateFlow.updateIfActive(...)` (or `ensureActive()`/`currentCoroutineContext().ensureActive()` where appropriate) instead of repeating ad-hoc `if (!isActive())` checks around every emission.
-*   Platform wrappers should own presenter cleanup on teardown so in-flight work cannot continue after the UI has moved on.
-
-### 4. API Key & Security
-*   **NEVER commit API access keys, client secrets, or credentials** to this repository.
-*   The project loads the API access key from `local.properties` (which is git-ignored) and exposes it via `BuildKonfig` to the shared client. 
-*   If you introduce new configurations, follow this pattern: load them in Gradle and inject via BuildKonfig.
-
----
-
-## Unsplash API Compliance
-
-You MUST follow the Unsplash API developer guidelines when editing the application logic or UI:
-
-*   **Hotlinking Image Files:** Do NOT cache image files on any third-party server or local database. Use the exact Unsplash URL returned by the API.
-*   **Retaining parameters:** All image requests must preserve the `ixid` parameter in the URL.
-*   **Photographer Attribution:** Every image card or detail page must prominently display the photographer’s name, their profile image (if available), and link back to their Unsplash profile and to Unsplash itself.
-*   **Download Tracking:** When downloading or saving an image, call the endpoint `photo.links.download_location` to trigger the download tracking count.
-
----
-
-## UI/UX & Performance Guidelines
-
-*   **Zero Hardcoded Design Tokens**: Never hardcode colors (`Color(0xFF...)`, `Color.White`, `Color(hex: ...)`), ad-hoc font sizes, or ad-hoc corner radii in view code. Always reference platform semantic tokens (`MaterialTheme.*` on Android, `GlassTheme` and native semantic materials on iOS). Consult [.agents/skills/android-m3-design/SKILL.md](.agents/skills/android-m3-design/SKILL.md) and [.agents/skills/ios-glass-design/SKILL.md](.agents/skills/ios-glass-design/SKILL.md).
-*   **Dynamic Resizing:** Do not download original full-sized images. Read the screen or container width, and append query parameters to the raw image URL (`&w=calculatedWidth&q=80&auto=format`).
-*   **BlurHash Placeholders:** Use the `blur_hash` string associated with each image to display a blurred placeholder during load transitions.
-*   **Fluid Scrolling & Motion:** Infinite scrolling pagination must trigger pre-fetching of the next page before the user reaches the end of the scroll container to ensure frictionless layout updates. Leverage native iOS 17 `.scrollTransition` and Android `SharedTransitionLayout` hero animations where specified.
-*   **Sensory Feedback:** Integrate subtle, purposeful haptic feedback (`LocalHapticFeedback` on Android, `.sensoryFeedback` on iOS) for filter selection, pull-to-refresh activation, and download completion.
-*   **Adaptive Layout for Tablets/iPads:** View layouts must adapt dynamically to screen sizes. Grid displays should use auto-calculating adaptive columns (e.g., `StaggeredGridCells.Adaptive` on Compose, or flexible grid layout columns on SwiftUI) to scale column count gracefully on tablets/iPads instead of using hardcoded column counts. Side-by-side split panes should be used for detailed views on large screens.
-
----
-
-## Commit Message Guidelines & Git Hygiene
-
-Every commit message should follow this structure:
-
-1. A short title summarizing the change.
-2. A quick description of what changed and why.
-3. A pointer to the spec file that generated the change.
-4. The name of the model that performed the commit.
-
-Use this format:
-
+```text
 <short title>
 
 <quick description>
 
-Spec: specs/<actual-spec-or-plan-file>.md
+Spec: specs/<actual-spec-file>.md
 Model: <model name>
+```
 
-Replace `<actual-spec-or-plan-file>.md` with the real file from `specs/` that was updated for this change. Do not use a generic placeholder or `implementation_plan.md` unless that exact file was the one changed.
-
-### Git Hygiene & Traceability
-*   **Commit Scope**: Commit only files that were intentionally changed by the current task.
-*   **Focus**: Keep messages focused on the actual change and avoid generic wording.
-*   **Documentation-Only Changes**: If the work is documentation-only or agent-guidance-only, point to the most relevant existing spec in `specs/` instead of inventing a generic reference.
-
-
----
-
-## Plan and Specs Requirements
-
-Every change must be accompanied by a planning artifact in the `specs/` folder.
-
-*   If the current work matches an existing implementation/spec document, update that existing plan instead of creating a duplicate.
-*   Any new or updated plan must also be referenced from `specs/steps.md` so the implementation path stays traceable.
-*   When working on a feature, bug fix, or refactor, confirm which spec file applies before starting, then update that spec and the related step notes together.
-*   **Implementation Status Tracking**: All specification files must track an explicit implementation status header (e.g. `**Status:** New / Not Implemented`). Upon successfully completing and verifying an implementation, the model MUST update the spec's status property to `**Status:** Implemented` and mark the corresponding step in `specs/steps.md` as `(Completed)`.
-
-This keeps implementation, planning, and execution aligned.
-
----
-
-## Reference Specs Directory
-Refer to the `specs/` folder for detailed implementation details:
-*   [Step-by-Step Guide](specs/steps.md)
-*   [Implementation Plan](specs/implementation_plan.md)
-*   [Metro DI Migration](specs/19_koin_to_metro_migration_plan.md)
-*   [Navigation 3 Upgrade](specs/10_navigation_3_upgrade_spec.md)
-*   [Adaptive Layouts for Tablets & Foldables](specs/23_adaptive_layout_tablets_foldables.md)
-*   [Material 3 Design Foundation](specs/24_material_3_design_foundation.md)
-*   [Material 3 Screen Tokenization](specs/25_material_3_screen_tokenization.md)
-*   [Material 3 UX Modernization](specs/26_material_3_ux_modernization.md)
-*   [iOS Glass Design Foundation](specs/27_ios_glass_design_foundation.md)
-*   [iOS Chrome Navigation Modernization](specs/28_ios_chrome_navigation_modernization.md)
-*   [iOS Cards Attribution Glass Redesign](specs/29_ios_cards_attribution_glass_redesign.md)
-*   [iOS Interactive Sheet & Sensory Experience](specs/30_ios_interactive_sheet_and_sensory_experience.md)
-*   [README & Navigation Architecture](specs/31_readme_and_navigation_documentation.md)
-*   [Agent Rules Modernization](specs/32_agent_rules_modernization.md)
-*   [Cross-Platform Parity & Token Hardening](specs/33_cross_platform_parity_and_token_hardening.md)
-*   [Agent Tooling & Verification Rules](specs/34_agent_tooling_and_verification_rules.md)
-*   [Navigation 3 Lifecycle & Transition Scope](specs/35_android_navigation3_lifecycle_and_transition_scope.md)
-*   [Navigation 3 Multiple Back Stacks & Navigator](specs/36_android_navigation3_multiple_backstacks_and_navigator.md)
-*   [Navigation 3 Motion & Predictive Back](specs/37_android_navigation3_predictive_back_and_motion.md)
-*   [Navigation 3 Adaptive List-Detail Scenes](specs/38_android_navigation3_adaptive_list_detail_scenes.md)
-*   [Agent Skills & Rules Migration](specs/39_skills_and_rules_migration.md)
-
-
+* **Planning & Specs**: Every change must be anchored in an active specification in `specs/`. When implementation finishes, update the spec's `**Status:** Implemented` and mark the step in [`specs/steps.md`](specs/steps.md) as `(Completed)`.
+* For historical implementation notes and deep architectural blueprints, refer to [`specs/steps.md`](specs/steps.md).

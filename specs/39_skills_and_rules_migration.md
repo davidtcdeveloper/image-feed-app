@@ -27,6 +27,8 @@ image-feed-app/
 ├── GEMINI.md                          # Pointer & Recommendation to load AGENTS.md (for Android Studio)
 ├── .agents/
 │   └── skills/                        # Universal Agent Skills Standard
+│       ├── kmp-architecture/
+│       │   └── SKILL.md
 │       ├── verification-and-linting/
 │       │   └── SKILL.md
 │       ├── kmp-testing/
@@ -62,7 +64,27 @@ Rules represent **non-negotiable constraints, boundaries, and policies** that mu
 ### B. Standardized Workspace Skills in `.agents/skills/`
 Skills adhere to the open Agent Skills standard (YAML frontmatter + Markdown body) and provide **actionable runbooks and domain procedures**:
 
-#### 1. `.agents/skills/verification-and-linting/SKILL.md`
+#### 1. `.agents/skills/kmp-architecture/SKILL.md`
+* **Triggers**: Adding or refactoring business logic, presenters, dependency injection (Metro), or coroutine scopes.
+* **Frontmatter**:
+  ```yaml
+  ---
+  name: kmp-architecture
+  description: >-
+    Architectural boundaries, Shared Presenter pattern, Metro compile-time DI,
+    and coroutine lifecycle management across Kotlin Multiplatform and platform UI shells.
+    Use when adding or refactoring business logic, presenters, dependency injection,
+    or coroutine scopes.
+  ---
+  ```
+* **Runbook Details**:
+  - KMP architecture boundaries (`shared/commonMain` vs declarative view shells).
+  - Shared Presenter pattern (`StateFlow`, view binding, Compose/SwiftUI lifecycle ownership).
+  - Compile-time Metro DI (`dev.zacsweers.metro`, `AppModule`, `@DependencyGraph ApplicationGraph`, `MetroHelper`).
+  - Coroutine scope lifecycle management (`PresenterScope`, `updateIfActive`, `clear()` teardown).
+  - Cross-language auditing (`@Suppress("unused") // Invoked on Swift code`) and zero dead code.
+
+#### 2. `.agents/skills/verification-and-linting/SKILL.md`
 * **Triggers**: Running builds, validating PRs, diagnosing compile errors or warnings, checking static analysis, or formatting code.
 * **Frontmatter**:
   ```yaml
@@ -79,7 +101,24 @@ Skills adhere to the open Agent Skills standard (YAML frontmatter + Markdown bod
   - Formatting & linting runbooks (`./gradlew ktlintFormat`, `./gradlew ktlintCheck detekt`, `swiftformat .`, `swiftlint lint iosApp/iosApp`).
   - Host execution requirements across CLI harnesses (`BypassSandbox: true` / host privileges).
 
-#### 2. `.agents/skills/kmp-testing/SKILL.md`
+#### 2. `.agents/skills/verification-and-linting/SKILL.md`
+* **Triggers**: Running builds, validating PRs, diagnosing compile errors or warnings, checking static analysis, or formatting code.
+* **Frontmatter**:
+  ```yaml
+  ---
+  name: verification-and-linting
+  description: >-
+    Run verification commands, compile checks, static analysis, and code formatters
+    across Kotlin (shared/androidApp) and Swift (iosApp/macosApp). Use when diagnosing
+    build errors, verifying changes, checking warnings, or formatting code prior to commit.
+  ---
+  ```
+* **Runbook Details**:
+  - Verification commands (`./gradlew :shared:allTests`, `./gradlew :androidApp:assembleDebug`, `xcodegen` + `xcodebuild`).
+  - Formatting & linting runbooks (`./gradlew ktlintFormat`, `./gradlew ktlintCheck detekt`, `swiftformat .`, `swiftlint lint iosApp/iosApp`).
+  - Host execution requirements across CLI harnesses (`BypassSandbox: true` / host privileges).
+
+#### 3. `.agents/skills/kmp-testing/SKILL.md`
 * **Triggers**: Writing, refactoring, or running tests for shared code or presenters.
 * **Frontmatter**:
   ```yaml
@@ -95,7 +134,7 @@ Skills adhere to the open Agent Skills standard (YAML frontmatter + Markdown bod
   - StateFlow assertion patterns (testing observable outcomes, avoiding private internals).
   - Test boundary explanation (platform shells lack dedicated unit test targets).
 
-#### 3. `.agents/skills/android-m3-design/SKILL.md`
+#### 4. `.agents/skills/android-m3-design/SKILL.md`
 * **Triggers**: Implementing or updating Android Compose UI, Material 3 styling, Navigation 3, or adaptive layouts.
 * **Frontmatter**:
   ```yaml
@@ -112,7 +151,7 @@ Skills adhere to the open Agent Skills standard (YAML frontmatter + Markdown bod
   - Adaptive column calculation (`StaggeredGridCells.Adaptive`) and foldable split-pane layouts.
   - Haptics and gesture-driven predictive back handlers.
 
-#### 4. `.agents/skills/ios-glass-design/SKILL.md`
+#### 5. `.agents/skills/ios-glass-design/SKILL.md`
 * **Triggers**: Implementing or updating SwiftUI views for iOS or macOS.
 * **Frontmatter**:
   ```yaml
@@ -142,11 +181,12 @@ For CLI tools (such as OpenCode or generic runners) that look for `skills/` dire
 - Create a symlink `skills -> .agents/skills` to guarantee path resolution across all agent runtime configurations.
 
 ### C. Self-Documenting Skills Catalog in `AGENTS.md`
-In `AGENTS.md`, replace the old `ai-rules/` index with:
+In `AGENTS.md`, provide the direct progressive-disclosure index:
 ```markdown
 ## Workspace Skills & Runbooks
 
 For detailed procedural instructions, consult the relevant skill:
+* [KMP Architecture & Lifecycle](.agents/skills/kmp-architecture/SKILL.md) — Shared boundaries, Presenter pattern, Metro DI, and coroutine scopes.
 * [Verification & Linting](.agents/skills/verification-and-linting/SKILL.md) — Build, test, lint, and formatting commands across Kotlin and Swift.
 * [KMP Testing Strategy](.agents/skills/kmp-testing/SKILL.md) — Shared presenter test harness, fake repositories, and coroutine testing.
 * [Android Material 3 & Navigation 3](.agents/skills/android-m3-design/SKILL.md) — Compose M3 tokens, Navigation 3 scenes, predictive back, adaptive layouts.
@@ -159,7 +199,7 @@ This guarantees that **any** harness or LLM unable to auto-discover YAML frontma
 ## 5. Execution Plan & Phasing
 
 ### Phase 1: Skill Structure & Setup
-1. Create `.agents/skills/` directory structure with the four standardized `SKILL.md` files.
+1. Create `.agents/skills/` directory structure with the five standardized `SKILL.md` files.
 2. Populate each `SKILL.md` with standard YAML frontmatter and comprehensive instructions migrated from `ai-rules/`.
 3. Create root `skills -> .agents/skills` symlink for cross-tool compatibility.
 4. Create root `GEMINI.md` pointer document directing Android Studio / Gemini to load `AGENTS.md`.
@@ -183,9 +223,28 @@ This guarantees that **any** harness or LLM unable to auto-discover YAML frontma
 
 ## 6. Success & Validation Criteria
 
-- [x] All four skills exist under `.agents/skills/` with valid YAML frontmatter and self-contained markdown documentation.
+- [x] All five skills exist under `.agents/skills/` with valid YAML frontmatter and self-contained markdown documentation.
 - [x] Root `GEMINI.md` points to and recommends loading [`AGENTS.md`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/AGENTS.md) for Android Studio / Gemini compatibility.
 - [x] Root `skills/` resolves to `.agents/skills/` for CLI and open-agent tooling compatibility.
-- [x] [`AGENTS.md`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/AGENTS.md) provides a comprehensive, self-contained set of invariants and a clear Markdown-linked Skills Catalog.
+- [x] [`AGENTS.md`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/AGENTS.md) provides a lean, context-efficient set of universal invariants and a clear Markdown-linked Skills Catalog.
 - [x] Legacy `ai-rules/` directory and all retired rule files are fully removed from the repository.
 - [x] Codebase linting and static analysis pass cleanly.
+
+---
+
+## 7. Iteration 2: Context Optimization & Architecture Skill Extraction
+
+### A. Problem Statement & Motivation
+During initial implementation, moving all architectural rules directly into root `AGENTS.md`—along with duplicate command tables and UI guidelines—expanded `AGENTS.md` to 175 lines (~15 KB).
+Because `AGENTS.md` is loaded into the agent's default system prompt on **every single invocation and tool turn**, this introduced substantial context bloat, increased latency/token costs, and diluted model attention on narrow coding tasks.
+
+### B. Progressive Disclosure Refinement
+1. **Extracted Dedicated `kmp-architecture` Skill**:
+   - Created `.agents/skills/kmp-architecture/SKILL.md` housing full architectural guidelines: KMP `commonMain` boundaries, shared presenter patterns, compile-time Metro DI (`ApplicationGraph`, `MetroHelper`), coroutine lifecycle management (`PresenterScope`, `updateIfActive`), and Swift interop auditing.
+2. **Streamlined Root `AGENTS.md`**:
+   - Stripped redundant command tables (deferring to `verification-and-linting`).
+   - Stripped duplicate UI guidelines (deferring to `android-m3-design` and `ios-glass-design`).
+   - Stripped historical spec inventory (deferring to `specs/steps.md`).
+   - Reduced `AGENTS.md` from 175 lines (~15 KB) to ~65 lines (~3.5 KB) — a **75% reduction in default prompt bloat**.
+3. **Harmonized Catalogs**:
+   - Updated `AGENTS.md` and `GEMINI.md` skills catalogs to index all 5 skills (`kmp-architecture`, `verification-and-linting`, `kmp-testing`, `android-m3-design`, `ios-glass-design`).
