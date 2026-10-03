@@ -1,6 +1,6 @@
 # Specification: Android Navigation 3 Lifecycle & Transition Scope Hardening
 
-**Status:** Approved
+**Status:** Implemented
 
 ## 1. Overview & Objectives
 
@@ -146,29 +146,29 @@ This specification details the end-to-end plan to rectify these issues, along wi
 
 ## 3. Implementation Plan & Execution Checklist
 
-- [ ] **Phase 1: Dependency Cleanup**
-  - [ ] Remove `androidx-navigation-compose` from `gradle/libs.versions.toml` and `androidApp/build.gradle.kts`.
-  - [ ] Verify Gradle sync succeeds with host permissions (`BypassSandbox: true`).
+- [x] **Phase 1: Dependency Cleanup**
+  - [x] Remove `androidx-navigation-compose` from `gradle/libs.versions.toml` and `androidApp/build.gradle.kts`.
+  - [x] Verify Gradle sync succeeds with host permissions (`BypassSandbox: true`).
 
-- [ ] **Phase 2: Transition Scope & Hero Animation Realignment**
-  - [ ] Pass `sharedTransitionScope = this` directly to `NavDisplay` in `MainActivity.kt`.
-  - [ ] Remove all 6 `AnimatedVisibility(visible = true)` wrapping blocks inside the `NavDisplay` entry provider.
-  - [ ] Pass `LocalNavAnimatedContentScope.current` as `animatedVisibilityScope` to screen composables.
-  - [ ] Verify that photo card-to-detail hero transitions animate seamlessly.
+- [x] **Phase 2: Transition Scope & Hero Animation Realignment**
+  - [x] Pass `sharedTransitionScope = this` directly to `NavDisplay` in `MainActivity.kt`.
+  - [x] Remove all 6 `AnimatedVisibility(visible = true)` wrapping blocks inside the `NavDisplay` entry provider.
+  - [x] Pass `LocalNavAnimatedContentScope.current` as `animatedVisibilityScope` to screen composables.
+  - [x] Verify that photo card-to-detail hero transitions animate seamlessly.
 
-- [ ] **Phase 3: Back-Stack Scoped Presenter Infrastructure**
-  - [ ] Add `rememberViewModelStoreNavEntryDecorator()` to `NavDisplay.entryDecorators`.
-  - [ ] Create `PresenterViewModel.kt` in `androidApp/src/main/java/com/example/imagefeed/android/util/PresenterViewModel.kt`.
-  - [ ] Implement `rememberEntryPresenter` helper.
-  - [ ] Refactor `FeedScreen`, `CollectionsFeedScreen`, `SearchScreen`, `PhotoDetailsScreen`, `UserProfileScreen`, and `CollectionDetailScreen` to consume entry-scoped presenters.
-  - [ ] Remove `presenter` and `collectionsPresenter` lazy properties and root `DisposableEffect` from `MainActivity.kt`.
+- [x] **Phase 3: Back-Stack Scoped Presenter Infrastructure**
+  - [x] Add `rememberViewModelStoreNavEntryDecorator()` to `NavDisplay.entryDecorators`.
+  - [x] Create `PresenterViewModel.kt` in `androidApp/src/main/java/com/example/imagefeed/android/util/PresenterViewModel.kt`.
+  - [x] Implement `rememberEntryPresenter` helper.
+  - [x] Refactor `FeedScreen`, `CollectionsFeedScreen`, `SearchScreen`, `PhotoDetailsScreen`, `UserProfileScreen`, and `CollectionDetailScreen` to consume entry-scoped presenters.
+  - [x] Remove `presenter` and `collectionsPresenter` lazy properties and root `DisposableEffect` from `MainActivity.kt`.
 
-- [ ] **Phase 4: Click Debouncing & Back Handling Cleanup**
-  - [ ] Replace custom `finish()` branch in `NavDisplay.onBack` with `backStackState.removeLastOrNull()`.
-  - [ ] Wrap all navigation click triggers in `dropUnlessResumed`.
+- [x] **Phase 4: Click Debouncing & Back Handling Cleanup**
+  - [x] Replace custom `finish()` branch in `NavDisplay.onBack` with `backStackState.removeLastOrNull()`.
+  - [x] Wrap all navigation click triggers in `dropUnlessResumed`.
 
-- [ ] **Phase 5: Verification & Zero-Warning Validation**
-  - [ ] Run `./gradlew ktlintCheck detekt`.
-  - [ ] Run `./gradlew :androidApp:compileDebugKotlin` and verify zero compiler warnings.
-  - [ ] Run `./gradlew :androidApp:assembleDebug`.
-  - [ ] Run `./gradlew :shared:allTests`.
+- [x] **Phase 5: Verification & Zero-Warning Validation**
+  - [x] Run `./gradlew ktlintCheck detekt`.
+  - [x] Run `./gradlew :androidApp:compileDebugKotlin` and verify zero compiler warnings.
+  - [x] Run `./gradlew :androidApp:assembleDebug`.
+  - [x] Run `./gradlew :shared:allTests`.

@@ -1,0 +1,139 @@
+---
+name: ios-glass-design
+description: >-
+  Design and implement SwiftUI views for iOS and macOS following Apple HIG, GlassTheme
+  design tokens, materials, detented sheets, background interactions, and sensory feedback.
+---
+
+# Apple HIG, Glass Design & SwiftUI Material System Runbook
+
+## Purpose & Triggers
+
+This skill guides the design, styling, motion, and interaction patterns for Apple platforms (iOS and macOS) within `iosApp`.
+Use this skill when:
+- Implementing or refactoring SwiftUI views, sheets, navigation bars, or cards.
+- Applying `GlassTheme` design tokens, Apple semantic materials, and vibrant typography.
+- Designing interactive detented sheets and full-canvas inspection experiences.
+- Adding native iOS 17+ scroll transitions or declarative sensory haptics.
+- Supporting accessibility (Reduce Transparency, Dynamic Type) and macOS desktop adaptations.
+
+---
+
+## 1. SwiftUI Materials & Translucency Standards
+
+All Apple UI components MUST adhere to native Human Interface Guidelines (HIG) and the project's `GlassTheme` system.
+
+### A. Semantic Materials over Solid Fills
+- **Prohibited**: Hardcoded opaque dark backgrounds for bars, cards, or floating controls (e.g., solid `#0F0F11` or `#1E1E24`).
+- **Prohibited**: Obscuring photos with heavy, opaque linear gradients (e.g. `LinearGradient(colors: [.clear, .black.opacity(0.85)])`).
+- **Mandatory**: Use native Apple semantic `Material` backgrounds:
+  - `.ultraThinMaterial`: Inset floating attribution capsules, active chips, floating toolbars, and inspection sheets over image content.
+  - `.thinMaterial`: Floating category filter bars, secondary inspection cards.
+  - `.regularMaterial`: Modal navigation bars, dialog containers, and context menus.
+  - `.thickMaterial` / `.ultraThickMaterial`: Base chrome backgrounds where high contrast is required.
+
+### B. Specular Edge Lighting & Ambient Shadows
+Glass elements must feature subtle specular highlights to define boundaries against dynamic photo backdrops:
+```swift
+.overlay(
+    RoundedRectangle(cornerRadius: r)
+        .strokeBorder(
+            LinearGradient(
+                colors: [Color.white.opacity(0.25), Color.white.opacity(0.05)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            ),
+            lineWidth: 0.5
+        )
+)
+```
+- Pair with wide-radius, low-opacity drop shadows: `.shadow(color: .black.opacity(0.18), radius: 10, y: 4)`.
+- Use the convenience modifiers provided in `GlassTheme.swift` (`.glassBackground(...)`, `.glassCapsule()`, `.glassCard()`).
+
+---
+
+## 2. Accessibility & "Reduce Transparency" Fallbacks
+
+Always honor `@Environment(\.accessibilityReduceTransparency)`:
+- When enabled, translucent material backgrounds must degrade gracefully to high-contrast opaque surfaces (e.g., `Color(uiColor: .secondarySystemBackground)` or a solid dark surface).
+- Apply this logic through `GlassTheme` view modifiers so fallbacks remain consistent throughout the application.
+
+---
+
+## 3. Vibrant Typography & Contrast Compliance
+
+- **Prohibited**: Low-contrast static grey text over variable photo backgrounds or translucent materials.
+- **Mandatory**: Use Apple's semantic hierarchical styles:
+  - `.foregroundStyle(.primary)`: High-vibrancy title and primary content text on glass.
+  - `.foregroundStyle(.secondary)`: Metadata, timestamps, and captions on glass.
+  - `.foregroundStyle(.tertiary)`: Non-critical annotations and icons.
+  - `.glassVibrancy(.primary)` / `.glassVibrancy(.secondary)`: Semantic vibrancy tokens defined in `GlassTheme.swift`.
+- Attribution over photos must reside in a compact, floating glass capsule rather than a heavy full-width bottom scrim.
+
+---
+
+## 4. Modern Navigation Chrome & Translucent Bars
+
+- **Prohibited**: Overriding `UITabBarAppearance` or `UINavigationBarAppearance` with opaque backgrounds (`appearance.configureWithOpaqueBackground()`).
+- **Mandatory**: Use native SwiftUI toolbar background modifiers:
+  ```swift
+  .toolbarBackground(.ultraThinMaterial, for: .navigationBar, .tabBar)
+  .toolbarBackground(.visible, for: .navigationBar, .tabBar)
+  ```
+- Allow imagery and scrollable content to draw edge-to-edge under the navigation and tab chrome.
+
+---
+
+## 5. iOS 17+ Motion, Transitions & Sensory Feedback
+
+### Scroll-Driven Transitions
+Use native iOS 17 `.scrollTransition` for feed items and cards:
+```swift
+.scrollTransition(topLeading: .interactive, bottomTrailing: .interactive) { content, phase in
+    content
+        .scaleEffect(phase.isIdentity ? 1.0 : 0.96)
+        .opacity(phase.isIdentity ? 1.0 : 0.85)
+}
+```
+
+### Declarative Sensory Feedback
+Use SwiftUI declarative `.sensoryFeedback` instead of imperative feedback generators:
+- `.sensoryFeedback(.impact(weight: .light), trigger: value)` for tab switching, category changes, and filter selections.
+- `.sensoryFeedback(.success, trigger: value)` for photo download completions or bookmarking actions.
+
+---
+
+## 6. Full-Canvas Presentation & Interactive Detents
+
+### Full-Canvas Photo Inspection (iPhone)
+- In detail views, high-resolution imagery takes center stage with full-width canvas presentation, pinch-to-zoom (1.0x to 4.0x), and double-tap toggle.
+- Implement non-modal interactive inspector sheets:
+  ```swift
+  .sheet(isPresented: $showInspector) {
+      PhotoInspectorView(photo: photo)
+          .presentationDetents([.fraction(0.35), .fraction(0.70), .large])
+          .presentationBackgroundInteraction(.enabled(upThrough: .fraction(0.70)))
+          .presentationDragIndicator(.visible)
+          .presentationCornerRadius(24)
+          .presentationBackground {
+              Rectangle()
+                  .fill(.regularMaterial)
+                  .overlay(Color(hex: "0A0A0C").opacity(0.82))
+          }
+          .preferredColorScheme(.dark)
+          .environment(\.colorScheme, .dark)
+  }
+  ```
+- Layering `.regularMaterial` with the dark scrim `Color(hex: "0A0A0C").opacity(0.82)` guarantees WCAG AAA ($\ge 7:1$) contrast over bright imagery in Light Mode.
+- Automatically dismiss the inspector sheet prior to navigation push when users tap tags or photographer profiles.
+
+### Adaptive Split-Pane (iPad & macOS)
+- When `horizontalSizeClass == .regular` (or running on macOS), display photo canvas and inspector side-by-side instead of using a bottom sheet.
+- Wrap iOS-specific sheet modifiers and size class queries in `#if os(iOS)` / `#if os(macOS)` compiler guards.
+
+---
+
+## 7. Presenter Lifecycle in Swift
+
+- Platform wrappers (Swift `ObservableObject` ViewModels) own shared presenter lifecycle.
+- Swift ViewModels MUST invoke `presenter.clear()` upon dismissal or inside `deinit` to cancel in-flight coroutines.

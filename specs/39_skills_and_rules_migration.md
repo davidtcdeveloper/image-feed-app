@@ -1,6 +1,6 @@
 # Specification: Universal Agent Guidelines, Skills & Rules Architecture Migration
 
-**Status:** Approved
+**Status:** Implemented
 
 ## 1. Overview & Objectives
 
@@ -24,7 +24,7 @@ Establish a **harness-agnostic, dual-tier architecture** that functions consiste
 ```
 image-feed-app/
 ├── AGENTS.md                          # Universal Source of Truth: Core Invariants & Skill Catalog
-├── GEMINI.md                          # Compatibility link to AGENTS.md (for Android Studio / Gemini)
+├── GEMINI.md                          # Pointer & Recommendation to load AGENTS.md (for Android Studio)
 ├── .agents/
 │   └── skills/                        # Universal Agent Skills Standard
 │       ├── verification-and-linting/
@@ -43,7 +43,7 @@ image-feed-app/
 | Developer Harness | Entrypoint / Discovery Mechanism | Progressive Disclosure Strategy |
 | :--- | :--- | :--- |
 | **Google Antigravity** | Automatically loads `AGENTS.md` as active project rules; traverses `.agents/skills/` for dynamic tool-assisted skill injection. | **Tier 1 (Native):** Skills descriptions injected into `<skills>` block; agent invokes `view_file` on demand. |
-| **Android Studio (Gemini)** | Native detection of root `GEMINI.md` and `AGENTS.md`. | **Tier 2 (Catalog Fallback):** Reads concise Skills Catalog in `AGENTS.md` and follows direct markdown file links. |
+| **Android Studio (Gemini)** | Native detection of root `GEMINI.md`, which points to and recommends loading `AGENTS.md`. | **Tier 2 (Catalog Fallback):** Reads recommendation in `GEMINI.md`, loads `AGENTS.md`, and follows direct markdown file links. |
 | **OpenCode CLI** | Scans workspace root for `AGENTS.md` and `.agents/skills/` or `skills/`. | **Tier 1 & Tier 2:** Reads `SKILL.md` metadata natively or falls back to prompt catalog in `AGENTS.md`. |
 | **Cursor / Claude Code / Other CLI** | Scans workspace root for `AGENTS.md` / `GEMINI.md`. | **Tier 2 (Catalog Fallback):** Explicit markdown links and trigger descriptions in `AGENTS.md`. |
 
@@ -133,9 +133,9 @@ Skills adhere to the open Agent Skills standard (YAML frontmatter + Markdown bod
 
 ## 4. Multi-Harness Compatibility Setup
 
-### A. Root `GEMINI.md` Symlink / Alias
+### A. Root `GEMINI.md` Pointer Document
 For Android Studio (which natively prioritizes `GEMINI.md`):
-- Create `GEMINI.md` at repository root as a symlink to `AGENTS.md` (or a redirect document), ensuring Android Studio Studio Bot/Gemini accesses identical instructions without maintenance overhead.
+- Maintain `GEMINI.md` at repository root as a standalone pointer/guidance document that explicitly points to and recommends loading `AGENTS.md` and following the standardized workspace skills, ensuring Android Studio Studio Bot/Gemini accesses identical instructions without maintenance overhead.
 
 ### B. Root `skills/` Symlink
 For CLI tools (such as OpenCode or generic runners) that look for `skills/` directly in the project root:
@@ -158,24 +158,24 @@ This guarantees that **any** harness or LLM unable to auto-discover YAML frontma
 
 ## 5. Execution Plan & Phasing
 
-### Phase 1: Skill Structure & Symlinks
+### Phase 1: Skill Structure & Setup
 1. Create `.agents/skills/` directory structure with the four standardized `SKILL.md` files.
 2. Populate each `SKILL.md` with standard YAML frontmatter and comprehensive instructions migrated from `ai-rules/`.
 3. Create root `skills -> .agents/skills` symlink for cross-tool compatibility.
-4. Create root `GEMINI.md -> AGENTS.md` symlink for Android Studio compatibility.
+4. Create root `GEMINI.md` pointer document directing Android Studio / Gemini to load `AGENTS.md`.
 
 ### Phase 2: Invariants Consolidation in `AGENTS.md`
-1. Consolidate core architectural invariants from [`ai-rules/architecture.md`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/ai-rules/architecture.md), [`ai-rules/git-guidelines.md`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/ai-rules/git-guidelines.md), and [`ai-rules/specs-and-commits.md`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/ai-rules/specs-and-commits.md) into [`AGENTS.md`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/AGENTS.md).
+1. Consolidate core architectural invariants from legacy rules into [`AGENTS.md`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/AGENTS.md).
 2. Add the **Workspace Skills & Runbooks Catalog** to [`AGENTS.md`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/AGENTS.md).
-3. Remove references to [`ai-rules/rule-loading.md`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/ai-rules/rule-loading.md).
+3. Remove references to `ai-rules/rule-loading.md`.
 
-### Phase 3: Retirement of `ai-rules/`
-1. Remove [`ai-rules/rule-loading.md`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/ai-rules/rule-loading.md).
-2. Clean up or archive legacy files in [`ai-rules/`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/ai-rules/).
+### Phase 3: Complete Removal of `ai-rules/`
+1. Remove `ai-rules/rule-loading.md`.
+2. Fully delete the legacy `ai-rules/` directory and all retired rule documents to keep the project clean.
 
 ### Phase 4: Verification Across Harnesses
 1. Verify frontmatter validity across all created `SKILL.md` files.
-2. Confirm symlinks resolve cleanly on macOS/Linux.
+2. Confirm symlink `skills/` resolves cleanly on macOS/Linux.
 3. Verify that `./gradlew ktlintCheck detekt`, `swiftlint lint iosApp/iosApp`, and `swiftformat --lint .` execute cleanly.
 4. Update [`specs/steps.md`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/specs/steps.md) marking Step 41 as completed.
 
@@ -183,9 +183,9 @@ This guarantees that **any** harness or LLM unable to auto-discover YAML frontma
 
 ## 6. Success & Validation Criteria
 
-- [ ] All four skills exist under `.agents/skills/` with valid YAML frontmatter and self-contained markdown documentation.
-- [ ] Root `GEMINI.md` resolves to [`AGENTS.md`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/AGENTS.md) for Android Studio / Gemini compatibility.
-- [ ] Root `skills/` resolves to `.agents/skills/` for CLI and open-agent tooling compatibility.
-- [ ] [`AGENTS.md`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/AGENTS.md) provides a comprehensive, self-contained set of invariants and a clear Markdown-linked Skills Catalog.
-- [ ] No remaining references to `ai-rules/rule-loading.md`.
-- [ ] Codebase linting and static analysis pass cleanly.
+- [x] All four skills exist under `.agents/skills/` with valid YAML frontmatter and self-contained markdown documentation.
+- [x] Root `GEMINI.md` points to and recommends loading [`AGENTS.md`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/AGENTS.md) for Android Studio / Gemini compatibility.
+- [x] Root `skills/` resolves to `.agents/skills/` for CLI and open-agent tooling compatibility.
+- [x] [`AGENTS.md`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/AGENTS.md) provides a comprehensive, self-contained set of invariants and a clear Markdown-linked Skills Catalog.
+- [x] Legacy `ai-rules/` directory and all retired rule files are fully removed from the repository.
+- [x] Codebase linting and static analysis pass cleanly.

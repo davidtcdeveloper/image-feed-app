@@ -225,7 +225,7 @@ This project adheres to a strict spec-driven engineering workflow:
 * **Specs & Planning**: Every change is anchored in a specification document in `specs/`. Check `specs/steps.md` for historical implementation notes.
 * **Zero Warning Policy**: Code changes must produce zero compiler warnings and clean lint reports.
 * **Dual-Platform Build Policy**: Any change affecting `shared/` or platform logic must be verified on both Android and iOS targets.
-* **Architecture Rules**: Review `AGENTS.md` and the rule sets in `ai-rules/` for guidelines on presenter lifecycles, cross-language interop, and UI styling.
+* **Architecture Rules**: Review `AGENTS.md` and the workspace skills in `.agents/skills/` for guidelines on presenter lifecycles, cross-language interop, and UI styling.
 
 ---
 

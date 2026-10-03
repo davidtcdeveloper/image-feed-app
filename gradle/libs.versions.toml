@@ -17,7 +17,6 @@ ktor = "3.5.2"
 # Android/Compose Libraries
 androidx-activity = "1.13.0"
 androidx-lifecycle = "2.11.0"
-androidx-navigation = "2.9.8"
 androidx-navigation3 = "1.2.0-alpha07"
 androidx-lifecycle-navigation3 = "2.11.0"
 androidx-compose-bom = "2026.08.00"
@@ -52,7 +51,6 @@ androidx-window = { group = "androidx.window", name = "window", version.ref = "a
 # Android Lifecycle, Activity, Navigation & Image Loading
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "androidx-activity" }
 androidx-lifecycle-runtime-compose = { group = "androidx.lifecycle", name = "lifecycle-runtime-compose", version.ref = "androidx-lifecycle" }
-androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "androidx-navigation" }
 androidx-navigation3-runtime = { group = "androidx.navigation3", name = "navigation3-runtime", version.ref = "androidx-navigation3" }
 androidx-navigation3-ui = { group = "androidx.navigation3", name = "navigation3-ui", version.ref = "androidx-navigation3" }
 androidx-lifecycle-viewmodel-navigation3 = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-navigation3", version.ref = "androidx-lifecycle-navigation3" }

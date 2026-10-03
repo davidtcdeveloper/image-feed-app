@@ -4,19 +4,14 @@
 
 Agents act as senior project collaborators for this Kotlin Multiplatform image-feed app. Keep responses concise, prefer the existing architecture and specs, and clarify uncertain decisions before changing behavior.
 
-## Rule Index
+## Workspace Skills & Runbooks
 
-Load the relevant rule files on demand instead of dumping the full rule set into every prompt:
+For detailed procedural instructions, consult the relevant skill:
+* [Verification & Linting](.agents/skills/verification-and-linting/SKILL.md) — Build, test, lint, and formatting commands across Kotlin and Swift.
+* [KMP Testing Strategy](.agents/skills/kmp-testing/SKILL.md) — Shared presenter test harness, fake repositories, and coroutine testing.
+* [Android Material 3 & Navigation 3](.agents/skills/android-m3-design/SKILL.md) — Compose M3 tokens, Navigation 3 scenes, predictive back, adaptive layouts.
+* [Apple Glass Design & HIG](.agents/skills/ios-glass-design/SKILL.md) — SwiftUI GlassTheme, materials, detents, dark scrims, sensory feedback.
 
-*   `ai-rules/rule-loading.md` — always start here for task routing.
-*   `ai-rules/architecture.md` — shared KMP boundaries, presenter/state flows, and UI shell responsibilities.
-*   `ai-rules/build-and-deps.md` — Gradle, version catalogs, dependency modernization, and Apple build tooling.
-*   `ai-rules/specs-and-commits.md` — specs, planning, and commit-message guidance.
-*   `ai-rules/testing.md` — integration/package-level test strategy, fake-repository patterns, and verification commands.
-*   `ai-rules/git-guidelines.md` — commit hygiene and traceability for commit-time tasks.
-*   `ai-rules/design-principles.md` — cross-platform UI/UX principles, design token discipline, accessibility, attribution, and sensory guidelines.
-*   `ai-rules/material-design.md` — Android Material 3 design tokens, typography, shapes, and component standards.
-*   `ai-rules/apple-design.md` — Apple Human Interface Guidelines (HIG), SwiftUI materials, glassmorphism, translucency, and modern iOS 17/18 interactions.
 
 ## Repository Overview
 
@@ -102,7 +97,7 @@ You MUST follow the Unsplash API developer guidelines when editing the applicati
 
 ## UI/UX & Performance Guidelines
 
-*   **Zero Hardcoded Design Tokens**: Never hardcode colors (`Color(0xFF...)`, `Color.White`, `Color(hex: ...)`), ad-hoc font sizes, or ad-hoc corner radii in view code. Always reference platform semantic tokens (`MaterialTheme.*` on Android, `GlassTheme` and native semantic materials on iOS). Consult `ai-rules/design-principles.md`, `ai-rules/material-design.md`, and `ai-rules/apple-design.md`.
+*   **Zero Hardcoded Design Tokens**: Never hardcode colors (`Color(0xFF...)`, `Color.White`, `Color(hex: ...)`), ad-hoc font sizes, or ad-hoc corner radii in view code. Always reference platform semantic tokens (`MaterialTheme.*` on Android, `GlassTheme` and native semantic materials on iOS). Consult [.agents/skills/android-m3-design/SKILL.md](.agents/skills/android-m3-design/SKILL.md) and [.agents/skills/ios-glass-design/SKILL.md](.agents/skills/ios-glass-design/SKILL.md).
 *   **Dynamic Resizing:** Do not download original full-sized images. Read the screen or container width, and append query parameters to the raw image URL (`&w=calculatedWidth&q=80&auto=format`).
 *   **BlurHash Placeholders:** Use the `blur_hash` string associated with each image to display a blurred placeholder during load transitions.
 *   **Fluid Scrolling & Motion:** Infinite scrolling pagination must trigger pre-fetching of the next page before the user reaches the end of the scroll container to ensure frictionless layout updates. Leverage native iOS 17 `.scrollTransition` and Android `SharedTransitionLayout` hero animations where specified.
@@ -111,7 +106,7 @@ You MUST follow the Unsplash API developer guidelines when editing the applicati
 
 ---
 
-## Commit Message Guidelines
+## Commit Message Guidelines & Git Hygiene
 
 Every commit message should follow this structure:
 
@@ -131,6 +126,12 @@ Model: <model name>
 
 Replace `<actual-spec-or-plan-file>.md` with the real file from `specs/` that was updated for this change. Do not use a generic placeholder or `implementation_plan.md` unless that exact file was the one changed.
 
+### Git Hygiene & Traceability
+*   **Commit Scope**: Commit only files that were intentionally changed by the current task.
+*   **Focus**: Keep messages focused on the actual change and avoid generic wording.
+*   **Documentation-Only Changes**: If the work is documentation-only or agent-guidance-only, point to the most relevant existing spec in `specs/` instead of inventing a generic reference.
+
+
 ---
 
 ## Plan and Specs Requirements
@@ -148,26 +149,26 @@ This keeps implementation, planning, and execution aligned.
 
 ## Reference Specs Directory
 Refer to the `specs/` folder for detailed implementation details:
-*   [Step-by-Step Guide](file:///Users/davidtiagoconceicao/Developer/image-feed-app/specs/steps.md)
-*   [Implementation Plan](file:///Users/davidtiagoconceicao/Developer/image-feed-app/specs/implementation_plan.md)
-*   [Metro DI Migration](file:///Users/davidtiagoconceicao/Developer/image-feed-app/specs/19_koin_to_metro_migration_plan.md)
-*   [Navigation 3 Upgrade](file:///Users/davidtiagoconceicao/Developer/image-feed-app/specs/10_navigation_3_upgrade_spec.md)
-*   [Adaptive Layouts for Tablets & Foldables](file:///Users/davidtiagoconceicao/Developer/image-feed-app/specs/23_adaptive_layout_tablets_foldables.md)
-*   [Material 3 Design Foundation](file:///Users/davidtiagoconceicao/Developer/image-feed-app/specs/24_material_3_design_foundation.md)
-*   [Material 3 Screen Tokenization](file:///Users/davidtiagoconceicao/Developer/image-feed-app/specs/25_material_3_screen_tokenization.md)
-*   [Material 3 UX Modernization](file:///Users/davidtiagoconceicao/Developer/image-feed-app/specs/26_material_3_ux_modernization.md)
-*   [iOS Glass Design Foundation](file:///Users/davidtiagoconceicao/Developer/image-feed-app/specs/27_ios_glass_design_foundation.md)
-*   [iOS Chrome Navigation Modernization](file:///Users/davidtiagoconceicao/Developer/image-feed-app/specs/28_ios_chrome_navigation_modernization.md)
-*   [iOS Cards Attribution Glass Redesign](file:///Users/davidtiagoconceicao/Developer/image-feed-app/specs/29_ios_cards_attribution_glass_redesign.md)
-*   [iOS Interactive Sheet & Sensory Experience](file:///Users/davidtiagoconceicao/Developer/image-feed-app/specs/30_ios_interactive_sheet_and_sensory_experience.md)
-*   [README & Navigation Architecture](file:///Users/davidtiagoconceicao/Developer/image-feed-app/specs/31_readme_and_navigation_documentation.md)
-*   [Agent Rules Modernization](file:///Users/davidtiagoconceicao/Developer/image-feed-app/specs/32_agent_rules_modernization.md)
-*   [Cross-Platform Parity & Token Hardening](file:///Users/davidtiagoconceicao/Developer/image-feed-app/specs/33_cross_platform_parity_and_token_hardening.md)
-*   [Agent Tooling & Verification Rules](file:///Users/davidtiagoconceicao/Developer/image-feed-app/specs/34_agent_tooling_and_verification_rules.md)
-*   [Navigation 3 Lifecycle & Transition Scope](file:///Users/davidtiagoconceicao/Developer/image-feed-app/specs/35_android_navigation3_lifecycle_and_transition_scope.md)
-*   [Navigation 3 Multiple Back Stacks & Navigator](file:///Users/davidtiagoconceicao/Developer/image-feed-app/specs/36_android_navigation3_multiple_backstacks_and_navigator.md)
-*   [Navigation 3 Motion & Predictive Back](file:///Users/davidtiagoconceicao/Developer/image-feed-app/specs/37_android_navigation3_predictive_back_and_motion.md)
-*   [Navigation 3 Adaptive List-Detail Scenes](file:///Users/davidtiagoconceicao/Developer/image-feed-app/specs/38_android_navigation3_adaptive_list_detail_scenes.md)
-*   [Agent Skills & Rules Migration](file:///Users/davidtiagoconceicao/Developer/image-feed-app/specs/39_skills_and_rules_migration.md)
+*   [Step-by-Step Guide](specs/steps.md)
+*   [Implementation Plan](specs/implementation_plan.md)
+*   [Metro DI Migration](specs/19_koin_to_metro_migration_plan.md)
+*   [Navigation 3 Upgrade](specs/10_navigation_3_upgrade_spec.md)
+*   [Adaptive Layouts for Tablets & Foldables](specs/23_adaptive_layout_tablets_foldables.md)
+*   [Material 3 Design Foundation](specs/24_material_3_design_foundation.md)
+*   [Material 3 Screen Tokenization](specs/25_material_3_screen_tokenization.md)
+*   [Material 3 UX Modernization](specs/26_material_3_ux_modernization.md)
+*   [iOS Glass Design Foundation](specs/27_ios_glass_design_foundation.md)
+*   [iOS Chrome Navigation Modernization](specs/28_ios_chrome_navigation_modernization.md)
+*   [iOS Cards Attribution Glass Redesign](specs/29_ios_cards_attribution_glass_redesign.md)
+*   [iOS Interactive Sheet & Sensory Experience](specs/30_ios_interactive_sheet_and_sensory_experience.md)
+*   [README & Navigation Architecture](specs/31_readme_and_navigation_documentation.md)
+*   [Agent Rules Modernization](specs/32_agent_rules_modernization.md)
+*   [Cross-Platform Parity & Token Hardening](specs/33_cross_platform_parity_and_token_hardening.md)
+*   [Agent Tooling & Verification Rules](specs/34_agent_tooling_and_verification_rules.md)
+*   [Navigation 3 Lifecycle & Transition Scope](specs/35_android_navigation3_lifecycle_and_transition_scope.md)
+*   [Navigation 3 Multiple Back Stacks & Navigator](specs/36_android_navigation3_multiple_backstacks_and_navigator.md)
+*   [Navigation 3 Motion & Predictive Back](specs/37_android_navigation3_predictive_back_and_motion.md)
+*   [Navigation 3 Adaptive List-Detail Scenes](specs/38_android_navigation3_adaptive_list_detail_scenes.md)
+*   [Agent Skills & Rules Migration](specs/39_skills_and_rules_migration.md)
 
 

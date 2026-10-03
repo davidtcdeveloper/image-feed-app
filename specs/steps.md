@@ -581,20 +581,20 @@ These are the spec files that the implementation notes and planning references s
 3.  **Reference Specification:**
     *   Track blueprint in `specs/38_android_navigation3_adaptive_list_detail_scenes.md`.
 
-### Step 41: Universal Agent Guidelines, Skills & Rules Migration (Approved)
+### Step 41: Universal Agent Guidelines, Skills & Rules Migration (Completed)
 1.  **Skills Packaging & Multi-Harness Discovery:**
     *   Create dedicated workspace skills in `.agents/skills/` using the universal Agent Skills standard (`SKILL.md` with YAML frontmatter):
         - `verification-and-linting/SKILL.md` (build commands, toolchain verification, linting/formatting runbooks).
         - `kmp-testing/SKILL.md` (shared presenter test scaffolding, fake repositories, testing execution).
         - `android-m3-design/SKILL.md` (Material 3 tokens, Navigation 3, predictive back, adaptive layouts).
         - `ios-glass-design/SKILL.md` (GlassTheme tokens, materials, detented sheets, sensory feedback).
-    *   Create `GEMINI.md -> AGENTS.md` symlink for Android Studio / Gemini compatibility.
+    *   Create root `GEMINI.md` pointer document directing Android Studio / Gemini to load `AGENTS.md`.
     *   Create `skills -> .agents/skills` symlink for OpenCode CLI and root-level scanning harnesses.
 2.  **Invariants Consolidation in `AGENTS.md`:**
     *   Consolidate critical architecture, security, commit format, and hygiene policies directly into `AGENTS.md`.
     *   Embed a markdown-linked Skills Catalog in `AGENTS.md` as a universal fallback for harnesses without native dynamic skill discovery.
 3.  **Deprecation of `ai-rules/` & Routing Streamlining:**
-    *   Remove `ai-rules/rule-loading.md` and retire redundant files in `ai-rules/`.
+    *   Remove `ai-rules/rule-loading.md` and completely delete the legacy `ai-rules/` directory to keep the project clean.
     *   Update `AGENTS.md` reference indexes to point to workspace skills and active specifications.
 4.  **Reference Specification:**
     *   Track blueprint in `specs/39_skills_and_rules_migration.md`.
