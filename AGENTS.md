@@ -164,5 +164,9 @@ Refer to the `specs/` folder for detailed implementation details:
 *   [Agent Rules Modernization](file:///Users/davidtiagoconceicao/Developer/image-feed-app/specs/32_agent_rules_modernization.md)
 *   [Cross-Platform Parity & Token Hardening](file:///Users/davidtiagoconceicao/Developer/image-feed-app/specs/33_cross_platform_parity_and_token_hardening.md)
 *   [Agent Tooling & Verification Rules](file:///Users/davidtiagoconceicao/Developer/image-feed-app/specs/34_agent_tooling_and_verification_rules.md)
+*   [Navigation 3 Lifecycle & Transition Scope](file:///Users/davidtiagoconceicao/Developer/image-feed-app/specs/35_android_navigation3_lifecycle_and_transition_scope.md)
+*   [Navigation 3 Multiple Back Stacks & Navigator](file:///Users/davidtiagoconceicao/Developer/image-feed-app/specs/36_android_navigation3_multiple_backstacks_and_navigator.md)
+*   [Navigation 3 Motion & Predictive Back](file:///Users/davidtiagoconceicao/Developer/image-feed-app/specs/37_android_navigation3_predictive_back_and_motion.md)
+*   [Navigation 3 Adaptive List-Detail Scenes](file:///Users/davidtiagoconceicao/Developer/image-feed-app/specs/38_android_navigation3_adaptive_list_detail_scenes.md)
 
 

@@ -67,6 +67,10 @@ The `specs/` folder currently contains the following implementation and design d
 *   `specs/32_agent_rules_modernization.md`
 *   `specs/33_cross_platform_parity_and_token_hardening.md`
 *   `specs/34_agent_tooling_and_verification_rules.md`
+*   `specs/35_android_navigation3_lifecycle_and_transition_scope.md`
+*   `specs/36_android_navigation3_multiple_backstacks_and_navigator.md`
+*   `specs/37_android_navigation3_predictive_back_and_motion.md`
+*   `specs/38_android_navigation3_adaptive_list_detail_scenes.md`
 *   `specs/implementation_plan.md`
 *   `specs/steps.md`
 
@@ -520,5 +524,62 @@ These are the spec files that the implementation notes and planning references s
     *   Specify the requirement to run `xcodegen generate --spec iosApp/project.yml` prior to running Xcode CLI or Xcode MCP build tools whenever project files or settings are modified.
 7.  **Reference Specification:**
     *   Track blueprint in `specs/34_agent_tooling_and_verification_rules.md`.
+
+### Step 37: Android Navigation 3 Lifecycle & Transition Scope Hardening (Approved)
+1.  **Shared Element Hero Transition Scope Fix:**
+    *   Pass `sharedTransitionScope = this` directly to `NavDisplay`.
+    *   Remove artificial `AnimatedVisibility(visible = true)` wrapping blocks across all 6 entries in `MainActivity.kt`.
+    *   Thread `LocalNavAnimatedContentScope.current` as `animatedVisibilityScope` to screen composables (`FeedScreen`, `CollectionsFeedScreen`, `CollectionDetailScreen`, `SearchScreen`, `PhotoDetailsScreen`, `UserProfileScreen`) so hero transitions animate.
+2.  **Back-Stack Entry Scoped Presenter Lifecycle:**
+    *   Equip `NavDisplay` with `rememberViewModelStoreNavEntryDecorator()` alongside `rememberSaveableStateHolderNavEntryDecorator()`.
+    *   Implement Android platform wrapper `PresenterViewModel<P>` and `rememberEntryPresenter` helper.
+    *   Migrate screen presenters to entry-scoped ViewModels so that state, search queries, active filters, and scroll offsets persist when covered by detail screens and survive device rotation.
+    *   Remove `by lazy` presenter fields and root `DisposableEffect` from `MainActivity.kt`.
+3.  **Click Debouncing & Back Handling Hygiene:**
+    *   Wrap navigation callbacks with `dropUnlessResumed` to drop rapid concurrent click events.
+    *   Replace dead `finish()` logic in `NavDisplay.onBack` with `backStackState.removeLastOrNull()`.
+    *   Remove unused legacy `navigation-compose` (Navigation 2) from catalog and Gradle build files.
+4.  **Reference Specification:**
+    *   Track blueprint in `specs/35_android_navigation3_lifecycle_and_transition_scope.md`.
+
+### Step 38: Android Navigation 3 Multiple Back Stacks & Navigator Architecture (Approved)
+1.  **Multiple Back Stacks & Navigation State Holder:**
+    *   Implement `rememberAppNavigationState` and `NavigationState` managing independent `NavBackStack<NavKey>` per top-level route (`Feed`, `Collections`, `Search`).
+    *   Enforce "Exit Through Home" back behavior (`AppRoute.Feed` remains the root anchor).
+2.  **Decoupled Navigator Controller & Reselect Interaction:**
+    *   Create `Navigator` with `navigate`, `goBack`, and `onReselect` methods.
+    *   Emit `reselectEvents` flow and wire `animateScrollToItem(0)` in `FeedScreen`, `CollectionsFeedScreen`, and `SearchScreen` on tab reselection.
+    *   Eliminate `private var backStack` field in `MainActivity` and wire shake detector directly to `navigator`.
+3.  **Entry Provider DSL & Consolidated Chrome:**
+    *   Consolidate `NavigationRail` and `NavigationBar` item rendering using a shared `TOP_LEVEL_DESTINATIONS` registry.
+    *   Refactor the 170-line inline entry provider into modular `EntryProviderScope<NavKey>` extensions (`feedSection`, `collectionsSection`, `searchSection`, `photoDetailsSection`, `userProfileSection`).
+4.  **Navigator Unit Test Suite:**
+    *   Implement JVM unit tests in `androidApp/src/test` verifying multi-stack isolation, top-level switching, exit-through-home, and reselection events.
+5.  **Reference Specification:**
+    *   Track blueprint in `specs/36_android_navigation3_multiple_backstacks_and_navigator.md`.
+
+### Step 39: Android Navigation 3 Motion & Predictive Back Navigation (Approved)
+1.  **NavigationEvent Migration in SearchScreen:**
+    *   Migrate legacy `BackHandler` in `SearchScreen` to modern `NavigationBackHandler` with `rememberNavigationEventState`.
+    *   Intercept gesture back to deactivate search without prematurely popping the back stack.
+2.  **Material 3 NavDisplay Transition Specifications:**
+    *   Configure `transitionSpec` (coordinated slide-and-fade for forward navigation).
+    *   Configure `popTransitionSpec` (reverse slide-and-fade for backward navigation).
+    *   Configure `predictivePopTransitionSpec` with edge-aware touch tracking.
+    *   Add destination-level metadata overrides where modal-style animations are desired.
+3.  **Reference Specification:**
+    *   Track blueprint in `specs/37_android_navigation3_predictive_back_and_motion.md`.
+
+### Step 40: Android Navigation 3 Adaptive List-Detail Scenes Architecture (Approved)
+1.  **Material 3 Adaptive Navigation 3 Integration:**
+    *   Integrate `androidx.compose.material3.adaptive:adaptive-navigation3` dependency.
+    *   Instantiate `rememberListDetailSceneStrategy` with zero horizontal partition spacing.
+2.  **Adaptive Pane Role Modeling:**
+    *   Annotate `Feed` and `Collections` as list panes with empty-state detail placeholders.
+    *   Annotate `PhotoDetails` and `CollectionDetails` as detail panes.
+    *   Coordinate responsive layout density between the navigation container split and `PhotoDetailsScreen`'s internal dual-pane inspector.
+3.  **Reference Specification:**
+    *   Track blueprint in `specs/38_android_navigation3_adaptive_list_detail_scenes.md`.
+
 
 
