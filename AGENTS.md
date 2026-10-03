@@ -168,5 +168,6 @@ Refer to the `specs/` folder for detailed implementation details:
 *   [Navigation 3 Multiple Back Stacks & Navigator](file:///Users/davidtiagoconceicao/Developer/image-feed-app/specs/36_android_navigation3_multiple_backstacks_and_navigator.md)
 *   [Navigation 3 Motion & Predictive Back](file:///Users/davidtiagoconceicao/Developer/image-feed-app/specs/37_android_navigation3_predictive_back_and_motion.md)
 *   [Navigation 3 Adaptive List-Detail Scenes](file:///Users/davidtiagoconceicao/Developer/image-feed-app/specs/38_android_navigation3_adaptive_list_detail_scenes.md)
+*   [Agent Skills & Rules Migration](file:///Users/davidtiagoconceicao/Developer/image-feed-app/specs/39_skills_and_rules_migration.md)
 
 
