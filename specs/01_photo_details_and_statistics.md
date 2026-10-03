@@ -1,5 +1,7 @@
 # Implementation Step 1: Photo Details, EXIF Metadata, & Interactive Statistics
 
+**Status:** Implemented
+
 This specification outlines the architecture, user experience, and design requirements to support full photo details, EXIF data rendering, location mapping, interactive statistics, and a "Shake-to-Randomize" photo generator using only public, unauthenticated Unsplash endpoints.
 
 ---

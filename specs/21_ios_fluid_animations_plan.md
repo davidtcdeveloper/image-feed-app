@@ -1,5 +1,7 @@
 # Specification 21: iOS SwiftUI Fluid Animations Plan
 
+**Status:** Implemented
+
 This specification outlines the technical design, architectural patterns, and exact code modifications required to implement highly polished, fluid animations within the iOS SwiftUI client. The plan covers shared hero transitions, staggered grid loading, responsive tactile touch interactions, and shimmering skeleton placeholders.
 
 ---

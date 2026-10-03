@@ -1,5 +1,7 @@
 # Specification 15: Gradle & KMP Modernization (AGP 9.0+)
 
+**Status:** Implemented
+
 This document outlines the final modernization of the project's build system to comply with AGP 9.2.1 and Kotlin Multiplatform 2.4.0, following the recommended "Built-in Kotlin" and "New DSL" architecture.
 
 ## Implementation Details

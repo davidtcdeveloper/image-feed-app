@@ -1,5 +1,7 @@
 # Implementation Step 7: Gradle Version Catalog Migration (`libs.versions.toml`)
 
+**Status:** Implemented
+
 This specification outlines the architecture and execution plan to migrate the current hardcoded dependency configurations across all Gradle build scripts into a unified, centralized **Gradle Version Catalog** (`libs.versions.toml`). This aligns with modern Android and Kotlin Multiplatform (KMP) development best practices.
 
 ---

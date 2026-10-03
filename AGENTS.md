@@ -33,6 +33,7 @@ Use the existing project tooling for verification and build work:
 *   `./gradlew ktlintFormat` — format Kotlin files automatically according to project rules.
 *   `./gradlew ktlintCheck detekt` — run Kotlin linting and static analysis (detecting unused properties/parameters).
 *   `swiftlint lint iosApp/iosApp` — run SwiftLint on iOS source code.
+*   `swiftformat .` — format Swift files automatically according to project rules.
 *   `swiftformat --lint .` — run SwiftFormat lint checks against project sources.
 
 ## Workflow
@@ -42,7 +43,9 @@ Use the existing project tooling for verification and build work:
 *   Drive tests through real presenter flows and fake repository boundaries, then assert observable outcomes instead of private internals.
 *   Update the relevant spec and `specs/steps.md` together when the implementation path changes.
 *   Prefer small, traceable changes and clarify ambiguous requirements before coding.
-*   **Zero Warning Policy**: Actively monitor and resolve compiler warnings. After every significant change, run `analyze_file` on modified files or execute a full build to identify new warnings or deprecations. Fix them immediately to keep the codebase clean.
+*   **Zero Warning Policy**: Actively monitor and resolve compiler warnings. After every significant change, execute compiler verification commands (e.g. `./gradlew :shared:compileKotlinIosSimulatorArm64`, `./gradlew :androidApp:compileDebugKotlin`, or `xcodebuild`) to identify new warnings or deprecations. Fix them immediately to keep the codebase clean.
+*   **Sandbox Execution Policy**: Build, test, and code-analysis commands (`./gradlew`, `xcodebuild`, `xcodegen`, `swiftlint`, `swiftformat`) require host execution permissions (`BypassSandbox: true` in agent environments) because they interact with external system SDKs (JDK, Android SDK, Gradle cache in `~/.gradle`, and Xcode toolchain). Standard file reading/editing and git operations run in standard workspace mode.
+*   **Tooling & MCP Interaction Guidelines**: When modifying Apple project settings, target sources, or dependencies, run `xcodegen generate --spec iosApp/project.yml` prior to invoking Xcode CLI tools (`xcodebuild`) or Xcode MCP tools (`BuildProject`, `RunProject`, etc.) to guarantee that the Xcode project accurately reflects project YAML definitions.
 *   **Dual-Platform Build Policy**: Whenever changes affect `shared/` or `iosApp/`, verify BOTH the Android build (`:androidApp:assembleDebug`) AND the iOS build via `xcodebuild` (iOS Simulator). Never assume a shared change works in Swift just because Kotlin compiles.
 *   **Cross-Language Reference Auditing**: Before removing or refactoring any declaration in `shared/commonMain`, search both Kotlin files (`androidApp/`, `shared/`) AND Swift files (`iosApp/`). Keep in mind Swift interop name transformations (e.g., `description` -> `description_`, closure signatures). Code that must be invoked from Swift only and has no calls from Kotlin should be annotated with `@Suppress("unused") // Invoked on Swift code`.
 *   **Zero Dead Code Policy**: Do NOT create speculative, unused helper properties, functions, or parameters. When replacing a parameter, service, or pattern during refactoring, eliminate the old code, variables, and imports across all call sites in the same change set.

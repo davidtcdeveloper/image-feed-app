@@ -1,5 +1,7 @@
 # Kotlin Multiplatform Unsplash Image Feed App
 
+**Status:** Implemented
+
 A plan to build a high-performance, modern, and adaptive mobile application utilizing Kotlin Multiplatform (KMP) for shared business logic, data models, networking, and presentation state management, combined with fully native user interfaces: Jetpack Compose for Android and SwiftUI for iOS.
 
 This document describes the final architectural decisions, integration patterns, and step-by-step implementation phases.

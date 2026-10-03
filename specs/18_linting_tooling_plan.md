@@ -1,5 +1,7 @@
 # Linting and Static Analysis Toolchain Plan
 
+**Status:** Implemented
+
 This plan adds a comprehensive, consistent quality-feedback toolchain for both Kotlin and Swift code in the project.
 
 ## Objectives

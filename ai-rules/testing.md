@@ -16,9 +16,17 @@
 ## How to Add Tests
 
 1. Add tests under `shared/src/commonTest/...` for shared KMP behavior.
-2. Use a fake repository or test double at the network boundary to keep the tests deterministic.
+2. Use the project's DI-driven coroutine test harness (`TestDispatcherProvider` and `TestPresenterScopeFactory`) along with a fake repository (`FakeUnsplashRepository`):
+   ```kotlin
+   val testDispatcher = StandardTestDispatcher()
+   val dispatcherProvider = TestDispatcherProvider(testDispatcher)
+   val presenterScopeFactory = TestPresenterScopeFactory(dispatcherProvider)
+   val repository = FakeUnsplashRepository()
+   val presenter = FeedPresenter(repository, presenterScopeFactory, dispatcherProvider)
+   ```
 3. Drive the behavior through the real presenter or state holder, then assert on emitted state.
 4. Keep assertions broad and outcome-based rather than verifying private implementation details.
+5. Note that platform UIs (`androidApp`, `iosApp`, `macosApp`) are thin declarative shells without dedicated platform test targets in `project.yml` or Gradle; `shared/src/commonTest` (`./gradlew :shared:allTests`) serves as the primary automated regression gate.
 
 ## Verification
 

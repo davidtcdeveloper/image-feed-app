@@ -1,5 +1,7 @@
 # Step 11: macOS Entry Point Integration & iOS UI Reuse
 
+**Status:** Implemented
+
 This specification captures the macOS desktop entry-point work that reuses the existing iOS SwiftUI code path and native KMP shared logic.
 
 ## Scope

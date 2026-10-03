@@ -504,7 +504,7 @@ These are the spec files that the implementation notes and planning references s
 7.  **Reference Specification:**
     *   Track blueprint in `specs/33_cross_platform_parity_and_token_hardening.md`.
 
-### Step 36: Agent Tooling, Sandbox Execution & Verification Modernization (Planned)
+### Step 36: Agent Tooling, Sandbox Execution & Verification Modernization (Completed)
 1.  **Sandbox Execution & Environment Permissions:**
     *   Document the requirement for `BypassSandbox: true` when running host build/test/lint commands (`./gradlew`, `xcodebuild`, `xcodegen`, `swiftlint`, `swiftformat`) in `AGENTS.md` and `ai-rules/build-and-deps.md`.
 2.  **Diagnostics & Compiler Warning Resolution:**

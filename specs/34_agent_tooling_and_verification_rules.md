@@ -1,6 +1,6 @@
 # Specification: Agent Tooling, Sandbox Execution & Verification Modernization
 
-**Status:** New / Not Implemented
+**Status:** Implemented
 
 ## 1. Overview & Objectives
 
@@ -91,31 +91,31 @@ This specification details the end-to-end plan to rectify these operational defi
 
 ## 3. Implementation Plan & Execution Checklist
 
-- [ ] **Phase 1: Modernize Agent Root Instructions (`AGENTS.md`)**
-  - [ ] Add the Sandbox Execution note explaining the requirement for `BypassSandbox: true` on build/test/lint commands.
-  - [ ] Remove `analyze_file` reference and replace with explicit compiler verification commands.
-  - [ ] Add `swiftformat .` auto-formatting command alongside `swiftformat --lint .`.
-  - [ ] Add XcodeGen-first policy for Xcode CLI / MCP interactions.
-  - [ ] Update Reference Specs Directory to include `specs/34_agent_tooling_and_verification_rules.md`.
+- [x] **Phase 1: Modernize Agent Root Instructions (`AGENTS.md`)**
+  - [x] Add the Sandbox Execution note explaining the requirement for `BypassSandbox: true` on build/test/lint commands.
+  - [x] Remove `analyze_file` reference and replace with explicit compiler verification commands.
+  - [x] Add `swiftformat .` auto-formatting command alongside `swiftformat --lint .`.
+  - [x] Add XcodeGen-first policy for Xcode CLI / MCP interactions.
+  - [x] Update Reference Specs Directory to include `specs/34_agent_tooling_and_verification_rules.md`.
 
-- [ ] **Phase 2: Update Dynamically Loaded Rules (`ai-rules/`)**
-  - [ ] Update `ai-rules/rule-loading.md` with complete routing (include `build-and-deps.md` for iOS/macOS tasks; add routing for build diagnostics, linting, and test authoring).
-  - [ ] Update `ai-rules/build-and-deps.md` with Sandbox guidance, `swiftformat .` instructions, and XcodeGen generation rules.
-  - [ ] Update `ai-rules/testing.md` with presenter test harness recipe (`TestPresenterScopeFactory`, `TestDispatcherProvider`, `FakeUnsplashRepository`) and platform test target clarity.
+- [x] **Phase 2: Update Dynamically Loaded Rules (`ai-rules/`)**
+  - [x] Update `ai-rules/rule-loading.md` with complete routing (include `build-and-deps.md` for iOS/macOS tasks; add routing for build diagnostics, linting, and test authoring).
+  - [x] Update `ai-rules/build-and-deps.md` with Sandbox guidance, `swiftformat .` instructions, and XcodeGen generation rules.
+  - [x] Update `ai-rules/testing.md` with presenter test harness recipe (`TestPresenterScopeFactory`, `TestDispatcherProvider`, `FakeUnsplashRepository`) and platform test target clarity.
 
-- [ ] **Phase 3: Clean SwiftFormat Baseline Violations**
-  - [ ] Run `swiftformat .` across the workspace to resolve existing formatting violations in `iosApp/`.
-  - [ ] Verify that `swiftformat --lint .` exits with code 0.
+- [x] **Phase 3: Clean SwiftFormat Baseline Violations**
+  - [x] Run `swiftformat .` across the workspace to resolve existing formatting violations in `iosApp/`.
+  - [x] Verify that `swiftformat --lint .` exits with code 0.
 
-- [ ] **Phase 4: Full Toolchain Verification**
-  - [ ] Verify `./gradlew :shared:allTests` passes.
-  - [ ] Verify `./gradlew :androidApp:assembleDebug` passes.
-  - [ ] Verify `xcodegen generate --spec iosApp/project.yml && xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp -destination 'generic/platform=iOS Simulator' build CODE_SIGNING_ALLOWED=NO` passes.
-  - [ ] Verify `./gradlew ktlintCheck detekt` passes.
-  - [ ] Verify `swiftlint lint iosApp/iosApp` passes.
-  - [ ] Verify `swiftformat --lint .` passes.
+- [x] **Phase 4: Full Toolchain Verification**
+  - [x] Verify `./gradlew :shared:allTests` passes.
+  - [x] Verify `./gradlew :androidApp:assembleDebug` passes.
+  - [x] Verify `xcodegen generate --spec iosApp/project.yml && xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp -destination 'generic/platform=iOS Simulator' build CODE_SIGNING_ALLOWED=NO` passes.
+  - [x] Verify `./gradlew ktlintCheck detekt` passes.
+  - [x] Verify `swiftlint lint iosApp/iosApp` passes.
+  - [x] Verify `swiftformat --lint .` passes.
 
-- [ ] **Phase 5: Steps & Spec Status Finalization**
-  - [ ] Update `specs/steps.md` with Step 36.
-  - [ ] Update `specs/steps.md` specification index.
-  - [ ] Mark this specification as `Implemented` upon completion.
+- [x] **Phase 5: Steps & Spec Status Finalization**
+  - [x] Update `specs/steps.md` with Step 36.
+  - [x] Update `specs/steps.md` specification index.
+  - [x] Mark this specification as `Implemented` upon completion.

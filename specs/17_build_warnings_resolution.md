@@ -1,5 +1,7 @@
 # Specification 17: Build Warnings Resolution
 
+**Status:** Implemented
+
 This document outlines the plan to address compile-time warnings and build configurations across the shared Kotlin Multiplatform module, Android app, and iOS/macOS apps.
 
 ---

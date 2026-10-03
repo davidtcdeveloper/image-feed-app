@@ -1,5 +1,7 @@
 # Implementation Step 4: Topics Directory & Home Feed Horizontal Category Navigation
 
+**Status:** Implemented
+
 This specification details the creation of horizontal topic navigation bar on the home screen feed, a full Topics Directory, and topic-specific photo feeds, following Unsplash public API standards.
 
 ---

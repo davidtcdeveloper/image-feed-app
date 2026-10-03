@@ -1,5 +1,7 @@
 # Implementation Step 3: Collections Feed, Curation Details, & Related Collections
 
+**Status:** Implemented
+
 This specification describes the architecture and UI designs for browsing, selecting, and inspecting curated collections of Unsplash photos, including secondary related collections exploration without authentication requirements.
 
 ---

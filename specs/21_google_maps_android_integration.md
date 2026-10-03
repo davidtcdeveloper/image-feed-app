@@ -1,5 +1,7 @@
 # Spec 21: Google Maps Android Integration Plan
 
+**Status:** Implemented
+
 This specification details the plan to resolve the UI inconsistency between Android and iOS/macOS. Apple targets currently render a native MapKit map within the photo detail screen. Android currently redirects the user to the external Google Maps application. 
 
 This plan details how to add support for an inline, interactive, and dark-styled Google Maps component within `PhotoDetailsScreen.kt` using Jetpack Compose and the official Google Maps Compose library.

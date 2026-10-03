@@ -1,5 +1,7 @@
 # Photo Detail Description Fix Spec
 
+**Status:** Implemented
+
 ## Problem
 The iOS and macOS photo detail screens currently render the raw Swift/Kotlin object description instead of the actual Unsplash photo caption.
 

@@ -1,5 +1,7 @@
 # Spec 22: Presenter Coroutine Scope Lifecycle and Metro DI Hardening
 
+**Status:** Implemented
+
 ## Goal
 
 Make presenter coroutine ownership explicit and lifecycle-aware while preserving the shared-presenter architecture used by the app.

@@ -22,8 +22,10 @@ Always start with this file when the request involves code changes, spec updates
 - When changing shared logic or UI state: load `architecture.md` and `specs-and-commits.md`.
 - When updating shared Dependency Injection (Metro), presenter factories, or client wiring: load `architecture.md`, `build-and-deps.md`, and `specs-and-commits.md`.
 - When writing or updating Android Compose UI or Jetpack Navigation 3: load `design-principles.md`, `material-design.md`, `architecture.md`, and `specs-and-commits.md`.
-- When writing or updating iOS SwiftUI / macOS UI: load `design-principles.md`, `apple-design.md`, `architecture.md`, and `specs-and-commits.md`.
-- When adding or changing tests: load `testing.md`, `architecture.md`, and `build-and-deps.md` when the test setup or Gradle configuration changes.
+- When writing or updating iOS SwiftUI / macOS UI: load `design-principles.md`, `apple-design.md`, `build-and-deps.md`, `architecture.md`, and `specs-and-commits.md`.
+- When adding or changing tests: load `testing.md`, `architecture.md`, and `build-and-deps.md`.
+- When diagnosing build failures, compiler warnings, or running Xcode tools: load `build-and-deps.md` and `architecture.md`.
+- When linting, formatting code, or checking static analysis: load `build-and-deps.md` and `git-guidelines.md`.
 - When changing Gradle, dependencies, or build tooling: load `build-and-deps.md` and `specs-and-commits.md`.
 - When preparing a commit or reviewing commit hygiene: load `git-guidelines.md` and `specs-and-commits.md`.
 - When updating docs or agent guidance: load `specs-and-commits.md` first, then the relevant domain rule if implementation is affected.

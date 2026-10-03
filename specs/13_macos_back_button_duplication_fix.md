@@ -1,5 +1,7 @@
 # macOS Back Button Duplication Fix Spec
 
+**Status:** Implemented
+
 ## Problem
 The macOS detail screens currently render two back arrows when a screen uses the custom navigation toolbar button:
 - one native system back arrow from the default navigation chrome

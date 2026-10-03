@@ -1,5 +1,7 @@
 # Spec 19: Transitioning from Koin to Metro Dependency Injection
 
+**Status:** Implemented
+
 ## Goal
 Migrate the application from **Koin** (a runtime service locator) to **Metro** (a compile-time dependency injection framework implemented as a native Kotlin compiler plugin) to achieve compile-time verification, cycle detection, and direct-invocation runtime performance.
 
