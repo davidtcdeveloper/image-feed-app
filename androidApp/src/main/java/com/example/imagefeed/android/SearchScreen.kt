@@ -27,6 +27,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.items
+import androidx.compose.foundation.lazy.staggeredgrid.itemsIndexed
 import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -565,8 +566,7 @@ fun PhotosResultGrid(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalItemSpacing = 8.dp,
     ) {
-        items(photos, key = { it.id }) { photo ->
-            val index = photos.indexOfFirst { it.id == photo.id }
+        itemsIndexed(photos, key = { _, photo -> photo.id }) { index, photo ->
             PhotoCard(
                 sharedTransitionScope = sharedTransitionScope,
                 animatedVisibilityScope = animatedVisibilityScope,
@@ -631,8 +631,7 @@ fun CollectionsResultList(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalItemSpacing = 16.dp,
     ) {
-        items(collections, key = { it.id }) { collection ->
-            val index = collections.indexOfFirst { it.id == collection.id }
+        itemsIndexed(collections, key = { _, collection -> collection.id }) { index, collection ->
             CollectionRowCard(
                 collection = collection,
                 modifier = Modifier.staggeredEntrance(index),
@@ -749,8 +748,7 @@ fun UsersResultList(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalItemSpacing = 12.dp,
     ) {
-        items(users, key = { it.id }) { user ->
-            val index = users.indexOfFirst { it.id == user.id }
+        itemsIndexed(users, key = { _, user -> user.id }) { index, user ->
             UserRowCard(
                 user = user,
                 modifier = Modifier.staggeredEntrance(index),

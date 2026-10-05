@@ -3,7 +3,9 @@ package com.example.imagefeed.presentation
 import com.example.imagefeed.model.PhotoCollection
 import com.example.imagefeed.repository.UnsplashRepository
 import com.example.imagefeed.util.CommonFlow
+import com.example.imagefeed.util.filterDistinctAgainst
 import dev.zacsweers.metro.Inject
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -28,12 +30,14 @@ class CollectionsFeedPresenter(
     private val _state = MutableStateFlow(CollectionsFeedState())
     val state: StateFlow<CollectionsFeedState> = _state.asStateFlow()
     val iosState: CommonFlow<CollectionsFeedState> = CommonFlow(state)
+    private var pageJob: Job? = null
 
     init {
         loadNextPage()
     }
 
     fun clear() {
+        pageJob?.cancel()
         presenterScope.clear()
     }
 
@@ -42,31 +46,34 @@ class CollectionsFeedPresenter(
     fun refresh() {
         if (_state.value.isRefreshing) return
 
+        pageJob?.cancel()
         _state.update { it.copy(isRefreshing = true, error = null) }
 
-        presenterScope.launch {
-            if (!isActive()) return@launch
-            try {
-                val freshCollections = repository.getCollections(page = 1, perPage = 10)
-                _state.updateIfActive(coroutineContext) {
-                    it.copy(
-                        collections = freshCollections,
-                        isLoading = false,
-                        isRefreshing = false,
-                        page = 1,
-                        hasReachedEnd = freshCollections.size < 10,
-                        error = null,
-                    )
-                }
-            } catch (e: Exception) {
-                _state.updateIfActive(coroutineContext) {
-                    it.copy(
-                        isRefreshing = false,
-                        error = e.message ?: "Failed to refresh collections",
-                    )
+        pageJob =
+            presenterScope.launch {
+                if (!isActive()) return@launch
+                try {
+                    val freshCollections = repository.getCollections(page = 1, perPage = 10)
+                    _state.updateIfActive(coroutineContext) {
+                        val distinctCollections = freshCollections.distinctBy { col -> col.id }
+                        it.copy(
+                            collections = distinctCollections,
+                            isLoading = false,
+                            isRefreshing = false,
+                            page = 1,
+                            hasReachedEnd = freshCollections.size < 10,
+                            error = null,
+                        )
+                    }
+                } catch (e: Exception) {
+                    _state.updateIfActive(coroutineContext) {
+                        it.copy(
+                            isRefreshing = false,
+                            error = e.message ?: "Failed to refresh collections",
+                        )
+                    }
                 }
             }
-        }
     }
 
     fun loadNextPage() {
@@ -75,29 +82,31 @@ class CollectionsFeedPresenter(
 
         _state.update { it.copy(isLoading = true, error = null) }
 
-        presenterScope.launch {
-            if (!isActive()) return@launch
-            try {
-                val nextPage = if (currentState.collections.isEmpty()) 1 else currentState.page + 1
-                val newCollections = repository.getCollections(page = nextPage, perPage = 10)
+        pageJob =
+            presenterScope.launch {
+                if (!isActive()) return@launch
+                try {
+                    val nextPage = if (currentState.collections.isEmpty()) 1 else currentState.page + 1
+                    val newCollections = repository.getCollections(page = nextPage, perPage = 10)
 
-                _state.updateIfActive(coroutineContext) {
-                    it.copy(
-                        collections = it.collections + newCollections,
-                        isLoading = false,
-                        page = nextPage,
-                        hasReachedEnd = newCollections.size < 10,
-                        error = null,
-                    )
-                }
-            } catch (e: Exception) {
-                _state.updateIfActive(coroutineContext) {
-                    it.copy(
-                        isLoading = false,
-                        error = e.message ?: "Failed to load collections",
-                    )
+                    _state.updateIfActive(coroutineContext) {
+                        val uniqueNew = newCollections.filterDistinctAgainst(it.collections) { col -> col.id }
+                        it.copy(
+                            collections = it.collections + uniqueNew,
+                            isLoading = false,
+                            page = nextPage,
+                            hasReachedEnd = newCollections.size < 10 || (newCollections.isNotEmpty() && uniqueNew.isEmpty()),
+                            error = null,
+                        )
+                    }
+                } catch (e: Exception) {
+                    _state.updateIfActive(coroutineContext) {
+                        it.copy(
+                            isLoading = false,
+                            error = e.message ?: "Failed to load collections",
+                        )
+                    }
                 }
             }
-        }
     }
 }

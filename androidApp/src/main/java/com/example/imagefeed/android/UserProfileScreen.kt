@@ -32,7 +32,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
-import androidx.compose.foundation.lazy.staggeredgrid.items
+import androidx.compose.foundation.lazy.staggeredgrid.itemsIndexed
 import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -557,8 +557,7 @@ fun PortfolioTabContent(
                 verticalItemSpacing = 8.dp,
                 userScrollEnabled = false, // Scroll is controlled by parent vertical scroll
             ) {
-                items(photos, key = { it.id }) { photo ->
-                    val index = photos.indexOfFirst { it.id == photo.id }
+                itemsIndexed(photos, key = { _, photo -> photo.id }) { index, photo ->
                     PhotoCard(
                         sharedTransitionScope = sharedTransitionScope,
                         animatedVisibilityScope = animatedVisibilityScope,
@@ -654,8 +653,7 @@ fun CollectionsTabContent(
                 verticalItemSpacing = 16.dp,
                 userScrollEnabled = false,
             ) {
-                items(collections, key = { it.id }) { col ->
-                    val index = collections.indexOfFirst { it.id == col.id }
+                itemsIndexed(collections, key = { _, col -> col.id }) { index, col ->
                     CollectionRowLayout(
                         collection = col,
                         modifier = Modifier.staggeredEntrance(index),

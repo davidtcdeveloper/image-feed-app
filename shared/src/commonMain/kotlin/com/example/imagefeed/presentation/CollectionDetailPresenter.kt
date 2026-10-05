@@ -4,6 +4,7 @@ import com.example.imagefeed.model.Photo
 import com.example.imagefeed.model.PhotoCollection
 import com.example.imagefeed.repository.UnsplashRepository
 import com.example.imagefeed.util.CommonFlow
+import com.example.imagefeed.util.filterDistinctAgainst
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
 import dev.zacsweers.metro.AssistedInject
@@ -71,7 +72,7 @@ class CollectionDetailPresenter(
                 // Fetch related collections
                 val relatedCollections = repository.getRelatedCollections(collectionId)
                 _state.updateIfActive(coroutineContext) {
-                    it.copy(related = relatedCollections, isHeaderLoading = false)
+                    it.copy(related = relatedCollections.distinctBy { col -> col.id }, isHeaderLoading = false)
                 }
             } catch (e: Exception) {
                 // Ignore related fetch failures so it doesn't break the main details
@@ -92,19 +93,18 @@ class CollectionDetailPresenter(
                 val nextPage = if (currentState.photos.isEmpty()) 1 else currentState.photosPage + 1
                 val newPhotos = repository.getCollectionPhotos(collectionId, page = nextPage, perPage = 15)
 
-                if (!isActive()) return@launch
-                _state.update {
+                _state.updateIfActive(coroutineContext) {
+                    val uniqueNewPhotos = newPhotos.filterDistinctAgainst(it.photos) { photo -> photo.id }
                     it.copy(
-                        photos = it.photos + newPhotos,
+                        photos = it.photos + uniqueNewPhotos,
                         isLoadingPhotos = false,
                         photosPage = nextPage,
-                        hasReachedEnd = newPhotos.size < 15,
+                        hasReachedEnd = newPhotos.size < 15 || (newPhotos.isNotEmpty() && uniqueNewPhotos.isEmpty()),
                         error = null,
                     )
                 }
             } catch (e: Exception) {
-                if (!isActive()) return@launch
-                _state.update {
+                _state.updateIfActive(coroutineContext) {
                     it.copy(
                         isLoadingPhotos = false,
                         error = e.message ?: "Failed to load collection photos",

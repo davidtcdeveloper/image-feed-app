@@ -5,6 +5,7 @@ import com.example.imagefeed.model.Photo
 import com.example.imagefeed.model.User
 import com.example.imagefeed.repository.UnsplashRepository
 import com.example.imagefeed.util.CommonFlow
+import com.example.imagefeed.util.filterDistinctAgainst
 import dev.zacsweers.metro.Inject
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -160,10 +161,14 @@ class UnifiedSearchPresenter(
                                 contentFilter = currentState.filters.contentFilter,
                             )
                         if (!_state.updateIfActive(coroutineContext) {
+                                val uniqueNew = response.results.filterDistinctAgainst(it.photos) { photo -> photo.id }
                                 it.copy(
-                                    photos = it.photos + response.results,
+                                    photos = it.photos + uniqueNew,
                                     photoPage = nextPage,
-                                    hasReachedEnd = response.results.isEmpty() || nextPage >= response.totalPages,
+                                    hasReachedEnd =
+                                        response.results.isEmpty() ||
+                                            nextPage >= response.totalPages ||
+                                            (response.results.isNotEmpty() && uniqueNew.isEmpty()),
                                     isLoadingMore = false,
                                 )
                             }
@@ -175,10 +180,14 @@ class UnifiedSearchPresenter(
                         val nextPage = currentState.collectionPage + 1
                         val response = repository.searchCollections(query, nextPage, 15)
                         if (!_state.updateIfActive(coroutineContext) {
+                                val uniqueNew = response.results.filterDistinctAgainst(it.collections) { col -> col.id }
                                 it.copy(
-                                    collections = it.collections + response.results,
+                                    collections = it.collections + uniqueNew,
                                     collectionPage = nextPage,
-                                    hasReachedEnd = response.results.isEmpty() || nextPage >= response.totalPages,
+                                    hasReachedEnd =
+                                        response.results.isEmpty() ||
+                                            nextPage >= response.totalPages ||
+                                            (response.results.isNotEmpty() && uniqueNew.isEmpty()),
                                     isLoadingMore = false,
                                 )
                             }
@@ -190,10 +199,14 @@ class UnifiedSearchPresenter(
                         val nextPage = currentState.userPage + 1
                         val response = repository.searchUsers(query, nextPage, 15)
                         if (!_state.updateIfActive(coroutineContext) {
+                                val uniqueNew = response.results.filterDistinctAgainst(it.users) { user -> user.id }
                                 it.copy(
-                                    users = it.users + response.results,
+                                    users = it.users + uniqueNew,
                                     userPage = nextPage,
-                                    hasReachedEnd = response.results.isEmpty() || nextPage >= response.totalPages,
+                                    hasReachedEnd =
+                                        response.results.isEmpty() ||
+                                            nextPage >= response.totalPages ||
+                                            (response.results.isNotEmpty() && uniqueNew.isEmpty()),
                                     isLoadingMore = false,
                                 )
                             }
@@ -258,8 +271,9 @@ class UnifiedSearchPresenter(
                             )
                         _state.updateIfActive(coroutineContext) { current ->
                             if (current.query != query) return@updateIfActive current.copy(isRefreshing = false)
+                            val distinctPhotos = response.results.distinctBy { photo -> photo.id }
                             current.copy(
-                                photos = response.results,
+                                photos = distinctPhotos,
                                 photoPage = 1,
                                 hasReachedEnd = response.results.isEmpty() || response.totalPages <= 1,
                                 isRefreshing = false,
@@ -271,8 +285,9 @@ class UnifiedSearchPresenter(
                         val response = repository.searchCollections(query, 1, 15)
                         _state.updateIfActive(coroutineContext) { current ->
                             if (current.query != query) return@updateIfActive current.copy(isRefreshing = false)
+                            val distinctCollections = response.results.distinctBy { col -> col.id }
                             current.copy(
-                                collections = response.results,
+                                collections = distinctCollections,
                                 collectionPage = 1,
                                 hasReachedEnd = response.results.isEmpty() || response.totalPages <= 1,
                                 isRefreshing = false,
@@ -284,8 +299,9 @@ class UnifiedSearchPresenter(
                         val response = repository.searchUsers(query, 1, 15)
                         _state.updateIfActive(coroutineContext) { current ->
                             if (current.query != query) return@updateIfActive current.copy(isRefreshing = false)
+                            val distinctUsers = response.results.distinctBy { user -> user.id }
                             current.copy(
-                                users = response.results,
+                                users = distinctUsers,
                                 userPage = 1,
                                 hasReachedEnd = response.results.isEmpty() || response.totalPages <= 1,
                                 isRefreshing = false,
@@ -341,7 +357,7 @@ class UnifiedSearchPresenter(
                             )
                         if (!_state.updateIfActive(coroutineContext) {
                                 it.copy(
-                                    photos = response.results,
+                                    photos = response.results.distinctBy { photo -> photo.id },
                                     hasReachedEnd = response.results.isEmpty() || response.totalPages <= 1,
                                     isLoading = false,
                                 )
@@ -354,7 +370,7 @@ class UnifiedSearchPresenter(
                         val response = repository.searchCollections(query, 1, 15)
                         if (!_state.updateIfActive(coroutineContext) {
                                 it.copy(
-                                    collections = response.results,
+                                    collections = response.results.distinctBy { col -> col.id },
                                     hasReachedEnd = response.results.isEmpty() || response.totalPages <= 1,
                                     isLoading = false,
                                 )
@@ -367,7 +383,7 @@ class UnifiedSearchPresenter(
                         val response = repository.searchUsers(query, 1, 15)
                         if (!_state.updateIfActive(coroutineContext) {
                                 it.copy(
-                                    users = response.results,
+                                    users = response.results.distinctBy { user -> user.id },
                                     hasReachedEnd = response.results.isEmpty() || response.totalPages <= 1,
                                     isLoading = false,
                                 )

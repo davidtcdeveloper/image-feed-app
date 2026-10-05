@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.foundation.lazy.staggeredgrid.items
+import androidx.compose.foundation.lazy.staggeredgrid.itemsIndexed
 import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -185,8 +186,7 @@ fun CollectionsFeedScreen(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalItemSpacing = 16.dp,
                 ) {
-                    items(state.collections, key = { it.id }) { collection ->
-                        val index = state.collections.indexOfFirst { it.id == collection.id }
+                    itemsIndexed(state.collections, key = { _, collection -> collection.id }) { index, collection ->
                         CollectionMosaicCard(
                             sharedTransitionScope = sharedTransitionScope,
                             animatedVisibilityScope = animatedVisibilityScope,

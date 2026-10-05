@@ -122,6 +122,82 @@ class FeedPresenterTest {
             assertEquals(1, presenter.state.value.page)
         }
 
+    @Test
+    fun loadNextPageDeduplicatesOverlappingPhotos() =
+        runTest {
+            val dispatcher = StandardTestDispatcher(testScheduler)
+            val page1Photos = (1..14).map { photo("p$it") } + photo("t1w5cLWcJ0E")
+            val repository =
+                FakeUnsplashRepository(
+                    topics = emptyList(),
+                    photosByPage =
+                        mapOf(
+                            "editorial" to
+                                mapOf(
+                                    1 to page1Photos,
+                                    2 to listOf(photo("t1w5cLWcJ0E"), photo("p15")),
+                                ),
+                        ),
+                )
+
+            val presenter = FeedPresenter(repository, TestPresenterScopeFactory(dispatcher))
+            advanceUntilIdle()
+
+            assertEquals(15, presenter.state.value.photos.size)
+            assertTrue(
+                presenter.state.value.photos
+                    .any { it.id == "t1w5cLWcJ0E" },
+            )
+
+            presenter.loadNextPage()
+            advanceUntilIdle()
+
+            // Key t1w5cLWcJ0E must appear only once to prevent duplicate key crashes in LazyVerticalStaggeredGrid
+            assertEquals(16, presenter.state.value.photos.size)
+            assertEquals(
+                1,
+                presenter.state.value.photos
+                    .count { it.id == "t1w5cLWcJ0E" },
+            )
+            assertEquals(
+                "p15",
+                presenter.state.value.photos
+                    .last()
+                    .id,
+            )
+            assertEquals(2, presenter.state.value.page)
+        }
+
+    @Test
+    fun refreshDeduplicatesPhotos() =
+        runTest {
+            val dispatcher = StandardTestDispatcher(testScheduler)
+            val repository =
+                FakeUnsplashRepository(
+                    topics = emptyList(),
+                    photosByPage = mapOf("editorial" to mapOf(1 to listOf(photo("p1")))),
+                    refreshedPhotosByPage =
+                        mapOf(
+                            "editorial" to
+                                mapOf(
+                                    1 to listOf(photo("p1"), photo("p1"), photo("p2")),
+                                ),
+                        ),
+                )
+
+            val presenter = FeedPresenter(repository, TestPresenterScopeFactory(dispatcher))
+            advanceUntilIdle()
+
+            presenter.refresh()
+            advanceUntilIdle()
+
+            assertEquals(
+                listOf("p1", "p2"),
+                presenter.state.value.photos
+                    .map { it.id },
+            )
+        }
+
     private fun photo(id: String) =
         Photo(
             id = id,

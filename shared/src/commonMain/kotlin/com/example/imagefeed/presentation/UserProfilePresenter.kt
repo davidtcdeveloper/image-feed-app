@@ -6,6 +6,7 @@ import com.example.imagefeed.model.User
 import com.example.imagefeed.model.UserStats
 import com.example.imagefeed.repository.UnsplashRepository
 import com.example.imagefeed.util.CommonFlow
+import com.example.imagefeed.util.filterDistinctAgainst
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
 import dev.zacsweers.metro.AssistedInject
@@ -170,10 +171,11 @@ class UserProfilePresenter(
                         val nextPage = if (currentState.portfolioPhotos.isEmpty()) 1 else currentState.portfolioPage + 1
                         val items = repository.getUserPhotos(username, page = nextPage, perPage = 15)
                         if (!_state.updateIfActive(coroutineContext) {
+                                val uniqueNew = items.filterDistinctAgainst(it.portfolioPhotos) { photo -> photo.id }
                                 it.copy(
-                                    portfolioPhotos = it.portfolioPhotos + items,
+                                    portfolioPhotos = it.portfolioPhotos + uniqueNew,
                                     portfolioPage = nextPage,
-                                    portfolioReachedEnd = items.size < 15,
+                                    portfolioReachedEnd = items.size < 15 || (items.isNotEmpty() && uniqueNew.isEmpty()),
                                     isLoadingContent = false,
                                 )
                             }
@@ -202,10 +204,11 @@ class UserProfilePresenter(
                         val nextPage = if (currentState.likedPhotos.isEmpty()) 1 else currentState.likesPage + 1
                         val items = repository.getUserLikes(username, page = nextPage, perPage = 15)
                         if (!_state.updateIfActive(coroutineContext) {
+                                val uniqueNew = items.filterDistinctAgainst(it.likedPhotos) { photo -> photo.id }
                                 it.copy(
-                                    likedPhotos = it.likedPhotos + items,
+                                    likedPhotos = it.likedPhotos + uniqueNew,
                                     likesPage = nextPage,
-                                    likesReachedEnd = items.size < 15,
+                                    likesReachedEnd = items.size < 15 || (items.isNotEmpty() && uniqueNew.isEmpty()),
                                     isLoadingContent = false,
                                 )
                             }
@@ -234,10 +237,11 @@ class UserProfilePresenter(
                         val nextPage = if (currentState.collections.isEmpty()) 1 else currentState.collectionsPage + 1
                         val items = repository.getUserCollections(username, page = nextPage, perPage = 15)
                         if (!_state.updateIfActive(coroutineContext) {
+                                val uniqueNew = items.filterDistinctAgainst(it.collections) { col -> col.id }
                                 it.copy(
-                                    collections = it.collections + items,
+                                    collections = it.collections + uniqueNew,
                                     collectionsPage = nextPage,
-                                    collectionsReachedEnd = items.size < 15,
+                                    collectionsReachedEnd = items.size < 15 || (items.isNotEmpty() && uniqueNew.isEmpty()),
                                     isLoadingContent = false,
                                 )
                             }

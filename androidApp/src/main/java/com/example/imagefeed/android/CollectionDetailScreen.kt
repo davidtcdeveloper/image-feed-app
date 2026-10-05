@@ -29,6 +29,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.foundation.lazy.staggeredgrid.items
+import androidx.compose.foundation.lazy.staggeredgrid.itemsIndexed
 import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -233,9 +234,8 @@ fun CollectionDetailScreen(
                     }
 
                     // Photos grid
-                    items(state.photos, key = { it.id }) { photo ->
+                    itemsIndexed(state.photos, key = { _, photo -> photo.id }) { index, photo ->
                         Box(modifier = Modifier.padding(horizontal = 4.dp)) {
-                            val index = state.photos.indexOfFirst { it.id == photo.id }
                             PhotoCard(
                                 sharedTransitionScope = sharedTransitionScope,
                                 animatedVisibilityScope = animatedVisibilityScope,
