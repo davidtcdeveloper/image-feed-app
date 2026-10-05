@@ -103,6 +103,14 @@ Actively monitor and resolve compiler warnings. After every significant change, 
 ### Zero Dead Code Policy
 Do not introduce speculative, unused helper properties, functions, or parameters. When replacing a parameter, service, or pattern during refactoring, eliminate the obsolete code, variables, and imports across all call sites in the same change set.
 
+### Pre-Commit Review & QA Checklist
+Before staging and committing changes:
+1. **Dual Build Verification**: Run `./gradlew :androidApp:assembleDebug` and `xcodegen generate --spec iosApp/project.yml && xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp -destination 'generic/platform=iOS Simulator' build CODE_SIGNING_ALLOWED=NO` with zero compiler warnings.
+2. **Static Analysis & Linters**: Execute `./gradlew ktlintCheck detekt` and `swiftformat --lint .` / `swiftlint lint iosApp/iosApp`.
+3. **Spec Checklist**: Confirm all acceptance criteria checkboxes in the active `specs/<id>.md` are completed (`- [x]`).
+4. **Artifact Cleanup**: Remove all temporary review reports, logs, and teammate scratch directories from `.agents/`.
+5. **Scoped Staging**: Stage only the files targeted by the user's prompt (e.g., `git add <files>`), preserving the required commit message template.
+
 ### Cross-Language Reference Auditing
 Before removing or refactoring any declaration in `shared/commonMain`, search both Kotlin files (`androidApp/`, `shared/`) and Swift files (`iosApp/`). Keep in mind Swift interop name transformations (e.g., Kotlin `description` maps to Swift `description_`, and callback signatures can vary). Code that is invoked exclusively from Swift and has no Kotlin call sites must be annotated with:
 ```kotlin

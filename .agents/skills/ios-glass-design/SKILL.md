@@ -70,6 +70,23 @@ Always honor `@Environment(\.accessibilityReduceTransparency)`:
   - `.glassVibrancy(.primary)` / `.glassVibrancy(.secondary)`: Semantic vibrancy tokens defined in `GlassTheme.swift`.
 - Attribution over photos must reside in a compact, floating glass capsule rather than a heavy full-width bottom scrim.
 
+### A. Retina Display Scale for CDN Imagery
+When computing target photo dimensions for network requests (e.g. in `AdaptiveLayoutHelper`):
+- Layout calculations in SwiftUI yield logical points, not physical pixels.
+- Always multiply points by the device's display scale to prevent soft/blurry 1x assets on Retina screens:
+  ```swift
+  #if os(iOS)
+  let scale = UIScreen.main.scale
+  #elseif os(macOS)
+  let scale = NSScreen.main?.backingScaleFactor ?? 2.0
+  #endif
+  let pixelWidth = Int(pointWidth * scale)
+  ```
+
+### B. Zero Token Leakage & Theme Parity
+- **Prohibited**: Hardcoded raw color constants (e.g. `.foregroundColor(.gray)`, `.foregroundColor(.white)`).
+- All views (top bars, search screen, details sheet, user profile) must dynamically adapt to both Light and Dark mode using `GlassTheme.colors` and Apple semantic styles.
+
 ---
 
 ## 4. Modern Navigation Chrome & Translucent Bars

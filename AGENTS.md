@@ -34,12 +34,15 @@ These non-negotiable boundaries and policies must be observed on every change:
    * **Zero Compiler Warning Policy**: Monitor and resolve compiler warnings immediately after significant changes.
    * **Zero Dead Code Policy**: Eliminate obsolete properties, parameters, and imports in the same change set.
    * **Host Permissions**: Build, test, and lint commands require host execution (`BypassSandbox: true` in sandboxed agents).
+   * **Strict Commit Scoping**: Stage and commit only specifically requested files; clean up temporary scratch files in `.agents/` prior to commit.
+   * **Spec Completeness**: Validate all acceptance criteria checkboxes (`- [x]`) before marking a spec as `Implemented`.
 
 4. **Security & Unsplash API Compliance**:
    * **Never commit API keys or credentials**. Keys are loaded from `local.properties` via `BuildKonfig`.
    * Hotlink exact Unsplash photo URLs; never cache image files locally or on third-party servers.
    * Preserve the `ixid` parameter on all photo requests.
    * Prominently display photographer attribution on all cards/screens and trigger download tracking on save.
+   * Multiply layout points by display scale (`UIScreen.main.scale`) for CDN image requests to ensure sharp Retina rendering.
 
 ---
 
