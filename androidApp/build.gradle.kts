@@ -68,6 +68,10 @@ dependencies {
     implementation(libs.androidx.navigation3.ui)
     implementation(libs.androidx.lifecycle.viewmodel.navigation3)
     implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.androidx.navigationevent.compose)
+    implementation(libs.androidx.material3.adaptive)
+    implementation(libs.androidx.material3.adaptive.layout)
+    implementation(libs.androidx.material3.adaptive.navigation3)
 
     // Coil (Image Loading)
     implementation(libs.coil.compose)
@@ -79,5 +83,6 @@ dependencies {
 
     // Tooling/Test
     debugImplementation(libs.androidx.compose.ui.tooling)
-    testImplementation(kotlin("test"))
+    testImplementation("org.jetbrains.kotlin:kotlin-test-junit")
+    testImplementation(libs.kotlinx.coroutines.test)
 }

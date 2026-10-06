@@ -82,6 +82,7 @@ fun CollectionsFeedScreen(
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope,
     presenter: CollectionsFeedPresenter,
+    reselectEvents: kotlinx.coroutines.flow.SharedFlow<androidx.navigation3.runtime.NavKey>? = null,
     onCollectionClick: (PhotoCollection) -> Unit,
     onSearchClick: () -> Unit,
 ) {
@@ -90,6 +91,14 @@ fun CollectionsFeedScreen(
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
     val pullToRefreshState = rememberPullToRefreshState()
     val haptic = LocalHapticFeedback.current
+
+    LaunchedEffect(reselectEvents) {
+        reselectEvents?.collect { key ->
+            if (key == com.example.imagefeed.android.navigation.AppRoute.Collections) {
+                listState.animateScrollToItem(0)
+            }
+        }
+    }
 
     LaunchedEffect(pullToRefreshState.distanceFraction) {
         if (pullToRefreshState.distanceFraction >= 1f) {

@@ -1,6 +1,6 @@
 # Specification: Android Navigation 3 Multiple Back Stacks & Navigator Architecture
 
-**Status:** Approved
+**Status:** Implemented
 
 ## 1. Overview & Objectives
 
@@ -276,31 +276,31 @@ The shake sensor detector (`handleShake()`) will invoke `navigator.navigate(AppR
 
 ## 3. Implementation Plan & Execution Checklist
 
-- [ ] **Phase 1: Architecture Foundation**
-  - [ ] Create `com.example.imagefeed.android.navigation.Routes.kt` with strongly typed `AppRoute` hierarchy and `TOP_LEVEL_DESTINATIONS`.
-  - [ ] Create `NavigationState.kt` with `rememberAppNavigationState` and per-stack decorated entry providers.
-  - [ ] Create `Navigator.kt` with `navigate`, `goBack`, `onReselect`, and `reselectEvents`.
+- [x] **Phase 1: Architecture Foundation**
+  - [x] Create `com.example.imagefeed.android.navigation.Routes.kt` with strongly typed `AppRoute` hierarchy and `TOP_LEVEL_DESTINATIONS`.
+  - [x] Create `NavigationState.kt` with `rememberAppNavigationState` and per-stack decorated entry providers.
+  - [x] Create `Navigator.kt` with `navigate`, `goBack`, `onReselect`, and `reselectEvents`.
 
-- [ ] **Phase 2: Feature Section Modularization**
-  - [ ] Implement `EntryProviderScope<NavKey>` extensions for `feedSection`, `collectionsSection`, `searchSection`, `photoDetailsSection`, and `userProfileSection`.
-  - [ ] Wire `reselectEvents` into `FeedScreen`, `CollectionsFeedScreen`, and `SearchScreen` for scroll-to-top interaction.
+- [x] **Phase 2: Feature Section Modularization**
+  - [x] Implement `EntryProviderScope<NavKey>` extensions for `feedSection`, `collectionsSection`, `searchSection`, `photoDetailsSection`, and `userProfileSection`.
+  - [x] Wire `reselectEvents` into `FeedScreen`, `CollectionsFeedScreen`, and `SearchScreen` for scroll-to-top interaction.
 
-- [ ] **Phase 3: Chrome & Shell Modernization in `MainActivity.kt`**
-  - [ ] Replace hand-rolled tab items in `NavigationRail` and `NavigationBar` with loops over `TOP_LEVEL_DESTINATIONS`.
-  - [ ] Bind selected tab state strictly to `navigationState.topLevelRoute`.
-  - [ ] Display navigation shell based on whether the active tab's stack is at root or has sub-routes.
-  - [ ] Connect `NavDisplay` to `navigationState.toDecoratedEntries(entryProvider)` and `onBack = { navigator.goBack() }`.
-  - [ ] Remove `private var backStack` field and wire shake action directly to `navigator`.
+- [x] **Phase 3: Chrome & Shell Modernization in `MainActivity.kt`**
+  - [x] Replace hand-rolled tab items in `NavigationRail` and `NavigationBar` with loops over `TOP_LEVEL_DESTINATIONS`.
+  - [x] Bind selected tab state strictly to `navigationState.topLevelRoute`.
+  - [x] Display navigation shell based on whether the active tab's stack is at root or has sub-routes.
+  - [x] Connect `NavDisplay` to `navigationState.toDecoratedEntries(entryProvider)` and `onBack = { navigator.goBack() }`.
+  - [x] Remove `private var backStack` field and wire shake action directly to `navigator`.
 
-- [ ] **Phase 4: Unit Test Suite (`androidApp/src/test`)**
-  - [ ] Create `NavigatorTest.kt` in `androidApp/src/test/java/com/example/imagefeed/android/navigation/NavigatorTest.kt`.
-  - [ ] Test tab switching between Feed, Collections, and Search.
-  - [ ] Test pushing sub-routes onto individual stacks without leaking into sibling stacks.
-  - [ ] Test "Exit Through Home" back navigation semantics.
-  - [ ] Test reselect event emission.
+- [x] **Phase 4: Unit Test Suite (`androidApp/src/test`)**
+  - [x] Create `NavigatorTest.kt` in `androidApp/src/test/java/com/example/imagefeed/android/navigation/NavigatorTest.kt`.
+  - [x] Test tab switching between Feed, Collections, and Search.
+  - [x] Test pushing sub-routes onto individual stacks without leaking into sibling stacks.
+  - [x] Test "Exit Through Home" back navigation semantics.
+  - [x] Test reselect event emission.
 
-- [ ] **Phase 5: Verification & Zero Warnings**
-  - [ ] Run `./gradlew :androidApp:testDebugUnitTest`.
-  - [ ] Run `./gradlew ktlintCheck detekt`.
-  - [ ] Run `./gradlew :androidApp:compileDebugKotlin`.
-  - [ ] Run `./gradlew :androidApp:assembleDebug`.
+- [x] **Phase 5: Verification & Zero Warnings**
+  - [x] Run `./gradlew :androidApp:testDebugUnitTest`.
+  - [x] Run `./gradlew ktlintCheck detekt`.
+  - [x] Run `./gradlew :androidApp:compileDebugKotlin`.
+  - [x] Run `./gradlew :androidApp:assembleDebug`.

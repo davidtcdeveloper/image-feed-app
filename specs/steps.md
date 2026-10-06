@@ -525,7 +525,7 @@ These are the spec files that the implementation notes and planning references s
 7.  **Reference Specification:**
     *   Track blueprint in `specs/34_agent_tooling_and_verification_rules.md`.
 
-### Step 37: Android Navigation 3 Lifecycle & Transition Scope Hardening (Approved)
+### Step 37: Android Navigation 3 Lifecycle & Transition Scope Hardening (Completed)
 1.  **Shared Element Hero Transition Scope Fix:**
     *   Pass `sharedTransitionScope = this` directly to `NavDisplay`.
     *   Remove artificial `AnimatedVisibility(visible = true)` wrapping blocks across all 6 entries in `MainActivity.kt`.
@@ -542,7 +542,7 @@ These are the spec files that the implementation notes and planning references s
 4.  **Reference Specification:**
     *   Track blueprint in `specs/35_android_navigation3_lifecycle_and_transition_scope.md`.
 
-### Step 38: Android Navigation 3 Multiple Back Stacks & Navigator Architecture (Approved)
+### Step 38: Android Navigation 3 Multiple Back Stacks & Navigator Architecture (Completed)
 1.  **Multiple Back Stacks & Navigation State Holder:**
     *   Implement `rememberAppNavigationState` and `NavigationState` managing independent `NavBackStack<NavKey>` per top-level route (`Feed`, `Collections`, `Search`).
     *   Enforce "Exit Through Home" back behavior (`AppRoute.Feed` remains the root anchor).
@@ -558,7 +558,7 @@ These are the spec files that the implementation notes and planning references s
 5.  **Reference Specification:**
     *   Track blueprint in `specs/36_android_navigation3_multiple_backstacks_and_navigator.md`.
 
-### Step 39: Android Navigation 3 Motion & Predictive Back Navigation (Approved)
+### Step 39: Android Navigation 3 Motion & Predictive Back Navigation (Completed)
 1.  **NavigationEvent Migration in SearchScreen:**
     *   Migrate legacy `BackHandler` in `SearchScreen` to modern `NavigationBackHandler` with `rememberNavigationEventState`.
     *   Intercept gesture back to deactivate search without prematurely popping the back stack.
@@ -570,7 +570,7 @@ These are the spec files that the implementation notes and planning references s
 3.  **Reference Specification:**
     *   Track blueprint in `specs/37_android_navigation3_predictive_back_and_motion.md`.
 
-### Step 40: Android Navigation 3 Adaptive List-Detail Scenes Architecture (Approved)
+### Step 40: Android Navigation 3 Adaptive List-Detail Scenes Architecture (Completed)
 1.  **Material 3 Adaptive Navigation 3 Integration:**
     *   Integrate `androidx.compose.material3.adaptive:adaptive-navigation3` dependency.
     *   Instantiate `rememberListDetailSceneStrategy` with zero horizontal partition spacing.

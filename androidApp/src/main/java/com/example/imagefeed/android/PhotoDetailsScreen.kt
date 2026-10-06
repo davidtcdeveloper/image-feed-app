@@ -14,6 +14,7 @@ import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
@@ -53,7 +54,6 @@ import androidx.compose.material3.SuggestionChipDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -76,7 +76,6 @@ import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
@@ -117,15 +116,15 @@ fun PhotoDetailsScreen(
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope,
     photoId: String,
+    presenter: com.example.imagefeed.presentation.PhotoDetailsPresenter =
+        com.example.imagefeed.android.util.rememberEntryPresenter(key = "photo_$photoId", onClear = { it.clear() }) {
+            MetroHelper.getPhotoDetailsPresenter(photoId)
+        },
     onBack: () -> Unit,
     onUserClick: (String) -> Unit,
     onTagClick: (String) -> Unit,
 ) {
     val context = LocalPlatformContext.current
-    val presenter = remember(photoId) { MetroHelper.getPhotoDetailsPresenter(photoId) }
-    DisposableEffect(presenter) {
-        onDispose { presenter.clear() }
-    }
     val state by presenter.state.collectAsStateWithLifecycle(initialValue = PhotoDetailsState())
 
     Scaffold(
@@ -243,52 +242,155 @@ fun PhotoDetailsContent(
     onTagClick: (String) -> Unit,
 ) {
     val context = LocalPlatformContext.current
-    val configuration = LocalConfiguration.current
     val density = LocalDensity.current
     val scrollState = rememberScrollState()
     val adaptiveLayoutInfo = LocalAdaptiveLayoutInfo.current
-    val isDualPane = adaptiveLayoutInfo.useDualPaneDetails
     val posture = adaptiveLayoutInfo.posture
 
-    val screenWidthDp = configuration.screenWidthDp
-    val canvasWidthDp =
-        if (isDualPane && posture !is DevicePosture.TableTop) {
-            (screenWidthDp * DUAL_PANE_CANVAS_WEIGHT).toInt().dp
-        } else {
-            screenWidthDp.dp
-        }
-    val imageWidthPx = with(density) { canvasWidthDp.roundToPx() }
-    val aspectRatio = photo.width.toFloat() / photo.height.toFloat()
-
-    val placeholderBitmap by produceState<android.graphics.Bitmap?>(initialValue = null, photo.blurHash) {
-        value = BlurHashDecoder.decode(photo.blurHash, 32, (32 / aspectRatio).toInt())
-    }
-
-    val painter =
-        rememberAsyncImagePainter(
-            model =
-                ImageRequest
-                    .Builder(context)
-                    .data(photo.urls.raw + "&w=" + imageWidthPx + "&q=85&auto=format")
-                    .crossfade(true)
-                    .build(),
-            placeholder = placeholderBitmap?.let { BitmapPainter(it.asImageBitmap()) },
-        )
-
-    if (posture is DevicePosture.TableTop) {
-        val hingeHeightDp =
-            if (posture.isSeparating) {
-                with(density) { posture.hingeBounds.height().toDp() }
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        val availableWidthDp = maxWidth
+        val isDualPane = adaptiveLayoutInfo.useDualPaneDetails && availableWidthDp >= 600.dp
+        val canvasWidthDp =
+            if (isDualPane && posture !is DevicePosture.TableTop) {
+                (availableWidthDp.value * DUAL_PANE_CANVAS_WEIGHT).toInt().dp
             } else {
-                0.dp
+                availableWidthDp
             }
-        // Foldable TableTop Posture (Horizontal split: Top photo viewer, Bottom controls deck)
-        Column(modifier = Modifier.fillMaxSize()) {
-            Box(
+        val imageWidthPx = with(density) { canvasWidthDp.roundToPx() }
+        val aspectRatio = photo.width.toFloat() / photo.height.toFloat()
+
+        val placeholderBitmap by produceState<android.graphics.Bitmap?>(initialValue = null, photo.blurHash) {
+            value = BlurHashDecoder.decode(photo.blurHash, 32, (32 / aspectRatio).toInt())
+        }
+
+        val painter =
+            rememberAsyncImagePainter(
+                model =
+                    ImageRequest
+                        .Builder(context)
+                        .data(photo.urls.raw + "&w=" + imageWidthPx + "&q=85&auto=format")
+                        .crossfade(true)
+                        .build(),
+                placeholder = placeholderBitmap?.let { BitmapPainter(it.asImageBitmap()) },
+            )
+
+        if (posture is DevicePosture.TableTop) {
+            val hingeHeightDp =
+                if (posture.isSeparating) {
+                    with(density) { posture.hingeBounds.height().toDp() }
+                } else {
+                    0.dp
+                }
+            // Foldable TableTop Posture (Horizontal split: Top photo viewer, Bottom controls deck)
+            Column(modifier = Modifier.fillMaxSize()) {
+                Box(
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .fillMaxWidth(),
+                ) {
+                    PhotoCanvasPane(
+                        sharedTransitionScope = sharedTransitionScope,
+                        animatedVisibilityScope = animatedVisibilityScope,
+                        photo = photo,
+                        painter = painter,
+                        aspectRatio = aspectRatio,
+                        isDualPane = true,
+                        onUserClick = onUserClick,
+                    )
+                }
+                if (hingeHeightDp > 0.dp) {
+                    Spacer(
+                        modifier =
+                            Modifier
+                                .height(hingeHeightDp)
+                                .fillMaxWidth()
+                                .background(MaterialTheme.colorScheme.surfaceContainerLowest),
+                    )
+                }
+                Box(
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .fillMaxWidth()
+                            .background(MaterialTheme.colorScheme.surface),
+                ) {
+                    PhotoInspectorPane(
+                        modifier =
+                            Modifier
+                                .fillMaxSize()
+                                .verticalScroll(scrollState),
+                        photo = photo,
+                        stats = stats,
+                        showPhotographerHeader = false,
+                        onTrackDownload = onTrackDownload,
+                        onUserClick = onUserClick,
+                        onTagClick = onTagClick,
+                    )
+                }
+            }
+        } else if (isDualPane) {
+            val hingeWidthDp =
+                if (posture is DevicePosture.Book && posture.isSeparating) {
+                    with(density) { posture.hingeBounds.width().toDp() }
+                } else {
+                    0.dp
+                }
+            // Tablets / Landscape / Foldable Book Posture (Vertical split: Left photo canvas, Right inspector)
+            Row(modifier = Modifier.fillMaxSize()) {
+                Box(
+                    modifier =
+                        Modifier
+                            .weight(DUAL_PANE_CANVAS_WEIGHT)
+                            .fillMaxHeight(),
+                ) {
+                    PhotoCanvasPane(
+                        sharedTransitionScope = sharedTransitionScope,
+                        animatedVisibilityScope = animatedVisibilityScope,
+                        photo = photo,
+                        painter = painter,
+                        aspectRatio = aspectRatio,
+                        isDualPane = true,
+                        onUserClick = onUserClick,
+                    )
+                }
+                if (hingeWidthDp > 0.dp) {
+                    Spacer(
+                        modifier =
+                            Modifier
+                                .width(hingeWidthDp)
+                                .fillMaxHeight()
+                                .background(MaterialTheme.colorScheme.surfaceContainerLowest),
+                    )
+                }
+                Box(
+                    modifier =
+                        Modifier
+                            .weight(DUAL_PANE_INSPECTOR_WEIGHT)
+                            .fillMaxHeight()
+                            .background(MaterialTheme.colorScheme.surface),
+                ) {
+                    PhotoInspectorPane(
+                        modifier =
+                            Modifier
+                                .fillMaxSize()
+                                .verticalScroll(scrollState),
+                        photo = photo,
+                        stats = stats,
+                        showPhotographerHeader = true,
+                        onTrackDownload = onTrackDownload,
+                        onUserClick = onUserClick,
+                        onTagClick = onTagClick,
+                    )
+                }
+            }
+        } else {
+            // Compact Phones (Single-column vertical scroll)
+            Column(
                 modifier =
                     Modifier
-                        .weight(1f)
-                        .fillMaxWidth(),
+                        .fillMaxSize()
+                        .verticalScroll(scrollState),
             ) {
                 PhotoCanvasPane(
                     sharedTransitionScope = sharedTransitionScope,
@@ -296,31 +398,11 @@ fun PhotoDetailsContent(
                     photo = photo,
                     painter = painter,
                     aspectRatio = aspectRatio,
-                    isDualPane = true,
+                    isDualPane = false,
                     onUserClick = onUserClick,
                 )
-            }
-            if (hingeHeightDp > 0.dp) {
-                Spacer(
-                    modifier =
-                        Modifier
-                            .height(hingeHeightDp)
-                            .fillMaxWidth()
-                            .background(MaterialTheme.colorScheme.surfaceContainerLowest),
-                )
-            }
-            Box(
-                modifier =
-                    Modifier
-                        .weight(1f)
-                        .fillMaxWidth()
-                        .background(MaterialTheme.colorScheme.surface),
-            ) {
                 PhotoInspectorPane(
-                    modifier =
-                        Modifier
-                            .fillMaxSize()
-                            .verticalScroll(scrollState),
+                    modifier = Modifier.fillMaxWidth(),
                     photo = photo,
                     stats = stats,
                     showPhotographerHeader = false,
@@ -329,88 +411,6 @@ fun PhotoDetailsContent(
                     onTagClick = onTagClick,
                 )
             }
-        }
-    } else if (isDualPane) {
-        val hingeWidthDp =
-            if (posture is DevicePosture.Book && posture.isSeparating) {
-                with(density) { posture.hingeBounds.width().toDp() }
-            } else {
-                0.dp
-            }
-        // Tablets / Landscape / Foldable Book Posture (Vertical split: Left photo canvas, Right inspector)
-        Row(modifier = Modifier.fillMaxSize()) {
-            Box(
-                modifier =
-                    Modifier
-                        .weight(DUAL_PANE_CANVAS_WEIGHT)
-                        .fillMaxHeight(),
-            ) {
-                PhotoCanvasPane(
-                    sharedTransitionScope = sharedTransitionScope,
-                    animatedVisibilityScope = animatedVisibilityScope,
-                    photo = photo,
-                    painter = painter,
-                    aspectRatio = aspectRatio,
-                    isDualPane = true,
-                    onUserClick = onUserClick,
-                )
-            }
-            if (hingeWidthDp > 0.dp) {
-                Spacer(
-                    modifier =
-                        Modifier
-                            .width(hingeWidthDp)
-                            .fillMaxHeight()
-                            .background(MaterialTheme.colorScheme.surfaceContainerLowest),
-                )
-            }
-            Box(
-                modifier =
-                    Modifier
-                        .weight(DUAL_PANE_INSPECTOR_WEIGHT)
-                        .fillMaxHeight()
-                        .background(MaterialTheme.colorScheme.surface),
-            ) {
-                PhotoInspectorPane(
-                    modifier =
-                        Modifier
-                            .fillMaxSize()
-                            .verticalScroll(scrollState),
-                    photo = photo,
-                    stats = stats,
-                    showPhotographerHeader = true,
-                    onTrackDownload = onTrackDownload,
-                    onUserClick = onUserClick,
-                    onTagClick = onTagClick,
-                )
-            }
-        }
-    } else {
-        // Compact Phones (Single-column vertical scroll)
-        Column(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .verticalScroll(scrollState),
-        ) {
-            PhotoCanvasPane(
-                sharedTransitionScope = sharedTransitionScope,
-                animatedVisibilityScope = animatedVisibilityScope,
-                photo = photo,
-                painter = painter,
-                aspectRatio = aspectRatio,
-                isDualPane = false,
-                onUserClick = onUserClick,
-            )
-            PhotoInspectorPane(
-                modifier = Modifier.fillMaxWidth(),
-                photo = photo,
-                stats = stats,
-                showPhotographerHeader = false,
-                onTrackDownload = onTrackDownload,
-                onUserClick = onUserClick,
-                onTagClick = onTagClick,
-            )
         }
     }
 }

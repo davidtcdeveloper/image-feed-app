@@ -46,7 +46,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -74,6 +73,7 @@ import com.example.imagefeed.android.util.BlurHashDecoder
 import com.example.imagefeed.android.util.bounceClick
 import com.example.imagefeed.model.Photo
 import com.example.imagefeed.model.PhotoCollection
+import com.example.imagefeed.presentation.CollectionDetailPresenter
 import com.example.imagefeed.presentation.CollectionDetailState
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
@@ -82,16 +82,16 @@ fun CollectionDetailScreen(
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope,
     collectionId: String,
+    presenter: CollectionDetailPresenter =
+        com.example.imagefeed.android.util.rememberEntryPresenter(key = "collection_$collectionId", onClear = { it.clear() }) {
+            com.example.imagefeed.di.MetroHelper
+                .getCollectionDetailPresenter(collectionId)
+        },
     onBack: () -> Unit,
     onPhotoClick: (Photo) -> Unit,
     onCollectionClick: (String) -> Unit,
 ) {
     val context = LocalPlatformContext.current
-    val metroHelper = remember { com.example.imagefeed.di.MetroHelper }
-    val presenter = remember(collectionId) { metroHelper.getCollectionDetailPresenter(collectionId) }
-    DisposableEffect(presenter) {
-        onDispose { presenter.clear() }
-    }
     val state by presenter.state.collectAsStateWithLifecycle(initialValue = CollectionDetailState())
 
     val gridState = rememberLazyStaggeredGridState()

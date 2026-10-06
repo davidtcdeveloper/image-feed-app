@@ -1,6 +1,5 @@
 package com.example.imagefeed.android
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
@@ -63,7 +62,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -81,11 +79,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation3.runtime.NavKey
+import androidx.navigationevent.NavigationEventInfo
+import androidx.navigationevent.compose.NavigationBackHandler
+import androidx.navigationevent.compose.rememberNavigationEventState
 import coil3.compose.rememberAsyncImagePainter
 import com.example.imagefeed.android.adaptive.LocalAdaptiveLayoutInfo
+import com.example.imagefeed.android.navigation.AppRoute
 import com.example.imagefeed.android.util.CollectionMosaicCardSkeleton
 import com.example.imagefeed.android.util.PhotoGridSkeleton
 import com.example.imagefeed.android.util.bounceClick
+import com.example.imagefeed.android.util.rememberEntryPresenter
 import com.example.imagefeed.android.util.staggeredEntrance
 import com.example.imagefeed.di.MetroHelper
 import com.example.imagefeed.model.CollectionSummary
@@ -94,6 +98,8 @@ import com.example.imagefeed.model.User
 import com.example.imagefeed.presentation.SearchFilters
 import com.example.imagefeed.presentation.SearchState
 import com.example.imagefeed.presentation.SearchTab
+import com.example.imagefeed.presentation.UnifiedSearchPresenter
+import kotlinx.coroutines.flow.SharedFlow
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
@@ -101,15 +107,16 @@ fun SearchScreen(
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope,
     initialQuery: String = "",
+    presenter: UnifiedSearchPresenter =
+        rememberEntryPresenter(key = "search_$initialQuery", onClear = { it.clear() }) {
+            MetroHelper.getUnifiedSearchPresenter()
+        },
+    reselectEvents: SharedFlow<NavKey>? = null,
     onBack: () -> Unit,
     onPhotoClick: (Photo) -> Unit,
     onUserClick: (User) -> Unit,
     onCollectionClick: (CollectionSummary) -> Unit,
 ) {
-    val presenter = remember { MetroHelper.getUnifiedSearchPresenter() }
-    DisposableEffect(presenter) {
-        onDispose { presenter.clear() }
-    }
     val state by presenter.state.collectAsStateWithLifecycle(initialValue = SearchState())
     var showFiltersSheet by remember { mutableStateOf(false) }
     val pullToRefreshState = rememberPullToRefreshState()
@@ -123,9 +130,14 @@ fun SearchScreen(
         }
     }
 
-    BackHandler(enabled = state.isSearchActive) {
-        presenter.setSearchActive(false)
-    }
+    val navigationEventState = rememberNavigationEventState(currentInfo = NavigationEventInfo.None)
+    NavigationBackHandler(
+        state = navigationEventState,
+        isBackEnabled = state.isSearchActive,
+        onBackCompleted = {
+            presenter.setSearchActive(false)
+        },
+    )
 
     LaunchedEffect(initialQuery) {
         if (initialQuery.isNotEmpty()) {
@@ -355,6 +367,7 @@ fun SearchScreen(
                                         animatedVisibilityScope = animatedVisibilityScope,
                                         photos = state.photos,
                                         isLoadingMore = state.isLoadingMore,
+                                        reselectEvents = reselectEvents,
                                         onLoadMore = { presenter.loadNextPage() },
                                         onPhotoClick = onPhotoClick,
                                     )
@@ -367,6 +380,7 @@ fun SearchScreen(
                                     CollectionsResultList(
                                         collections = state.collections,
                                         isLoadingMore = state.isLoadingMore,
+                                        reselectEvents = reselectEvents,
                                         onLoadMore = { presenter.loadNextPage() },
                                         onCollectionClick = onCollectionClick,
                                     )
@@ -379,6 +393,7 @@ fun SearchScreen(
                                     UsersResultList(
                                         users = state.users,
                                         isLoadingMore = state.isLoadingMore,
+                                        reselectEvents = reselectEvents,
                                         onLoadMore = { presenter.loadNextPage() },
                                         onUserClick = onUserClick,
                                     )
@@ -534,10 +549,19 @@ fun PhotosResultGrid(
     animatedVisibilityScope: AnimatedVisibilityScope,
     photos: List<Photo>,
     isLoadingMore: Boolean,
+    reselectEvents: SharedFlow<NavKey>? = null,
     onLoadMore: () -> Unit,
     onPhotoClick: (Photo) -> Unit,
 ) {
     val listState = rememberLazyStaggeredGridState()
+
+    LaunchedEffect(reselectEvents) {
+        reselectEvents?.collect { key ->
+            if (key is AppRoute.Search) {
+                listState.animateScrollToItem(0)
+            }
+        }
+    }
 
     val shouldLoadMore =
         remember {
@@ -599,10 +623,19 @@ fun PhotosResultGrid(
 fun CollectionsResultList(
     collections: List<CollectionSummary>,
     isLoadingMore: Boolean,
+    reselectEvents: SharedFlow<NavKey>? = null,
     onLoadMore: () -> Unit,
     onCollectionClick: (CollectionSummary) -> Unit,
 ) {
     val listState = rememberLazyStaggeredGridState() // staggered grid with 1 column as flexible list
+
+    LaunchedEffect(reselectEvents) {
+        reselectEvents?.collect { key ->
+            if (key is AppRoute.Search) {
+                listState.animateScrollToItem(0)
+            }
+        }
+    }
 
     val shouldLoadMore =
         remember {
@@ -716,10 +749,19 @@ fun CollectionRowCard(
 fun UsersResultList(
     users: List<User>,
     isLoadingMore: Boolean,
+    reselectEvents: SharedFlow<NavKey>? = null,
     onLoadMore: () -> Unit,
     onUserClick: (User) -> Unit,
 ) {
     val listState = rememberLazyStaggeredGridState()
+
+    LaunchedEffect(reselectEvents) {
+        reselectEvents?.collect { key ->
+            if (key is AppRoute.Search) {
+                listState.animateScrollToItem(0)
+            }
+        }
+    }
 
     val shouldLoadMore =
         remember {

@@ -9,46 +9,24 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
-import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
-import androidx.compose.foundation.lazy.staggeredgrid.itemsIndexed
-import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -57,101 +35,43 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SecondaryScrollableTabRow
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
-import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.produceState
+import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
+import androidx.compose.material3.adaptive.layout.calculatePaneScaffoldDirective
+import androidx.compose.material3.adaptive.navigation3.rememberListDetailSceneStrategy
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.graphics.painter.BitmapPainter
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
-import androidx.navigation3.runtime.NavBackStack
-import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
-import androidx.navigation3.runtime.rememberNavBackStack
+import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
-import coil3.compose.LocalPlatformContext
-import coil3.compose.rememberAsyncImagePainter
-import coil3.request.ImageRequest
-import coil3.request.crossfade
+import androidx.navigationevent.NavigationEvent
 import com.example.imagefeed.android.adaptive.LocalAdaptiveLayoutInfo
 import com.example.imagefeed.android.adaptive.ProvideAdaptiveLayoutInfo
+import com.example.imagefeed.android.navigation.AppRoute
+import com.example.imagefeed.android.navigation.Navigator
+import com.example.imagefeed.android.navigation.TOP_LEVEL_DESTINATIONS
+import com.example.imagefeed.android.navigation.collectionsSection
+import com.example.imagefeed.android.navigation.feedSection
+import com.example.imagefeed.android.navigation.photoDetailsSection
+import com.example.imagefeed.android.navigation.rememberAppNavigationState
+import com.example.imagefeed.android.navigation.searchSection
+import com.example.imagefeed.android.navigation.userProfileSection
 import com.example.imagefeed.android.theme.ImageFeedTheme
-import com.example.imagefeed.android.util.BlurHashDecoder
-import com.example.imagefeed.android.util.PhotoGridSkeleton
-import com.example.imagefeed.android.util.bounceClick
-import com.example.imagefeed.android.util.staggeredEntrance
 import com.example.imagefeed.di.MetroHelper
-import com.example.imagefeed.model.Photo
-import com.example.imagefeed.model.User
-import com.example.imagefeed.presentation.CollectionsFeedPresenter
-import com.example.imagefeed.presentation.FeedPresenter
-import com.example.imagefeed.presentation.FeedState
 import com.example.imagefeed.repository.UnsplashRepository
 import kotlinx.coroutines.launch
-import kotlinx.serialization.Serializable
 import kotlin.math.sqrt
 
-@Serializable
-sealed class Screen : NavKey {
-    @Serializable
-    data object Feed : Screen()
-
-    @Serializable
-    data object Collections : Screen()
-
-    @Serializable
-    data class CollectionDetails(
-        val collectionId: String,
-    ) : Screen()
-
-    @Serializable
-    data class Search(
-        val query: String = "",
-    ) : Screen()
-
-    @Serializable
-    data class PhotoDetails(
-        val photoId: String,
-    ) : Screen()
-
-    @Serializable
-    data class UserProfile(
-        val username: String,
-    ) : Screen()
-}
-
 class MainActivity : ComponentActivity() {
-    private val presenter: FeedPresenter by lazy { MetroHelper.getFeedPresenter() }
-    private val collectionsPresenter: CollectionsFeedPresenter by lazy { MetroHelper.getCollectionsFeedPresenter() }
     private val repository: UnsplashRepository by lazy { MetroHelper.graph.repository }
 
     private var sensorManager: SensorManager? = null
     private var shakeDetector: ShakeDetector? = null
-    private var backStack: NavBackStack<NavKey>? = null
+    private var onNavigateToRandom: ((AppRoute) -> Unit)? = null
     private var isFetchingRandom = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -173,50 +93,14 @@ class MainActivity : ComponentActivity() {
                         modifier = Modifier.fillMaxSize(),
                         color = MaterialTheme.colorScheme.background,
                     ) {
-                        val backStackState = rememberNavBackStack(Screen.Feed)
-                        backStack = backStackState
-                        DisposableEffect(Unit) {
-                            onDispose {
-                                presenter.clear()
-                                collectionsPresenter.clear()
-                            }
-                        }
+                        val navigationState = rememberAppNavigationState()
+                        val navigator = remember(navigationState) { Navigator(navigationState) }
+                        onNavigateToRandom = { route -> navigator.navigate(route) }
 
-                        val navigateToTab = { targetScreen: Screen ->
-                            if (targetScreen is Screen.Feed) {
-                                while (backStackState.size > 1) {
-                                    backStackState.removeAt(backStackState.size - 1)
-                                }
-                            } else {
-                                val targetIndex =
-                                    backStackState.indexOfFirst {
-                                        (targetScreen is Screen.Search && it is Screen.Search) ||
-                                            (targetScreen is Screen.Collections && it is Screen.Collections)
-                                    }
-                                if (targetIndex != -1) {
-                                    while (backStackState.size > targetIndex + 1) {
-                                        backStackState.removeAt(backStackState.size - 1)
-                                    }
-                                } else {
-                                    while (backStackState.size > 2) {
-                                        backStackState.removeAt(backStackState.size - 1)
-                                    }
-                                    if (backStackState.size > 1) {
-                                        backStackState[1] = targetScreen
-                                    } else {
-                                        backStackState.add(targetScreen)
-                                    }
-                                }
-                            }
-                        }
-
-                        val currentScreen = backStackState.lastOrNull() as? Screen ?: Screen.Feed
-                        val showNavigation =
-                            currentScreen is Screen.Feed ||
-                                currentScreen is Screen.Collections ||
-                                currentScreen is Screen.Search
-                        val useRail = adaptiveLayoutInfo.useNavigationRail && showNavigation
-                        val useBottomBar = !adaptiveLayoutInfo.useNavigationRail && showNavigation
+                        val currentStack = navigationState.backStacks[navigationState.topLevelRoute]
+                        val isAtRoot = currentStack?.size == 1
+                        val useRail = adaptiveLayoutInfo.useNavigationRail
+                        val useBottomBar = !adaptiveLayoutInfo.useNavigationRail && isAtRoot
 
                         Row(modifier = Modifier.fillMaxSize()) {
                             if (useRail) {
@@ -235,53 +119,26 @@ class MainActivity : ComponentActivity() {
                                     },
                                 ) {
                                     Spacer(modifier = Modifier.height(16.dp))
-                                    NavigationRailItem(
-                                        selected = currentScreen is Screen.Feed,
-                                        onClick = {
-                                            if (currentScreen !is Screen.Feed) {
-                                                navigateToTab(Screen.Feed)
-                                            }
-                                        },
-                                        icon = {
-                                            Icon(
-                                                imageVector = Icons.Default.Home,
-                                                contentDescription = "Photos",
-                                            )
-                                        },
-                                        label = { Text("Photos") },
-                                    )
-
-                                    NavigationRailItem(
-                                        selected = currentScreen is Screen.Collections,
-                                        onClick = {
-                                            if (currentScreen !is Screen.Collections) {
-                                                navigateToTab(Screen.Collections)
-                                            }
-                                        },
-                                        icon = {
-                                            Icon(
-                                                imageVector = Icons.AutoMirrored.Filled.List,
-                                                contentDescription = "Collections",
-                                            )
-                                        },
-                                        label = { Text("Collections") },
-                                    )
-
-                                    NavigationRailItem(
-                                        selected = currentScreen is Screen.Search,
-                                        onClick = {
-                                            if (currentScreen !is Screen.Search) {
-                                                navigateToTab(Screen.Search())
-                                            }
-                                        },
-                                        icon = {
-                                            Icon(
-                                                imageVector = Icons.Default.Search,
-                                                contentDescription = "Search",
-                                            )
-                                        },
-                                        label = { Text("Search") },
-                                    )
+                                    TOP_LEVEL_DESTINATIONS.forEach { destination ->
+                                        val isSelected = navigationState.topLevelRoute == destination.route
+                                        NavigationRailItem(
+                                            selected = isSelected,
+                                            onClick = {
+                                                if (isSelected) {
+                                                    navigator.onReselect(destination.route)
+                                                } else {
+                                                    navigator.navigate(destination.route)
+                                                }
+                                            },
+                                            icon = {
+                                                Icon(
+                                                    imageVector = destination.icon,
+                                                    contentDescription = destination.label,
+                                                )
+                                            },
+                                            label = { Text(destination.label) },
+                                        )
+                                    }
                                 }
                             }
 
@@ -291,230 +148,128 @@ class MainActivity : ComponentActivity() {
                                 bottomBar = {
                                     if (useBottomBar) {
                                         NavigationBar {
-                                            NavigationBarItem(
-                                                selected = currentScreen is Screen.Feed,
-                                                onClick = {
-                                                    if (currentScreen !is Screen.Feed) {
-                                                        navigateToTab(Screen.Feed)
-                                                    }
-                                                },
-                                                icon = {
-                                                    Icon(
-                                                        imageVector = Icons.Default.Home,
-                                                        contentDescription = "Photos",
-                                                    )
-                                                },
-                                                label = { Text("Photos") },
-                                            )
-
-                                            NavigationBarItem(
-                                                selected = currentScreen is Screen.Collections,
-                                                onClick = {
-                                                    if (currentScreen !is Screen.Collections) {
-                                                        navigateToTab(Screen.Collections)
-                                                    }
-                                                },
-                                                icon = {
-                                                    Icon(
-                                                        imageVector = Icons.AutoMirrored.Filled.List,
-                                                        contentDescription = "Collections",
-                                                    )
-                                                },
-                                                label = { Text("Collections") },
-                                            )
-
-                                            NavigationBarItem(
-                                                selected = currentScreen is Screen.Search,
-                                                onClick = {
-                                                    if (currentScreen !is Screen.Search) {
-                                                        navigateToTab(Screen.Search())
-                                                    }
-                                                },
-                                                icon = {
-                                                    Icon(
-                                                        imageVector = Icons.Default.Search,
-                                                        contentDescription = "Search",
-                                                    )
-                                                },
-                                                label = { Text("Search") },
-                                            )
+                                            TOP_LEVEL_DESTINATIONS.forEach { destination ->
+                                                val isSelected = navigationState.topLevelRoute == destination.route
+                                                NavigationBarItem(
+                                                    selected = isSelected,
+                                                    onClick = {
+                                                        if (isSelected) {
+                                                            navigator.onReselect(destination.route)
+                                                        } else {
+                                                            navigator.navigate(destination.route)
+                                                        }
+                                                    },
+                                                    icon = {
+                                                        Icon(
+                                                            imageVector = destination.icon,
+                                                            contentDescription = destination.label,
+                                                        )
+                                                    },
+                                                    label = { Text(destination.label) },
+                                                )
+                                            }
                                         }
                                     }
                                 },
                             ) { innerPadding ->
+                                @OptIn(ExperimentalSharedTransitionApi::class, ExperimentalMaterial3AdaptiveApi::class)
                                 SharedTransitionLayout {
                                     val sharedTransitionScope = this
+                                    val entries =
+                                        navigationState.toDecoratedEntries(
+                                            entryProvider =
+                                                entryProvider {
+                                                    feedSection(
+                                                        sharedTransitionScope = sharedTransitionScope,
+                                                        navigator = navigator,
+                                                        onRandomClick = { handleShake() },
+                                                    )
+                                                    collectionsSection(
+                                                        sharedTransitionScope = sharedTransitionScope,
+                                                        navigator = navigator,
+                                                    )
+                                                    searchSection(
+                                                        sharedTransitionScope = sharedTransitionScope,
+                                                        navigator = navigator,
+                                                    )
+                                                    photoDetailsSection(
+                                                        sharedTransitionScope = sharedTransitionScope,
+                                                        navigator = navigator,
+                                                    )
+                                                    userProfileSection(
+                                                        sharedTransitionScope = sharedTransitionScope,
+                                                        navigator = navigator,
+                                                    )
+                                                },
+                                        )
+
+                                    val windowAdaptiveInfo = currentWindowAdaptiveInfoV2()
+                                    val directive =
+                                        remember(windowAdaptiveInfo) {
+                                            calculatePaneScaffoldDirective(windowAdaptiveInfo)
+                                                .copy(horizontalPartitionSpacerSize = 0.dp)
+                                        }
+                                    val listDetailStrategy = rememberListDetailSceneStrategy<NavKey>(directive = directive)
+
                                     NavDisplay(
-                                        backStack = backStackState,
+                                        entries = entries,
+                                        sceneStrategies = listOf(listDetailStrategy),
                                         onBack = {
-                                            if (backStackState.size > 1) {
-                                                backStackState.removeAt(backStackState.size - 1)
-                                            } else {
+                                            if (!navigator.goBack()) {
                                                 finish()
                                             }
                                         },
+                                        sharedTransitionScope = sharedTransitionScope,
                                         modifier =
                                             Modifier
                                                 .padding(innerPadding)
                                                 .consumeWindowInsets(innerPadding),
-                                        entryProvider = { navKey ->
-                                            when (val key = navKey as Screen) {
-                                                is Screen.Feed ->
-                                                    NavEntry(key) {
-                                                        AnimatedVisibility(
-                                                            visible = true,
-                                                            enter = fadeIn(),
-                                                            exit = fadeOut(),
-                                                        ) {
-                                                            val animatedVisibilityScope = this
-                                                            FeedScreen(
-                                                                sharedTransitionScope = sharedTransitionScope,
-                                                                animatedVisibilityScope = animatedVisibilityScope,
-                                                                presenter = presenter,
-                                                                onPhotoClick = { photo ->
-                                                                    backStackState.add(Screen.PhotoDetails(photo.id))
-                                                                },
-                                                                onUserClick = { user ->
-                                                                    backStackState.add(Screen.UserProfile(user.username))
-                                                                },
-                                                                onSearchClick = {
-                                                                    backStackState.add(Screen.Search())
-                                                                },
-                                                                onRandomClick = {
-                                                                    handleShake()
-                                                                },
-                                                            )
-                                                        }
-                                                    }
-                                                is Screen.Collections ->
-                                                    NavEntry(key) {
-                                                        AnimatedVisibility(
-                                                            visible = true,
-                                                            enter = fadeIn(),
-                                                            exit = fadeOut(),
-                                                        ) {
-                                                            val animatedVisibilityScope = this
-                                                            CollectionsFeedScreen(
-                                                                sharedTransitionScope = sharedTransitionScope,
-                                                                animatedVisibilityScope = animatedVisibilityScope,
-                                                                presenter = collectionsPresenter,
-                                                                onCollectionClick = { coll ->
-                                                                    backStackState.add(Screen.CollectionDetails(coll.id))
-                                                                },
-                                                                onSearchClick = {
-                                                                    backStackState.add(Screen.Search())
-                                                                },
-                                                            )
-                                                        }
-                                                    }
-                                                is Screen.CollectionDetails ->
-                                                    NavEntry(key) {
-                                                        AnimatedVisibility(
-                                                            visible = true,
-                                                            enter = fadeIn(),
-                                                            exit = fadeOut(),
-                                                        ) {
-                                                            val animatedVisibilityScope = this
-                                                            CollectionDetailScreen(
-                                                                sharedTransitionScope = sharedTransitionScope,
-                                                                animatedVisibilityScope = animatedVisibilityScope,
-                                                                collectionId = key.collectionId,
-                                                                onBack = {
-                                                                    if (backStackState.size > 1) {
-                                                                        backStackState.removeAt(backStackState.size - 1)
-                                                                    }
-                                                                },
-                                                                onPhotoClick = { photo ->
-                                                                    backStackState.add(Screen.PhotoDetails(photo.id))
-                                                                },
-                                                                onCollectionClick = { id ->
-                                                                    backStackState.add(Screen.CollectionDetails(id))
-                                                                },
-                                                            )
-                                                        }
-                                                    }
-                                                is Screen.Search ->
-                                                    NavEntry(key) {
-                                                        AnimatedVisibility(
-                                                            visible = true,
-                                                            enter = fadeIn(),
-                                                            exit = fadeOut(),
-                                                        ) {
-                                                            val animatedVisibilityScope = this
-                                                            SearchScreen(
-                                                                sharedTransitionScope = sharedTransitionScope,
-                                                                animatedVisibilityScope = animatedVisibilityScope,
-                                                                initialQuery = key.query,
-                                                                onBack = {
-                                                                    if (backStackState.size > 1) {
-                                                                        backStackState.removeAt(backStackState.size - 1)
-                                                                    }
-                                                                },
-                                                                onPhotoClick = { photo ->
-                                                                    backStackState.add(Screen.PhotoDetails(photo.id))
-                                                                },
-                                                                onUserClick = { user ->
-                                                                    backStackState.add(Screen.UserProfile(user.username))
-                                                                },
-                                                                onCollectionClick = { collection ->
-                                                                    backStackState.add(Screen.CollectionDetails(collection.id))
-                                                                },
-                                                            )
-                                                        }
-                                                    }
-                                                is Screen.PhotoDetails ->
-                                                    NavEntry(key) {
-                                                        AnimatedVisibility(
-                                                            visible = true,
-                                                            enter = fadeIn(),
-                                                            exit = fadeOut(),
-                                                        ) {
-                                                            val animatedVisibilityScope = this
-                                                            PhotoDetailsScreen(
-                                                                sharedTransitionScope = sharedTransitionScope,
-                                                                animatedVisibilityScope = animatedVisibilityScope,
-                                                                photoId = key.photoId,
-                                                                onBack = {
-                                                                    if (backStackState.size > 1) {
-                                                                        backStackState.removeAt(backStackState.size - 1)
-                                                                    }
-                                                                },
-                                                                onUserClick = { username ->
-                                                                    backStackState.add(Screen.UserProfile(username))
-                                                                },
-                                                                onTagClick = { tag ->
-                                                                    backStackState.add(Screen.Search(query = tag))
-                                                                },
-                                                            )
-                                                        }
-                                                    }
-                                                is Screen.UserProfile ->
-                                                    NavEntry(key) {
-                                                        AnimatedVisibility(
-                                                            visible = true,
-                                                            enter = fadeIn(),
-                                                            exit = fadeOut(),
-                                                        ) {
-                                                            val animatedVisibilityScope = this
-                                                            UserProfileScreen(
-                                                                sharedTransitionScope = sharedTransitionScope,
-                                                                animatedVisibilityScope = animatedVisibilityScope,
-                                                                username = key.username,
-                                                                onBack = {
-                                                                    if (backStackState.size > 1) {
-                                                                        backStackState.removeAt(backStackState.size - 1)
-                                                                    }
-                                                                },
-                                                                onPhotoClick = { photo ->
-                                                                    backStackState.add(Screen.PhotoDetails(photo.id))
-                                                                },
-                                                                onCollectionClick = { col ->
-                                                                    backStackState.add(Screen.CollectionDetails(col.id))
-                                                                },
-                                                            )
-                                                        }
-                                                    }
-                                            }
+                                        transitionSpec = {
+                                            (
+                                                slideInHorizontally(
+                                                    initialOffsetX = { fullWidth -> (fullWidth * 0.15f).toInt() },
+                                                    animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing),
+                                                ) + fadeIn(animationSpec = tween(350))
+                                            ) togetherWith
+                                                (
+                                                    slideOutHorizontally(
+                                                        targetOffsetX = { fullWidth -> -(fullWidth * 0.15f).toInt() },
+                                                        animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing),
+                                                    ) + fadeOut(animationSpec = tween(200))
+                                                )
+                                        },
+                                        popTransitionSpec = {
+                                            (
+                                                slideInHorizontally(
+                                                    initialOffsetX = { fullWidth -> -(fullWidth * 0.15f).toInt() },
+                                                    animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing),
+                                                ) + fadeIn(animationSpec = tween(350))
+                                            ) togetherWith
+                                                (
+                                                    slideOutHorizontally(
+                                                        targetOffsetX = { fullWidth -> (fullWidth * 0.15f).toInt() },
+                                                        animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing),
+                                                    ) + fadeOut(animationSpec = tween(200))
+                                                )
+                                        },
+                                        predictivePopTransitionSpec = { swipeEdge ->
+                                            val isEdgeLeft = swipeEdge == NavigationEvent.EDGE_LEFT
+                                            (
+                                                slideInHorizontally(
+                                                    initialOffsetX = { fullWidth ->
+                                                        if (isEdgeLeft) -(fullWidth * 0.15f).toInt() else (fullWidth * 0.15f).toInt()
+                                                    },
+                                                    animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing),
+                                                ) + fadeIn(animationSpec = tween(350))
+                                            ) togetherWith
+                                                (
+                                                    slideOutHorizontally(
+                                                        targetOffsetX = { fullWidth ->
+                                                            if (isEdgeLeft) (fullWidth * 0.15f).toInt() else -(fullWidth * 0.15f).toInt()
+                                                        },
+                                                        animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing),
+                                                    ) + fadeOut(animationSpec = tween(200))
+                                                )
                                         },
                                     )
                                 }
@@ -526,42 +281,37 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun handleShake() {
-        if (isFetchingRandom) return
-        val backStackState = backStack ?: return
-
-        isFetchingRandom = true
-        Toast.makeText(this, "🎲 Shaking up a random photo...", Toast.LENGTH_SHORT).show()
-
-        lifecycleScope.launch {
-            try {
-                val randomPhotos = repository.getRandomPhotos(count = 1)
-                val randomPhoto = randomPhotos.firstOrNull()
-                if (randomPhoto != null) {
-                    backStackState.add(Screen.PhotoDetails(randomPhoto.id))
-                } else {
-                    Toast.makeText(this@MainActivity, "No photos found", Toast.LENGTH_SHORT).show()
-                }
-            } catch (e: Exception) {
-                Toast.makeText(this@MainActivity, "Fetch failed: ${e.message}", Toast.LENGTH_SHORT).show()
-            } finally {
-                isFetchingRandom = false
-            }
-        }
-    }
-
     override fun onResume() {
         super.onResume()
-        sensorManager?.registerListener(
-            shakeDetector,
-            sensorManager?.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),
-            SensorManager.SENSOR_DELAY_UI,
-        )
+        sensorManager?.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)?.let { accelerometer ->
+            sensorManager?.registerListener(shakeDetector, accelerometer, SensorManager.SENSOR_DELAY_UI)
+        }
     }
 
     override fun onPause() {
         sensorManager?.unregisterListener(shakeDetector)
         super.onPause()
+    }
+
+    private fun handleShake() {
+        if (isFetchingRandom) return
+        isFetchingRandom = true
+        lifecycleScope.launch {
+            try {
+                val photos = repository.getRandomPhotos(count = 1)
+                val randomPhoto = photos.firstOrNull() ?: return@launch
+                onNavigateToRandom?.invoke(AppRoute.PhotoDetails(randomPhoto.id))
+            } catch (e: Exception) {
+                Toast
+                    .makeText(
+                        this@MainActivity,
+                        "Failed to fetch random photo: ${e.message}",
+                        Toast.LENGTH_SHORT,
+                    ).show()
+            } finally {
+                isFetchingRandom = false
+            }
+        }
     }
 }
 
@@ -584,7 +334,10 @@ class ShakeDetector(
             if (curTime - lastUpdate > 100) {
                 val diffTime = curTime - lastUpdate
                 lastUpdate = curTime
-                val speed = sqrt((x - lastX) * (x - lastX) + (y - lastY) * (y - lastY) + (z - lastZ) * (z - lastZ)) / diffTime * 10000
+                val speed =
+                    sqrt(
+                        (x - lastX) * (x - lastX) + (y - lastY) * (y - lastY) + (z - lastZ) * (z - lastZ),
+                    ) / diffTime * 10000
                 if (speed > shakeThreshold) {
                     onShake()
                 }
@@ -599,339 +352,4 @@ class ShakeDetector(
         sensor: Sensor,
         accuracy: Int,
     ) {}
-}
-
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
-@Composable
-fun FeedScreen(
-    sharedTransitionScope: SharedTransitionScope,
-    animatedVisibilityScope: AnimatedVisibilityScope,
-    presenter: FeedPresenter,
-    onPhotoClick: (Photo) -> Unit,
-    onUserClick: (User) -> Unit,
-    onSearchClick: () -> Unit,
-    onRandomClick: () -> Unit,
-) {
-    val state by presenter.state.collectAsStateWithLifecycle(initialValue = FeedState())
-    val listState = rememberLazyStaggeredGridState()
-    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
-    val pullToRefreshState = rememberPullToRefreshState()
-    val haptic = LocalHapticFeedback.current
-
-    LaunchedEffect(pullToRefreshState.distanceFraction) {
-        if (pullToRefreshState.distanceFraction >= 1f) {
-            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-        }
-    }
-
-    // Infinite scrolling logic
-    val shouldLoadMore =
-        remember {
-            derivedStateOf {
-                val lastVisibleItem = listState.layoutInfo.visibleItemsInfo.lastOrNull()
-                val totalItems = listState.layoutInfo.totalItemsCount
-                if (lastVisibleItem == null || totalItems == 0) {
-                    false
-                } else {
-                    lastVisibleItem.index >= totalItems - 6
-                }
-            }
-        }
-
-    LaunchedEffect(shouldLoadMore.value) {
-        if (shouldLoadMore.value) {
-            presenter.loadNextPage()
-        }
-    }
-
-    Scaffold(
-        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-        topBar = {
-            Column {
-                CenterAlignedTopAppBar(
-                    title = {
-                        Text(
-                            "FEED",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 2.sp,
-                        )
-                    },
-                    actions = {
-                        IconButton(onClick = onSearchClick) {
-                            Icon(
-                                imageVector = Icons.Default.Search,
-                                contentDescription = "Search",
-                            )
-                        }
-                        IconButton(onClick = onRandomClick) {
-                            Icon(
-                                imageVector = Icons.Default.Refresh,
-                                contentDescription = "Randomize",
-                            )
-                        }
-                    },
-                    colors =
-                        TopAppBarDefaults.topAppBarColors(
-                            containerColor = MaterialTheme.colorScheme.surface,
-                            scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainer,
-                            titleContentColor = MaterialTheme.colorScheme.onSurface,
-                            actionIconContentColor = MaterialTheme.colorScheme.onSurface,
-                        ),
-                    scrollBehavior = scrollBehavior,
-                )
-
-                val activeIndex =
-                    if (state.selectedTopicSlug == "editorial") {
-                        0
-                    } else {
-                        val idx = state.topics.indexOfFirst { it.slug == state.selectedTopicSlug }
-                        if (idx >= 0) idx + 1 else 0
-                    }
-
-                SecondaryScrollableTabRow(
-                    selectedTabIndex = activeIndex,
-                    containerColor =
-                        if (scrollBehavior.state.contentOffset < 0f) {
-                            MaterialTheme.colorScheme.surfaceContainer
-                        } else {
-                            MaterialTheme.colorScheme.surface
-                        },
-                    contentColor = MaterialTheme.colorScheme.primary,
-                    edgePadding = 12.dp,
-                ) {
-                    Tab(
-                        selected = state.selectedTopicSlug == "editorial",
-                        onClick = { presenter.selectTopic("editorial") },
-                        text = {
-                            Text(
-                                "Editorial",
-                                style = MaterialTheme.typography.labelLarge,
-                                fontWeight = if (state.selectedTopicSlug == "editorial") FontWeight.Bold else FontWeight.Normal,
-                            )
-                        },
-                    )
-                    state.topics.forEach { topic ->
-                        val isSelected = state.selectedTopicSlug == topic.slug
-                        Tab(
-                            selected = isSelected,
-                            onClick = { presenter.selectTopic(topic.slug) },
-                            text = {
-                                Text(
-                                    topic.title,
-                                    style = MaterialTheme.typography.labelLarge,
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                )
-                            },
-                        )
-                    }
-                }
-            }
-        },
-    ) { paddingValues ->
-        PullToRefreshBox(
-            isRefreshing = state.isRefreshing,
-            onRefresh = {
-                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                presenter.refresh()
-            },
-            state = pullToRefreshState,
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
-        ) {
-            if (state.photos.isEmpty() && state.isLoading) {
-                PhotoGridSkeleton()
-            } else if (state.photos.isEmpty() && state.error != null) {
-                ErrorView(error = state.error!!, onRetry = { presenter.refresh() })
-            } else {
-                // Main content: Photo Feed
-                LazyVerticalStaggeredGrid(
-                    columns = calculateGridColumns(),
-                    state = listState,
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalItemSpacing = 8.dp,
-                ) {
-                    itemsIndexed(state.photos, key = { _, photo -> photo.id }) { index, photo ->
-                        PhotoCard(
-                            sharedTransitionScope = sharedTransitionScope,
-                            animatedVisibilityScope = animatedVisibilityScope,
-                            index = index,
-                            photo = photo,
-                            onClick = {
-                                onPhotoClick(photo)
-                            },
-                            onUserClick = {
-                                onUserClick(photo.user)
-                            },
-                        )
-                    }
-
-                    if (state.isLoading) {
-                        item {
-                            Box(
-                                modifier =
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .padding(16.dp),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                CircularProgressIndicator()
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalSharedTransitionApi::class)
-@Composable
-fun PhotoCard(
-    sharedTransitionScope: SharedTransitionScope,
-    animatedVisibilityScope: AnimatedVisibilityScope,
-    index: Int,
-    photo: Photo,
-    onClick: () -> Unit,
-    onUserClick: () -> Unit,
-) {
-    val context = LocalPlatformContext.current
-    val itemWidthPx = calculatePhotoItemWidthPx()
-    val aspectRatio = photo.width.toFloat() / photo.height.toFloat()
-
-    // Decode BlurHash placeholder in background
-    val placeholderBitmap by produceState<android.graphics.Bitmap?>(initialValue = null, photo.blurHash) {
-        value = BlurHashDecoder.decode(photo.blurHash, 32, (32 / aspectRatio).toInt())
-    }
-
-    val painter =
-        rememberAsyncImagePainter(
-            model =
-                ImageRequest
-                    .Builder(context)
-                    .data(photo.urls.raw + "&w=" + itemWidthPx + "&q=80&auto=format")
-                    .crossfade(true)
-                    .build(),
-            placeholder = placeholderBitmap?.let { BitmapPainter(it.asImageBitmap()) },
-        )
-
-    Card(
-        shape = MaterialTheme.shapes.medium,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .staggeredEntrance(index = index)
-                .bounceClick(onClick = onClick),
-    ) {
-        Box(
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            with(sharedTransitionScope) {
-                Image(
-                    painter = painter,
-                    contentDescription = photo.altDescription ?: photo.description,
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .aspectRatio(aspectRatio)
-                            .sharedElement(
-                                sharedContentState = rememberSharedContentState(key = "photo_img_${photo.id}"),
-                                animatedVisibilityScope = animatedVisibilityScope,
-                            ),
-                    contentScale = ContentScale.Crop,
-                )
-            }
-
-            // Dynamic bottom overlay containing photographer attribution
-            Box(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .align(Alignment.BottomCenter)
-                        .background(
-                            Brush.verticalGradient(
-                                colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.75f)),
-                            ),
-                        ).padding(8.dp),
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .clickable { onUserClick() },
-                ) {
-                    val userProfileImagePainter =
-                        rememberAsyncImagePainter(
-                            model =
-                                ImageRequest
-                                    .Builder(context)
-                                    .data(photo.user.profileImage.small)
-                                    .crossfade(true)
-                                    .build(),
-                        )
-
-                    Image(
-                        painter = userProfileImagePainter,
-                        contentDescription = "User profile",
-                        modifier =
-                            Modifier
-                                .size(24.dp)
-                                .clip(CircleShape),
-                    )
-
-                    Spacer(modifier = Modifier.width(6.dp))
-
-                    Text(
-                        text = photo.user.name,
-                        color = Color.White,
-                        style = MaterialTheme.typography.titleSmall,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun ErrorView(
-    error: String,
-    onRetry: () -> Unit,
-) {
-    Column(
-        modifier =
-            Modifier
-                .fillMaxSize()
-                .padding(24.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Text(
-            text = "Error Loading Feed",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface,
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = error,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Button(
-            onClick = onRetry,
-            shape = MaterialTheme.shapes.small,
-        ) {
-            Text("Retry")
-        }
-    }
 }

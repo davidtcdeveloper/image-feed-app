@@ -58,7 +58,6 @@ import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -107,15 +106,15 @@ fun UserProfileScreen(
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope,
     username: String,
+    presenter: com.example.imagefeed.presentation.UserProfilePresenter =
+        com.example.imagefeed.android.util.rememberEntryPresenter(key = "user_$username", onClear = { it.clear() }) {
+            MetroHelper.getUserProfilePresenter(username)
+        },
     onBack: () -> Unit,
     onPhotoClick: (Photo) -> Unit,
     onCollectionClick: (PhotoCollection) -> Unit,
 ) {
     val context = LocalPlatformContext.current
-    val presenter = remember(username) { MetroHelper.getUserProfilePresenter(username) }
-    DisposableEffect(presenter) {
-        onDispose { presenter.clear() }
-    }
     val state by presenter.state.collectAsStateWithLifecycle(initialValue = UserProfileState())
 
     Scaffold(

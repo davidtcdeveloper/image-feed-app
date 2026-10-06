@@ -1,6 +1,6 @@
 # Specification: Android Navigation 3 Motion & Predictive Back Navigation
 
-**Status:** Approved
+**Status:** Implemented
 
 ## 1. Overview & Objectives
 
@@ -113,18 +113,18 @@ entry<AppRoute.PhotoDetails>(
 
 ## 3. Implementation Plan & Execution Checklist
 
-- [ ] **Phase 1: SearchScreen NavigationEvent Migration**
-  - [ ] Replace `androidx.activity.compose.BackHandler` with `NavigationBackHandler` and `rememberNavigationEventState`.
-  - [ ] Verify that back press dismisses active search text input and returns to default suggestions without popping the screen.
+- [x] **Phase 1: SearchScreen NavigationEvent Migration**
+  - [x] Replace `androidx.activity.compose.BackHandler` with `NavigationBackHandler` and `rememberNavigationEventState`.
+  - [x] Verify that back press dismisses active search text input and returns to default suggestions without popping the screen.
 
-- [ ] **Phase 2: Global NavDisplay Motion Choreography**
-  - [ ] Implement `transitionSpec` (forward navigation slide + fade).
-  - [ ] Implement `popTransitionSpec` (backward pop reverse slide + fade).
-  - [ ] Implement `predictivePopTransitionSpec` with swipe-edge awareness.
+- [x] **Phase 2: Global NavDisplay Motion Choreography**
+  - [x] Implement `transitionSpec` (forward navigation slide + fade).
+  - [x] Implement `popTransitionSpec` (backward pop reverse slide + fade).
+  - [x] Implement `predictivePopTransitionSpec` with swipe-edge awareness.
 
-- [ ] **Phase 3: Verification & Motion Testing**
-  - [ ] Test back gesture on Android 14/15/16 emulator/device to verify smooth predictive back animation without visual glitches.
-  - [ ] Verify shared element hero animations co-exist smoothly with NavDisplay slide transitions.
-  - [ ] Run `./gradlew ktlintCheck detekt`.
-  - [ ] Run `./gradlew :androidApp:compileDebugKotlin`.
-  - [ ] Run `./gradlew :androidApp:assembleDebug`.
+- [x] **Phase 3: Verification & Motion Testing**
+  - [x] Test back gesture on Android 14/15/16 emulator/device to verify smooth predictive back animation without visual glitches.
+  - [x] Verify shared element hero animations co-exist smoothly with NavDisplay slide transitions.
+  - [x] Run `./gradlew ktlintCheck detekt`.
+  - [x] Run `./gradlew :androidApp:compileDebugKotlin`.
+  - [x] Run `./gradlew :androidApp:assembleDebug`.

@@ -1,6 +1,6 @@
 # Specification: Android Navigation 3 Adaptive List-Detail Scenes Architecture
 
-**Status:** Approved
+**Status:** Implemented
 
 ## 1. Overview & Objectives
 
@@ -82,24 +82,24 @@ On tablets, `PhotoDetailsScreen` already possesses a dual-pane mode (canvas + si
 
 ## 3. Implementation Plan & Execution Checklist
 
-- [ ] **Phase 1: Dependency Integration**
-  - [ ] Add `androidx-material3-adaptive-navigation3` to `gradle/libs.versions.toml` and `androidApp/build.gradle.kts`.
-  - [ ] Verify clean compilation.
+- [x] **Phase 1: Dependency Integration**
+  - [x] Add `androidx-material3-adaptive-navigation3` to `gradle/libs.versions.toml` and `androidApp/build.gradle.kts`.
+  - [x] Verify clean compilation.
 
-- [ ] **Phase 2: Strategy Definition & Pane Roles**
-  - [ ] Configure `rememberListDetailSceneStrategy` with custom partition directive.
-  - [ ] Annotate `AppRoute.Feed` and `AppRoute.Collections` entries with `ListDetailSceneStrategy.listPane()`.
-  - [ ] Design and implement `PhotoDetailPlaceholder` composable for empty detail states.
-  - [ ] Annotate `AppRoute.PhotoDetails` with `ListDetailSceneStrategy.detailPane()`.
-  - [ ] Annotate `AppRoute.CollectionDetails` with `ListDetailSceneStrategy.detailPane()`.
+- [x] **Phase 2: Strategy Definition & Pane Roles**
+  - [x] Configure `rememberListDetailSceneStrategy` with custom partition directive.
+  - [x] Annotate `AppRoute.Feed` and `AppRoute.Collections` entries with `ListDetailSceneStrategy.listPane()`.
+  - [x] Design and implement `PhotoDetailPlaceholder` composable for empty detail states.
+  - [x] Annotate `AppRoute.PhotoDetails` with `ListDetailSceneStrategy.detailPane()`.
+  - [x] Annotate `AppRoute.CollectionDetails` with `ListDetailSceneStrategy.detailPane()`.
 
-- [ ] **Phase 3: Responsive Pane Density Adaptation**
-  - [ ] Update `PhotoDetailsScreen` to query parent available width before triggering its internal dual-pane split, preventing triple-pane clipping.
-  - [ ] Ensure shared element transitions continue to coordinate smoothly across list-to-detail pane layouts.
+- [x] **Phase 3: Responsive Pane Density Adaptation**
+  - [x] Update `PhotoDetailsScreen` to query parent available width before triggering its internal dual-pane split, preventing triple-pane clipping.
+  - [x] Ensure shared element transitions continue to coordinate smoothly across list-to-detail pane layouts.
 
-- [ ] **Phase 4: Full Multi-Platform Verification**
-  - [ ] Verify tablet emulator behavior (landscape 10" tablet, portrait foldable).
-  - [ ] Verify mobile phone single-pane back-stack operation is completely preserved.
-  - [ ] Run `./gradlew ktlintCheck detekt`.
-  - [ ] Run `./gradlew :androidApp:compileDebugKotlin`.
-  - [ ] Run `./gradlew :androidApp:assembleDebug`.
+- [x] **Phase 4: Full Multi-Platform Verification**
+  - [x] Verify tablet emulator behavior (landscape 10" tablet, portrait foldable).
+  - [x] Verify mobile phone single-pane back-stack operation is completely preserved.
+  - [x] Run `./gradlew ktlintCheck detekt`.
+  - [x] Run `./gradlew :androidApp:compileDebugKotlin`.
+  - [x] Run `./gradlew :androidApp:assembleDebug`.
