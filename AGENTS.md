@@ -33,6 +33,7 @@ These non-negotiable boundaries and policies must be observed on every change:
 3. **Quality & Hygiene Standards**:
    * **Zero Compiler Warning Policy**: Monitor and resolve compiler warnings immediately after significant changes.
    * **Zero Dead Code Policy**: Eliminate obsolete properties, parameters, and imports in the same change set.
+   * **Living Code & Anti-Staleness Policy**: Instructions and skills must never include verbatim boilerplate code samples or multi-line implementation blocks. Reference living, compiler-verified source files via file links or specify guidelines declaratively. Micro-snippets (< 4 lines) are restricted to compiler suppressions, CLI commands, or formulas.
    * **Host Permissions**: Build, test, and lint commands require host execution (`BypassSandbox: true` in sandboxed agents).
    * **Strict Commit Scoping**: Stage and commit only specifically requested files; clean up temporary scratch files in `.agents/` prior to commit.
    * **Spec Completeness**: Validate all acceptance criteria checkboxes (`- [x]`) before marking a spec as `Implemented`.

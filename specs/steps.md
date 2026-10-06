@@ -599,3 +599,17 @@ These are the spec files that the implementation notes and planning references s
     *   Update `AGENTS.md` reference indexes to point to workspace skills and active specifications.
 4.  **Reference Specification:**
     *   Track blueprint in `specs/39_skills_and_rules_migration.md`.
+
+### Step 42: Living Code References & Anti-Staleness Rules for Agent Skills (Completed)
+1.  **Core Invariant in `AGENTS.md`:**
+    *   Add the `Living Code & Anti-Staleness Policy` under `Core Invariants -> Quality & Hygiene Standards`.
+    *   Prohibit verbatim boilerplate code templates and multi-line implementation blocks in all model instructions and skills.
+    *   Mandate living code references (clickable markdown links) and declarative token/invariant definitions.
+    *   Enforce the < 4 lines micro-snippet rule for compiler flags, CLI commands, and formulas.
+2.  **Refactoring Existing Skills:**
+    *   Remove 40-line `FeedPresenterTest` boilerplate in `kmp-testing/SKILL.md` and replace with a living file link to `shared/src/commonTest/kotlin/com/example/imagefeed/presentation/FeedPresenterTest.kt`.
+    *   Remove raw overlay and sheet boilerplate in `ios-glass-design/SKILL.md`, pointing to `iosApp/iosApp/GlassTheme.swift` modifiers instead.
+    *   Streamline `kmp-architecture/SKILL.md` to reference shared state extension definitions declaratively.
+3.  **Reference Specification:**
+    *   Track blueprint in `specs/40_living_code_references_and_anti_staleness_rules.md`.
+

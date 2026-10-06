@@ -36,48 +36,14 @@ Use this skill when:
 
 Shared presenters rely on compile-time Metro DI and injected coroutine lifecycle abstractions (`PresenterScope` / `PresenterScopeFactory` and `DispatcherProvider`).
 
-### Canonical Test Fixture Setup
-When authoring presenter tests, construct the presenter using the project's test fixtures:
+### Canonical Test Fixture Reference
+Do not duplicate test fixture boilerplate in documentation. Reference the living, compiler-verified test suite in [`FeedPresenterTest.kt`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/src/commonTest/kotlin/com/example/imagefeed/presentation/FeedPresenterTest.kt) as the canonical pattern for presenter tests.
 
-```kotlin
-import com.example.imagefeed.model.Topic
-import com.example.imagefeed.presentation.FeedPresenter
-import com.example.imagefeed.presentation.TestPresenterScopeFactory
-import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.advanceUntilIdle
-import kotlinx.coroutines.test.runTest
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
-
-class FeedPresenterTest {
-
-    @Test
-    fun loadsInitialFeedAndTopics() = runTest {
-        val testDispatcher = StandardTestDispatcher(testScheduler)
-        val presenterScopeFactory = TestPresenterScopeFactory(testDispatcher)
-        val repository = FakeUnsplashRepository(
-            topics = listOf(Topic("t1", "nature", "Nature", totalPhotos = 2)),
-            photosByPage = mapOf("editorial" to mapOf(1 to listOf(photo("p1"), photo("p2")))),
-        )
-
-        val presenter = FeedPresenter(
-            repository = repository,
-            presenterScopeFactory = presenterScopeFactory,
-        )
-
-        advanceUntilIdle()
-
-        val state = presenter.state.value
-        assertFalse(state.isLoading)
-        assertTrue(state.photos.isNotEmpty())
-        assertEquals("editorial", state.selectedTopicSlug)
-
-        presenter.clear()
-    }
-}
-```
+Key scaffolding patterns:
+- **Coroutines & Dispatcher Scoping**: Execute tests within `runTest`. Create a `StandardTestDispatcher(testScheduler)` and pass it to `TestPresenterScopeFactory(testDispatcher)`.
+- **Deterministic Scheduling**: Advance asynchronous coroutines deterministically using `advanceUntilIdle()` or `testScheduler.runCurrent()`.
+- **Fakes over Mocks**: Use `FakeUnsplashRepository` (configured with seed topics, collections, or photos) rather than dynamic mocking frameworks.
+- **Presenter Teardown**: Always invoke `presenter.clear()` at the end of tests to verify clean coroutine cancellation and prevent cross-test job leakage.
 
 ---
 

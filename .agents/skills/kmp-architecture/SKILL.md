@@ -68,13 +68,7 @@ The UI across all platforms is driven by the **Shared Presenter** pattern:
   - On iOS/macOS: Swift ViewModels invoke `presenter.clear()` in `deinit` or upon view dismissal.
 
 ### C. State Update Guarding
-To prevent emissions after scope cancellation, guard state updates with shared lifecycle helpers:
-```kotlin
-stateFlow.updateIfActive(coroutineContext) { currentState ->
-    currentState.copy(...)
-}
-```
-Avoid repeating ad-hoc `if (!isActive())` checks across individual emission points.
+To prevent emissions after scope cancellation, guard state updates using the shared [`updateIfActive`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/src/commonMain/kotlin/com/example/imagefeed/presentation/PresenterScope.kt) extension on `MutableStateFlow`. Avoid repeating ad-hoc `if (!isActive())` checks across individual emission points.
 
 ---
 
