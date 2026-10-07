@@ -71,6 +71,9 @@ The `specs/` folder currently contains the following implementation and design d
 *   `specs/36_android_navigation3_multiple_backstacks_and_navigator.md`
 *   `specs/37_android_navigation3_predictive_back_and_motion.md`
 *   `specs/38_android_navigation3_adaptive_list_detail_scenes.md`
+*   `specs/39_skills_and_rules_migration.md`
+*   `specs/40_living_code_references_and_anti_staleness_rules.md`
+*   `specs/41_readme_and_agents_parity_alignment.md`
 *   `specs/implementation_plan.md`
 *   `specs/steps.md`
 
@@ -613,7 +616,7 @@ These are the spec files that the implementation notes and planning references s
 3.  **Reference Specification:**
     *   Track blueprint in `specs/40_living_code_references_and_anti_staleness_rules.md`.
 
-### Step 43: Documentation Parity & Alignment with AGENTS.md (Approved)
+### Step 43: Documentation Parity & Alignment with AGENTS.md (Completed)
 1.  **Dual-Platform Build Commands Synchronization:**
     *   Align `README.md` iOS command-line verification with `AGENTS.md` and `verification-and-linting/SKILL.md` (`xcodegen generate --spec iosApp/project.yml` and `xcodebuild ... CODE_SIGNING_ALLOWED=NO`).
 2.  **Swift Formatting Toolchain Parity:**
