@@ -613,3 +613,17 @@ These are the spec files that the implementation notes and planning references s
 3.  **Reference Specification:**
     *   Track blueprint in `specs/40_living_code_references_and_anti_staleness_rules.md`.
 
+### Step 43: Documentation Parity & Alignment with AGENTS.md (Approved)
+1.  **Dual-Platform Build Commands Synchronization:**
+    *   Align `README.md` iOS command-line verification with `AGENTS.md` and `verification-and-linting/SKILL.md` (`xcodegen generate --spec iosApp/project.yml` and `xcodebuild ... CODE_SIGNING_ALLOWED=NO`).
+2.  **Swift Formatting Toolchain Parity:**
+    *   Add `swiftformat .` to `README.md` Code Quality section to match Kotlin auto-formatting.
+3.  **Unsplash API Compliance Hardening:**
+    *   Document the Retina display scaling (`UIScreen.main.scale`) requirement in `README.md` Unsplash compliance guidelines.
+4.  **Living Code References in Architecture & Navigation:**
+    *   Update Android Navigation 3 route references from `Screen.*` to `AppRoute.*`.
+    *   Correct iOS navigation description to `FeedPathItem` struct and eliminate `CollectionPathItem`.
+    *   Expand presenter architecture list to include `CollectionsFeedPresenter` and `RandomPhotoPresenter`.
+5.  **Reference Specification:**
+    *   Track blueprint in `specs/41_readme_and_agents_parity_alignment.md`.
+

@@ -126,11 +126,11 @@ flowchart TD
 ### Navigation Architecture Details
 
 * **Android Navigation 3 (`NavBackStack` + `NavDisplay`)**:
-  * Type-safe, sealed route hierarchy: `Screen.Feed`, `Screen.Collections`, `Screen.CollectionDetails(collectionId)`, `Screen.Search(query)`, `Screen.PhotoDetails(photoId)`, `Screen.UserProfile(username)`.
+  * Type-safe, sealed route hierarchy: `AppRoute.Feed`, `AppRoute.Collections`, `AppRoute.CollectionDetails(collectionId)`, `AppRoute.Search(query)`, `AppRoute.PhotoDetails(photoId)`, `AppRoute.UserProfile(username)`.
   * Responsive navigation container: Start-docked `NavigationRail` with quick-shuffle access on Medium/Expanded displays ($\ge 600\text{dp}$), switching to a bottom `NavigationBar` on compact screens (< 600dp).
   * Smooth entry transitions wrapped in `SharedTransitionLayout` for hero photo expansion.
 * **iOS & macOS SwiftUI Navigation (`NavigationStack`)**:
-  * Typed path back stacks using `FeedPathItem` and `CollectionPathItem` enums.
+  * Typed path back stacks using `FeedPathItem` struct (`type`: photo, user, collection, search).
   * Translucent glass `TabView` on iOS with `.toolbarBackground(.ultraThinMaterial, for: .tabBar)`.
   * Native `NavigationSplitView` master-detail sidebar layout on macOS.
   * Interactive hero card zoom transitions powered by `matchedGeometryEffect`.
@@ -161,7 +161,8 @@ The codebase follows the **Shared Presenter Pattern**, maximizing cross-platform
 │   ┌─────────────────────────────────────────────────────────────────────┐   │
 │   │                             Presenters                              │   │
 │   │  (FeedPresenter, UnifiedSearchPresenter, PhotoDetailsPresenter,     │   │
-│   │   CollectionDetailPresenter, UserProfilePresenter)                  │   │
+│   │   CollectionDetailPresenter, CollectionsFeedPresenter,              │   │
+│   │   RandomPhotoPresenter, UserProfilePresenter)                       │   │
 │   │   * PresenterScope Lifecycle Management & updateIfActive Guard      │   │
 │   └──────────────────────────────────┬──────────────────────────────────┘   │
 │                                      ▼                                      │
@@ -224,7 +225,7 @@ To render inline Google Maps in Android's Photo Details screen:
 This project adheres to a strict spec-driven engineering workflow:
 * **Specs & Planning**: Every change is anchored in a specification document in `specs/`. Check `specs/steps.md` for historical implementation notes.
 * **Zero Warning Policy**: Code changes must produce zero compiler warnings and clean lint reports.
-* **Dual-Platform Build Policy**: Any change affecting `shared/` or platform logic must be verified on both Android and iOS targets.
+* **Dual-Platform Build Policy**: Any change affecting `shared/` or platform logic must be verified on both Android and iOS targets. While macOS is supported via the shared Xcode project, pre-commit CI and automated verification focus on the dual mobile targets (`androidApp` and `iosApp`).
 * **Architecture Rules**: Review `AGENTS.md` and the workspace skills in `.agents/skills/` for guidelines on presenter lifecycles, cross-language interop, and UI styling.
 
 ---
@@ -254,13 +255,18 @@ The shared KMP framework compiles for iOS device and simulator architectures (`i
 
 1. Generate the Xcode project:
    ```bash
-   cd iosApp && xcodegen
+   xcodegen generate --spec iosApp/project.yml
    ```
 2. Open `iosApp/iosApp.xcodeproj` in **Xcode**.
 3. Select the `iosApp` scheme and an iOS Simulator (iPhone 15+ / iOS 17+).
 4. Build and run with **⌘R**.
 
-Command-line simulator compilation:
+Command-line verification (XcodeGen + iOS Simulator build):
+```bash
+xcodegen generate --spec iosApp/project.yml && xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp -destination 'generic/platform=iOS Simulator' build CODE_SIGNING_ALLOWED=NO
+```
+
+To compile only the shared KMP framework for Apple Silicon simulator:
 ```bash
 ./gradlew :shared:compileKotlinIosSimulatorArm64
 ```
@@ -286,9 +292,12 @@ Run project linters before submitting changes:
 # Automatically format Kotlin code
 ./gradlew ktlintFormat
 
-# Swift linting & formatting
-swiftlint lint iosApp/iosApp
+# Swift linting & formatting checks
 swiftformat --lint .
+swiftlint lint iosApp/iosApp
+
+# Automatically format Swift code
+swiftformat .
 ```
 
 ---
@@ -300,3 +309,4 @@ When modifying views or business logic, always follow the Unsplash API developer
 * **Parameter Preservation**: Preserve all `ixid` tracking parameters in image request query strings.
 * **Photographer Attribution**: Display photographer names and profile pictures prominently, including clickable links back to their Unsplash profile with UTM referral tracking parameters (`utm_source=ImageFeedApp&utm_medium=referral`).
 * **Download Tracking**: Ensure that photo download and save actions trigger the designated `photo.links.download_location` endpoint.
+* **Retina CDN Optimization**: Multiply layout points by display scale (`UIScreen.main.scale` on iOS/macOS, display density on Android) when constructing `&w=` URL parameters to deliver sharp Retina imagery without requesting excessive raw file dimensions.
