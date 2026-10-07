@@ -625,7 +625,7 @@ These are the spec files that the implementation notes and planning references s
     *   Document the Retina display scaling (`UIScreen.main.scale`) requirement in `README.md` Unsplash compliance guidelines.
 4.  **Living Code References in Architecture & Navigation:**
     *   Update Android Navigation 3 route references from `Screen.*` to `AppRoute.*`.
-    *   Correct iOS navigation description to `FeedPathItem` struct and eliminate `CollectionPathItem`.
+    *   Correct iOS navigation description to `FeedPathItem` and `CollectionPathItem` structs (wrapping `ItemType` enums).
     *   Expand presenter architecture list to include `CollectionsFeedPresenter` and `RandomPhotoPresenter`.
 5.  **Reference Specification:**
     *   Track blueprint in `specs/41_readme_and_agents_parity_alignment.md`.

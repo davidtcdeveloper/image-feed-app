@@ -130,7 +130,7 @@ flowchart TD
   * Responsive navigation container: Start-docked `NavigationRail` with quick-shuffle access on Medium/Expanded displays ($\ge 600\text{dp}$), switching to a bottom `NavigationBar` on compact screens (< 600dp).
   * Smooth entry transitions wrapped in `SharedTransitionLayout` for hero photo expansion.
 * **iOS & macOS SwiftUI Navigation (`NavigationStack`)**:
-  * Typed path back stacks using `FeedPathItem` struct (`type`: photo, user, collection, search).
+  * Typed path back stacks using `FeedPathItem` and `CollectionPathItem` structs (`type`: photo, user, collection, search).
   * Translucent glass `TabView` on iOS with `.toolbarBackground(.ultraThinMaterial, for: .tabBar)`.
   * Native `NavigationSplitView` master-detail sidebar layout on macOS.
   * Interactive hero card zoom transitions powered by `matchedGeometryEffect`.
@@ -177,7 +177,7 @@ The codebase follows the **Shared Presenter Pattern**, maximizing cross-platform
 │                                      ▼                                      │
 │   ┌─────────────────────────────────────────────────────────────────────┐   │
 │   │                         UnsplashApiClient                           │   │
-│   │          (Ktor 3.5 HTTP Engine, ContentNegotiation, Json)           │   │
+│   │          (Ktor 3.6 HTTP Engine, ContentNegotiation, Json)           │   │
 │   └──────────────────────────────────┬──────────────────────────────────┘   │
 │                                      ▼                                      │
 │   ┌─────────────────────────────────────────────────────────────────────┐   │
@@ -189,8 +189,8 @@ The codebase follows the **Shared Presenter Pattern**, maximizing cross-platform
 * **`shared` (`commonMain`, `appleMain`, `androidMain`)**:
   * **Compile-Time DI**: Fast, reflection-free dependency injection with **Metro** (`dev.zacsweers.metro`).
   * **Lifecycle-Safe Presenters**: Presenters own managed `PresenterScope` instances with clean `clear()` lifecycles, guarded by `updateIfActive()` helpers to prevent memory leaks or emissions after screen teardown.
-  * **Networking**: High-performance HTTP client using Ktor 3.5 with Darwin engine for Apple targets and OkHttp engine for Android.
-* **`androidApp`**: Pure Jetpack Compose UI shell with Navigation 3, Coil 3.5 image pipeline, Google Maps Compose, and Material 3 design tokens.
+  * **Networking**: High-performance HTTP client using Ktor 3.6 with Darwin engine for Apple targets and OkHttp engine for Android.
+* **`androidApp`**: Pure Jetpack Compose UI shell with Navigation 3, Coil 3.6 image pipeline, Google Maps Compose, and Material 3 design tokens.
 * **`iosApp`**: Pure SwiftUI shell observing shared Kotlin flows into Swift 5.9+ `@Observable` view models, supporting iOS 17+ and macOS 14+ targets.
 
 ---

@@ -25,7 +25,7 @@ A comprehensive review comparing [`README.md`](file:///Users/davidtiagoconceicao
 
 4. **Stale Living Code References in Navigation & Architecture**:
    * [`README.md`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/README.md#L128-L131) previously described Android Navigation 3 routes as `Screen.Feed`, `Screen.Collections`, `Screen.CollectionDetails`, `Screen.Search`, `Screen.PhotoDetails`, `Screen.UserProfile`. In the living codebase ([`Routes.kt`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/androidApp/src/main/java/com/example/imagefeed/android/navigation/Routes.kt#L13-L41)), the sealed hierarchy is named `AppRoute` (`AppRoute.Feed`, `AppRoute.Collections`, `AppRoute.CollectionDetails`, `AppRoute.Search`, `AppRoute.PhotoDetails`, `AppRoute.UserProfile`).
-   * [`README.md`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/README.md#L132-L137) previously claimed SwiftUI navigation uses `FeedPathItem` and `CollectionPathItem` enums. In [`ContentView.swift`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/iosApp/iosApp/ContentView.swift#L116), `FeedPathItem` is a `struct`, and no `CollectionPathItem` exists.
+   * [`README.md`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/README.md#L132-L137) previously claimed SwiftUI navigation uses `FeedPathItem` and `CollectionPathItem` enums. In [`ContentView.swift`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/iosApp/iosApp/ContentView.swift#L104-L126), both `FeedPathItem` and `CollectionPathItem` are `struct`s wrapping an inner `ItemType` enum, rather than enums themselves.
    * [`README.md`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/README.md#L162-L167) listed an incomplete subset of presenters (`FeedPresenter, UnifiedSearchPresenter, PhotoDetailsPresenter, CollectionDetailPresenter, UserProfilePresenter`), omitting [`CollectionsFeedPresenter`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/src/commonMain/kotlin/com/example/imagefeed/presentation/CollectionsFeedPresenter.kt) and [`RandomPhotoPresenter`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/src/commonMain/kotlin/com/example/imagefeed/presentation/RandomPhotoPresenter.kt).
 
 5. **Platform Scope & Dual-Platform Verification Terminology**:
@@ -54,7 +54,7 @@ All updates to [`README.md`](file:///Users/davidtiagoconceicao/Developer/image-f
    * Include the mandatory requirement to multiply layout points by display scale (`UIScreen.main.scale`) for CDN requests to guarantee sharp Retina rendering.
 
 4. **Living Code & Anti-Staleness**:
-   * Documentation must reflect active, living types and declarations: [`AppRoute`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/androidApp/src/main/java/com/example/imagefeed/android/navigation/Routes.kt#L13), [`FeedPathItem`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/iosApp/iosApp/ContentView.swift#L116), and the full suite of presenters in [`shared/src/commonMain/kotlin/com/example/imagefeed/presentation/`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/src/commonMain/kotlin/com/example/imagefeed/presentation/).
+   * Documentation must reflect active, living types and declarations: [`AppRoute`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/androidApp/src/main/java/com/example/imagefeed/android/navigation/Routes.kt#L13), [`FeedPathItem`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/iosApp/iosApp/ContentView.swift#L116), [`CollectionPathItem`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/iosApp/iosApp/ContentView.swift#L104), and the full suite of presenters in [`shared/src/commonMain/kotlin/com/example/imagefeed/presentation/`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/src/commonMain/kotlin/com/example/imagefeed/presentation/).
 
 ---
 
@@ -88,7 +88,7 @@ All updates to [`README.md`](file:///Users/davidtiagoconceicao/Developer/image-f
 * In Section 3 (*Screen Navigation Architecture Details*):
   * Update the Android sealed route list from `Screen.*` to `AppRoute`:
     `AppRoute.Feed`, `AppRoute.Collections`, `AppRoute.CollectionDetails(collectionId)`, `AppRoute.Search(query)`, `AppRoute.PhotoDetails(photoId)`, `AppRoute.UserProfile(username)`.
-  * Update the iOS navigation description to specify the `FeedPathItem` struct and eliminate the non-existent `CollectionPathItem` reference.
+  * Update the iOS navigation description to specify the `FeedPathItem` and `CollectionPathItem` structs (clarifying that each wraps an `ItemType` enum rather than being top-level enums).
 
 ### 3.5. Technical Architecture Diagram
 * In the ASCII architecture diagram under `Presenters`:
@@ -114,6 +114,6 @@ All updates to [`README.md`](file:///Users/davidtiagoconceicao/Developer/image-f
 - [x] [`README.md`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/README.md) Code Quality section includes `swiftformat .` for auto-formatting Swift code.
 - [x] [`README.md`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/README.md) Unsplash Compliance section includes the Retina display scaling requirement (`UIScreen.main.scale`).
 - [x] Android Navigation 3 route references in [`README.md`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/README.md) use `AppRoute.*` matching [`Routes.kt`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/androidApp/src/main/java/com/example/imagefeed/android/navigation/Routes.kt).
-- [x] iOS navigation references in [`README.md`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/README.md) correctly identify `FeedPathItem` as a struct and remove references to `CollectionPathItem`.
+- [x] iOS navigation references in [`README.md`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/README.md) correctly identify `FeedPathItem` and `CollectionPathItem` as structs.
 - [x] Architecture presenter diagram in [`README.md`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/README.md) lists all active presenters.
 - [x] [`specs/steps.md`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/specs/steps.md) indexes Step 43.
