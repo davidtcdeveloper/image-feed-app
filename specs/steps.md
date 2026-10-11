@@ -74,6 +74,10 @@ The `specs/` folder currently contains the following implementation and design d
 *   `specs/39_skills_and_rules_migration.md`
 *   `specs/40_living_code_references_and_anti_staleness_rules.md`
 *   `specs/41_readme_and_agents_parity_alignment.md`
+*   `specs/42_mvi_foundation_and_transition_guidelines.md`
+*   `specs/43_mvi_pilot_photo_details_migration.md`
+*   `specs/44_mvi_core_screens_migration.md`
+*   `specs/45_mvi_architecture_cleanup_and_finalization.md`
 *   `specs/implementation_plan.md`
 *   `specs/steps.md`
 
