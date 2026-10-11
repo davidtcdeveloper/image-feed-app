@@ -631,6 +631,18 @@ These are the spec files that the implementation notes and planning references s
     *   Update Android Navigation 3 route references from `Screen.*` to `AppRoute.*`.
     *   Correct iOS navigation description to `FeedPathItem` and `CollectionPathItem` structs (wrapping `ItemType` enums).
     *   Expand presenter architecture list to include `CollectionsFeedPresenter` and `RandomPhotoPresenter`.
+
+### Step 44: Shared MVI Foundation & Architecture Transition Guidelines (Completed)
+1.  **Multiplatform Lifecycle ViewModel Dependency:**
+    *   Add `androidx-lifecycle-viewmodel` to `gradle/libs.versions.toml` and configure as `implementation` dependency in `shared/build.gradle.kts` under `commonMain.dependencies`.
+2.  **Base MVI / UDF Contracts:**
+    *   Implement `UiState`, `UiIntent`, and `UiEffect` marker interfaces under `shared/src/commonMain/kotlin/com/example/imagefeed/presentation/mvi/`.
+    *   Implement abstract base class `MviViewModel<S : UiState, I : UiIntent, E : UiEffect>` providing `state: StateFlow<S>`, `iosState: CommonFlow<S>`, `effects: Flow<E>`, `iosEffects: CommonFlow<E>`, `dispatch(intent: I)`, and `teardown()` lifecycle hook.
+    *   Author unit tests in `MviViewModelTest.kt` validating atomic state mutations, buffered effect channels, and teardown hooks.
+3.  **Active Transition Architecture Guidelines:**
+    *   Update `AGENTS.md` and `.agents/skills/kmp-architecture/SKILL.md` to formally document the active transition state where legacy Presenters and MVI ViewModels coexist during ongoing migration.
+4.  **Reference Specification:**
+    *   Track blueprint in `specs/42_mvi_foundation_and_transition_guidelines.md`.
 5.  **Reference Specification:**
     *   Track blueprint in `specs/41_readme_and_agents_parity_alignment.md`.
 

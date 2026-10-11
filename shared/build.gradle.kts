@@ -43,6 +43,9 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
+            // Lifecycle ViewModel (KMP)
+            implementation(libs.androidx.lifecycle.viewmodel)
+
             // Coroutines & Concurrency
             implementation(libs.kotlin.coroutines.core)
 

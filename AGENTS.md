@@ -21,10 +21,15 @@ For detailed implementation runbooks and domain guidelines, consult the relevant
 
 These non-negotiable boundaries and policies must be observed on every change:
 
-1. **KMP Architecture Boundaries**:
+1. **KMP Architecture Boundaries & Active Architecture Transition**:
    * All business logic, models, networking, and presentation state reside in `shared/commonMain`.
    * Platform modules (`androidApp`, `iosApp`, `macosApp`) remain thin, declarative view shells (Compose / SwiftUI).
    * Dependency injection is handled at compile time using **Metro** (`dev.zacsweers.metro`). Do not use Koin or dynamic DI.
+   * **Active Transition State (Presenter -> MVI ViewModel)**:
+     - The repository is actively transitioning from the legacy Shared Presenter pattern to **Shared MVI / Unidirectional Data Flow (UDF)** built on [`MviViewModel`](shared/src/commonMain/kotlin/com/example/imagefeed/presentation/mvi/MviViewModel.kt).
+     - **Coexistence Policy**: Existing presenters remain supported until their scheduled migration. Any newly authored presentation logic MUST inherit from `MviViewModel` and implement [`UiState`](shared/src/commonMain/kotlin/com/example/imagefeed/presentation/mvi/UiState.kt), [`UiIntent`](shared/src/commonMain/kotlin/com/example/imagefeed/presentation/mvi/UiIntent.kt), and [`UiEffect`](shared/src/commonMain/kotlin/com/example/imagefeed/presentation/mvi/UiEffect.kt).
+     - **Lifecycle & Teardown**: Legacy presenters use `presenter.clear()`. MVI ViewModels use `viewModelScope` and `onCleared()`, with Swift `@Observable` wrappers invoking `viewModel.clear()` upon `deinit`.
+     - **Metro DI Support**: Metro graphs provide bindings for both legacy presenter factories and modern MVI ViewModel factories during the transition.
 
 2. **Dual-Platform Build Policy**:
    * Whenever changes affect `shared/` or platform logic, verify **BOTH** Android (`./gradlew :androidApp:assembleDebug`) and iOS (`xcodegen generate --spec iosApp/project.yml && xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp -destination 'generic/platform=iOS Simulator' build CODE_SIGNING_ALLOWED=NO`).

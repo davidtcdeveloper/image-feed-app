@@ -1,6 +1,6 @@
 # Specification 42: Shared MVI Foundation & Architecture Transition Guidelines
 
-**Status:** Approved
+**Status:** Implemented
 
 ## 1. Overview & Problem Statement
 
@@ -69,24 +69,24 @@ The guideline documents will be updated with an explicit **Architecture Transiti
 
 ## 3. Implementation Steps
 
-- [ ] **Step 1: Update Build Dependencies**
+- [x] **Step 1: Update Build Dependencies**
   - Add `libs.androidx.lifecycle.viewmodel` to `commonMain.dependencies` in [`shared/build.gradle.kts`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/build.gradle.kts).
   - Verify Gradle sync and shared module compilation.
 
-- [ ] **Step 2: Implement Base MVI Infrastructure**
+- [x] **Step 2: Implement Base MVI Infrastructure**
   - Create package `com.example.imagefeed.presentation.mvi`.
   - Implement `UiState.kt`, `UiIntent.kt`, `UiEffect.kt`, and `MviViewModel.kt`.
   - Ensure zero compilation warnings and proper Swift export visibility.
 
-- [ ] **Step 3: Update `AGENTS.md` with Transition Architecture Rules**
+- [x] **Step 3: Update `AGENTS.md` with Transition Architecture Rules**
   - Add "Active Transition State: Presenter to MVI ViewModel" to Core Invariants.
   - Specify boundaries for both legacy presenters and modern MVI ViewModels.
 
-- [ ] **Step 4: Update `.agents/skills/kmp-architecture/SKILL.md`**
+- [x] **Step 4: Update `.agents/skills/kmp-architecture/SKILL.md`**
   - Add transition section describing `MviViewModel`, `UiState`, `UiIntent`, and `UiEffect`.
   - Detail how Compose and SwiftUI observe state and dispatch intents during transition.
 
-- [ ] **Step 5: Verification & Linting**
+- [x] **Step 5: Verification & Linting**
   - Execute `./gradlew ktlintCheck detekt` to guarantee hygiene compliance.
   - Verify dual-platform compilation (`./gradlew :androidApp:assembleDebug` and iOS xcodebuild).
 
@@ -94,8 +94,8 @@ The guideline documents will be updated with an explicit **Architecture Transiti
 
 ## 4. Acceptance Criteria
 
-- [ ] Multiplatform `androidx.lifecycle.ViewModel` is available in `shared/commonMain`.
-- [ ] `MviViewModel<S, I, E>` is compiled and tested with reactive state updates and buffered effect channels.
-- [ ] [`AGENTS.md`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/AGENTS.md) and [`.agents/skills/kmp-architecture/SKILL.md`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/.agents/skills/kmp-architecture/SKILL.md) clearly document the coexistence rules and transition standards.
-- [ ] Existing presenter code remains 100% functional with zero regressions.
-- [ ] Both Android and iOS project builds succeed cleanly with zero warnings.
+- [x] Multiplatform `androidx.lifecycle.ViewModel` is available in `shared/commonMain`.
+- [x] `MviViewModel<S, I, E>` is compiled and tested with reactive state updates and buffered effect channels.
+- [x] [`AGENTS.md`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/AGENTS.md) and [`.agents/skills/kmp-architecture/SKILL.md`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/.agents/skills/kmp-architecture/SKILL.md) clearly document the coexistence rules and transition standards.
+- [x] Existing presenter code remains 100% functional with zero regressions.
+- [x] Both Android and iOS project builds succeed cleanly with zero warnings.
