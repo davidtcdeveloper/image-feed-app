@@ -1,4 +1,4 @@
-> This project is a proof of concept written entirely with recent models focused on efficiency like Google's Gemini 3.5 Flash and MAI-Code-1-Flash. The main goal was to evaluate the models and different ways to work with them (Antigravity, Gemini CLI, GitHub Copilot and so on).
+> This project is a proof of concept under heavy development with the support of models focused on efficiency like Google's Gemini Flash family. The initial goal is to evaluate the models and the support in tooling (Android Studio, Antigravity, Gemini CLI, and so on). The file structure and guiding through markdown files (AGENTS.md and so on) is also under heavy development looking for an ideal that balances output quality and cost. The ultimate goal is to learn more about agentic development for Kotlin Multiplatform projects.
 
 # Unsplash Image Feed App (Kotlin Multiplatform)
 
