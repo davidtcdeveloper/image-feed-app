@@ -1,6 +1,6 @@
 # Specification 43: MVI Pilot Migration - Photo Details
 
-**Status:** Approved
+**Status:** Implemented
 
 ## 1. Overview & Objectives
 
@@ -22,6 +22,7 @@ Photo Details is the optimal pilot candidate because:
    ```kotlin
    data class PhotoDetailsState(
        val photo: Photo? = null,
+       val stats: PhotoStats? = null,
        val isLoading: Boolean = false,
        val error: String? = null,
    ) : UiState
@@ -87,26 +88,26 @@ Expose `photoDetailsViewModelFactory: PhotoDetailsViewModel.Factory` on [`Applic
 
 ## 3. Implementation Steps
 
-- [ ] **Step 1: Implement `PhotoDetailsViewModel` & Contracts**
+- [x] **Step 1: Implement `PhotoDetailsViewModel` & Contracts**
   - Define `PhotoDetailsState`, `PhotoDetailsIntent`, `PhotoDetailsEffect`.
   - Implement `PhotoDetailsViewModel` extending `MviViewModel`.
   - Configure Metro `@AssistedFactory`.
 
-- [ ] **Step 2: Update Metro DI Graph**
+- [x] **Step 2: Update Metro DI Graph**
   - Add `photoDetailsViewModelFactory` to `ApplicationGraph`.
   - Add helper function `MetroHelper.getPhotoDetailsViewModel(photoId)`.
 
-- [ ] **Step 3: Update Android Compose Screen**
+- [x] **Step 3: Update Android Compose Screen**
   - Adapt `PhotoDetailsScreen.kt` and Navigation 3 entry scoping to use `PhotoDetailsViewModel`.
 
-- [ ] **Step 4: Update Apple SwiftUI Shell**
+- [x] **Step 4: Update Apple SwiftUI Shell**
   - Adapt `PhotoDetailsViewModel.swift` and `PhotoDetailsView.swift` to consume state and dispatch intents.
 
-- [ ] **Step 5: Migrate Unit Tests**
+- [x] **Step 5: Migrate Unit Tests**
   - Implement `PhotoDetailsViewModelTest.kt` verifying UDF flow and effect channels.
 
-- [ ] **Step 6: Dual-Platform Verification**
-  - Run `./gradlew :shared:testDebugUnitTest`.
+- [x] **Step 6: Dual-Platform Verification**
+  - Run `./gradlew :shared:allTests`.
   - Build Android: `./gradlew :androidApp:assembleDebug`.
   - Build iOS: `xcodegen generate --spec iosApp/project.yml && xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp -destination 'generic/platform=iOS Simulator' build CODE_SIGNING_ALLOWED=NO`.
 
@@ -114,8 +115,8 @@ Expose `photoDetailsViewModelFactory: PhotoDetailsViewModel.Factory` on [`Applic
 
 ## 4. Acceptance Criteria
 
-- [ ] `PhotoDetailsViewModel` completely replaces `PhotoDetailsPresenter` in production code.
-- [ ] Photo Details feature behaves identically across Android Compose and iOS/macOS SwiftUI.
-- [ ] Metro DI compiles cleanly without runtime reflection.
-- [ ] Unit tests pass with 100% coverage of state transitions and intents.
-- [ ] Dual-platform builds pass with zero compiler warnings.
+- [x] `PhotoDetailsViewModel` completely replaces `PhotoDetailsPresenter` in production code.
+- [x] Photo Details feature behaves identically across Android Compose and iOS/macOS SwiftUI.
+- [x] Metro DI compiles cleanly without runtime reflection.
+- [x] Unit tests pass with 100% coverage of state transitions and intents.
+- [x] Dual-platform builds pass with zero compiler warnings.

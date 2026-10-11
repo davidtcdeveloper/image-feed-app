@@ -7,33 +7,62 @@ class PhotoDetailsViewModel {
     var stats: PhotoStats?
     var isLoading = false
     var error: String?
+    var shouldDismiss = false
 
-    private let presenter: PhotoDetailsPresenter
-    private var closeable: Closeable?
+    private let viewModel: shared.PhotoDetailsViewModel
+    private var stateCloseable: Closeable?
+    private var effectsCloseable: Closeable?
 
     init(photoId: String) {
-        let presenter = MetroHelper.shared.getPhotoDetailsPresenter(photoId: photoId)
-        self.presenter = presenter
+        let viewModel = MetroHelper.shared.getPhotoDetailsViewModel(photoId: photoId)
+        self.viewModel = viewModel
 
-        self.closeable = presenter.iosState.watch { [weak self] state in
+        self.stateCloseable = viewModel.iosState.watch { [weak self] state in
             guard let self, let state else { return }
             self.photo = state.photo
             self.stats = state.stats
             self.isLoading = state.isLoading
             self.error = state.error
         }
+
+        self.effectsCloseable = viewModel.iosEffects.watch { [weak self] effect in
+            guard let self, let effect else { return }
+            handleEffect(effect)
+        }
+    }
+
+    private func handleEffect(_ effect: PhotoDetailsEffect) {
+        switch effect {
+        case is PhotoDetailsEffectDismissScreen:
+            shouldDismiss = true
+        case let snackbar as PhotoDetailsEffectShowErrorSnackbar:
+            error = snackbar.message
+        default:
+            break
+        }
+    }
+
+    func send(_ intent: PhotoDetailsIntent) {
+        viewModel.dispatch(intent: intent)
     }
 
     func loadDetails() {
-        presenter.loadDetails()
+        viewModel.dispatch(intent: PhotoDetailsIntentLoadDetails.shared)
+    }
+
+    func retry() {
+        viewModel.dispatch(intent: PhotoDetailsIntentRetry.shared)
     }
 
     func trackDownload() {
-        presenter.trackDownload()
+        if let photo {
+            viewModel.dispatch(intent: PhotoDetailsIntentTrackDownload(photo: photo))
+        }
     }
 
     deinit {
-        closeable?.close()
-        presenter.clear()
+        stateCloseable?.close()
+        effectsCloseable?.close()
+        viewModel.clear()
     }
 }

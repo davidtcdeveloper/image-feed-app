@@ -98,6 +98,11 @@ struct PhotoDetailsView: View {
             }
         }
         .navigationBarBackButtonHidden(true)
+        .onChange(of: viewModel.shouldDismiss) { _, shouldDismiss in
+            if shouldDismiss {
+                handleDismiss()
+            }
+        }
         .overlay(alignment: .topLeading) {
             if onDismiss != nil {
                 GlassToolbarButton(systemName: "chevron.left", accessibilityLabel: "Back") {

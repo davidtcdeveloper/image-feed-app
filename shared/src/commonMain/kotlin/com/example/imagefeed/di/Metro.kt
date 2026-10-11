@@ -14,13 +14,13 @@ import com.example.imagefeed.presentation.DefaultUnifiedSearchPresenterFactory
 import com.example.imagefeed.presentation.DispatcherProvider
 import com.example.imagefeed.presentation.FeedPresenter
 import com.example.imagefeed.presentation.FeedPresenterFactory
-import com.example.imagefeed.presentation.PhotoDetailsPresenter
 import com.example.imagefeed.presentation.PresenterScopeFactory
 import com.example.imagefeed.presentation.RandomPhotoPresenter
 import com.example.imagefeed.presentation.RandomPhotoPresenterFactory
 import com.example.imagefeed.presentation.UnifiedSearchPresenter
 import com.example.imagefeed.presentation.UnifiedSearchPresenterFactory
 import com.example.imagefeed.presentation.UserProfilePresenter
+import com.example.imagefeed.presentation.details.PhotoDetailsViewModel
 import com.example.imagefeed.repository.UnsplashRepository
 import com.example.imagefeed.repository.UnsplashRepositoryImpl
 import dev.zacsweers.metro.BindingContainer
@@ -94,7 +94,7 @@ interface ApplicationGraph {
     val unifiedSearchPresenterFactory: UnifiedSearchPresenterFactory
     val collectionsFeedPresenterFactory: CollectionsFeedPresenterFactory
 
-    val photoDetailsPresenterFactory: PhotoDetailsPresenter.Factory
+    val photoDetailsViewModelFactory: PhotoDetailsViewModel.Factory
     val collectionDetailPresenterFactory: CollectionDetailPresenter.Factory
     val userProfilePresenterFactory: UserProfilePresenter.Factory
 }
@@ -106,7 +106,7 @@ object MetroHelper {
 
     fun getFeedPresenter(): FeedPresenter = graph.feedPresenterFactory.create()
 
-    fun getPhotoDetailsPresenter(photoId: String): PhotoDetailsPresenter = graph.photoDetailsPresenterFactory.create(photoId)
+    fun getPhotoDetailsViewModel(photoId: String): PhotoDetailsViewModel = graph.photoDetailsViewModelFactory.create(photoId)
 
     fun getRandomPhotoPresenter(): RandomPhotoPresenter = graph.randomPhotoPresenterFactory.create()
 

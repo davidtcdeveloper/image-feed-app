@@ -49,11 +49,14 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.SuggestionChipDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -93,7 +96,10 @@ import com.example.imagefeed.android.util.BlurHashDecoder
 import com.example.imagefeed.di.MetroHelper
 import com.example.imagefeed.model.Photo
 import com.example.imagefeed.model.PhotoStats
-import com.example.imagefeed.presentation.PhotoDetailsState
+import com.example.imagefeed.presentation.details.PhotoDetailsEffect
+import com.example.imagefeed.presentation.details.PhotoDetailsIntent
+import com.example.imagefeed.presentation.details.PhotoDetailsState
+import com.example.imagefeed.presentation.details.PhotoDetailsViewModel
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MapStyleOptions
@@ -116,18 +122,31 @@ fun PhotoDetailsScreen(
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope,
     photoId: String,
-    presenter: com.example.imagefeed.presentation.PhotoDetailsPresenter =
+    viewModel: PhotoDetailsViewModel =
         com.example.imagefeed.android.util.rememberEntryPresenter(key = "photo_$photoId", onClear = { it.clear() }) {
-            MetroHelper.getPhotoDetailsPresenter(photoId)
+            MetroHelper.getPhotoDetailsViewModel(photoId)
         },
     onBack: () -> Unit,
     onUserClick: (String) -> Unit,
     onTagClick: (String) -> Unit,
 ) {
     val context = LocalPlatformContext.current
-    val state by presenter.state.collectAsStateWithLifecycle(initialValue = PhotoDetailsState())
+    val state by viewModel.state.collectAsStateWithLifecycle(initialValue = PhotoDetailsState())
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(viewModel) {
+        viewModel.effects.collect { effect ->
+            when (effect) {
+                is PhotoDetailsEffect.DismissScreen -> onBack()
+                is PhotoDetailsEffect.ShowErrorSnackbar -> {
+                    snackbarHostState.showSnackbar(effect.message)
+                }
+            }
+        }
+    }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
@@ -207,7 +226,7 @@ fun PhotoDetailsScreen(
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Button(
-                        onClick = { presenter.loadDetails() },
+                        onClick = { viewModel.dispatch(PhotoDetailsIntent.Retry) },
                         shape = MaterialTheme.shapes.small,
                     ) {
                         Text("Retry")
@@ -220,7 +239,7 @@ fun PhotoDetailsScreen(
                         animatedVisibilityScope = animatedVisibilityScope,
                         photo = photo,
                         stats = state.stats,
-                        onTrackDownload = { presenter.trackDownload() },
+                        onTrackDownload = { viewModel.dispatch(PhotoDetailsIntent.TrackDownload(photo)) },
                         onUserClick = onUserClick,
                         onTagClick = onTagClick,
                     )

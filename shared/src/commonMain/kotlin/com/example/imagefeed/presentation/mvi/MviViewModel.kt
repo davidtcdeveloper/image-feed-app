@@ -3,6 +3,7 @@ package com.example.imagefeed.presentation.mvi
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.imagefeed.util.CommonFlow
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -59,8 +60,15 @@ abstract class MviViewModel<S : UiState, I : UiIntent, E : UiEffect>(
         // Can be overridden by subclasses for additional cleanup
     }
 
+    fun clear() {
+        viewModelScope.cancel()
+        _effects.close()
+        teardown()
+    }
+
     override fun onCleared() {
         super.onCleared()
+        _effects.close()
         teardown()
     }
 }

@@ -646,3 +646,18 @@ These are the spec files that the implementation notes and planning references s
 5.  **Reference Specification:**
     *   Track blueprint in `specs/41_readme_and_agents_parity_alignment.md`.
 
+### Step 45: MVI Pilot Migration - Photo Details (Completed)
+1.  **Shared MVI Contracts & Implementation:**
+    *   Implement `PhotoDetailsState`, `PhotoDetailsIntent`, and `PhotoDetailsEffect` under `shared/src/commonMain/kotlin/com/example/imagefeed/presentation/details/`.
+    *   Implement `PhotoDetailsViewModel` extending `MviViewModel` with Metro `@AssistedInject` and `@AssistedFactory`.
+2.  **Metro DI Graph Integration:**
+    *   Provide `photoDetailsViewModelFactory` in `ApplicationGraph` and `getPhotoDetailsViewModel(photoId)` in `MetroHelper`.
+3.  **Platform Presentation Shell Migration:**
+    *   Migrate Android `PhotoDetailsScreen.kt` and `NavigationSections.kt` to collect state and effects from `PhotoDetailsViewModel` and dispatch intents.
+    *   Migrate iOS `PhotoDetailsViewModel.swift` to wrap shared `PhotoDetailsViewModel`, observe `iosState` and `iosEffects`, forward intents, and clear on `deinit`.
+4.  **Unit Testing:**
+    *   Author comprehensive `PhotoDetailsViewModelTest.kt` verifying state transitions, intent dispatching, error side-effects, and retry flows.
+5.  **Reference Specification:**
+    *   Track blueprint in `specs/43_mvi_pilot_photo_details_migration.md`.
+
+

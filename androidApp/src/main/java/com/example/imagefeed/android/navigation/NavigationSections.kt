@@ -167,9 +167,9 @@ fun EntryProviderScope<NavKey>.photoDetailsSection(
             sharedTransitionScope = sharedTransitionScope,
             animatedVisibilityScope = LocalNavAnimatedContentScope.current,
             photoId = key.photoId,
-            presenter =
+            viewModel =
                 rememberEntryPresenter(key = "photo_${key.photoId}", onClear = { it.clear() }) {
-                    MetroHelper.getPhotoDetailsPresenter(key.photoId)
+                    MetroHelper.getPhotoDetailsViewModel(key.photoId)
                 },
             onBack = dropUnlessResumed { navigator.goBack() },
             onUserClick =

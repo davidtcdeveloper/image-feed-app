@@ -69,7 +69,7 @@ class MviViewModelTest {
     @Test
     fun teardownInvokesTeardownHook() {
         val viewModel = ConcreteTestViewModel()
-        viewModel.teardown()
+        viewModel.clear()
         assertTrue(viewModel.cleared)
     }
 }

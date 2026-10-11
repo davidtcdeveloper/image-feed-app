@@ -159,11 +159,11 @@ The codebase follows the **Shared Presenter Pattern**, maximizing cross-platform
 │                    shared Module (Kotlin Multiplatform)                     │
 │                                                                             │
 │   ┌─────────────────────────────────────────────────────────────────────┐   │
-│   │                             Presenters                              │   │
-│   │  (FeedPresenter, UnifiedSearchPresenter, PhotoDetailsPresenter,     │   │
+│   │                     Presenters & MVI ViewModels                     │   │
+│   │  (FeedPresenter, UnifiedSearchPresenter, PhotoDetailsViewModel,     │   │
 │   │   CollectionDetailPresenter, CollectionsFeedPresenter,              │   │
 │   │   RandomPhotoPresenter, UserProfilePresenter)                       │   │
-│   │   * PresenterScope Lifecycle Management & updateIfActive Guard      │   │
+│   │   * PresenterScope & MviViewModel Lifecycle Management               │   │
 │   └──────────────────────────────────┬──────────────────────────────────┘   │
 │                                      ▼                                      │
 │   ┌─────────────────────────────────────────────────────────────────────┐   │
