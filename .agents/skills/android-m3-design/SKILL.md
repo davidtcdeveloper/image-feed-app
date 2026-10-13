@@ -72,7 +72,7 @@ The application uses **Jetpack Navigation 3** (`androidx.navigation3`). Legacy N
 2. **Navigation State Holder**: Manage independent stacks per top-level route (`Feed`, `Collections`, `Search`) with an "Exit Through Home" anchor.
 3. **Entry-Scoped Lifecycle**:
    - Equip `NavDisplay` with `rememberViewModelStoreNavEntryDecorator()` and `rememberSaveableStateHolderNavEntryDecorator()`.
-   - Use `rememberEntryPresenter` so presenter state survives backgrounding and screen rotations.
+   - Scope ViewModels with standard Compose `viewModel(key = ...) { ... }` so ViewModel state survives backgrounding and screen rotations.
 4. **Predictive Back & Gestures**:
    - Enable `android:enableOnBackInvokedCallback="true"` in `AndroidManifest.xml`.
    - Intercept back events in sub-components (such as active search) with `NavigationBackHandler` and `rememberNavigationEventState` before popping the stack.

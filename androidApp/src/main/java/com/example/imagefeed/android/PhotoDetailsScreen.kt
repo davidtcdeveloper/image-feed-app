@@ -123,7 +123,7 @@ fun PhotoDetailsScreen(
     animatedVisibilityScope: AnimatedVisibilityScope,
     photoId: String,
     viewModel: PhotoDetailsViewModel =
-        com.example.imagefeed.android.util.rememberEntryPresenter(key = "photo_$photoId", onClear = { it.clear() }) {
+        androidx.lifecycle.viewmodel.compose.viewModel(key = "photo_$photoId") {
             MetroHelper.getPhotoDetailsViewModel(photoId)
         },
     onBack: () -> Unit,

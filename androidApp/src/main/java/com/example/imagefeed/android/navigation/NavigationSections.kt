@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.dropUnlessResumed
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation3.runtime.EntryProviderScope
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.ui.LocalNavAnimatedContentScope
@@ -19,7 +20,6 @@ import com.example.imagefeed.android.PhotoDetailPlaceholder
 import com.example.imagefeed.android.PhotoDetailsScreen
 import com.example.imagefeed.android.SearchScreen
 import com.example.imagefeed.android.UserProfileScreen
-import com.example.imagefeed.android.util.rememberEntryPresenter
 import com.example.imagefeed.di.MetroHelper
 
 @Composable
@@ -47,7 +47,7 @@ fun EntryProviderScope<NavKey>.feedSection(
             sharedTransitionScope = sharedTransitionScope,
             animatedVisibilityScope = LocalNavAnimatedContentScope.current,
             viewModel =
-                rememberEntryPresenter(key = "feed", onClear = { it.clear() }) {
+                viewModel(key = "feed") {
                     MetroHelper.getFeedViewModel()
                 },
             reselectEvents = navigator.reselectEvents,
@@ -82,7 +82,7 @@ fun EntryProviderScope<NavKey>.collectionsSection(
             sharedTransitionScope = sharedTransitionScope,
             animatedVisibilityScope = LocalNavAnimatedContentScope.current,
             viewModel =
-                rememberEntryPresenter(key = "collections", onClear = { it.clear() }) {
+                viewModel(key = "collections") {
                     MetroHelper.getCollectionsFeedViewModel()
                 },
             reselectEvents = navigator.reselectEvents,
@@ -104,7 +104,7 @@ fun EntryProviderScope<NavKey>.collectionsSection(
             animatedVisibilityScope = LocalNavAnimatedContentScope.current,
             collectionId = key.collectionId,
             viewModel =
-                rememberEntryPresenter(key = "collection_${key.collectionId}", onClear = { it.clear() }) {
+                viewModel(key = "collection_${key.collectionId}") {
                     MetroHelper.getCollectionDetailViewModel(key.collectionId)
                 },
             onBack = dropUnlessResumed { navigator.goBack() },
@@ -135,7 +135,7 @@ fun EntryProviderScope<NavKey>.searchSection(
             animatedVisibilityScope = LocalNavAnimatedContentScope.current,
             initialQuery = key.query,
             viewModel =
-                rememberEntryPresenter(key = "search_${key.query}", onClear = { it.clear() }) {
+                viewModel(key = "search_${key.query}") {
                     MetroHelper.getUnifiedSearchViewModel()
                 },
             reselectEvents = navigator.reselectEvents,
@@ -168,7 +168,7 @@ fun EntryProviderScope<NavKey>.photoDetailsSection(
             animatedVisibilityScope = LocalNavAnimatedContentScope.current,
             photoId = key.photoId,
             viewModel =
-                rememberEntryPresenter(key = "photo_${key.photoId}", onClear = { it.clear() }) {
+                viewModel(key = "photo_${key.photoId}") {
                     MetroHelper.getPhotoDetailsViewModel(key.photoId)
                 },
             onBack = dropUnlessResumed { navigator.goBack() },
@@ -196,7 +196,7 @@ fun EntryProviderScope<NavKey>.userProfileSection(
             animatedVisibilityScope = LocalNavAnimatedContentScope.current,
             username = key.username,
             viewModel =
-                rememberEntryPresenter(key = "user_${key.username}", onClear = { it.clear() }) {
+                viewModel(key = "user_${key.username}") {
                     MetroHelper.getUserProfileViewModel(key.username)
                 },
             onBack = dropUnlessResumed { navigator.goBack() },

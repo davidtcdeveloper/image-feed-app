@@ -9,9 +9,9 @@ Agents act as senior project collaborators for this Kotlin Multiplatform image-f
 ## Workspace Skills & Runbooks
 
 For detailed implementation runbooks and domain guidelines, consult the relevant skill:
-* [KMP Architecture & Lifecycle](.agents/skills/kmp-architecture/SKILL.md) — Shared boundaries, Presenter pattern, Metro DI, and coroutine scopes.
+* [KMP Architecture & Lifecycle](.agents/skills/kmp-architecture/SKILL.md) — Shared boundaries, MVI pattern, Metro DI, and coroutine scopes.
 * [Verification & Linting](.agents/skills/verification-and-linting/SKILL.md) — Build, test, lint, and formatting commands across Kotlin and Swift.
-* [KMP Testing Strategy](.agents/skills/kmp-testing/SKILL.md) — Shared presenter test harness, fake repositories, and coroutine testing.
+* [KMP Testing Strategy](.agents/skills/kmp-testing/SKILL.md) — Shared MVI ViewModel test harness, fake repositories, and coroutine testing.
 * [Android Material 3 & Navigation 3](.agents/skills/android-m3-design/SKILL.md) — Compose M3 tokens, Navigation 3 scenes, predictive back, adaptive layouts.
 * [Apple Glass Design & HIG](.agents/skills/ios-glass-design/SKILL.md) — SwiftUI GlassTheme, materials, detents, dark scrims, sensory feedback.
 
@@ -21,15 +21,13 @@ For detailed implementation runbooks and domain guidelines, consult the relevant
 
 These non-negotiable boundaries and policies must be observed on every change:
 
-1. **KMP Architecture Boundaries & Active Architecture Transition**:
+1. **KMP Architecture Boundaries & Shared MVI / UDF**:
    * All business logic, models, networking, and presentation state reside in `shared/commonMain`.
    * Platform modules (`androidApp`, `iosApp`, `macosApp`) remain thin, declarative view shells (Compose / SwiftUI).
    * Dependency injection is handled at compile time using **Metro** (`dev.zacsweers.metro`). Do not use Koin or dynamic DI.
-   * **Active Transition State (Presenter -> MVI ViewModel)**:
-     - The repository is actively transitioning from the legacy Shared Presenter pattern to **Shared MVI / Unidirectional Data Flow (UDF)** built on [`MviViewModel`](shared/src/commonMain/kotlin/com/example/imagefeed/presentation/mvi/MviViewModel.kt).
-     - **Coexistence Policy**: Existing presenters remain supported until their scheduled migration. Any newly authored presentation logic MUST inherit from `MviViewModel` and implement [`UiState`](shared/src/commonMain/kotlin/com/example/imagefeed/presentation/mvi/UiState.kt), [`UiIntent`](shared/src/commonMain/kotlin/com/example/imagefeed/presentation/mvi/UiIntent.kt), and [`UiEffect`](shared/src/commonMain/kotlin/com/example/imagefeed/presentation/mvi/UiEffect.kt).
-     - **Lifecycle & Teardown**: Legacy presenters use `presenter.clear()`. MVI ViewModels use `viewModelScope` and `onCleared()`, with Swift `@Observable` wrappers invoking `viewModel.clear()` upon `deinit`.
-     - **Metro DI Support**: Metro graphs provide bindings for both legacy presenter factories and modern MVI ViewModel factories during the transition.
+   * **Presentation Architecture**: Presentation logic is standardized on **Shared MVI / Unidirectional Data Flow (UDF)** built on [`MviViewModel`](shared/src/commonMain/kotlin/com/example/imagefeed/presentation/mvi/MviViewModel.kt), [`UiState`](shared/src/commonMain/kotlin/com/example/imagefeed/presentation/mvi/UiState.kt), [`UiIntent`](shared/src/commonMain/kotlin/com/example/imagefeed/presentation/mvi/UiIntent.kt), and [`UiEffect`](shared/src/commonMain/kotlin/com/example/imagefeed/presentation/mvi/UiEffect.kt).
+   * **Lifecycle & Teardown**: ViewModels manage coroutines within `viewModelScope`. On Android, ViewModels are scoped via standard Compose `viewModel { ... }`. On iOS/macOS, Swift `@Observable` wrappers invoke `viewModel.clear()` upon `deinit`.
+
 
 2. **Dual-Platform Build Policy**:
    * Whenever changes affect `shared/` or platform logic, verify **BOTH** Android (`./gradlew :androidApp:assembleDebug`) and iOS (`xcodegen generate --spec iosApp/project.yml && xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp -destination 'generic/platform=iOS Simulator' build CODE_SIGNING_ALLOWED=NO`).

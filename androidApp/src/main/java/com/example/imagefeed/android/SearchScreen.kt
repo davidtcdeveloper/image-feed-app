@@ -89,7 +89,6 @@ import com.example.imagefeed.android.navigation.AppRoute
 import com.example.imagefeed.android.util.CollectionMosaicCardSkeleton
 import com.example.imagefeed.android.util.PhotoGridSkeleton
 import com.example.imagefeed.android.util.bounceClick
-import com.example.imagefeed.android.util.rememberEntryPresenter
 import com.example.imagefeed.android.util.staggeredEntrance
 import com.example.imagefeed.di.MetroHelper
 import com.example.imagefeed.model.CollectionSummary
@@ -110,7 +109,7 @@ fun SearchScreen(
     animatedVisibilityScope: AnimatedVisibilityScope,
     initialQuery: String = "",
     viewModel: UnifiedSearchViewModel =
-        rememberEntryPresenter(key = "search_$initialQuery", onClear = { it.clear() }) {
+        androidx.lifecycle.viewmodel.compose.viewModel(key = "search_$initialQuery") {
             MetroHelper.getUnifiedSearchViewModel()
         },
     reselectEvents: SharedFlow<NavKey>? = null,

@@ -119,7 +119,8 @@ Use SwiftUI declarative `.sensoryFeedback` instead of imperative feedback genera
 
 ---
 
-## 7. Presenter Lifecycle in Swift
+## 7. MVI ViewModel Lifecycle in Swift
 
-- Platform wrappers (Swift `ObservableObject` ViewModels) own shared presenter lifecycle.
-- Swift ViewModels MUST invoke `presenter.clear()` upon dismissal or inside `deinit` to cancel in-flight coroutines.
+- Platform wrappers (Swift `@Observable` ViewModels) own shared `MviViewModel` lifecycle.
+- Swift ViewModels MUST invoke `viewModel.clear()` upon dismissal or inside `deinit` to cancel in-flight coroutines and close effect channels.
+

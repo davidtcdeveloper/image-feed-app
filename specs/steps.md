@@ -679,5 +679,14 @@ These are the spec files that the implementation notes and planning references s
 5.  **Reference Specification:**
     *   Track blueprint in `specs/44_mvi_core_screens_migration.md`.
 
-
-
+### Step 47: MVI Architecture Cleanup & Finalization (Completed)
+1.  **Delete Legacy Presenter Infrastructure:**
+    *   Decommissioned `PresenterScope.kt`, `PresenterFactories.kt`, `TestPresenterScopeFactory.kt`, `PresenterViewModel.kt`, and all obsolete `*Presenter.kt` implementations and presenter tests.
+2.  **Metro Graph Cleanliness:**
+    *   Removed `DispatcherProvider`, `PresenterScopeFactory`, and all legacy presenter factory bindings from `AppModule`, `ApplicationGraph`, and `MetroHelper`.
+3.  **Android UI Shell Standard ViewModel Scoping:**
+    *   Migrated navigation entry ViewModels from `rememberEntryPresenter` to standard Android Compose `viewModel(key = ...) { ... }`.
+4.  **Agent Documentation Alignment:**
+    *   Updated `AGENTS.md`, `GEMINI.md`, and skills (`kmp-architecture`, `kmp-testing`, `ios-glass-design`, `android-m3-design`) to establish Shared MVI / UDF as the sole architectural standard and eliminated the transition state.
+5.  **Reference Specification:**
+    *   Track blueprint in `specs/45_mvi_architecture_cleanup_and_finalization.md`.

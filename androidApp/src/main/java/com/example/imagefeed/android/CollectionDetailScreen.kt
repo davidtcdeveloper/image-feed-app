@@ -85,7 +85,7 @@ fun CollectionDetailScreen(
     animatedVisibilityScope: AnimatedVisibilityScope,
     collectionId: String,
     viewModel: CollectionDetailViewModel =
-        com.example.imagefeed.android.util.rememberEntryPresenter(key = "collection_$collectionId", onClear = { it.clear() }) {
+        androidx.lifecycle.viewmodel.compose.viewModel(key = "collection_$collectionId") {
             com.example.imagefeed.di.MetroHelper
                 .getCollectionDetailViewModel(collectionId)
         },

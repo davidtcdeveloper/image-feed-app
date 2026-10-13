@@ -110,7 +110,7 @@ fun UserProfileScreen(
     animatedVisibilityScope: AnimatedVisibilityScope,
     username: String,
     viewModel: UserProfileViewModel =
-        com.example.imagefeed.android.util.rememberEntryPresenter(key = "user_$username", onClear = { it.clear() }) {
+        androidx.lifecycle.viewmodel.compose.viewModel(key = "user_$username") {
             MetroHelper.getUserProfileViewModel(username)
         },
     onBack: () -> Unit,

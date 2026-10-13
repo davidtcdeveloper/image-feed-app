@@ -1,9 +1,9 @@
 ---
 name: kmp-architecture
 description: >-
-  Architectural boundaries, Shared Presenter pattern, Metro compile-time DI,
+  Architectural boundaries, Shared MVI / UDF pattern, Metro compile-time DI,
   and coroutine lifecycle management across Kotlin Multiplatform and platform UI shells.
-  Use when adding or refactoring business logic, presenters, dependency injection,
+  Use when adding or refactoring business logic, ViewModels, dependency injection,
   or coroutine scopes.
 ---
 
@@ -14,9 +14,9 @@ description: >-
 This skill defines the architectural boundaries, design patterns, dependency injection standards, and coroutine lifecycle rules for this repository.
 Use this skill when:
 - Designing or modifying shared business logic, data models, or repositories in `shared/commonMain`.
-- Creating or refactoring shared presenters, view models, or state flows.
+- Creating or refactoring shared MVI ViewModels, state, intents, effects, or state flows.
 - Configuring compile-time dependency injection with Metro (`dev.zacsweers.metro`).
-- Managing coroutine scopes, structured concurrency, or presenter teardown.
+- Managing coroutine scopes, structured concurrency, or ViewModel teardown.
 - Bridging shared Kotlin code to Android Compose or Apple SwiftUI view shells.
 
 ---
@@ -48,42 +48,20 @@ Do not introduce speculative, unused helper functions, extension methods, or pro
 
 ---
 
-## 2. Architecture Models: Legacy Presenter & Modern MVI Transition State
+## 2. Shared MVI & Unidirectional Data Flow (UDF) Pattern
 
-The repository is actively transitioning from the legacy **Shared Presenter** pattern to **Shared MVI / Unidirectional Data Flow (UDF)**. Both patterns coexist during the migration phase:
+All presentation logic in this repository is built upon **Shared MVI / Unidirectional Data Flow (UDF)** centered around [`MviViewModel`](shared/src/commonMain/kotlin/com/example/imagefeed/presentation/mvi/MviViewModel.kt):
 
-### A. Transition Invariants & Coexistence Rules
-- **Legacy Components**: Existing presenters remain supported and operational until their scheduled migration. Do not prematurely break legacy call sites.
-- **New & Migrated Components**: All newly authored presentation logic or migrated screens MUST adopt the MVI architecture based on [`MviViewModel`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/src/commonMain/kotlin/com/example/imagefeed/presentation/mvi/MviViewModel.kt).
-- **Core MVI Types**:
-  - State: [`UiState`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/src/commonMain/kotlin/com/example/imagefeed/presentation/mvi/UiState.kt) represents immutable visual conditions emitted via `StateFlow`.
-  - Intent: [`UiIntent`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/src/commonMain/kotlin/com/example/imagefeed/presentation/mvi/UiIntent.kt) represents sealed user interactions routed into `viewModel.dispatch(intent)`.
-  - Effect: [`UiEffect`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/src/commonMain/kotlin/com/example/imagefeed/presentation/mvi/UiEffect.kt) represents one-off, single-shot side effects (navigation, snackbars, sensory haptics) emitted via buffered channels.
-- **Platform Integration**:
-  - **Android (Compose)**: Binds state via `collectAsStateWithLifecycle()` and collects effects via `LaunchedEffect`. UI interactions dispatch typed intents to `viewModel.dispatch(intent)`.
-  - **Apple (SwiftUI)**: Swift `@Observable` classes watch `viewModel.iosState` and `viewModel.iosEffects`, route user actions into `viewModel.dispatch(intent:)`, and trigger `viewModel.clear()` upon `deinit`.
-- **Coroutine Lifecycles**: MVI ViewModels manage asynchronous workloads within official multiplatform `viewModelScope`, automatically cancelled when the host screen clears.
+### A. Core MVI Components
+- **State**: [`UiState`](shared/src/commonMain/kotlin/com/example/imagefeed/presentation/mvi/UiState.kt) represents immutable visual conditions streamed via `state: StateFlow<S>` and `iosState: CommonFlow<S>`.
+- **Intent**: [`UiIntent`](shared/src/commonMain/kotlin/com/example/imagefeed/presentation/mvi/UiIntent.kt) represents user interactions and lifecycle actions dispatched via `viewModel.dispatch(intent)`.
+- **Effect**: [`UiEffect`](shared/src/commonMain/kotlin/com/example/imagefeed/presentation/mvi/UiEffect.kt) represents one-off side effects (navigation commands, toast messages, sensory haptics) emitted through buffered channels exposed via `effects: Flow<E>` and `iosEffects: CommonFlow<E>`.
 
-### B. Legacy Shared Presenter Pattern (Under Active Deprecation)
-The UI across all platforms was previously driven by the **Shared Presenter** pattern:
-
-#### 1. Unidirectional State Flow
-- Presenters expose UI state through immutable Kotlin data classes streamed via `StateFlow<T>`.
-- State classes represent all possible visual conditions (loading, pagination, error, empty, content).
-- Platform views observe this state reactively:
-  - **Android**: `presenter.state.collectAsStateWithLifecycle()` in Compose.
-  - **iOS / macOS**: Swift `ObservableObject` ViewModels observe Kotlin `CommonFlow` and publish updates to SwiftUI `@Published` properties.
-
-#### 2. Presenter Lifecycle & Teardown
-- Presenters implement a lifecycle teardown contract (such as `fun clear()`).
-- Presenter coroutines MUST be launched within an injected `PresenterScope` / `PresenterScopeFactory` tied to the presenter lifecycle.
-- When `clear()` is invoked, all in-flight coroutines and child jobs are deterministically cancelled.
-- **Platform Ownership**: Platform wrappers own presenter teardown:
-  - On Android: Back-stack scoped `PresenterViewModel` invokes `presenter.clear()` when its `ViewModelStore` is cleared.
-  - On iOS/macOS: Swift ViewModels invoke `presenter.clear()` in `deinit` or upon view dismissal.
-
-#### 3. State Update Guarding
-To prevent emissions after scope cancellation, guard state updates using the shared [`updateIfActive`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/src/commonMain/kotlin/com/example/imagefeed/presentation/PresenterScope.kt) extension on `MutableStateFlow`. Avoid repeating ad-hoc `if (!isActive())` checks across individual emission points.
+### B. Coroutine Lifecycles & Structured Concurrency
+- `MviViewModel` extends the official multiplatform `androidx.lifecycle.ViewModel`.
+- All asynchronous workloads (networking, debounced flows, search queries) are launched strictly within `viewModelScope`.
+- When a screen is popped or dismissed, `viewModelScope` is cancelled automatically via `onCleared()`.
+- Darwin runtimes (SwiftUI) invoke `viewModel.clear()` inside `deinit` to deterministically trigger job cancellation and effect channel closure.
 
 ---
 
@@ -94,16 +72,16 @@ Dependency injection is handled at compile time using **Metro** (`dev.zacsweers.
 ### A. Graph & Scoping Architecture
 - The root dependency container is defined via `@DependencyGraph interface ApplicationGraph` in `shared/src/commonMain/kotlin/com/example/imagefeed/di/Metro.kt`.
 - Application-level singletons are scoped using `@SingleIn(AppScope::class)`.
-- Core networking and system services are declared in `NetworkModule` and bound via `@ContributesBinding`.
+- Core networking and repository bindings are declared in `AppModule`.
 - Access to the graph is centralized through `MetroHelper.graph`.
 
-### B. Presenter & ViewModel Injection Patterns
-1. **Un-parameterized Presenters / ViewModels** (e.g. `FeedPresenter`, `UnifiedSearchPresenter`):
-   - Migrated to standard `@Inject constructor(...)`.
-   - Exposed as factories on `ApplicationGraph`.
-2. **Parameterized Presenters / ViewModels** (e.g. `PhotoDetailsPresenter`, `CollectionDetailPresenter`, `UserProfilePresenter`):
-   - Use `@Assisted` injection for runtime parameters (e.g. `photoId`, `collectionId`, `username`).
-   - Define dedicated `@AssistedFactory` interfaces exposed via `ApplicationGraph`.
+### B. ViewModel Injection Patterns
+1. **Un-parameterized ViewModels** (e.g. `FeedViewModel`, `CollectionsFeedViewModel`, `UnifiedSearchViewModel`, `RandomPhotoViewModel`):
+   - Defined with `@Inject constructor(...)`.
+   - Exposed directly on `ApplicationGraph` as properties (e.g., `val feedViewModel: FeedViewModel`).
+2. **Parameterized ViewModels** (e.g. `PhotoDetailsViewModel`, `CollectionDetailViewModel`, `UserProfileViewModel`):
+   - Use `@AssistedInject` and `@Assisted` injection for runtime parameters (e.g. `photoId`, `collectionId`, `username`).
+   - Define dedicated `@AssistedFactory` interfaces exposed on `ApplicationGraph` (e.g., `val photoDetailsViewModelFactory: PhotoDetailsViewModel.Factory`).
 
 ---
 
@@ -111,11 +89,12 @@ Dependency injection is handled at compile time using **Metro** (`dev.zacsweers.
 
 ### Android (`androidApp`)
 - Render views using pure Jetpack Compose following Material 3 guidelines.
-- Navigation must use **Jetpack Navigation 3** (`NavBackStack`, `NavDisplay`, `NavKey`).
-- Scope presenters and `MviViewModel` instances to navigation back-stack entries using `rememberEntryPresenter` and `rememberViewModelStoreNavEntryDecorator()`.
-- Collect state via `collectAsStateWithLifecycle()` and route user events into `viewModel.dispatch(intent)`.
+- Navigation uses **Jetpack Navigation 3** (`NavBackStack`, `NavDisplay`, `NavKey`).
+- Scope ViewModels using standard Compose `viewModel(key = ...) { MetroHelper.get...() }` within `rememberViewModelStoreNavEntryDecorator()`.
+- Observe state via `collectAsStateWithLifecycle()` and collect effects via `LaunchedEffect`.
+- Route UI actions directly into `viewModel.dispatch(intent)`.
 
 ### Apple (`iosApp` & `macosApp`)
 - Render views using pure SwiftUI following Apple Human Interface Guidelines (HIG) and `GlassTheme`.
-- Platform ViewModel wrappers bridge Kotlin `StateFlow` to `@Published` or Swift `@Observable` properties on `@MainActor`.
-- Invoke `presenter.clear()` or `viewModel.clear()` inside `deinit` to cancel background coroutines upon screen dismissal.
+- Platform ViewModel wrappers bridge Kotlin `iosState` and `iosEffects` to Swift `@Observable` properties on `@MainActor`.
+- Invoke `viewModel.clear()` inside `deinit` to cancel background coroutines upon screen dismissal.
