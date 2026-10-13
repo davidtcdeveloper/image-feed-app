@@ -84,6 +84,7 @@ The `specs/` folder currently contains the following implementation and design d
 *   `specs/49_modularization_umbrella_and_linking_optimization.md`
 *   `specs/50_image_pipeline_and_blurhash_caching.md`
 *   `specs/51_lazy_grid_motion_and_scroll_optimization.md`
+*   `specs/52_macos_title_and_ios_sheet_navigation_fixes.md`
 *   `specs/researches/modularization_evaluation.md`
 *   `specs/implementation_plan.md`
 *   `specs/steps.md`
@@ -775,11 +776,18 @@ These are the spec files that the implementation notes and planning references s
     *   Remove `.shadow()` dynamic elevation from `Modifier.bounceClick` and migrate scale animation to Draw-phase lambda `graphicsLayer { ... }`.
 2.  **Scroll State & Pagination Prefetching:**
     *   Replace inline `derivedStateOf { listState.layoutInfo... }` with coroutine `snapshotFlow` and `distinctUntilChanged()`.
-    *   Add state guards (`!state.isLoading && !state.hasReachedEnd`) to prevent redundant pagination triggers.
-    *   Specify `contentType` in `LazyVerticalStaggeredGrid` items to maximize subcomposition reuse and prefetching.
 3.  **Sister Screen Alignment:**
     *   Align `CollectionsFeedScreen.kt`, `SearchScreen.kt`, `CollectionDetailScreen.kt`, and `UserProfileScreen.kt`.
 4.  **Reference Specification:**
     *   Track blueprint in `specs/51_lazy_grid_motion_and_scroll_optimization.md`.
+
+### Step 54: macOS Window Title & iOS Navigation Bar Sheet Overlap Fixes
+1.  **macOS Collection Detail Window Title:**
+    *   Add `.navigationTitle(viewModel.collection?.title ?? "Collection")` and iOS inline title display mode to `CollectionDetailView.swift`.
+2.  **iOS Photo Details Navigation Bar Overlap & Focus:**
+    *   Hide navigation bar chrome on iOS via `.toolbar(.hidden, for: .navigationBar)` and add empty `.navigationTitle("")` in `PhotoDetailsView.swift` to prevent background bar from overlapping bottom sheet and stealing gestures.
+3.  **Reference Specification:**
+    *   Track blueprint in `specs/52_macos_title_and_ios_sheet_navigation_fixes.md`.
+
 
 
