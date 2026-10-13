@@ -82,6 +82,8 @@ The `specs/` folder currently contains the following implementation and design d
 *   `specs/47_modularization_pilot_feature_details.md`
 *   `specs/48_modularization_remaining_features_extraction.md`
 *   `specs/49_modularization_umbrella_and_linking_optimization.md`
+*   `specs/50_image_pipeline_and_blurhash_caching.md`
+*   `specs/51_lazy_grid_motion_and_scroll_optimization.md`
 *   `specs/researches/modularization_evaluation.md`
 *   `specs/implementation_plan.md`
 *   `specs/steps.md`
@@ -752,5 +754,32 @@ These are the spec files that the implementation notes and planning references s
     *   Partition CI pipeline tasks across fast Linux runners (unit tests across all 8 modular libraries, static analysis, Android build) and macOS runners (Apple framework compilation, native tests).
 3.  **Reference Specification & Research:**
     *   Track blueprint in `specs/49_modularization_umbrella_and_linking_optimization.md` and `specs/researches/modularization_evaluation.md`.
+
+### Step 52: Android Image Pipeline & BlurHash Decoding Cache
+1.  **Coil 3 Application ImageLoader Configuration:**
+    *   Implement `SingletonImageLoader.Factory` in `ImageFeedApplication.kt`.
+    *   Configure `MemoryCache` with 25% heap sizing and strong reference caching.
+    *   Configure `DiskCache` with 100 MB max size in `cacheDir` in compliance with Unsplash hotlinking rules.
+2.  **BlurHash Asynchronous Offloading & LRU Caching:**
+    *   Implement an in-memory `LruCache<String, Bitmap>` in `BlurHashDecoder.kt` preventing duplicate decoding across list item recycling.
+    *   Offload trigonometric decoding to `Dispatchers.Default` via `decodeAsync(...)`.
+    *   Provide synchronous `getCached(...)` inspection for zero-flicker placeholder rendering during initial composition.
+3.  **Screen Integration:**
+    *   Migrate placeholder loading across `FeedScreen.kt`, `CollectionsFeedScreen.kt`, `CollectionDetailScreen.kt`, and `PhotoDetailsScreen.kt`.
+4.  **Reference Specification:**
+    *   Track blueprint in `specs/50_image_pipeline_and_blurhash_caching.md`.
+
+### Step 53: Android Lazy Grid Motion, Modifier Overhead & Scroll Optimization
+1.  **Motion & Modifier Performance Hardening:**
+    *   Scope `Modifier.staggeredEntrance` strictly to initial screen appearance batch (`index < 6`), bypassing translation and alpha springs for scrolled/recycled items.
+    *   Remove `.shadow()` dynamic elevation from `Modifier.bounceClick` and migrate scale animation to Draw-phase lambda `graphicsLayer { ... }`.
+2.  **Scroll State & Pagination Prefetching:**
+    *   Replace inline `derivedStateOf { listState.layoutInfo... }` with coroutine `snapshotFlow` and `distinctUntilChanged()`.
+    *   Add state guards (`!state.isLoading && !state.hasReachedEnd`) to prevent redundant pagination triggers.
+    *   Specify `contentType` in `LazyVerticalStaggeredGrid` items to maximize subcomposition reuse and prefetching.
+3.  **Sister Screen Alignment:**
+    *   Align `CollectionsFeedScreen.kt`, `SearchScreen.kt`, `CollectionDetailScreen.kt`, and `UserProfileScreen.kt`.
+4.  **Reference Specification:**
+    *   Track blueprint in `specs/51_lazy_grid_motion_and_scroll_optimization.md`.
 
 
