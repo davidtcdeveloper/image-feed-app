@@ -3,6 +3,8 @@ package com.example.imagefeed.presentation
 import com.example.imagefeed.model.CollectionSummary
 import com.example.imagefeed.model.Photo
 import com.example.imagefeed.model.User
+import com.example.imagefeed.presentation.search.SearchFilters
+import com.example.imagefeed.presentation.search.SearchTab
 import com.example.imagefeed.repository.UnsplashRepository
 import com.example.imagefeed.util.CommonFlow
 import com.example.imagefeed.util.filterDistinctAgainst
@@ -15,17 +17,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.milliseconds
-
-enum class SearchTab { PHOTOS, COLLECTIONS, USERS }
-
-data class SearchFilters(
-    val orderBy: String = "relevant",
-    val color: String? = null,
-    val orientation: String? = null,
-    val contentFilter: String = "low",
-) {
-    constructor() : this("relevant", null, null, "low")
-}
 
 data class SearchState(
     val query: String = "",

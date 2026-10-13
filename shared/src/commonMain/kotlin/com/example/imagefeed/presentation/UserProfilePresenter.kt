@@ -4,6 +4,7 @@ import com.example.imagefeed.model.Photo
 import com.example.imagefeed.model.PhotoCollection
 import com.example.imagefeed.model.User
 import com.example.imagefeed.model.UserStats
+import com.example.imagefeed.presentation.profile.ProfileTab
 import com.example.imagefeed.repository.UnsplashRepository
 import com.example.imagefeed.util.CommonFlow
 import com.example.imagefeed.util.filterDistinctAgainst
@@ -15,8 +16,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-
-enum class ProfileTab { PORTFOLIO, LIKES, COLLECTIONS, INSIGHTS }
 
 data class UserProfileState(
     val user: User? = null,

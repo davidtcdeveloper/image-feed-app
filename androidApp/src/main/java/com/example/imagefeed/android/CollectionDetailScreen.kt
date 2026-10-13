@@ -73,8 +73,10 @@ import com.example.imagefeed.android.util.BlurHashDecoder
 import com.example.imagefeed.android.util.bounceClick
 import com.example.imagefeed.model.Photo
 import com.example.imagefeed.model.PhotoCollection
-import com.example.imagefeed.presentation.CollectionDetailPresenter
-import com.example.imagefeed.presentation.CollectionDetailState
+import com.example.imagefeed.presentation.collection.CollectionDetailEffect
+import com.example.imagefeed.presentation.collection.CollectionDetailIntent
+import com.example.imagefeed.presentation.collection.CollectionDetailState
+import com.example.imagefeed.presentation.collection.CollectionDetailViewModel
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
@@ -82,17 +84,26 @@ fun CollectionDetailScreen(
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope,
     collectionId: String,
-    presenter: CollectionDetailPresenter =
+    viewModel: CollectionDetailViewModel =
         com.example.imagefeed.android.util.rememberEntryPresenter(key = "collection_$collectionId", onClear = { it.clear() }) {
             com.example.imagefeed.di.MetroHelper
-                .getCollectionDetailPresenter(collectionId)
+                .getCollectionDetailViewModel(collectionId)
         },
     onBack: () -> Unit,
     onPhotoClick: (Photo) -> Unit,
     onCollectionClick: (String) -> Unit,
 ) {
     val context = LocalPlatformContext.current
-    val state by presenter.state.collectAsStateWithLifecycle(initialValue = CollectionDetailState())
+    val state by viewModel.state.collectAsStateWithLifecycle(initialValue = CollectionDetailState())
+
+    LaunchedEffect(viewModel) {
+        viewModel.effects.collect { effect ->
+            when (effect) {
+                is CollectionDetailEffect.NavigateBack -> onBack()
+                is CollectionDetailEffect.ShowError -> Unit
+            }
+        }
+    }
 
     val gridState = rememberLazyStaggeredGridState()
 
@@ -112,7 +123,7 @@ fun CollectionDetailScreen(
 
     LaunchedEffect(shouldLoadMore.value) {
         if (shouldLoadMore.value) {
-            presenter.loadNextPhotosPage()
+            viewModel.dispatch(CollectionDetailIntent.LoadNextPage)
         }
     }
 

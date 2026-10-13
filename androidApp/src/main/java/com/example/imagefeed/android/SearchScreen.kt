@@ -95,10 +95,12 @@ import com.example.imagefeed.di.MetroHelper
 import com.example.imagefeed.model.CollectionSummary
 import com.example.imagefeed.model.Photo
 import com.example.imagefeed.model.User
-import com.example.imagefeed.presentation.SearchFilters
-import com.example.imagefeed.presentation.SearchState
-import com.example.imagefeed.presentation.SearchTab
-import com.example.imagefeed.presentation.UnifiedSearchPresenter
+import com.example.imagefeed.presentation.search.SearchFilters
+import com.example.imagefeed.presentation.search.SearchState
+import com.example.imagefeed.presentation.search.SearchTab
+import com.example.imagefeed.presentation.search.UnifiedSearchEffect
+import com.example.imagefeed.presentation.search.UnifiedSearchIntent
+import com.example.imagefeed.presentation.search.UnifiedSearchViewModel
 import kotlinx.coroutines.flow.SharedFlow
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
@@ -107,9 +109,9 @@ fun SearchScreen(
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope,
     initialQuery: String = "",
-    presenter: UnifiedSearchPresenter =
+    viewModel: UnifiedSearchViewModel =
         rememberEntryPresenter(key = "search_$initialQuery", onClear = { it.clear() }) {
-            MetroHelper.getUnifiedSearchPresenter()
+            MetroHelper.getUnifiedSearchViewModel()
         },
     reselectEvents: SharedFlow<NavKey>? = null,
     onBack: () -> Unit,
@@ -117,12 +119,22 @@ fun SearchScreen(
     onUserClick: (User) -> Unit,
     onCollectionClick: (CollectionSummary) -> Unit,
 ) {
-    val state by presenter.state.collectAsStateWithLifecycle(initialValue = SearchState())
+    val state by viewModel.state.collectAsStateWithLifecycle(initialValue = SearchState())
     var showFiltersSheet by remember { mutableStateOf(false) }
     val pullToRefreshState = rememberPullToRefreshState()
     val haptic = LocalHapticFeedback.current
     val adaptiveLayoutInfo = LocalAdaptiveLayoutInfo.current
     val isCompact = adaptiveLayoutInfo.isCompactWidth
+
+    LaunchedEffect(viewModel) {
+        viewModel.effects.collect { effect ->
+            when (effect) {
+                is UnifiedSearchEffect.DismissKeyboard -> Unit
+                is UnifiedSearchEffect.ScrollToTop -> Unit
+                is UnifiedSearchEffect.ShowError -> Unit
+            }
+        }
+    }
 
     LaunchedEffect(pullToRefreshState.distanceFraction) {
         if (pullToRefreshState.distanceFraction >= 1f) {
@@ -135,23 +147,23 @@ fun SearchScreen(
         state = navigationEventState,
         isBackEnabled = state.isSearchActive,
         onBackCompleted = {
-            presenter.setSearchActive(false)
+            viewModel.dispatch(UnifiedSearchIntent.SetSearchActive(false))
         },
     )
 
     LaunchedEffect(initialQuery) {
         if (initialQuery.isNotEmpty()) {
-            presenter.updateQuery(initialQuery)
+            viewModel.dispatch(UnifiedSearchIntent.UpdateQuery(initialQuery))
         }
     }
 
     val searchInputField = @Composable {
         SearchBarDefaults.InputField(
             query = state.query,
-            onQueryChange = { presenter.updateQuery(it) },
-            onSearch = { presenter.submitSearch(it) },
+            onQueryChange = { viewModel.dispatch(UnifiedSearchIntent.UpdateQuery(it)) },
+            onSearch = { viewModel.dispatch(UnifiedSearchIntent.SubmitSearch(it)) },
             expanded = state.isSearchActive,
-            onExpandedChange = { presenter.setSearchActive(it) },
+            onExpandedChange = { viewModel.dispatch(UnifiedSearchIntent.SetSearchActive(it)) },
             placeholder = {
                 Text(
                     "Search Photos, Collections, Users...",
@@ -161,7 +173,7 @@ fun SearchScreen(
             },
             leadingIcon = {
                 if (state.isSearchActive) {
-                    IconButton(onClick = { presenter.setSearchActive(false) }) {
+                    IconButton(onClick = { viewModel.dispatch(UnifiedSearchIntent.SetSearchActive(false)) }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Collapse Search",
@@ -179,7 +191,7 @@ fun SearchScreen(
             trailingIcon = {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (state.query.isNotEmpty()) {
-                        IconButton(onClick = { presenter.updateQuery("") }) {
+                        IconButton(onClick = { viewModel.dispatch(UnifiedSearchIntent.UpdateQuery("")) }) {
                             Icon(
                                 Icons.Default.Clear,
                                 contentDescription = "Clear",
@@ -214,7 +226,7 @@ fun SearchScreen(
                     SearchBar(
                         inputField = searchInputField,
                         expanded = state.isSearchActive,
-                        onExpandedChange = { presenter.setSearchActive(it) },
+                        onExpandedChange = { viewModel.dispatch(UnifiedSearchIntent.SetSearchActive(it)) },
                         modifier =
                             Modifier
                                 .fillMaxWidth()
@@ -225,16 +237,18 @@ fun SearchScreen(
                     ) {
                         SearchSuggestionsAndHistory(
                             history = state.searchHistory,
-                            onItemClick = { suggestion -> presenter.submitSearch(suggestion) },
-                            onDeleteClick = { presenter.removeHistoryEntry(it) },
-                            onClearAll = { presenter.clearHistory() },
+                            onItemClick = { suggestion ->
+                                viewModel.dispatch(UnifiedSearchIntent.SubmitSearch(suggestion))
+                            },
+                            onDeleteClick = { viewModel.dispatch(UnifiedSearchIntent.RemoveHistoryEntry(it)) },
+                            onClearAll = { viewModel.dispatch(UnifiedSearchIntent.ClearHistory) },
                         )
                     }
                 } else {
                     DockedSearchBar(
                         inputField = searchInputField,
                         expanded = state.isSearchActive,
-                        onExpandedChange = { presenter.setSearchActive(it) },
+                        onExpandedChange = { viewModel.dispatch(UnifiedSearchIntent.SetSearchActive(it)) },
                         modifier =
                             Modifier
                                 .fillMaxWidth()
@@ -242,9 +256,11 @@ fun SearchScreen(
                     ) {
                         SearchSuggestionsAndHistory(
                             history = state.searchHistory,
-                            onItemClick = { suggestion -> presenter.submitSearch(suggestion) },
-                            onDeleteClick = { presenter.removeHistoryEntry(it) },
-                            onClearAll = { presenter.clearHistory() },
+                            onItemClick = { suggestion ->
+                                viewModel.dispatch(UnifiedSearchIntent.SubmitSearch(suggestion))
+                            },
+                            onDeleteClick = { viewModel.dispatch(UnifiedSearchIntent.RemoveHistoryEntry(it)) },
+                            onClearAll = { viewModel.dispatch(UnifiedSearchIntent.ClearHistory) },
                         )
                     }
                 }
@@ -265,7 +281,7 @@ fun SearchScreen(
                         SearchTab.entries.forEach { tab ->
                             Tab(
                                 selected = state.activeTab == tab,
-                                onClick = { presenter.setTab(tab) },
+                                onClick = { viewModel.dispatch(UnifiedSearchIntent.SelectSearchType(tab)) },
                                 text = {
                                     Text(
                                         text = tab.name,
@@ -293,9 +309,9 @@ fun SearchScreen(
                 if (!state.isSearchActive) {
                     SearchSuggestionsAndHistory(
                         history = state.searchHistory,
-                        onItemClick = { presenter.submitSearch(it) },
-                        onDeleteClick = { presenter.removeHistoryEntry(it) },
-                        onClearAll = { presenter.clearHistory() },
+                        onItemClick = { viewModel.dispatch(UnifiedSearchIntent.SubmitSearch(it)) },
+                        onDeleteClick = { viewModel.dispatch(UnifiedSearchIntent.RemoveHistoryEntry(it)) },
+                        onClearAll = { viewModel.dispatch(UnifiedSearchIntent.ClearHistory) },
                     )
                 }
             } else {
@@ -303,7 +319,7 @@ fun SearchScreen(
                     isRefreshing = state.isRefreshing,
                     onRefresh = {
                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                        presenter.refresh()
+                        viewModel.dispatch(UnifiedSearchIntent.Refresh)
                     },
                     state = pullToRefreshState,
                     modifier = Modifier.fillMaxSize(),
@@ -368,7 +384,7 @@ fun SearchScreen(
                                         photos = state.photos,
                                         isLoadingMore = state.isLoadingMore,
                                         reselectEvents = reselectEvents,
-                                        onLoadMore = { presenter.loadNextPage() },
+                                        onLoadMore = { viewModel.dispatch(UnifiedSearchIntent.LoadNextPage) },
                                         onPhotoClick = onPhotoClick,
                                     )
                                 }
@@ -381,7 +397,7 @@ fun SearchScreen(
                                         collections = state.collections,
                                         isLoadingMore = state.isLoadingMore,
                                         reselectEvents = reselectEvents,
-                                        onLoadMore = { presenter.loadNextPage() },
+                                        onLoadMore = { viewModel.dispatch(UnifiedSearchIntent.LoadNextPage) },
                                         onCollectionClick = onCollectionClick,
                                     )
                                 }
@@ -394,7 +410,7 @@ fun SearchScreen(
                                         users = state.users,
                                         isLoadingMore = state.isLoadingMore,
                                         reselectEvents = reselectEvents,
-                                        onLoadMore = { presenter.loadNextPage() },
+                                        onLoadMore = { viewModel.dispatch(UnifiedSearchIntent.LoadNextPage) },
                                         onUserClick = onUserClick,
                                     )
                                 }
@@ -409,7 +425,7 @@ fun SearchScreen(
                 SearchFiltersSheet(
                     filters = state.filters,
                     onDismiss = { showFiltersSheet = false },
-                    onApply = { presenter.applyFilters(it) },
+                    onApply = { viewModel.dispatch(UnifiedSearchIntent.ApplyFilters(it)) },
                 )
             }
         }

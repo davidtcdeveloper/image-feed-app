@@ -17,18 +17,19 @@ class SearchViewModel {
     var searchHistory: [String] = []
     var hasReachedEnd = false
 
-    private let presenter: UnifiedSearchPresenter
-    private var closeable: Closeable?
+    private let viewModel: shared.UnifiedSearchViewModel
+    private var stateCloseable: Closeable?
+    private var effectsCloseable: Closeable?
 
     init(initialQuery: String = "") {
-        let presenter = MetroHelper.shared.getUnifiedSearchPresenter()
-        self.presenter = presenter
+        let viewModel = MetroHelper.shared.getUnifiedSearchViewModel()
+        self.viewModel = viewModel
 
         if !initialQuery.isEmpty {
-            presenter.updateQuery(newQuery: initialQuery)
+            viewModel.dispatch(intent: UnifiedSearchIntentUpdateQuery(query: initialQuery))
         }
 
-        self.closeable = presenter.iosState.watch { [weak self] state in
+        self.stateCloseable = viewModel.iosState.watch { [weak self] state in
             guard let self, let state else { return }
             self.query = state.query
             self.isSearchActive = state.isSearchActive
@@ -44,26 +45,40 @@ class SearchViewModel {
             self.searchHistory = state.searchHistory
             self.hasReachedEnd = state.hasReachedEnd
         }
+
+        self.effectsCloseable = viewModel.iosEffects.watch { [weak self] effect in
+            guard let self, let effect else { return }
+            handleEffect(effect)
+        }
+    }
+
+    private func handleEffect(_ effect: UnifiedSearchEffect) {
+        switch effect {
+        case let showError as UnifiedSearchEffectShowError:
+            error = showError.message
+        default:
+            break
+        }
     }
 
     func updateQuery(newQuery: String) {
-        presenter.updateQuery(newQuery: newQuery)
+        viewModel.dispatch(intent: UnifiedSearchIntentUpdateQuery(query: newQuery))
     }
 
     func setSearchActive(active: Bool) {
-        presenter.setSearchActive(active: active)
+        viewModel.dispatch(intent: UnifiedSearchIntentSetSearchActive(active: active))
     }
 
     func submitSearch(query: String) {
-        presenter.submitSearch(query: query)
+        viewModel.dispatch(intent: UnifiedSearchIntentSubmitSearch(query: query))
     }
 
     func refresh() {
-        presenter.refresh()
+        viewModel.dispatch(intent: UnifiedSearchIntentRefresh.shared)
     }
 
     func setTab(tab: SearchTab) {
-        presenter.setTab(tab: tab)
+        viewModel.dispatch(intent: UnifiedSearchIntentSelectSearchType(type: tab))
     }
 
     func applyFilters(orderBy: String, color: String?, orientation: String?) {
@@ -72,23 +87,24 @@ class SearchViewModel {
             color: color,
             orientation: orientation,
             contentFilter: "low")
-        presenter.applyFilters(filters: newFilters)
+        viewModel.dispatch(intent: UnifiedSearchIntentApplyFilters(filters: newFilters))
     }
 
     func loadNextPage() {
-        presenter.loadNextPage()
+        viewModel.dispatch(intent: UnifiedSearchIntentLoadNextPage.shared)
     }
 
     func removeHistoryEntry(entry: String) {
-        presenter.removeHistoryEntry(entry: entry)
+        viewModel.dispatch(intent: UnifiedSearchIntentRemoveHistoryEntry(entry: entry))
     }
 
     func clearHistory() {
-        presenter.clearHistory()
+        viewModel.dispatch(intent: UnifiedSearchIntentClearHistory.shared)
     }
 
     deinit {
-        closeable?.close()
-        presenter.clear()
+        stateCloseable?.close()
+        effectsCloseable?.close()
+        viewModel.clear()
     }
 }

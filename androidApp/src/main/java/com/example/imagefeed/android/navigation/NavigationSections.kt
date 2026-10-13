@@ -46,9 +46,9 @@ fun EntryProviderScope<NavKey>.feedSection(
         FeedScreen(
             sharedTransitionScope = sharedTransitionScope,
             animatedVisibilityScope = LocalNavAnimatedContentScope.current,
-            presenter =
+            viewModel =
                 rememberEntryPresenter(key = "feed", onClear = { it.clear() }) {
-                    MetroHelper.getFeedPresenter()
+                    MetroHelper.getFeedViewModel()
                 },
             reselectEvents = navigator.reselectEvents,
             onPhotoClick =
@@ -81,9 +81,9 @@ fun EntryProviderScope<NavKey>.collectionsSection(
         CollectionsFeedScreen(
             sharedTransitionScope = sharedTransitionScope,
             animatedVisibilityScope = LocalNavAnimatedContentScope.current,
-            presenter =
+            viewModel =
                 rememberEntryPresenter(key = "collections", onClear = { it.clear() }) {
-                    MetroHelper.getCollectionsFeedPresenter()
+                    MetroHelper.getCollectionsFeedViewModel()
                 },
             reselectEvents = navigator.reselectEvents,
             onCollectionClick =
@@ -103,9 +103,9 @@ fun EntryProviderScope<NavKey>.collectionsSection(
             sharedTransitionScope = sharedTransitionScope,
             animatedVisibilityScope = LocalNavAnimatedContentScope.current,
             collectionId = key.collectionId,
-            presenter =
+            viewModel =
                 rememberEntryPresenter(key = "collection_${key.collectionId}", onClear = { it.clear() }) {
-                    MetroHelper.getCollectionDetailPresenter(key.collectionId)
+                    MetroHelper.getCollectionDetailViewModel(key.collectionId)
                 },
             onBack = dropUnlessResumed { navigator.goBack() },
             onPhotoClick =
@@ -134,9 +134,9 @@ fun EntryProviderScope<NavKey>.searchSection(
             sharedTransitionScope = sharedTransitionScope,
             animatedVisibilityScope = LocalNavAnimatedContentScope.current,
             initialQuery = key.query,
-            presenter =
+            viewModel =
                 rememberEntryPresenter(key = "search_${key.query}", onClear = { it.clear() }) {
-                    MetroHelper.getUnifiedSearchPresenter()
+                    MetroHelper.getUnifiedSearchViewModel()
                 },
             reselectEvents = navigator.reselectEvents,
             onBack = dropUnlessResumed { navigator.goBack() },
@@ -195,9 +195,9 @@ fun EntryProviderScope<NavKey>.userProfileSection(
             sharedTransitionScope = sharedTransitionScope,
             animatedVisibilityScope = LocalNavAnimatedContentScope.current,
             username = key.username,
-            presenter =
+            viewModel =
                 rememberEntryPresenter(key = "user_${key.username}", onClear = { it.clear() }) {
-                    MetroHelper.getUserProfilePresenter(key.username)
+                    MetroHelper.getUserProfileViewModel(key.username)
                 },
             onBack = dropUnlessResumed { navigator.goBack() },
             onPhotoClick =

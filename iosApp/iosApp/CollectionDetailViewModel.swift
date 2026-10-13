@@ -11,14 +11,15 @@ class CollectionDetailViewModel {
     var error: String?
     var hasReachedEnd = false
 
-    private let presenter: CollectionDetailPresenter
-    private var closeable: Closeable?
+    private let viewModel: shared.CollectionDetailViewModel
+    private var stateCloseable: Closeable?
+    private var effectsCloseable: Closeable?
 
     init(collectionId: String) {
-        let presenter = MetroHelper.shared.getCollectionDetailPresenter(collectionId: collectionId)
-        self.presenter = presenter
+        let viewModel = MetroHelper.shared.getCollectionDetailViewModel(collectionId: collectionId)
+        self.viewModel = viewModel
 
-        self.closeable = presenter.iosState.watch { [weak self] state in
+        self.stateCloseable = viewModel.iosState.watch { [weak self] state in
             guard let self, let state else { return }
             self.collection = state.collection
             self.photos = state.photos
@@ -28,18 +29,37 @@ class CollectionDetailViewModel {
             self.error = state.error
             self.hasReachedEnd = state.hasReachedEnd
         }
+
+        self.effectsCloseable = viewModel.iosEffects.watch { [weak self] effect in
+            guard let self, let effect else { return }
+            handleEffect(effect)
+        }
+    }
+
+    private func handleEffect(_ effect: CollectionDetailEffect) {
+        switch effect {
+        case let showError as CollectionDetailEffectShowError:
+            error = showError.message
+        default:
+            break
+        }
     }
 
     func loadNextPhotosPage() {
-        presenter.loadNextPhotosPage()
+        viewModel.dispatch(intent: CollectionDetailIntentLoadNextPage.shared)
+    }
+
+    func refresh() {
+        viewModel.dispatch(intent: CollectionDetailIntentRefresh.shared)
     }
 
     func trackDownload(photo: Photo) {
-        presenter.trackDownload(photo: photo)
+        viewModel.dispatch(intent: CollectionDetailIntentTrackDownload(photo: photo))
     }
 
     deinit {
-        closeable?.close()
-        presenter.clear()
+        stateCloseable?.close()
+        effectsCloseable?.close()
+        viewModel.clear()
     }
 }

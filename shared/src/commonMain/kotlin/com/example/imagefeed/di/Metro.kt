@@ -20,7 +20,13 @@ import com.example.imagefeed.presentation.RandomPhotoPresenterFactory
 import com.example.imagefeed.presentation.UnifiedSearchPresenter
 import com.example.imagefeed.presentation.UnifiedSearchPresenterFactory
 import com.example.imagefeed.presentation.UserProfilePresenter
+import com.example.imagefeed.presentation.collection.CollectionDetailViewModel
+import com.example.imagefeed.presentation.collections.CollectionsFeedViewModel
 import com.example.imagefeed.presentation.details.PhotoDetailsViewModel
+import com.example.imagefeed.presentation.feed.FeedViewModel
+import com.example.imagefeed.presentation.profile.UserProfileViewModel
+import com.example.imagefeed.presentation.random.RandomPhotoViewModel
+import com.example.imagefeed.presentation.search.UnifiedSearchViewModel
 import com.example.imagefeed.repository.UnsplashRepository
 import com.example.imagefeed.repository.UnsplashRepositoryImpl
 import dev.zacsweers.metro.BindingContainer
@@ -97,6 +103,13 @@ interface ApplicationGraph {
     val photoDetailsViewModelFactory: PhotoDetailsViewModel.Factory
     val collectionDetailPresenterFactory: CollectionDetailPresenter.Factory
     val userProfilePresenterFactory: UserProfilePresenter.Factory
+
+    val feedViewModel: FeedViewModel
+    val randomPhotoViewModel: RandomPhotoViewModel
+    val unifiedSearchViewModel: UnifiedSearchViewModel
+    val collectionsFeedViewModel: CollectionsFeedViewModel
+    val collectionDetailViewModelFactory: CollectionDetailViewModel.Factory
+    val userProfileViewModelFactory: UserProfileViewModel.Factory
 }
 
 object MetroHelper {
@@ -118,4 +131,17 @@ object MetroHelper {
         graph.collectionDetailPresenterFactory.create(collectionId)
 
     fun getUserProfilePresenter(username: String): UserProfilePresenter = graph.userProfilePresenterFactory.create(username)
+
+    fun getFeedViewModel(): FeedViewModel = graph.feedViewModel
+
+    fun getRandomPhotoViewModel(): RandomPhotoViewModel = graph.randomPhotoViewModel
+
+    fun getUnifiedSearchViewModel(): UnifiedSearchViewModel = graph.unifiedSearchViewModel
+
+    fun getCollectionsFeedViewModel(): CollectionsFeedViewModel = graph.collectionsFeedViewModel
+
+    fun getCollectionDetailViewModel(collectionId: String): CollectionDetailViewModel =
+        graph.collectionDetailViewModelFactory.create(collectionId)
+
+    fun getUserProfileViewModel(username: String): UserProfileViewModel = graph.userProfileViewModelFactory.create(username)
 }

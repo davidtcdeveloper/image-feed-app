@@ -14,14 +14,15 @@ class UserProfileViewModel {
     var isLoadingStats = false
     var error: String?
 
-    private let presenter: UserProfilePresenter
-    private var closeable: Closeable?
+    private let viewModel: shared.UserProfileViewModel
+    private var stateCloseable: Closeable?
+    private var effectsCloseable: Closeable?
 
     init(username: String) {
-        let presenter = MetroHelper.shared.getUserProfilePresenter(username: username)
-        self.presenter = presenter
+        let viewModel = MetroHelper.shared.getUserProfileViewModel(username: username)
+        self.viewModel = viewModel
 
-        self.closeable = presenter.iosState.watch { [weak self] state in
+        self.stateCloseable = viewModel.iosState.watch { [weak self] state in
             guard let self, let state else { return }
             self.user = state.user
             self.activeTab = state.activeTab
@@ -34,26 +35,41 @@ class UserProfileViewModel {
             self.isLoadingStats = state.isLoadingStats
             self.error = state.error
         }
+
+        self.effectsCloseable = viewModel.iosEffects.watch { [weak self] effect in
+            guard let self, let effect else { return }
+            handleEffect(effect)
+        }
+    }
+
+    private func handleEffect(_ effect: UserProfileEffect) {
+        switch effect {
+        case let showError as UserProfileEffectShowError:
+            error = showError.message
+        default:
+            break
+        }
     }
 
     func selectTab(tab: ProfileTab) {
-        presenter.selectTab(tab: tab)
+        viewModel.dispatch(intent: UserProfileIntentSelectTab(tab: tab))
     }
 
     func loadNextPage() {
-        presenter.loadNextPage()
+        viewModel.dispatch(intent: UserProfileIntentLoadNextPage.shared)
     }
 
     func refresh() {
-        presenter.refresh()
+        viewModel.dispatch(intent: UserProfileIntentRefresh.shared)
     }
 
     func trackDownload(photo: Photo) {
-        presenter.trackDownload(photo: photo)
+        viewModel.dispatch(intent: UserProfileIntentTrackDownload(photo: photo))
     }
 
     deinit {
-        closeable?.close()
-        presenter.clear()
+        stateCloseable?.close()
+        effectsCloseable?.close()
+        viewModel.clear()
     }
 }

@@ -73,24 +73,35 @@ import com.example.imagefeed.android.util.CollectionMosaicCardSkeleton
 import com.example.imagefeed.android.util.bounceClick
 import com.example.imagefeed.android.util.staggeredEntrance
 import com.example.imagefeed.model.PhotoCollection
-import com.example.imagefeed.presentation.CollectionsFeedPresenter
-import com.example.imagefeed.presentation.CollectionsFeedState
+import com.example.imagefeed.presentation.collections.CollectionsFeedEffect
+import com.example.imagefeed.presentation.collections.CollectionsFeedIntent
+import com.example.imagefeed.presentation.collections.CollectionsFeedState
+import com.example.imagefeed.presentation.collections.CollectionsFeedViewModel
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
 fun CollectionsFeedScreen(
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope,
-    presenter: CollectionsFeedPresenter,
+    viewModel: CollectionsFeedViewModel,
     reselectEvents: kotlinx.coroutines.flow.SharedFlow<androidx.navigation3.runtime.NavKey>? = null,
     onCollectionClick: (PhotoCollection) -> Unit,
     onSearchClick: () -> Unit,
 ) {
-    val state by presenter.state.collectAsStateWithLifecycle(initialValue = CollectionsFeedState())
+    val state by viewModel.state.collectAsStateWithLifecycle(initialValue = CollectionsFeedState())
     val listState = rememberLazyStaggeredGridState()
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
     val pullToRefreshState = rememberPullToRefreshState()
     val haptic = LocalHapticFeedback.current
+
+    LaunchedEffect(viewModel) {
+        viewModel.effects.collect { effect ->
+            when (effect) {
+                is CollectionsFeedEffect.ScrollToTop -> listState.animateScrollToItem(0)
+                is CollectionsFeedEffect.ShowError -> Unit
+            }
+        }
+    }
 
     LaunchedEffect(reselectEvents) {
         reselectEvents?.collect { key ->
@@ -122,7 +133,7 @@ fun CollectionsFeedScreen(
 
     LaunchedEffect(shouldLoadMore.value) {
         if (shouldLoadMore.value) {
-            presenter.loadNextPage()
+            viewModel.dispatch(CollectionsFeedIntent.LoadNextPage)
         }
     }
 
@@ -163,7 +174,7 @@ fun CollectionsFeedScreen(
             isRefreshing = state.isRefreshing,
             onRefresh = {
                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                presenter.refresh()
+                viewModel.dispatch(CollectionsFeedIntent.Refresh)
             },
             state = pullToRefreshState,
             modifier =
@@ -185,7 +196,7 @@ fun CollectionsFeedScreen(
                     }
                 }
             } else if (state.collections.isEmpty() && state.error != null) {
-                ErrorView(error = state.error!!, onRetry = { presenter.refresh() })
+                ErrorView(error = state.error!!, onRetry = { viewModel.dispatch(CollectionsFeedIntent.Refresh) })
             } else {
                 LazyVerticalStaggeredGrid(
                     columns = calculateCollectionGridColumns(),

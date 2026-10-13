@@ -96,8 +96,11 @@ import com.example.imagefeed.model.Photo
 import com.example.imagefeed.model.PhotoCollection
 import com.example.imagefeed.model.User
 import com.example.imagefeed.model.UserStats
-import com.example.imagefeed.presentation.ProfileTab
-import com.example.imagefeed.presentation.UserProfileState
+import com.example.imagefeed.presentation.profile.ProfileTab
+import com.example.imagefeed.presentation.profile.UserProfileEffect
+import com.example.imagefeed.presentation.profile.UserProfileIntent
+import com.example.imagefeed.presentation.profile.UserProfileState
+import com.example.imagefeed.presentation.profile.UserProfileViewModel
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
@@ -106,16 +109,25 @@ fun UserProfileScreen(
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope,
     username: String,
-    presenter: com.example.imagefeed.presentation.UserProfilePresenter =
+    viewModel: UserProfileViewModel =
         com.example.imagefeed.android.util.rememberEntryPresenter(key = "user_$username", onClear = { it.clear() }) {
-            MetroHelper.getUserProfilePresenter(username)
+            MetroHelper.getUserProfileViewModel(username)
         },
     onBack: () -> Unit,
     onPhotoClick: (Photo) -> Unit,
     onCollectionClick: (PhotoCollection) -> Unit,
 ) {
     val context = LocalPlatformContext.current
-    val state by presenter.state.collectAsStateWithLifecycle(initialValue = UserProfileState())
+    val state by viewModel.state.collectAsStateWithLifecycle(initialValue = UserProfileState())
+
+    LaunchedEffect(viewModel) {
+        viewModel.effects.collect { effect ->
+            when (effect) {
+                is UserProfileEffect.NavigateBack -> onBack()
+                is UserProfileEffect.ShowError -> Unit
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -196,7 +208,7 @@ fun UserProfileScreen(
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Button(
-                        onClick = { presenter.loadProfile() },
+                        onClick = { viewModel.dispatch(UserProfileIntent.LoadProfile) },
                     ) {
                         Text("Retry")
                     }
@@ -208,8 +220,8 @@ fun UserProfileScreen(
                         animatedVisibilityScope = animatedVisibilityScope,
                         user = user,
                         state = state,
-                        onTabSelect = { presenter.selectTab(it) },
-                        onLoadMore = { presenter.loadNextPage() },
+                        onTabSelect = { viewModel.dispatch(UserProfileIntent.SelectTab(it)) },
+                        onLoadMore = { viewModel.dispatch(UserProfileIntent.LoadNextPage) },
                         onPhotoClick = onPhotoClick,
                         onCollectionClick = onCollectionClick,
                     )

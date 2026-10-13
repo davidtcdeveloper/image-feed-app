@@ -76,8 +76,10 @@ import com.example.imagefeed.android.util.bounceClick
 import com.example.imagefeed.android.util.staggeredEntrance
 import com.example.imagefeed.model.Photo
 import com.example.imagefeed.model.User
-import com.example.imagefeed.presentation.FeedPresenter
-import com.example.imagefeed.presentation.FeedState
+import com.example.imagefeed.presentation.feed.FeedEffect
+import com.example.imagefeed.presentation.feed.FeedIntent
+import com.example.imagefeed.presentation.feed.FeedState
+import com.example.imagefeed.presentation.feed.FeedViewModel
 import kotlinx.coroutines.flow.SharedFlow
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
@@ -85,18 +87,27 @@ import kotlinx.coroutines.flow.SharedFlow
 fun FeedScreen(
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope,
-    presenter: FeedPresenter,
+    viewModel: FeedViewModel,
     reselectEvents: SharedFlow<NavKey>? = null,
     onPhotoClick: (Photo) -> Unit,
     onUserClick: (User) -> Unit,
     onSearchClick: () -> Unit,
     onRandomClick: () -> Unit,
 ) {
-    val state by presenter.state.collectAsStateWithLifecycle(initialValue = FeedState())
+    val state by viewModel.state.collectAsStateWithLifecycle(initialValue = FeedState())
     val listState = rememberLazyStaggeredGridState()
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val pullToRefreshState = rememberPullToRefreshState()
     val haptic = LocalHapticFeedback.current
+
+    LaunchedEffect(viewModel) {
+        viewModel.effects.collect { effect ->
+            when (effect) {
+                is FeedEffect.ScrollToTop -> listState.animateScrollToItem(0)
+                is FeedEffect.ShowToast -> Unit
+            }
+        }
+    }
 
     LaunchedEffect(reselectEvents) {
         reselectEvents?.collect { key ->
@@ -128,7 +139,7 @@ fun FeedScreen(
 
     LaunchedEffect(shouldLoadMore.value) {
         if (shouldLoadMore.value) {
-            presenter.loadNextPage()
+            viewModel.dispatch(FeedIntent.LoadNextPage)
         }
     }
 
@@ -190,7 +201,7 @@ fun FeedScreen(
                 ) {
                     Tab(
                         selected = state.selectedTopicSlug == "editorial",
-                        onClick = { presenter.selectTopic("editorial") },
+                        onClick = { viewModel.dispatch(FeedIntent.SelectTopic("editorial")) },
                         text = {
                             Text(
                                 "Editorial",
@@ -208,7 +219,7 @@ fun FeedScreen(
                         val isSelected = state.selectedTopicSlug == topic.slug
                         Tab(
                             selected = isSelected,
-                            onClick = { presenter.selectTopic(topic.slug) },
+                            onClick = { viewModel.dispatch(FeedIntent.SelectTopic(topic.slug)) },
                             text = {
                                 Text(
                                     topic.title,
@@ -228,7 +239,7 @@ fun FeedScreen(
             isRefreshing = state.isRefreshing,
             onRefresh = {
                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                presenter.refresh()
+                viewModel.dispatch(FeedIntent.Refresh)
             },
             state = pullToRefreshState,
             modifier =
@@ -239,7 +250,7 @@ fun FeedScreen(
             if (state.photos.isEmpty() && state.isLoading) {
                 PhotoGridSkeleton()
             } else if (state.photos.isEmpty() && state.error != null) {
-                ErrorView(error = state.error ?: "Unknown error", onRetry = { presenter.refresh() })
+                ErrorView(error = state.error ?: "Unknown error", onRetry = { viewModel.dispatch(FeedIntent.Refresh) })
             } else {
                 // Main content: Photo Feed
                 LazyVerticalStaggeredGrid(

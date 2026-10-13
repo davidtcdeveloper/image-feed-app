@@ -1,6 +1,6 @@
 # Specification 44: MVI Core Features Migration
 
-**Status:** Approved
+**Status:** Implemented
 
 ## 1. Overview & Objectives
 
@@ -102,12 +102,12 @@ Following the successful pilot validation in [Spec 43](file:///Users/davidtiagoc
 
 ## 4. Implementation Steps
 
-- [ ] **Step 1: Migrate Collection Detail & Collections Feed**
-- [ ] **Step 2: Migrate User Profile & Random Photo**
-- [ ] **Step 3: Migrate Main Feed**
-- [ ] **Step 4: Migrate Unified Search (with Debounced Intents)**
-- [ ] **Step 5: Migrate All Unit Test Suites to Coroutine Dispatchers**
-- [ ] **Step 6: Dual-Platform Verification**
+- [x] **Step 1: Migrate Collection Detail & Collections Feed**
+- [x] **Step 2: Migrate User Profile & Random Photo**
+- [x] **Step 3: Migrate Main Feed**
+- [x] **Step 4: Migrate Unified Search (with Debounced Intents)**
+- [x] **Step 5: Migrate All Unit Test Suites to Coroutine Dispatchers**
+- [x] **Step 6: Dual-Platform Verification**
   - Verify Android assemble and unit tests.
   - Verify iOS xcodebuild and SwiftUI view shells.
 
@@ -115,8 +115,8 @@ Following the successful pilot validation in [Spec 43](file:///Users/davidtiagoc
 
 ## 5. Acceptance Criteria
 
-- [ ] All 6 core features are powered by `MviViewModel`.
-- [ ] All user interactions flow through typed, sealed `Intent` pipelines.
-- [ ] All one-off events are delivered via decoupled `Effect` flows.
-- [ ] Zero presenter calls remain in Android and Apple UI shells.
-- [ ] Dual-platform builds pass with zero compiler warnings.
+- [x] All 6 core features are powered by `MviViewModel`.
+- [x] All user interactions flow through typed, sealed `Intent` pipelines.
+- [x] All one-off events are delivered via decoupled `Effect` flows.
+- [x] Zero presenter calls remain in Android and Apple UI shells.
+- [x] Dual-platform builds pass with zero compiler warnings.

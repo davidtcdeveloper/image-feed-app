@@ -660,4 +660,24 @@ These are the spec files that the implementation notes and planning references s
 5.  **Reference Specification:**
     *   Track blueprint in `specs/43_mvi_pilot_photo_details_migration.md`.
 
+### Step 46: MVI Core Features Migration (Completed)
+1.  **Shared MVI Feature Contracts & ViewModels:**
+    *   Implement `CollectionDetailState/Intent/Effect/ViewModel` under `shared/src/commonMain/kotlin/com/example/imagefeed/presentation/collection/`.
+    *   Implement `CollectionsFeedState/Intent/Effect/ViewModel` under `shared/src/commonMain/kotlin/com/example/imagefeed/presentation/collections/`.
+    *   Implement `UserProfileState/Intent/Effect/ViewModel` under `shared/src/commonMain/kotlin/com/example/imagefeed/presentation/profile/`.
+    *   Implement `RandomPhotoState/Intent/Effect/ViewModel` under `shared/src/commonMain/kotlin/com/example/imagefeed/presentation/random/`.
+    *   Implement `FeedState/Intent/Effect/ViewModel` under `shared/src/commonMain/kotlin/com/example/imagefeed/presentation/feed/`.
+    *   Implement `UnifiedSearchState/Intent/Effect/ViewModel` under `shared/src/commonMain/kotlin/com/example/imagefeed/presentation/search/`.
+2.  **Metro DI Bindings:**
+    *   Add bindings and accessors for all modern ViewModels and assisted factories to `ApplicationGraph` and `MetroHelper`.
+3.  **Platform Presentation Shells:**
+    *   Migrate Android screens (`CollectionDetailScreen`, `CollectionsFeedScreen`, `FeedScreen`, `SearchScreen`, `UserProfileScreen`) to collect MVI state/effects and dispatch intents.
+    *   Migrate iOS Swift ViewModels (`CollectionDetailViewModel`, `CollectionsFeedViewModel`, `FeedViewModel`, `SearchViewModel`, `UserProfileViewModel`) to wrap shared `MviViewModel` instances.
+4.  **Unit Testing & Verification:**
+    *   Author unit tests for all ViewModels in `shared/src/commonTest/kotlin/com/example/imagefeed/presentation/`.
+    *   Verify dual-platform compilation and linters.
+5.  **Reference Specification:**
+    *   Track blueprint in `specs/44_mvi_core_screens_migration.md`.
+
+
 
