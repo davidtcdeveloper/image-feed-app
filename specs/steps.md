@@ -78,6 +78,11 @@ The `specs/` folder currently contains the following implementation and design d
 *   `specs/43_mvi_pilot_photo_details_migration.md`
 *   `specs/44_mvi_core_screens_migration.md`
 *   `specs/45_mvi_architecture_cleanup_and_finalization.md`
+*   `specs/46_modularization_foundation_core_extraction.md`
+*   `specs/47_modularization_pilot_feature_details.md`
+*   `specs/48_modularization_remaining_features_extraction.md`
+*   `specs/49_modularization_umbrella_and_linking_optimization.md`
+*   `specs/researches/modularization_evaluation.md`
 *   `specs/implementation_plan.md`
 *   `specs/steps.md`
 
@@ -690,3 +695,62 @@ These are the spec files that the implementation notes and planning references s
     *   Updated `AGENTS.md`, `GEMINI.md`, and skills (`kmp-architecture`, `kmp-testing`, `ios-glass-design`, `android-m3-design`) to establish Shared MVI / UDF as the sole architectural standard and eliminated the transition state.
 5.  **Reference Specification:**
     *   Track blueprint in `specs/45_mvi_architecture_cleanup_and_finalization.md`.
+
+### Step 48: Modularization Phase 1 - Foundation & Core Extraction
+1.  **Module Directory & Build Script Scaffolding:**
+    *   Register `:core:model`, `:core:mvi`, and `:core:network` in `settings.gradle.kts` (eliminating centralized `:core:data` under Option B).
+    *   Create KMP build scripts using `com.android.kotlin.multiplatform.library` and Apple Silicon targets (`iosArm64`, `iosSimulatorArm64`, `macosArm64`).
+2.  **Extract Core Infrastructure Modules:**
+    *   Extract `:core:model` (universal domain entities and serialization DTOs: `Photo`, `Topic`, `PhotoCollection`, `CollectionSummary`, `User`, `SearchResponse`, deferring feature-specific models to their owning features).
+    *   Extract `:core:mvi` (presentation primitives: `MviViewModel`, `UiState`, `UiIntent`, `UiEffect`, `CommonFlow`).
+    *   Extract `:core:network` (Ktor 3 HTTP engine configuration, logging, `BuildKonfig` API key injection, dedicated `PhotoDownloadTracker`, and pagination helper `CollectionsExt`).
+    *   Retain legacy `UnsplashApiClient` and `UnsplashRepository` temporarily in `:shared` to service un-migrated ViewModels without introducing an intermediate `:core:data` module.
+3.  **Update Assembly Umbrella & Validate:**
+    *   Configure `:shared` to depend on `:core:network`, `:core:mvi`, and `:core:model` with `api` scope and export core symbols in native framework.
+    *   Verify dual-platform builds and test suites.
+4.  **Reference Specification & Research:**
+    *   Track blueprint in `specs/46_modularization_foundation_core_extraction.md` and `specs/researches/modularization_evaluation.md`.
+
+### Step 49: Modularization Phase 2 - Pilot Feature Migration (`:feature:details`)
+1.  **Scaffold Feature Module:**
+    *   Register `:feature:details` in `settings.gradle.kts` and configure `build.gradle.kts` with Metro compiler plugin and dependencies on `:core:model`, `:core:mvi`, and `:core:network`.
+2.  **Migrate Photo Details Vertical Slice:**
+    *   Relocate `PhotoDetailsViewModel`, `PhotoDetailsState`, `PhotoDetailsIntent`, `PhotoDetailsEffect` to `:feature:details`.
+    *   Implement dedicated `PhotoDetailsRepository` contract, `internal class PhotoDetailsRepositoryImpl`, and `internal class PhotoDetailsApiClient`.
+    *   Migrate `PhotoStats` (and metric sub-types) from `Photo.kt` into `:feature:details`.
+    *   Delegate download tracking directly to `PhotoDownloadTracker` from `:core:network`.
+    *   Relocate unit tests to `feature/details/src/commonTest/kotlin/com/example/imagefeed/presentation/details/PhotoDetailsViewModelTest.kt` and replace the 17-method monolithic fake with lean `FakePhotoDetailsRepository`.
+3.  **Validate Metro DI & Apple Framework Linking:**
+    *   Verify Metro compile-time code generation for assisted factory (`PhotoDetailsViewModel.Factory`) across Gradle module boundaries.
+    *   Export `:feature:details` from `:shared` native framework and verify Swift views in `iosApp` and `macosApp` link without errors while keeping internal data classes unexported.
+4.  **Reference Specification & Research:**
+    *   Track blueprint in `specs/47_modularization_pilot_feature_details.md` and `specs/researches/modularization_evaluation.md`.
+
+### Step 50: Modularization Phase 3 - Remaining Feature Extractions
+1.  **Scaffold Vertical Feature Modules:**
+    *   Register and configure `:feature:feed`, `:feature:search`, `:feature:collections`, and `:feature:profile` in `settings.gradle.kts` with dependencies on `:core:model`, `:core:mvi`, and `:core:network`.
+2.  **Migrate Vertical Feature Slices & Tests:**
+    *   Migrate feed and random photo logic to `:feature:feed` with dedicated `FeedRepository`, `FeedApiClient`, and `FakeFeedRepository`.
+    *   Migrate multi-facet search logic to `:feature:search` with dedicated `SearchRepository`, `SearchApiClient`, and `FakeSearchRepository`.
+    *   Migrate collection feed and detail logic to `:feature:collections` with dedicated `CollectionsRepository`, `CollectionsApiClient`, and `FakeCollectionsRepository`.
+    *   Migrate photographer profile logic to `:feature:profile` with dedicated `ProfileRepository`, `ProfileApiClient`, `FakeProfileRepository`, and feature-owned `UserStats` model.
+    *   Delegate all download tracking calls to `PhotoDownloadTracker` from `:core:network`.
+    *   Correct all test paths and move test suites into each feature module's `commonTest`.
+3.  **Decommission Legacy Data Layer & Root Metro Graph:**
+    *   Completely delete `UnsplashRepository.kt` and `UnsplashApiClient.kt` from `:shared`.
+    *   Aggregate all feature modules into `:shared`'s `ApplicationGraph` and `MetroHelper`.
+    *   Export feature ViewModels in `:shared` native framework for Swift/HIG consumption.
+4.  **Reference Specification & Research:**
+    *   Track blueprint in `specs/48_modularization_remaining_features_extraction.md` and `specs/researches/modularization_evaluation.md`.
+
+### Step 51: Modularization Phase 4 - Umbrella Framework & Linking Optimization
+1.  **Selective Binary Export & Internal Visibility Benefits:**
+    *   Restrict Apple framework `export(...)` declarations in `:shared` strictly to public feature ViewModels and core model/MVI contracts.
+    *   Keep internal networking engines (`:core:network`), feature repository implementations, and feature API clients unexported (enforced via `internal` visibility) to minimize Objective-C bridging stubs and reduce link times.
+2.  **Toolchain Caching & CI Matrix Optimization:**
+    *   Verify `org.gradle.parallel=true`, `org.gradle.caching=true`, and `org.gradle.configuration-cache=true`.
+    *   Partition CI pipeline tasks across fast Linux runners (unit tests across all 8 modular libraries, static analysis, Android build) and macOS runners (Apple framework compilation, native tests).
+3.  **Reference Specification & Research:**
+    *   Track blueprint in `specs/49_modularization_umbrella_and_linking_optimization.md` and `specs/researches/modularization_evaluation.md`.
+
+

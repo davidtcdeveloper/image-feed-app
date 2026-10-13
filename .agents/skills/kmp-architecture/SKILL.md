@@ -25,12 +25,11 @@ Use this skill when:
 
 The application follows a strict Kotlin Multiplatform (KMP) division of responsibilities:
 
-### A. Shared Business Logic (`shared/commonMain`)
-All core logic MUST reside in the shared module:
-- Network client configuration (Ktor 3).
-- Data parsing, domain models, and serialization (Kotlinx Serialization).
-- Repository abstractions and caching policies.
-- Presentation state holders, pagination logic, and search query debounce.
+### A. Shared Business Logic & Modularization Migration
+All core logic MUST reside in shared Kotlin code. The repository is executing a phased modularization migration from a monolithic `:shared` module to **Vertical Feature Modules with an Umbrella Framework** (see [`specs/researches/modularization_evaluation.md`](specs/researches/modularization_evaluation.md) and Specs [46](specs/46_modularization_foundation_core_extraction.md)–[49](specs/49_modularization_umbrella_and_linking_optimization.md)):
+- **Foundational Core Modules**: `:core:model`, `:core:mvi`, `:core:network`.
+- **Vertical Feature Modules**: `:feature:feed`, `:feature:details`, `:feature:search`, `:feature:collections`, `:feature:profile` (owning their repositories and API clients).
+- **Umbrella Assembly & Gateway**: `:shared` compiles the unified Apple native framework and aggregates the root Metro DI graph.
 - Platform modules (`androidApp`, `iosApp`, `macosApp`) MUST remain thin, declarative view shells (Jetpack Compose and SwiftUI). Do not duplicate data parsing or pagination offsets in platform code.
 
 ### B. Cross-Language Reference Auditing & Swift Interop

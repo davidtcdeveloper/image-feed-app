@@ -193,6 +193,68 @@ The codebase follows the **Shared MVI / Unidirectional Data Flow (UDF) Pattern**
 * **`androidApp`**: Pure Jetpack Compose UI shell with Navigation 3, Coil 3.6 image pipeline, Google Maps Compose, and Material 3 design tokens.
 * **`iosApp`**: Pure SwiftUI shell observing shared Kotlin flows into Swift 5.9+ `@Observable` view models, supporting iOS 17+ and macOS 14+ targets.
 
+### 📦 Modularization Architecture & Migration Roadmap
+
+The codebase is executing a structured modularization migration from a monolithic `:shared` module to **Vertical Feature Modules with an Umbrella Framework** (**Option B: Vertical Feature Ownership**), as recommended in the architectural research evaluation ([`specs/researches/modularization_evaluation.md`](specs/researches/modularization_evaluation.md)):
+
+```mermaid
+graph TD
+    subgraph Platform UI Shells
+        Android["androidApp (Compose + Nav 3)"]
+        Apple["iosApp / macosApp (SwiftUI)"]
+    end
+
+    subgraph Assembly & Umbrella
+        Umbrella[":shared (Umbrella Framework & Metro Graph)"]
+    end
+
+    subgraph Feature Modules [Vertical Feature Modules (VM + Repo + Client)]
+        FeatFeed[":feature:feed"]
+        FeatDetails[":feature:details"]
+        FeatSearch[":feature:search"]
+        FeatCollections[":feature:collections"]
+        FeatProfile[":feature:profile"]
+    end
+
+    subgraph Core Modules [Foundational Core Modules]
+        CoreNetwork[":core:network (Ktor Engine, PhotoDownloadTracker, CollectionsExt)"]
+        CoreModel[":core:model (Entities & DTOs)"]
+        CoreMvi[":core:mvi (MviViewModel, UiState, UiIntent, UiEffect)"]
+    end
+
+    Android --> Umbrella
+    Apple --> Umbrella
+    Umbrella --> FeatFeed
+    Umbrella --> FeatDetails
+    Umbrella --> FeatSearch
+    Umbrella --> FeatCollections
+    Umbrella --> FeatProfile
+
+    FeatFeed --> CoreNetwork
+    FeatFeed --> CoreMvi
+    FeatFeed --> CoreModel
+    FeatDetails --> CoreNetwork
+    FeatDetails --> CoreMvi
+    FeatDetails --> CoreModel
+    FeatSearch --> CoreNetwork
+    FeatSearch --> CoreMvi
+    FeatSearch --> CoreModel
+    FeatCollections --> CoreNetwork
+    FeatCollections --> CoreMvi
+    FeatCollections --> CoreModel
+    FeatProfile --> CoreNetwork
+    FeatProfile --> CoreMvi
+    FeatProfile --> CoreModel
+
+    CoreNetwork --> CoreModel
+```
+
+The migration is partitioned into four phased specifications:
+1. **Phase 1: Foundation & Core Extraction** ([Spec 46](specs/46_modularization_foundation_core_extraction.md)): Extract `:core:model`, `:core:mvi`, and `:core:network` (with `PhotoDownloadTracker` and `CollectionsExt`), eliminating centralized `:core:data`.
+2. **Phase 2: Pilot Feature Migration** ([Spec 47](specs/47_modularization_pilot_feature_details.md)): Migrate Photo Details (`:feature:details`) to vertically own `PhotoDetailsRepository`, `PhotoDetailsApiClient`, and `PhotoStats`, validating multi-module Metro assisted injection and Apple framework linking.
+3. **Phase 3: Remaining Feature Extractions** ([Spec 48](specs/48_modularization_remaining_features_extraction.md)): Extract `:feature:feed`, `:feature:search`, `:feature:collections`, and `:feature:profile` to vertically own their repositories, clients, fakes, and models (`UserStats`), completely retiring the legacy monolithic `UnsplashRepository`.
+4. **Phase 4: Umbrella Framework & Linking Optimization** ([Spec 49](specs/49_modularization_umbrella_and_linking_optimization.md)): Configure selective binary export to minimize Objective-C bridging stubs, leverage `internal` visibility linking benefits, optimize Gradle build caching, and tune CI execution matrices.
+
 ---
 
 ## 🔑 API Keys & Configuration
@@ -226,7 +288,7 @@ This project adheres to a strict spec-driven engineering workflow:
 * **Specs & Planning**: Every change is anchored in a specification document in `specs/`. Check `specs/steps.md` for historical implementation notes.
 * **Zero Warning Policy**: Code changes must produce zero compiler warnings and clean lint reports.
 * **Dual-Platform Build Policy**: Any change affecting `shared/` or platform logic must be verified on both Android and iOS targets. While macOS is supported via the shared Xcode project, pre-commit CI and automated verification focus on the dual mobile targets (`androidApp` and `iosApp`).
-* **Architecture Rules**: Review `AGENTS.md` and the workspace skills in `.agents/skills/` for guidelines on presenter lifecycles, cross-language interop, and UI styling.
+* **Architecture Rules**: Review `AGENTS.md` and the workspace skills in `.agents/skills/` for guidelines on MVI ViewModel lifecycles, cross-language interop, and UI styling.
 
 ---
 
