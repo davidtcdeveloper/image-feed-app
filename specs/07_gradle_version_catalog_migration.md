@@ -212,8 +212,8 @@ dependencies {
 
 ## 4. Verification Checklist
 
-- [ ] **Catalog Creation:** Create `gradle` directory and populate `libs.versions.toml`.
-- [ ] **Root Build Sync:** Apply alias loaders in `/build.gradle.kts` and trigger Gradle sync.
-- [ ] **Shared Module Migration:** Replace coordinates in `shared/build.gradle.kts` and verify multiplatform targets resolve cleanly.
-- [ ] **Android App Migration:** Replace coordinates in `androidApp/build.gradle.kts` and verify type-safety binding.
-- [ ] **Compilation Validation:** Run `./gradlew assembleDebug` to guarantee 100% compilation success without deprecated properties or broken links.
+- [x] **Catalog Creation:** Create `gradle` directory and populate `libs.versions.toml`.
+- [x] **Root Build Sync:** Apply alias loaders in `/build.gradle.kts` and trigger Gradle sync.
+- [x] **Shared Module Migration:** Replace coordinates in `shared/build.gradle.kts` and verify multiplatform targets resolve cleanly.
+- [x] **Android App Migration:** Replace coordinates in `androidApp/build.gradle.kts` and verify type-safety binding.
+- [x] **Compilation Validation:** Run `./gradlew assembleDebug` to guarantee 100% compilation success without deprecated properties or broken links.

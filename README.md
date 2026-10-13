@@ -139,7 +139,7 @@ flowchart TD
 
 ## 🏗️ Technical Architecture
 
-The codebase follows the **Shared Presenter Pattern**, maximizing cross-platform code reuse while retaining completely native rendering and scrolling performance.
+The codebase follows the **Shared MVI / Unidirectional Data Flow (UDF) Pattern**, maximizing cross-platform code reuse while retaining completely native rendering and scrolling performance.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -159,11 +159,11 @@ The codebase follows the **Shared Presenter Pattern**, maximizing cross-platform
 │                    shared Module (Kotlin Multiplatform)                     │
 │                                                                             │
 │   ┌─────────────────────────────────────────────────────────────────────┐   │
-│   │                     Presenters & MVI ViewModels                     │   │
-│   │  (FeedPresenter, UnifiedSearchPresenter, PhotoDetailsViewModel,     │   │
-│   │   CollectionDetailPresenter, CollectionsFeedPresenter,              │   │
-│   │   RandomPhotoPresenter, UserProfilePresenter)                       │   │
-│   │   * PresenterScope & MviViewModel Lifecycle Management               │   │
+│   │                  Shared MVI ViewModels (UDF Pattern)                │   │
+│   │  (FeedViewModel, UnifiedSearchViewModel, PhotoDetailsViewModel,     │   │
+│   │   CollectionDetailViewModel, CollectionsFeedViewModel,              │   │
+│   │   RandomPhotoViewModel, UserProfileViewModel)                       │   │
+│   │   * MviViewModel (UiState, UiIntent, UiEffect) & viewModelScope     │   │
 │   └──────────────────────────────────┬──────────────────────────────────┘   │
 │                                      ▼                                      │
 │   ┌─────────────────────────────────────────────────────────────────────┐   │
@@ -188,7 +188,7 @@ The codebase follows the **Shared Presenter Pattern**, maximizing cross-platform
 
 * **`shared` (`commonMain`, `appleMain`, `androidMain`)**:
   * **Compile-Time DI**: Fast, reflection-free dependency injection with **Metro** (`dev.zacsweers.metro`).
-  * **Lifecycle-Safe Presenters**: Presenters own managed `PresenterScope` instances with clean `clear()` lifecycles, guarded by `updateIfActive()` helpers to prevent memory leaks or emissions after screen teardown.
+  * **Shared MVI / UDF Architecture**: Presentation logic is standardized on `MviViewModel`, `UiState`, `UiIntent`, and `UiEffect` scoped to `viewModelScope`, providing structured concurrency, predictable state transitions, and deterministic teardown.
   * **Networking**: High-performance HTTP client using Ktor 3.6 with Darwin engine for Apple targets and OkHttp engine for Android.
 * **`androidApp`**: Pure Jetpack Compose UI shell with Navigation 3, Coil 3.6 image pipeline, Google Maps Compose, and Material 3 design tokens.
 * **`iosApp`**: Pure SwiftUI shell observing shared Kotlin flows into Swift 5.9+ `@Observable` view models, supporting iOS 17+ and macOS 14+ targets.

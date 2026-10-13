@@ -49,6 +49,7 @@ class UnifiedSearchViewModel(
             clearSearch()
             return
         }
+        addHistoryEntry(query)
         performSearch(query, reset = true)
     }
 

@@ -150,6 +150,11 @@ class UnifiedSearchViewModelTest {
 
             assertEquals(false, viewModel.state.value.isSearchActive)
             assertEquals(1, viewModel.state.value.photos.size)
+            assertEquals(
+                "cars",
+                viewModel.state.value.searchHistory
+                    .first(),
+            )
         }
 
     private class FakeUnsplashRepository(
