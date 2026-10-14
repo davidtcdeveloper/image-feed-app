@@ -45,16 +45,21 @@ On iPhone, when viewing a photo after navigating into a profile (`UserProfileVie
      ```
    * When pushed onto a `NavigationStack`, `PhotoDetailsView` hides the back button (`.navigationBarBackButtonHidden(true)`) and supplies custom toolbar items, but **does not hide the navigation bar chrome** (`.toolbar(.hidden, for: .navigationBar)`).
    * Because `presentationBackgroundInteraction` enables touch and layout pass-through to the underlying view hierarchy up through the `0.70` detent fraction, dragging the sheet towards the lower detent (`0.35`) or downward allows the active navigation bar container of the navigation stack to intercept gestures and render on top of the sheet window hierarchy.
+3. **Trapped Navigation Regression Risk**:
+   * In [PhotoDetailsView.swift](file:///Users/davidtiagoconceicao/Developer/image-feed-app/iosApp/iosApp/PhotoDetailsView.swift#L106-L128), floating top overlay controls (back button and inspector toggle) are guarded by `if onDismiss != nil`.
+   * When `PhotoDetailsView` is pushed onto a `NavigationStack` from `UserProfileView`, `CollectionDetailView`, or `SearchView` ([`ContentView.swift` line 68](file:///Users/davidtiagoconceicao/Developer/image-feed-app/iosApp/iosApp/ContentView.swift#L68)), `onDismiss` is `nil`.
+   * The **only** navigation controls rendered on pushed views are in `.toolbar { ToolbarItem(placement: .navigationBarLeading) ... }`.
+   * Therefore, simply applying `.toolbar(.hidden, for: .navigationBar)` without updating the overlay controls would hide the toolbar items and trap the user on the screen with zero navigation controls!
 
 ### Proposed Solution
-1. **Hide the Navigation Bar in `PhotoDetailsView` on iOS**:
-   * Since `PhotoDetailsView` renders its own floating back button and action bar controls:
+1. **Hide the Navigation Bar in `PhotoDetailsView` on iOS & Render Floating Controls Unconditionally**:
+   * In `PhotoDetailsView.swift`, hide the navigation bar chrome on iOS:
      ```swift
      #if os(iOS)
      .toolbar(.hidden, for: .navigationBar)
      #endif
      ```
-   * This ensures that when `PhotoDetailsView` is pushed onto any `NavigationStack`, the navigation bar chrome is hidden completely and cannot render over or intercept touches from the sheet.
+   * **Promote floating overlay controls**: Update the top overlays (`overlay(alignment: .topLeading)` and `overlay(alignment: .topTrailing)`) to render unconditionally on iOS (or whenever navigation bar is hidden), rather than gating behind `if onDismiss != nil`. This guarantees the floating back button (invoking `handleDismiss()`) and inspector toggle button remain fully visible and interactive on pushed `NavigationStack` destinations.
 2. **Constrain or Conditionally Enable Background Interaction**:
    * Ensure that background interaction is active only when appropriate and does not leak gestures into parent navigation bars.
 3. **Explicit Empty Navigation Title**:
@@ -84,7 +89,7 @@ On iPhone, when viewing a photo after navigating into a profile (`UserProfileVie
   * Add `.navigationTitle(viewModel.collection?.title ?? "Collection")`.
   * Add `#if os(iOS) .navigationBarTitleDisplayMode(.inline) #endif`.
 
-### Step 2: Fix iOS Photo Details Navigation Bar Overlap
+### Step 2: Fix iOS Photo Details Navigation Bar Overlap & Promote Floating Controls
 * Edit [PhotoDetailsView.swift](file:///Users/davidtiagoconceicao/Developer/image-feed-app/iosApp/iosApp/PhotoDetailsView.swift):
   * Add `.navigationTitle("")` and hide the navigation bar:
     ```swift
@@ -92,6 +97,7 @@ On iPhone, when viewing a photo after navigating into a profile (`UserProfileVie
     .toolbar(.hidden, for: .navigationBar)
     #endif
     ```
+  * Update `overlay(alignment: .topLeading)` and `overlay(alignment: .topTrailing)` to render floating back and inspector buttons unconditionally on iOS (or whenever navigation bar is hidden), ensuring destinations pushed onto `NavigationStack` (where `onDismiss == nil`) have interactive navigation affordances.
   * Verify that floating top controls (back button and info button) render seamlessly without navigation bar interference.
 
 ---
@@ -101,7 +107,7 @@ On iPhone, when viewing a photo after navigating into a profile (`UserProfileVie
 - [ ] When clicking on any collection on macOS, the window title displays the collection's title (or `"Collection"` while loading) instead of `macosapp`.
 - [ ] On iPhone, navigating to a user profile (or collection/search) and clicking an image displays the photo details without showing an unwanted navigation bar.
 - [ ] Sliding the inspector sheet down to the minimum detent or dragging it downwards does not cause the background navigation bar to overlay the sheet or capture touch focus.
-- [ ] Tapping the back button on `PhotoDetailsView` returns properly to the preceding screen (`UserProfileView`, `CollectionDetailView`, or `SearchView`).
+- [ ] Pushed `PhotoDetailsView` destinations on `NavigationStack` display floating back and info buttons that allow dismissing back to the previous screen (`UserProfileView`, `CollectionDetailView`, or `SearchView`).
 - [ ] Both `iosApp` and `macosApp` schemes compile cleanly with zero warnings.
 
 ---

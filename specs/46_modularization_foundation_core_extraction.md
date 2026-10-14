@@ -49,7 +49,7 @@ graph TD
 * **Domain Model Scoping Note**: Feature-specific models (`PhotoStats` and `UserStats`) will migrate directly to `:feature:details` and `:feature:profile` during their respective feature extractions, keeping `:core:model` strictly scoped to universal domain types.
 * **Dependencies**:
   - `kotlinx-serialization-json`
-* **Target Platforms**: `android`, `iosArm64`, `iosSimulatorArm64`, `macosArm64`.
+* **Target Platforms**: `android` (namespace `com.example.imagefeed.core.model`), `iosArm64`, `iosSimulatorArm64`, `macosArm64`.
 
 ### B. `:core:mvi`
 * **Purpose**: Platform-agnostic presentation foundation and Unidirectional Data Flow primitives.
@@ -62,20 +62,21 @@ graph TD
 * **Dependencies**:
   - `kotlinx-coroutines-core`
   - `androidx-lifecycle-viewmodel`
-* **Target Platforms**: `android`, `iosArm64`, `iosSimulatorArm64`, `macosArm64`.
+* **Target Platforms**: `android` (namespace `com.example.imagefeed.core.mvi`), `iosArm64`, `iosSimulatorArm64`, `macosArm64`.
 
 ### C. `:core:network`
 * **Purpose**: HTTP client configuration, serialization content negotiation, logging, compile-time API key injection, compliance download tracking, and network collection utilities.
 * **Contents**:
   - Ktor HTTP client engine factory (`createUnsplashHttpClient`)
-  - `BuildKonfig` plugin configuration loading `unsplash.api.key` from `local.properties`
+  - `BuildKonfig` plugin configuration loading `unsplash.api.key` from `local.properties` with `packageName = "com.example.imagefeed.core.network"`
+  - `generateBuildKonfig` Gradle post-processing task replicating [`shared/build.gradle.kts`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/build.gradle.kts#L83-L92) to replace 2-space indentation with 4 spaces for `ktlint` compliance
   - Network error handling and logging plugins
   - `PhotoDownloadTracker`: Dedicated download tracking utility that executes compliant Unsplash `photo.links.download_location` triggers directly via `HttpClient`, decoupling this compliance obligation from domain repositories.
   - [`CollectionsExt.kt`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/src/commonMain/kotlin/com/example/imagefeed/util/CollectionsExt.kt): Pagination stream deduplication helper (`filterDistinctAgainst`).
 * **Dependencies**:
   - `:core:model`
   - Ktor 3 Client Core, Content Negotiation, Serialization, Logging, OkHttp (Android), Darwin (Apple)
-* **Target Platforms**: `android`, `iosArm64`, `iosSimulatorArm64`, `macosArm64`.
+* **Target Platforms**: `android` (namespace `com.example.imagefeed.core.network`), `iosArm64`, `iosSimulatorArm64`, `macosArm64`.
 
 ### D. Assembly & Umbrella Integration (`:shared`)
 * During Phase 1, `:shared` includes `:core:network`, `:core:mvi`, and `:core:model` as `api(...)` dependencies.
@@ -91,6 +92,7 @@ graph TD
 - [ ] **Step 1: Module Directory & Build Script Scaffolding**
   - Register `:core:model`, `:core:mvi`, and `:core:network` in `settings.gradle.kts`.
   - Create standard KMP `build.gradle.kts` files using the `com.android.kotlin.multiplatform.library` plugin and Apple Silicon targets (`iosArm64`, `iosSimulatorArm64`, `macosArm64`).
+  - Configure distinct Android namespaces: `com.example.imagefeed.core.model`, `com.example.imagefeed.core.mvi`, and `com.example.imagefeed.core.network`.
 - [ ] **Step 2: Extract `:core:model`**
   - Move universal model files from `shared/src/commonMain/kotlin/com/example/imagefeed/model/` to `core/model/src/commonMain/kotlin/com/example/imagefeed/model/`.
   - Verify serialization annotations and package structures.
@@ -98,7 +100,8 @@ graph TD
   - Move `MviViewModel.kt`, `UiState.kt`, `UiIntent.kt`, `UiEffect.kt`, and `CommonFlow.kt` to `core/mvi/src/commonMain/kotlin/com/example/imagefeed/presentation/mvi/`.
   - Migrate corresponding unit tests from [`shared/src/commonTest/kotlin/com/example/imagefeed/presentation/mvi/MviViewModelTest.kt`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/src/commonTest/kotlin/com/example/imagefeed/presentation/mvi/MviViewModelTest.kt) to `core/mvi/src/commonTest`.
 - [ ] **Step 4: Extract `:core:network`**
-  - Move Ktor client instantiation and `BuildKonfig` configuration from `:shared` to `core/network`.
+  - Move Ktor client instantiation and `BuildKonfig` configuration from `:shared` to `core/network` with `packageName = "com.example.imagefeed.core.network"`.
+  - Replicate `generateBuildKonfig` Gradle post-processing task in `core/network/build.gradle.kts` for `ktlint` compliance.
   - Implement `PhotoDownloadTracker` in `core/network` to encapsulate Unsplash download tracking requests.
   - Relocate [`CollectionsExt.kt`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/src/commonMain/kotlin/com/example/imagefeed/util/CollectionsExt.kt) into `core/network`.
   - Wire platform engines in `androidMain` (OkHttp) and `appleMain` (Darwin).
@@ -117,9 +120,10 @@ graph TD
 
 ## 4. Acceptance Criteria
 
-- [ ] `:core:model`, `:core:mvi`, and `:core:network` are isolated Gradle modules compiling cleanly.
+- [ ] `:core:model`, `:core:mvi`, and `:core:network` are isolated Gradle modules compiling cleanly with unique Android namespaces (`com.example.imagefeed.core.*`).
 - [ ] Centralized `:core:data` is eliminated from Phase 1 scope; data access will be vertically owned by features.
 - [ ] `PhotoDownloadTracker` and `CollectionsExt` are cleanly extracted into `:core:network`.
+- [ ] `BuildKonfig` generates cleanly in `:core:network` with package `com.example.imagefeed.core.network` and satisfies `ktlint`.
 - [ ] `:core:model` has zero dependencies on Ktor, Coroutines, or UI lifecycle libraries.
 - [ ] `:shared` compiles successfully as an assembly umbrella and exports symbols to Xcode without Swift compilation errors.
 - [ ] Existing Android, iOS, and macOS applications build and run with zero regression in functionality.

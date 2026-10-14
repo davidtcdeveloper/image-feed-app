@@ -57,6 +57,7 @@ graph TD
   - `projects.core.network` (for `HttpClient`, `PhotoDownloadTracker`)
   - `libs.kotlinx.coroutines.core`
   - `libs.androidx.lifecycle.viewmodel`
+* **Target Platforms**: `android` (namespace `com.example.imagefeed.feature.details`), `iosArm64`, `iosSimulatorArm64`, `macosArm64`.
 
 ### B. Vertical Feature Artifacts & Domain Scoping
 
@@ -102,7 +103,7 @@ Move the following files from `shared/src/commonMain/kotlin/com/example/imagefee
       }
   }
   ```
-- `:feature:details` declares an `internal` Metro binding container providing `PhotoDetailsApiClient` and binding `PhotoDetailsRepository` to `PhotoDetailsRepositoryImpl`.
+- `:feature:details` declares a `public` Metro binding container (or `@ContributesTo(AppScope::class)`) providing `PhotoDetailsApiClient` and binding the public interface `PhotoDetailsRepository` to its `internal class PhotoDetailsRepositoryImpl`. Because the container is public, `:shared` can reference it without violating Kotlin module visibility rules, while the implementation class remains strictly internal.
 - The `:shared` root graph ([`ApplicationGraph`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/src/commonMain/kotlin/com/example/imagefeed/di/Metro.kt)) imports `:feature:details` and exposes:
   ```kotlin
   val photoDetailsViewModelFactory: PhotoDetailsViewModel.Factory
@@ -134,7 +135,7 @@ To allow Swift views (`PhotoDetailsViewModel.swift`, `PhotoDetailsView.swift`) t
 
 - [ ] **Step 1: Create `:feature:details` Gradle Module**
   - Add `include(":feature:details")` to `settings.gradle.kts`.
-  - Author `feature/details/build.gradle.kts` targeting Android, iOS, and macOS with Metro plugin and dependencies on `:core:model`, `:core:mvi`, and `:core:network`.
+  - Author `feature/details/build.gradle.kts` targeting Android (namespace `com.example.imagefeed.feature.details`), iOS, and macOS with Metro plugin and dependencies on `:core:model`, `:core:mvi`, and `:core:network`.
 - [ ] **Step 2: Migrate Feature Domain Models**
   - Relocate `PhotoStats`, `StatMetric`, `HistoricalStats`, and `StatsValue` from `Photo.kt` to `feature/details/src/commonMain/kotlin/com/example/imagefeed/details/model/PhotoStats.kt`.
 - [ ] **Step 3: Extract Feature Data Layer & Download Tracker Integration**
@@ -163,10 +164,10 @@ To allow Swift views (`PhotoDetailsViewModel.swift`, `PhotoDetailsView.swift`) t
 
 ## 4. Acceptance Criteria
 
-- [ ] `:feature:details` is an independent Gradle module vertically owning its presentation, repository, API client, and domain model (`PhotoStats`).
+- [ ] `:feature:details` is an independent Gradle module vertically owning its presentation, repository, API client, and domain model (`PhotoStats`), configured with Android namespace `com.example.imagefeed.feature.details`.
 - [ ] Centralized `:core:data` is bypassed; `:feature:details` depends only on `:core:model`, `:core:mvi`, and `:core:network`.
 - [ ] Monolithic test fakes are eliminated in favor of a lean `FakePhotoDetailsRepository`.
-- [ ] Metro successfully generates assisted injection factories across module boundaries.
+- [ ] Metro successfully generates assisted injection factories across module boundaries with clean container visibility.
 - [ ] `:shared` exports `PhotoDetailsViewModel` cleanly into the Apple framework without breaking Swift code.
 - [ ] Dual-pane view on Android and detented inspector sheet on iOS function identically to baseline.
 - [ ] All unit tests pass under `:feature:details:allTests`.

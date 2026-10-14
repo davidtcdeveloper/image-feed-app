@@ -63,8 +63,9 @@ org.gradle.parallel=true
 org.gradle.caching=true
 org.gradle.configuration-cache=true
 
-# Kotlin K2 incremental compilation & Native link settings
+# Kotlin incremental compilation & Native link settings
 kotlin.incremental=true
+# Verify cacheKind against Kotlin 2.4+ compiler flags to prevent deprecation warnings
 kotlin.native.cacheKind=none
 ```
 
@@ -76,8 +77,8 @@ kotlin.native.cacheKind=none
 ### D. Continuous Integration Execution Matrix
 Align CI workflow execution with the optimized matrix from research section 6.3:
 - **Linux (Ubuntu) Runners**:
-  - Run all unit tests across all 8 modular libraries:
-    `./gradlew :core:model:allTests :core:mvi:allTests :core:network:allTests :feature:feed:allTests :feature:details:allTests :feature:search:allTests :feature:collections:allTests :feature:profile:allTests`
+  - Run all unit tests across all 8 modular libraries and umbrella graph:
+    `./gradlew :core:model:allTests :core:mvi:allTests :core:network:allTests :feature:feed:allTests :feature:details:allTests :feature:search:allTests :feature:collections:allTests :feature:profile:allTests :shared:allTests`
   - Run static analysis: `./gradlew ktlintCheck detekt`
   - Assemble Android binary: `./gradlew :androidApp:assembleDebug`
 - **macOS (Apple Silicon) Runners**:

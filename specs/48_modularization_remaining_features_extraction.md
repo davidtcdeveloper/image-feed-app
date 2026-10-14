@@ -88,10 +88,12 @@ graph TD
 * **Unit Tests & Fakes**:
   - Migrated from [`shared/src/commonTest/kotlin/com/example/imagefeed/presentation/feed/FeedViewModelTest.kt`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/src/commonTest/kotlin/com/example/imagefeed/presentation/feed/FeedViewModelTest.kt) and [`shared/src/commonTest/kotlin/com/example/imagefeed/presentation/random/RandomPhotoViewModelTest.kt`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/src/commonTest/kotlin/com/example/imagefeed/presentation/random/RandomPhotoViewModelTest.kt) to `feature/feed/src/commonTest/`.
   - `FakeFeedRepository`: Lean fake implementing only feed and topic photo queries.
+* **Target Platforms**: `android` (namespace `com.example.imagefeed.feature.feed`), `iosArm64`, `iosSimulatorArm64`, `macosArm64`.
 * **DI Wiring**: Standard `@Inject constructor(...)` for both ViewModels.
 
 #### 2. `:feature:search`
 * **Path**: `feature/search`
+* **Target Platforms**: `android` (namespace `com.example.imagefeed.feature.search`), `iosArm64`, `iosSimulatorArm64`, `macosArm64`.
 * **Contents**:
   - Presentation:
     - [`UnifiedSearchViewModel.kt`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/src/commonMain/kotlin/com/example/imagefeed/presentation/search/UnifiedSearchViewModel.kt), `SearchState.kt`, `UnifiedSearchIntent.kt`, `UnifiedSearchEffect.kt`
@@ -107,6 +109,7 @@ graph TD
 
 #### 3. `:feature:collections`
 * **Path**: `feature/collections`
+* **Target Platforms**: `android` (namespace `com.example.imagefeed.feature.collections`), `iosArm64`, `iosSimulatorArm64`, `macosArm64`.
 * **Contents**:
   - Presentation:
     - [`CollectionsFeedViewModel.kt`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/src/commonMain/kotlin/com/example/imagefeed/presentation/collections/CollectionsFeedViewModel.kt), `CollectionsFeedState.kt`, `CollectionsFeedIntent.kt`, `CollectionsFeedEffect.kt`
@@ -126,6 +129,7 @@ graph TD
 
 #### 4. `:feature:profile`
 * **Path**: `feature/profile`
+* **Target Platforms**: `android` (namespace `com.example.imagefeed.feature.profile`), `iosArm64`, `iosSimulatorArm64`, `macosArm64`.
 * **Contents**:
   - Presentation:
     - [`UserProfileViewModel.kt`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/src/commonMain/kotlin/com/example/imagefeed/presentation/profile/UserProfileViewModel.kt), `UserProfileState.kt`, `UserProfileIntent.kt`, `UserProfileEffect.kt`
@@ -141,11 +145,11 @@ graph TD
   - `FakeProfileRepository`: Lean fake implementing only profile queries.
 * **DI Wiring**: `@AssistedInject` and `@AssistedFactory` (`username: String`)
 
-### B. Retirement of Legacy Monolithic Data Layer
+### B. Retirement of Legacy Monolithic Data Layer & Metro Multi-Module Assembly
 Once all four features are extracted:
 1. Delete [`UnsplashRepository.kt`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/src/commonMain/kotlin/com/example/imagefeed/repository/UnsplashRepository.kt) and [`UnsplashApiClient.kt`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/src/commonMain/kotlin/com/example/imagefeed/api/UnsplashApiClient.kt) from `:shared`.
 2. Remove legacy repository provider methods from `AppModule` in [`Metro.kt`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/src/commonMain/kotlin/com/example/imagefeed/di/Metro.kt).
-3. The root [`ApplicationGraph`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/src/commonMain/kotlin/com/example/imagefeed/di/Metro.kt) binds each feature's repository to its internal implementation within the feature module's Metro container.
+3. Each feature module declares a `public` Metro binding container (or uses `@ContributesTo(AppScope::class)`), binding its public repository interface to its `internal class *RepositoryImpl`. This allows the root [`ApplicationGraph`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/src/commonMain/kotlin/com/example/imagefeed/di/Metro.kt) in `:shared` to assemble the multi-module graph cleanly while keeping concrete data implementations encapsulated.
 
 ### C. Inter-Feature Decoupling Invariant
 Features MUST NOT declare dependencies on other feature modules (e.g. `:feature:feed` has no dependency on `:feature:profile` or `:feature:details`). Navigation routing across domain boundaries is handled entirely by platform navigation containers via typed navigation parameters or effects:
@@ -158,7 +162,7 @@ Features MUST NOT declare dependencies on other feature modules (e.g. `:feature:
 
 - [ ] **Step 1: Module Directory & Build Script Scaffolding**
   - Add `include(":feature:feed")`, `include(":feature:search")`, `include(":feature:collections")`, and `include(":feature:profile")` to `settings.gradle.kts`.
-  - Author `build.gradle.kts` for each feature module applying KMP, Android Library, and Metro plugins, with dependencies on `:core:model`, `:core:mvi`, and `:core:network`.
+  - Author `build.gradle.kts` for each feature module applying KMP, Android Library, and Metro plugins, configuring respective namespaces (`com.example.imagefeed.feature.*`), with dependencies on `:core:model`, `:core:mvi`, and `:core:network`.
 - [ ] **Step 2: Migrate Feed Feature & Fakes**
   - Create `FeedRepository`, `internal class FeedRepositoryImpl`, and `internal class FeedApiClient`.
   - Move `presentation/feed` and `presentation/random` to `feature/feed/`.
@@ -187,8 +191,9 @@ Features MUST NOT declare dependencies on other feature modules (e.g. `:feature:
   - Add `api(projects.feature.*)` dependencies in `shared/build.gradle.kts`.
   - Export all feature modules in the Apple framework binary configuration.
   - Verify [`ApplicationGraph`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/src/commonMain/kotlin/com/example/imagefeed/di/Metro.kt) and [`MetroHelper`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/src/commonMain/kotlin/com/example/imagefeed/di/Metro.kt) resolve all un-parameterized and assisted factories across the multi-module graph.
+  - Author `ApplicationGraphTest.kt` in `shared/src/commonTest/` verifying compile-time DI graph assembly and runtime factory resolution.
 - [ ] **Step 8: Verification & Test Execution**
-  - Run tests across all feature modules:
+  - Run tests across all feature modules and umbrella graph:
     `./gradlew :feature:feed:allTests :feature:search:allTests :feature:collections:allTests :feature:profile:allTests :shared:allTests`
   - Verify dual-platform compilation:
     - Android: `./gradlew :androidApp:assembleDebug`
@@ -199,10 +204,11 @@ Features MUST NOT declare dependencies on other feature modules (e.g. `:feature:
 
 ## 4. Acceptance Criteria
 
-- [ ] All presentation domains are isolated within dedicated vertical feature modules owning their repositories, API clients, and fakes.
+- [ ] All presentation domains are isolated within dedicated vertical feature modules owning their repositories, API clients, and fakes, with unique Android namespaces (`com.example.imagefeed.feature.*`).
 - [ ] The monolithic `UnsplashRepository` and `UnsplashApiClient` are fully retired and deleted from `:shared`.
 - [ ] All test fakes are lean and feature-specific; all test paths are corrected.
 - [ ] Zero ViewModels or presentation state machines remain in the `:shared` module.
 - [ ] Features are strictly independent with zero inter-feature dependencies.
+- [ ] Root `MetroHelper.graph` instantiation is verified via `ApplicationGraphTest` in `:shared`.
 - [ ] Android Navigation 3 and Apple SwiftUI navigation work seamlessly without regressions.
-- [ ] All unit tests pass in their respective feature modules.
+- [ ] All unit tests pass in their respective feature modules and `:shared`.

@@ -64,9 +64,9 @@ graph TD
 ### A. Grid Item Motion & Interaction Modifiers ([`AnimationUtils.kt`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/androidApp/src/main/java/com/example/imagefeed/android/util/AnimationUtils.kt))
 
 1. **Scope `Modifier.staggeredEntrance` to Initial Load Only & Draw-Phase Lambda**:
-   - Provide an overloaded or updated `staggeredEntrance` that only executes staggered translation and alpha springs during the initial screen appearance (e.g., indices of the first visible viewport batch: `index < 6` or tracked via a `rememberSaveable` state).
-   - For all subsequently loaded pages or recycled cells scrolled into view, bypass animations entirely (`alpha = 1f`, `translationY = 0f`), ensuring newly visible cards appear instantly without rubber-banding or layout fighting against the user's scroll direction.
-   - For items that execute the entrance animation, migrate `this.graphicsLayer(alpha = alpha.value, translationY = translationY.value)` to the **Draw-phase lambda syntax**:
+   - Provide an overloaded or updated `staggeredEntrance` that only executes staggered translation and alpha springs during the initial screen appearance, tracked via a state flag (`val hasEntered = rememberSaveable { mutableStateOf(false) }`) or an initial viewport threshold.
+   - For all subsequently loaded pages, recycled cells, or items scrolled back into view after initial entrance, bypass animations entirely and return `this` directly without allocating `Animatable` or attaching unnecessary `graphicsLayer` modifiers. This guarantees zero visual rubber-banding and zero modifier overhead during active gesture flings.
+   - For items executing the initial entrance animation, migrate `this.graphicsLayer(alpha = alpha.value, translationY = translationY.value)` to the **Draw-phase lambda syntax**:
      ```kotlin
      Modifier.graphicsLayer {
          this.alpha = alpha.value
@@ -76,7 +76,7 @@ graph TD
      Reading `alpha.value` and `translationY.value` in the Draw phase rather than the composition phase prevents full composable recomposition loops on every 16ms animation tick.
 
 2. **Strip Heavy Dynamic `.shadow()` from `Modifier.bounceClick`**:
-   - Remove `.shadow(elevation = elevation.dp)` from `bounceClick`. Rely on static container styling (`CardDefaults.cardElevation` or M3 surface elevation) on the parent `Card`.
+   - Remove `.shadow(elevation = elevation.dp)` from `bounceClick`. Rely on static container styling on the parent `Card` (e.g. `CardDefaults.cardElevation(defaultElevation = 2.dp)` where subtle drop shadows are desired, or flat M3 surface tonal elevation).
    - Migrate scale animations to **Draw-phase lambda `graphicsLayer`**:
      ```kotlin
      Modifier.graphicsLayer {
@@ -88,11 +88,14 @@ graph TD
 
 ### B. Lazy Grid Pagination & Prefetching Optimization ([`FeedScreen.kt`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/androidApp/src/main/java/com/example/imagefeed/android/FeedScreen.kt), [`CollectionsFeedScreen.kt`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/androidApp/src/main/java/com/example/imagefeed/android/CollectionsFeedScreen.kt))
 
-1. **Replace Inline `derivedStateOf` with Coroutine `snapshotFlow`**:
+1. **Replace Inline `derivedStateOf` with Stable `snapshotFlow`**:
    - Decommission `derivedStateOf { listState.layoutInfo.visibleItemsInfo.lastOrNull() ... }` from the composable body.
-   - Implement pagination detection using `snapshotFlow` inside a `LaunchedEffect(listState)`:
+   - Implement pagination detection using `snapshotFlow` inside a `LaunchedEffect(listState)`. Use `rememberUpdatedState` for dynamic state flags (`isLoading`, `hasReachedEnd`) so the coroutine is **not cancelled and restarted on every loading toggle**:
      ```kotlin
-     LaunchedEffect(listState, state.isLoading, state.hasReachedEnd) {
+     val currentLoading by rememberUpdatedState(state.isLoading)
+     val currentHasReachedEnd by rememberUpdatedState(state.hasReachedEnd)
+
+     LaunchedEffect(listState) {
          snapshotFlow {
              val layoutInfo = listState.layoutInfo
              val totalItems = layoutInfo.totalItemsCount
@@ -100,7 +103,7 @@ graph TD
              totalItems > 0 && lastVisible >= totalItems - 6
          }
          .distinctUntilChanged()
-         .filter { shouldLoad -> shouldLoad && !state.isLoading && !state.hasReachedEnd }
+         .filter { shouldLoad -> shouldLoad && !currentLoading && !currentHasReachedEnd }
          .collect {
              viewModel.dispatch(FeedIntent.LoadNextPage)
          }
@@ -108,8 +111,9 @@ graph TD
      ```
    - **Key Benefits**:
      - Evaluates outside the composable recomposition scope.
+     - `LaunchedEffect(listState)` stays active across loading cycles; it does not cancel or reset `distinctUntilChanged()` when `isLoading` toggles.
      - `distinctUntilChanged()` guarantees the threshold check triggers an event only once per pagination boundary.
-     - Hardened with explicit state guards (`!state.isLoading && !state.hasReachedEnd`) to prevent runaway API requests.
+     - Hardened with explicit state guards (`!currentLoading && !currentHasReachedEnd`) preventing duplicate or runaway API calls.
 
 2. **Prefetching & Subcomposition Reuse**:
    - Provide explicit `contentType = { _, _ -> "photo_card" }` in `itemsIndexed(...)` calls for `LazyVerticalStaggeredGrid`.
@@ -122,21 +126,21 @@ graph TD
 
 ### Step 1: Refactor `AnimationUtils.kt`
 - Modify `Modifier.staggeredEntrance` to avoid running translation springs on scrolled/recycled items:
-  - Add `enabled: Boolean = true` or restrict delay and translation to initial batch (`index < 6`).
+  - Track entrance state via `rememberSaveable` or viewport bounds; bypass animations and return `this` directly for recycled or scrolled items.
   - Migrate internal `graphicsLayer` to Draw-phase lambda `graphicsLayer { this.alpha = alpha.value; this.translationY = translationY.value }` to eliminate recomposition during initial animation.
 - Modify `Modifier.bounceClick`:
   - Eliminate `.shadow()`.
-  - Migrate `graphicsLayer` scale to lambda syntax.
+  - Migrate `graphicsLayer` scale to Draw-phase lambda syntax.
   - Retain tactile haptic/indication and pointer input without forcing render cache invalidation.
 
 ### Step 2: Modernize Pagination & Grid State in `FeedScreen.kt`
 - Remove inline `val shouldLoadMore = remember { derivedStateOf { ... } }`.
-- Introduce `snapshotFlow` with `distinctUntilChanged()` and state guards in `LaunchedEffect(listState)`.
+- Introduce `snapshotFlow` with `distinctUntilChanged()` and state guards in stable `LaunchedEffect(listState)` using `rememberUpdatedState`.
 - Specify `contentType` in `LazyVerticalStaggeredGrid.itemsIndexed`.
 - Update pagination loading item to use `span = StaggeredGridItemSpan.FullLine` and `contentType = "loading_indicator"`.
 
 ### Step 3: Align Sister Screens
-- Apply `snapshotFlow` pagination and optimized card modifiers in:
+- Apply stable `snapshotFlow` pagination and optimized card modifiers in:
   - [`CollectionsFeedScreen.kt`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/androidApp/src/main/java/com/example/imagefeed/android/CollectionsFeedScreen.kt)
   - [`SearchScreen.kt`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/androidApp/src/main/java/com/example/imagefeed/android/SearchScreen.kt)
   - [`CollectionDetailScreen.kt`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/androidApp/src/main/java/com/example/imagefeed/android/CollectionDetailScreen.kt)
@@ -154,7 +158,7 @@ graph TD
    - Verify initial feed entrance retains delightful motion on app start with zero composition churn.
    - Verify rapid downward and upward flings exhibit smooth continuous movement with zero rubber-band judder.
 3. **Pagination Unit & Integration Testing**:
-   - Author tests verifying `snapshotFlow` triggers `LoadNextPage` exactly once when crossing threshold and suppresses triggers when `isLoading` or `hasReachedEnd` are true.
+   - Author tests verifying `snapshotFlow` triggers `LoadNextPage` exactly once when crossing threshold and does not re-trigger or restart when `isLoading` toggles.
 4. **Dual-Platform Build Checks**:
    - Run `./gradlew :androidApp:assembleDebug`.
    - Run `./gradlew ktlintCheck detekt`.
@@ -163,11 +167,11 @@ graph TD
 
 ## 5. Acceptance Criteria
 
-- [ ] `Modifier.staggeredEntrance` is restricted to initial viewport items, preventing translation springs from running on items scrolled into view during flings.
+- [ ] `Modifier.staggeredEntrance` is restricted to initial viewport appearance and returns `this` directly for recycled or scrolled items, preventing translation springs from running on items scrolled into view during flings.
 - [ ] Both `staggeredEntrance` and `bounceClick` utilize Draw-phase lambda `graphicsLayer { ... }` to eliminate recomposition and RenderNode re-rasterization.
 - [ ] `Modifier.bounceClick` eliminates dynamic `.shadow()` inside list cells.
-- [ ] Inline `derivedStateOf` over `listState.layoutInfo` is replaced with `snapshotFlow` and `distinctUntilChanged()`.
-- [ ] Pagination triggers include state guards (`!state.isLoading && !state.hasReachedEnd`).
+- [ ] Inline `derivedStateOf` over `listState.layoutInfo` is replaced with `snapshotFlow` and `distinctUntilChanged()` inside a stable `LaunchedEffect(listState)`.
+- [ ] Pagination triggers include state guards (`!state.isLoading && !state.hasReachedEnd`) without coroutine cancellation loops on loading state changes.
 - [ ] Staggered grid items specify stable keys and `contentType` to optimize lazy layout node recycling and prefetching.
 - [ ] Loading progress indicators in staggered grids span full width (`StaggeredGridItemSpan.FullLine`) with explicit `contentType`.
 - [ ] All calling screens (`FeedScreen`, `CollectionsFeedScreen`, `SearchScreen`, `CollectionDetailScreen`, `UserProfileScreen`) are aligned with these performance standards.

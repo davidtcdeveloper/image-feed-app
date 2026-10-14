@@ -64,7 +64,7 @@ graph TD
   - Sized dynamically to **25% of available application heap** using `MemoryCache.Builder().maxSizePercent(context, 0.25).strongReferencesEnabled(true).build()`.
   - Enables strong reference caching to prevent premature bitmap recycling during rapid scrolling within the same session.
 - **Disk Cache Configuration**:
-  - Located in `context.cacheDir.resolve("image_cache").toOkioPath()` using Okio Path API.
+  - Located in `context.cacheDir.resolve("image_cache").absolutePath.toPath()` using Okio Path API (provided transitively via Coil 3).
   - Sized to **100 MB** (`100L * 1024 * 1024`).
   - Strict compliance with **Core Invariant 4 (Security & Unsplash API Compliance)**: Transient client HTTP caching in `cacheDir` (managed by Android OS LRU eviction) preserving the hotlinked URL with `ixid` parameter intact, rather than persisting image files to permanent storage or custom databases.
 - **Crossfade & Transition Defaults**:
@@ -97,7 +97,7 @@ graph TD
 - Update `ImageFeedApplication` to implement `SingletonImageLoader.Factory`.
 - Provide `newImageLoader(context: PlatformContext): ImageLoader` with:
   - `MemoryCache.Builder().maxSizePercent(context, 0.25).build()`
-  - `DiskCache.Builder().directory(context.cacheDir.resolve("image_cache").toOkioPath()).maxSizeBytes(100L * 1024 * 1024).build()`
+  - `DiskCache.Builder().directory(context.cacheDir.resolve("image_cache").absolutePath.toPath()).maxSizeBytes(100L * 1024 * 1024).build()`
   - `.crossfade(true)`
   - Respect HTTP cache headers and hotlink URLs.
 
