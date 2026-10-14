@@ -1,6 +1,6 @@
 # macOS Window Title & iOS Navigation Bar Sheet Overlap Fix Spec
 
-**Status:** Approved
+**Status:** Implemented
 
 ## Overview
 This specification details the root causes and architectural fixes for two navigation and presentation defects identified in the macOS and iOS applications:
@@ -104,11 +104,11 @@ On iPhone, when viewing a photo after navigating into a profile (`UserProfileVie
 
 ## Acceptance Criteria
 
-- [ ] When clicking on any collection on macOS, the window title displays the collection's title (or `"Collection"` while loading) instead of `macosapp`.
-- [ ] On iPhone, navigating to a user profile (or collection/search) and clicking an image displays the photo details without showing an unwanted navigation bar.
-- [ ] Sliding the inspector sheet down to the minimum detent or dragging it downwards does not cause the background navigation bar to overlay the sheet or capture touch focus.
-- [ ] Pushed `PhotoDetailsView` destinations on `NavigationStack` display floating back and info buttons that allow dismissing back to the previous screen (`UserProfileView`, `CollectionDetailView`, or `SearchView`).
-- [ ] Both `iosApp` and `macosApp` schemes compile cleanly with zero warnings.
+- [x] When clicking on any collection on macOS, the window title displays the collection's title (or `"Collection"` while loading) instead of `macosapp`.
+- [x] On iPhone, navigating to a user profile (or collection/search) and clicking an image displays the photo details without showing an unwanted navigation bar.
+- [x] Sliding the inspector sheet down to the minimum detent or dragging it downwards does not cause the background navigation bar to overlay the sheet or capture touch focus.
+- [x] Pushed `PhotoDetailsView` destinations on `NavigationStack` display floating back and info buttons that allow dismissing back to the previous screen (`UserProfileView`, `CollectionDetailView`, or `SearchView`).
+- [x] Both `iosApp` and `macosApp` schemes compile cleanly with zero warnings.
 
 ---
 

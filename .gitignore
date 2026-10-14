@@ -19,6 +19,7 @@ iosApp/.lock
 iosApp/iosApp.xcworkspace
 iosApp/iosApp.xcodeproj/project.xcworkspace
 iosApp/iosApp.xcodeproj/xcuserdata/
+iosApp/iosApp.xcodeproj/xcshareddata/
 iosApp/DerivedData/
 iosApp/build/
 iosApp/Pods/

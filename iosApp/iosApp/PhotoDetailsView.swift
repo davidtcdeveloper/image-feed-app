@@ -97,13 +97,24 @@ struct PhotoDetailsView: View {
                 }
             }
         }
+        .navigationTitle("")
         .navigationBarBackButtonHidden(true)
+        #if os(iOS)
+        .toolbar(.hidden, for: .navigationBar)
+        #endif
         .onChange(of: viewModel.shouldDismiss) { _, shouldDismiss in
             if shouldDismiss {
                 handleDismiss()
             }
         }
         .overlay(alignment: .topLeading) {
+            #if os(iOS)
+            GlassToolbarButton(systemName: "chevron.left", accessibilityLabel: "Back") {
+                handleDismiss()
+            }
+            .padding(.top, 60)
+            .padding(.leading, 16)
+            #else
             if onDismiss != nil {
                 GlassToolbarButton(systemName: "chevron.left", accessibilityLabel: "Back") {
                     handleDismiss()
@@ -111,8 +122,23 @@ struct PhotoDetailsView: View {
                 .padding(.top, 60)
                 .padding(.leading, 16)
             }
+            #endif
         }
         .overlay(alignment: .topTrailing) {
+            #if os(iOS)
+            if !isDualPane {
+                GlassToolbarButton(
+                    systemName: showInspector ? "info.circle.fill" : "info.circle",
+                    accessibilityLabel: "Photo Details")
+                {
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                        showInspector.toggle()
+                    }
+                }
+                .padding(.top, 60)
+                .padding(.trailing, 16)
+            }
+            #else
             if onDismiss != nil, !isDualPane {
                 GlassToolbarButton(
                     systemName: showInspector ? "info.circle.fill" : "info.circle",
@@ -125,12 +151,10 @@ struct PhotoDetailsView: View {
                 .padding(.top, 60)
                 .padding(.trailing, 16)
             }
+            #endif
         }
         .sensoryFeedback(.success, trigger: downloadFeedbackTrigger)
         #if os(iOS)
-        .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
-        .toolbarBackground(.visible, for: .navigationBar)
-        .toolbarColorScheme(.dark, for: .navigationBar)
         .sheet(isPresented: Binding(
             get: { showInspector && !isDualPane && viewModel.photo != nil },
             set: { showInspector = $0 }))
@@ -174,25 +198,7 @@ struct PhotoDetailsView: View {
         }
         #endif
         .toolbar {
-            #if os(iOS)
-            ToolbarItem(placement: .navigationBarLeading) {
-                GlassToolbarButton(systemName: "chevron.left", accessibilityLabel: "Back") {
-                    handleDismiss()
-                }
-            }
-            if !isDualPane {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    GlassToolbarButton(
-                        systemName: showInspector ? "info.circle.fill" : "info.circle",
-                        accessibilityLabel: "Photo Details")
-                    {
-                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                            showInspector.toggle()
-                        }
-                    }
-                }
-            }
-            #else
+            #if !os(iOS)
             ToolbarItem(placement: .navigation) {
                 GlassToolbarButton(systemName: "chevron.left", accessibilityLabel: "Back") {
                     handleDismiss()

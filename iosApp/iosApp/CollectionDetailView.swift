@@ -238,8 +238,10 @@ struct CollectionDetailView: View {
                 .ignoresSafeArea(edges: .top)
             }
         }
+        .navigationTitle(viewModel.collection?.title ?? "Collection")
         .navigationBarBackButtonHidden(true)
         #if os(iOS)
+        .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)

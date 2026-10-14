@@ -781,7 +781,7 @@ These are the spec files that the implementation notes and planning references s
 4.  **Reference Specification:**
     *   Track blueprint in `specs/51_lazy_grid_motion_and_scroll_optimization.md`.
 
-### Step 54: macOS Window Title & iOS Navigation Bar Sheet Overlap Fixes
+### Step 54: macOS Window Title & iOS Navigation Bar Sheet Overlap Fixes (Completed)
 1.  **macOS Collection Detail Window Title:**
     *   Add `.navigationTitle(viewModel.collection?.title ?? "Collection")` and iOS inline title display mode to `CollectionDetailView.swift`.
 2.  **iOS Photo Details Navigation Bar Overlap & Focus:**
