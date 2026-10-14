@@ -25,7 +25,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
-import androidx.compose.foundation.lazy.staggeredgrid.items
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.foundation.lazy.staggeredgrid.itemsIndexed
 import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.foundation.rememberScrollState
@@ -63,11 +63,12 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -101,6 +102,8 @@ import com.example.imagefeed.presentation.search.UnifiedSearchEffect
 import com.example.imagefeed.presentation.search.UnifiedSearchIntent
 import com.example.imagefeed.presentation.search.UnifiedSearchViewModel
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filter
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
@@ -358,7 +361,7 @@ fun SearchScreen(
                             horizontalAlignment = Alignment.CenterHorizontally,
                         ) {
                             Text(
-                                "Search failed",
+                                text = "Search failed",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Medium,
                                 color = MaterialTheme.colorScheme.onSurface,
@@ -382,6 +385,7 @@ fun SearchScreen(
                                         animatedVisibilityScope = animatedVisibilityScope,
                                         photos = state.photos,
                                         isLoadingMore = state.isLoadingMore,
+                                        hasReachedEnd = state.hasReachedEnd,
                                         reselectEvents = reselectEvents,
                                         onLoadMore = { viewModel.dispatch(UnifiedSearchIntent.LoadNextPage) },
                                         onPhotoClick = onPhotoClick,
@@ -395,6 +399,7 @@ fun SearchScreen(
                                     CollectionsResultList(
                                         collections = state.collections,
                                         isLoadingMore = state.isLoadingMore,
+                                        hasReachedEnd = state.hasReachedEnd,
                                         reselectEvents = reselectEvents,
                                         onLoadMore = { viewModel.dispatch(UnifiedSearchIntent.LoadNextPage) },
                                         onCollectionClick = onCollectionClick,
@@ -408,6 +413,7 @@ fun SearchScreen(
                                     UsersResultList(
                                         users = state.users,
                                         isLoadingMore = state.isLoadingMore,
+                                        hasReachedEnd = state.hasReachedEnd,
                                         reselectEvents = reselectEvents,
                                         onLoadMore = { viewModel.dispatch(UnifiedSearchIntent.LoadNextPage) },
                                         onUserClick = onUserClick,
@@ -564,6 +570,7 @@ fun PhotosResultGrid(
     animatedVisibilityScope: AnimatedVisibilityScope,
     photos: List<Photo>,
     isLoadingMore: Boolean,
+    hasReachedEnd: Boolean = false,
     reselectEvents: SharedFlow<NavKey>? = null,
     onLoadMore: () -> Unit,
     onPhotoClick: (Photo) -> Unit,
@@ -578,23 +585,20 @@ fun PhotosResultGrid(
         }
     }
 
-    val shouldLoadMore =
-        remember {
-            derivedStateOf {
-                val lastVisibleItem = listState.layoutInfo.visibleItemsInfo.lastOrNull()
-                val totalItems = listState.layoutInfo.totalItemsCount
-                if (lastVisibleItem == null || totalItems == 0) {
-                    false
-                } else {
-                    lastVisibleItem.index >= totalItems - 6
-                }
-            }
-        }
+    val currentLoading by rememberUpdatedState(isLoadingMore)
+    val currentHasReachedEnd by rememberUpdatedState(hasReachedEnd)
 
-    LaunchedEffect(shouldLoadMore.value) {
-        if (shouldLoadMore.value) {
-            onLoadMore()
-        }
+    LaunchedEffect(listState) {
+        snapshotFlow {
+            val layoutInfo = listState.layoutInfo
+            val totalItems = layoutInfo.totalItemsCount
+            val lastVisible = layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
+            totalItems > 0 && lastVisible >= totalItems - 6
+        }.distinctUntilChanged()
+            .filter { shouldLoad -> shouldLoad && !currentLoading && !currentHasReachedEnd }
+            .collect {
+                onLoadMore()
+            }
     }
 
     LazyVerticalStaggeredGrid(
@@ -605,7 +609,11 @@ fun PhotosResultGrid(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalItemSpacing = 8.dp,
     ) {
-        itemsIndexed(photos, key = { _, photo -> photo.id }) { index, photo ->
+        itemsIndexed(
+            photos,
+            key = { _, photo -> photo.id },
+            contentType = { _, _ -> "photo_card" },
+        ) { index, photo ->
             PhotoCard(
                 sharedTransitionScope = sharedTransitionScope,
                 animatedVisibilityScope = animatedVisibilityScope,
@@ -619,7 +627,7 @@ fun PhotosResultGrid(
         }
 
         if (isLoadingMore) {
-            item {
+            item(span = StaggeredGridItemSpan.FullLine, contentType = "loading_indicator") {
                 Box(
                     modifier =
                         Modifier
@@ -638,6 +646,7 @@ fun PhotosResultGrid(
 fun CollectionsResultList(
     collections: List<CollectionSummary>,
     isLoadingMore: Boolean,
+    hasReachedEnd: Boolean = false,
     reselectEvents: SharedFlow<NavKey>? = null,
     onLoadMore: () -> Unit,
     onCollectionClick: (CollectionSummary) -> Unit,
@@ -652,23 +661,20 @@ fun CollectionsResultList(
         }
     }
 
-    val shouldLoadMore =
-        remember {
-            derivedStateOf {
-                val lastVisibleItem = listState.layoutInfo.visibleItemsInfo.lastOrNull()
-                val totalItems = listState.layoutInfo.totalItemsCount
-                if (lastVisibleItem == null || totalItems == 0) {
-                    false
-                } else {
-                    lastVisibleItem.index >= totalItems - 4
-                }
-            }
-        }
+    val currentLoading by rememberUpdatedState(isLoadingMore)
+    val currentHasReachedEnd by rememberUpdatedState(hasReachedEnd)
 
-    LaunchedEffect(shouldLoadMore.value) {
-        if (shouldLoadMore.value) {
-            onLoadMore()
-        }
+    LaunchedEffect(listState) {
+        snapshotFlow {
+            val layoutInfo = listState.layoutInfo
+            val totalItems = layoutInfo.totalItemsCount
+            val lastVisible = layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
+            totalItems > 0 && lastVisible >= totalItems - 4
+        }.distinctUntilChanged()
+            .filter { shouldLoad -> shouldLoad && !currentLoading && !currentHasReachedEnd }
+            .collect {
+                onLoadMore()
+            }
     }
 
     LazyVerticalStaggeredGrid(
@@ -679,7 +685,11 @@ fun CollectionsResultList(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalItemSpacing = 16.dp,
     ) {
-        itemsIndexed(collections, key = { _, collection -> collection.id }) { index, collection ->
+        itemsIndexed(
+            collections,
+            key = { _, collection -> collection.id },
+            contentType = { _, _ -> "collection_card" },
+        ) { index, collection ->
             CollectionRowCard(
                 collection = collection,
                 modifier = Modifier.staggeredEntrance(index),
@@ -688,7 +698,7 @@ fun CollectionsResultList(
         }
 
         if (isLoadingMore) {
-            item {
+            item(span = StaggeredGridItemSpan.FullLine, contentType = "loading_indicator") {
                 Box(
                     modifier =
                         Modifier
@@ -764,6 +774,7 @@ fun CollectionRowCard(
 fun UsersResultList(
     users: List<User>,
     isLoadingMore: Boolean,
+    hasReachedEnd: Boolean = false,
     reselectEvents: SharedFlow<NavKey>? = null,
     onLoadMore: () -> Unit,
     onUserClick: (User) -> Unit,
@@ -778,23 +789,20 @@ fun UsersResultList(
         }
     }
 
-    val shouldLoadMore =
-        remember {
-            derivedStateOf {
-                val lastVisibleItem = listState.layoutInfo.visibleItemsInfo.lastOrNull()
-                val totalItems = listState.layoutInfo.totalItemsCount
-                if (lastVisibleItem == null || totalItems == 0) {
-                    false
-                } else {
-                    lastVisibleItem.index >= totalItems - 4
-                }
-            }
-        }
+    val currentLoading by rememberUpdatedState(isLoadingMore)
+    val currentHasReachedEnd by rememberUpdatedState(hasReachedEnd)
 
-    LaunchedEffect(shouldLoadMore.value) {
-        if (shouldLoadMore.value) {
-            onLoadMore()
-        }
+    LaunchedEffect(listState) {
+        snapshotFlow {
+            val layoutInfo = listState.layoutInfo
+            val totalItems = layoutInfo.totalItemsCount
+            val lastVisible = layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
+            totalItems > 0 && lastVisible >= totalItems - 4
+        }.distinctUntilChanged()
+            .filter { shouldLoad -> shouldLoad && !currentLoading && !currentHasReachedEnd }
+            .collect {
+                onLoadMore()
+            }
     }
 
     LazyVerticalStaggeredGrid(
@@ -805,7 +813,11 @@ fun UsersResultList(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalItemSpacing = 12.dp,
     ) {
-        itemsIndexed(users, key = { _, user -> user.id }) { index, user ->
+        itemsIndexed(
+            users,
+            key = { _, user -> user.id },
+            contentType = { _, _ -> "user_card" },
+        ) { index, user ->
             UserRowCard(
                 user = user,
                 modifier = Modifier.staggeredEntrance(index),
@@ -816,7 +828,7 @@ fun UsersResultList(
         }
 
         if (isLoadingMore) {
-            item {
+            item(span = StaggeredGridItemSpan.FullLine, contentType = "loading_indicator") {
                 Box(
                     modifier =
                         Modifier

@@ -1,6 +1,6 @@
 # Specification 51: Android Lazy Grid Motion, Modifier Overhead & Scroll Optimization
 
-**Status:** Approved
+**Status:** Implemented
 
 ## 1. Overview & Problem Statement
 
@@ -118,61 +118,4 @@ graph TD
 2. **Prefetching & Subcomposition Reuse**:
    - Provide explicit `contentType = { _, _ -> "photo_card" }` in `itemsIndexed(...)` calls for `LazyVerticalStaggeredGrid`.
    - Update the pagination progress indicator item in `FeedScreen.kt` to include `span = StaggeredGridItemSpan.FullLine` and `contentType = "loading_indicator"` (matching `CollectionsFeedScreen.kt`), avoiding single-column offset distortion and layout recalculation.
-   - Ensure item layouts maintain a fixed or aspect-ratio bounded height (`Modifier.aspectRatio(aspectRatio)`) before image loading finishes, allowing the Compose prefetcher to calculate staggered item layouts ahead of the viewport during idle frame intervals.
-
----
-
-## 3. Implementation Plan & Source Modifications
-
-### Step 1: Refactor `AnimationUtils.kt`
-- Modify `Modifier.staggeredEntrance` to avoid running translation springs on scrolled/recycled items:
-  - Track entrance state via `rememberSaveable` or viewport bounds; bypass animations and return `this` directly for recycled or scrolled items.
-  - Migrate internal `graphicsLayer` to Draw-phase lambda `graphicsLayer { this.alpha = alpha.value; this.translationY = translationY.value }` to eliminate recomposition during initial animation.
-- Modify `Modifier.bounceClick`:
-  - Eliminate `.shadow()`.
-  - Migrate `graphicsLayer` scale to Draw-phase lambda syntax.
-  - Retain tactile haptic/indication and pointer input without forcing render cache invalidation.
-
-### Step 2: Modernize Pagination & Grid State in `FeedScreen.kt`
-- Remove inline `val shouldLoadMore = remember { derivedStateOf { ... } }`.
-- Introduce `snapshotFlow` with `distinctUntilChanged()` and state guards in stable `LaunchedEffect(listState)` using `rememberUpdatedState`.
-- Specify `contentType` in `LazyVerticalStaggeredGrid.itemsIndexed`.
-- Update pagination loading item to use `span = StaggeredGridItemSpan.FullLine` and `contentType = "loading_indicator"`.
-
-### Step 3: Align Sister Screens
-- Apply stable `snapshotFlow` pagination and optimized card modifiers in:
-  - [`CollectionsFeedScreen.kt`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/androidApp/src/main/java/com/example/imagefeed/android/CollectionsFeedScreen.kt)
-  - [`SearchScreen.kt`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/androidApp/src/main/java/com/example/imagefeed/android/SearchScreen.kt)
-  - [`CollectionDetailScreen.kt`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/androidApp/src/main/java/com/example/imagefeed/android/CollectionDetailScreen.kt)
-  - [`UserProfileScreen.kt`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/androidApp/src/main/java/com/example/imagefeed/android/UserProfileScreen.kt)
-
----
-
-## 4. Verification & Testing Strategy
-
-1. **Jank & Frame Rendering Verification**:
-   - Profile scrolling using Android Studio Layout Inspector and System Tracing (`systrace` / Perfetto):
-     - Measure frame pacing and verify frame rendering stays within the 16.6ms (60fps) or 8.3ms (120fps) budget.
-     - Confirm zero GPU overdraw spikes from dynamic elevation shadows during fling gestures.
-2. **Gesture & Animation Smoke Tests**:
-   - Verify initial feed entrance retains delightful motion on app start with zero composition churn.
-   - Verify rapid downward and upward flings exhibit smooth continuous movement with zero rubber-band judder.
-3. **Pagination Unit & Integration Testing**:
-   - Author tests verifying `snapshotFlow` triggers `LoadNextPage` exactly once when crossing threshold and does not re-trigger or restart when `isLoading` toggles.
-4. **Dual-Platform Build Checks**:
-   - Run `./gradlew :androidApp:assembleDebug`.
-   - Run `./gradlew ktlintCheck detekt`.
-
----
-
-## 5. Acceptance Criteria
-
-- [ ] `Modifier.staggeredEntrance` is restricted to initial viewport appearance and returns `this` directly for recycled or scrolled items, preventing translation springs from running on items scrolled into view during flings.
-- [ ] Both `staggeredEntrance` and `bounceClick` utilize Draw-phase lambda `graphicsLayer { ... }` to eliminate recomposition and RenderNode re-rasterization.
-- [ ] `Modifier.bounceClick` eliminates dynamic `.shadow()` inside list cells.
-- [ ] Inline `derivedStateOf` over `listState.layoutInfo` is replaced with `snapshotFlow` and `distinctUntilChanged()` inside a stable `LaunchedEffect(listState)`.
-- [ ] Pagination triggers include state guards (`!state.isLoading && !state.hasReachedEnd`) without coroutine cancellation loops on loading state changes.
-- [ ] Staggered grid items specify stable keys and `contentType` to optimize lazy layout node recycling and prefetching.
-- [ ] Loading progress indicators in staggered grids span full width (`StaggeredGridItemSpan.FullLine`) with explicit `contentType`.
-- [ ] All calling screens (`FeedScreen`, `CollectionsFeedScreen`, `SearchScreen`, `CollectionDetailScreen`, `UserProfileScreen`) are aligned with these performance standards.
-- [ ] Android and iOS builds compile cleanly without warnings.
+   - Ensure item layouts maintain a fixed or aspect-ratio bounded height (`Modifier.aspectRatio(aspectRatio)`) before image loading finishes, allowing the Compose prefetcher to calculate staggered item layouts ahead of the viewport during idle frame intervals.\n\n---\n\n## 3. Implementation Plan & Source Modifications\n\n### Step 1: Refactor `AnimationUtils.kt`\n- Modify `Modifier.staggeredEntrance` to avoid running translation springs on scrolled/recycled items:\n  - Track entrance state via `rememberSaveable` or viewport bounds; bypass animations and return `this` directly for recycled or scrolled items.\n  - Migrate internal `graphicsLayer` to Draw-phase lambda `graphicsLayer { this.alpha = alpha.value; this.translationY = translationY.value }` to eliminate recomposition during initial animation.\n- Modify `Modifier.bounceClick`:\n  - Eliminate `.shadow()`.\n  - Migrate `graphicsLayer` scale to Draw-phase lambda syntax.\n  - Retain tactile haptic/indication and pointer input without forcing render cache invalidation.\n\n### Step 2: Modernize Pagination & Grid State in `FeedScreen.kt`\n- Remove inline `val shouldLoadMore = remember { derivedStateOf { ... } }`.\n- Introduce `snapshotFlow` with `distinctUntilChanged()` and state guards in stable `LaunchedEffect(listState)` using `rememberUpdatedState`.\n- Specify `contentType` in `LazyVerticalStaggeredGrid.itemsIndexed`.\n- Update pagination loading item to use `span = StaggeredGridItemSpan.FullLine` and `contentType = \"loading_indicator\"`.\n\n### Step 3: Align Sister Screens\n- Apply stable `snapshotFlow` pagination and optimized card modifiers in:\n  - [`CollectionsFeedScreen.kt`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/androidApp/src/main/java/com/example/imagefeed/android/CollectionsFeedScreen.kt)\n  - [`SearchScreen.kt`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/androidApp/src/main/java/com/example/imagefeed/android/SearchScreen.kt)\n  - [`CollectionDetailScreen.kt`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/androidApp/src/main/java/com/example/imagefeed/android/CollectionDetailScreen.kt)\n  - [`UserProfileScreen.kt`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/androidApp/src/main/java/com/example/imagefeed/android/UserProfileScreen.kt)\n\n---\n\n## 4. Verification & Testing Strategy\n\n1. **Jank & Frame Rendering Verification**:\n   - Profile scrolling using Android Studio Layout Inspector and System Tracing (`systrace` / Perfetto):\n     - Measure frame pacing and verify frame rendering stays within the 16.6ms (60fps) or 8.3ms (120fps) budget.\n     - Confirm zero GPU overdraw spikes from dynamic elevation shadows during fling gestures.\n2. **Gesture & Animation Smoke Tests**:\n   - Verify initial feed entrance retains delightful motion on app start with zero composition churn.\n   - Verify rapid downward and upward flings exhibit smooth continuous movement with zero rubber-band judder.\n3. **Pagination Unit & Integration Testing**:\n   - Author tests verifying `snapshotFlow` triggers `LoadNextPage` exactly once when crossing threshold and does not re-trigger or restart when `isLoading` toggles.\n4. **Dual-Platform Build Checks**:\n   - Run `./gradlew :androidApp:assembleDebug`.\n   - Run `./gradlew ktlintCheck detekt`.\n\n---\n\n## 5. Acceptance Criteria\n\n- [x] `Modifier.staggeredEntrance` is restricted to initial viewport appearance and returns `this` directly for recycled or scrolled items, preventing translation springs from running on items scrolled into view during flings.\n- [x] Both `staggeredEntrance` and `bounceClick` utilize Draw-phase lambda `graphicsLayer { ... }` to eliminate recomposition and RenderNode re-rasterization.\n- [x] `Modifier.bounceClick` eliminates dynamic `.shadow()` inside list cells.\n- [x] Inline `derivedStateOf` over `listState.layoutInfo` is replaced with `snapshotFlow` and `distinctUntilChanged()` inside a stable `LaunchedEffect(listState)`.\n- [x] Pagination triggers include state guards (`!state.isLoading && !state.hasReachedEnd`) without coroutine cancellation loops on loading state changes.\n- [x] Staggered grid items specify stable keys and `contentType` to optimize lazy layout node recycling and prefetching.\n- [x] Loading progress indicators in staggered grids span full width (`StaggeredGridItemSpan.FullLine`) with explicit `contentType`.\n- [x] All calling screens (`FeedScreen`, `CollectionsFeedScreen`, `SearchScreen`, `CollectionDetailScreen`, `UserProfileScreen`) are aligned with these performance standards.\n- [x] Android and iOS builds compile cleanly without warnings.\n

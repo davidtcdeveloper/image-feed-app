@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.foundation.lazy.staggeredgrid.itemsIndexed
 import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.foundation.shape.CircleShape
@@ -44,10 +45,10 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -81,6 +82,8 @@ import com.example.imagefeed.presentation.feed.FeedIntent
 import com.example.imagefeed.presentation.feed.FeedState
 import com.example.imagefeed.presentation.feed.FeedViewModel
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filter
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
@@ -124,23 +127,20 @@ fun FeedScreen(
     }
 
     // Infinite scrolling logic
-    val shouldLoadMore =
-        remember {
-            derivedStateOf {
-                val lastVisibleItem = listState.layoutInfo.visibleItemsInfo.lastOrNull()
-                val totalItems = listState.layoutInfo.totalItemsCount
-                if (lastVisibleItem == null || totalItems == 0) {
-                    false
-                } else {
-                    lastVisibleItem.index >= totalItems - 6
-                }
-            }
-        }
+    val currentLoading by rememberUpdatedState(state.isLoading)
+    val currentHasReachedEnd by rememberUpdatedState(state.hasReachedEnd)
 
-    LaunchedEffect(shouldLoadMore.value) {
-        if (shouldLoadMore.value) {
-            viewModel.dispatch(FeedIntent.LoadNextPage)
-        }
+    LaunchedEffect(listState) {
+        snapshotFlow {
+            val layoutInfo = listState.layoutInfo
+            val totalItems = layoutInfo.totalItemsCount
+            val lastVisible = layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
+            totalItems > 0 && lastVisible >= totalItems - 6
+        }.distinctUntilChanged()
+            .filter { shouldLoad -> shouldLoad && !currentLoading && !currentHasReachedEnd }
+            .collect {
+                viewModel.dispatch(FeedIntent.LoadNextPage)
+            }
     }
 
     Scaffold(
@@ -261,7 +261,11 @@ fun FeedScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalItemSpacing = 8.dp,
                 ) {
-                    itemsIndexed(state.photos, key = { _, photo -> photo.id }) { index, photo ->
+                    itemsIndexed(
+                        state.photos,
+                        key = { _, photo -> photo.id },
+                        contentType = { _, _ -> "photo_card" },
+                    ) { index, photo ->
                         PhotoCard(
                             sharedTransitionScope = sharedTransitionScope,
                             animatedVisibilityScope = animatedVisibilityScope,
@@ -277,7 +281,7 @@ fun FeedScreen(
                     }
 
                     if (state.isLoading) {
-                        item {
+                        item(span = StaggeredGridItemSpan.FullLine, contentType = "loading_indicator") {
                             Box(
                                 modifier =
                                     Modifier

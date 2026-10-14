@@ -44,10 +44,10 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -77,6 +77,8 @@ import com.example.imagefeed.presentation.collections.CollectionsFeedEffect
 import com.example.imagefeed.presentation.collections.CollectionsFeedIntent
 import com.example.imagefeed.presentation.collections.CollectionsFeedState
 import com.example.imagefeed.presentation.collections.CollectionsFeedViewModel
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filter
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
@@ -118,23 +120,20 @@ fun CollectionsFeedScreen(
     }
 
     // Infinite scrolling logic
-    val shouldLoadMore =
-        remember {
-            derivedStateOf {
-                val lastVisibleItem = listState.layoutInfo.visibleItemsInfo.lastOrNull()
-                val totalItems = listState.layoutInfo.totalItemsCount
-                if (lastVisibleItem == null || totalItems == 0) {
-                    false
-                } else {
-                    lastVisibleItem.index >= totalItems - 4
-                }
-            }
-        }
+    val currentLoading by rememberUpdatedState(state.isLoading)
+    val currentHasReachedEnd by rememberUpdatedState(state.hasReachedEnd)
 
-    LaunchedEffect(shouldLoadMore.value) {
-        if (shouldLoadMore.value) {
-            viewModel.dispatch(CollectionsFeedIntent.LoadNextPage)
-        }
+    LaunchedEffect(listState) {
+        snapshotFlow {
+            val layoutInfo = listState.layoutInfo
+            val totalItems = layoutInfo.totalItemsCount
+            val lastVisible = layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
+            totalItems > 0 && lastVisible >= totalItems - 4
+        }.distinctUntilChanged()
+            .filter { shouldLoad -> shouldLoad && !currentLoading && !currentHasReachedEnd }
+            .collect {
+                viewModel.dispatch(CollectionsFeedIntent.LoadNextPage)
+            }
     }
 
     Scaffold(
@@ -191,7 +190,7 @@ fun CollectionsFeedScreen(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalItemSpacing = 16.dp,
                 ) {
-                    items(6) {
+                    items(6, contentType = { "collection_skeleton" }) {
                         CollectionMosaicCardSkeleton()
                     }
                 }
@@ -206,7 +205,11 @@ fun CollectionsFeedScreen(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalItemSpacing = 16.dp,
                 ) {
-                    itemsIndexed(state.collections, key = { _, collection -> collection.id }) { index, collection ->
+                    itemsIndexed(
+                        state.collections,
+                        key = { _, collection -> collection.id },
+                        contentType = { _, _ -> "collection_card" },
+                    ) { index, collection ->
                         CollectionMosaicCard(
                             sharedTransitionScope = sharedTransitionScope,
                             animatedVisibilityScope = animatedVisibilityScope,
@@ -217,7 +220,7 @@ fun CollectionsFeedScreen(
                     }
 
                     if (state.isLoading) {
-                        item(span = StaggeredGridItemSpan.FullLine) {
+                        item(span = StaggeredGridItemSpan.FullLine, contentType = "loading_indicator") {
                             Box(
                                 modifier =
                                     Modifier

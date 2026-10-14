@@ -32,6 +32,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.foundation.lazy.staggeredgrid.itemsIndexed
 import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.foundation.rememberScrollState
@@ -59,11 +60,12 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -101,6 +103,8 @@ import com.example.imagefeed.presentation.profile.UserProfileEffect
 import com.example.imagefeed.presentation.profile.UserProfileIntent
 import com.example.imagefeed.presentation.profile.UserProfileState
 import com.example.imagefeed.presentation.profile.UserProfileViewModel
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filter
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
@@ -279,6 +283,7 @@ fun UserProfileContent(
                         animatedVisibilityScope = animatedVisibilityScope,
                         photos = state.portfolioPhotos,
                         isLoading = state.isLoadingContent,
+                        hasReachedEnd = state.portfolioReachedEnd,
                         onLoadMore = onLoadMore,
                         onPhotoClick = onPhotoClick,
                     )
@@ -289,6 +294,7 @@ fun UserProfileContent(
                         animatedVisibilityScope = animatedVisibilityScope,
                         photos = state.likedPhotos,
                         isLoading = state.isLoadingContent,
+                        hasReachedEnd = state.likesReachedEnd,
                         onLoadMore = onLoadMore,
                         onPhotoClick = onPhotoClick,
                     )
@@ -297,6 +303,7 @@ fun UserProfileContent(
                     CollectionsTabContent(
                         collections = state.collections,
                         isLoading = state.isLoadingContent,
+                        hasReachedEnd = state.collectionsReachedEnd,
                         onLoadMore = onLoadMore,
                         onCollectionClick = onCollectionClick,
                     )
@@ -515,27 +522,25 @@ fun PortfolioTabContent(
     animatedVisibilityScope: AnimatedVisibilityScope,
     photos: List<Photo>,
     isLoading: Boolean,
+    hasReachedEnd: Boolean = false,
     onLoadMore: () -> Unit,
     onPhotoClick: (Photo) -> Unit,
 ) {
     val listState = rememberLazyStaggeredGridState()
-    val shouldLoadMore =
-        remember {
-            derivedStateOf {
-                val lastVisibleItem = listState.layoutInfo.visibleItemsInfo.lastOrNull()
-                val totalItems = listState.layoutInfo.totalItemsCount
-                if (lastVisibleItem == null || totalItems == 0) {
-                    false
-                } else {
-                    lastVisibleItem.index >= totalItems - 6
-                }
-            }
-        }
+    val currentLoading by rememberUpdatedState(isLoading)
+    val currentHasReachedEnd by rememberUpdatedState(hasReachedEnd)
 
-    LaunchedEffect(shouldLoadMore.value) {
-        if (shouldLoadMore.value) {
-            onLoadMore()
-        }
+    LaunchedEffect(listState) {
+        snapshotFlow {
+            val layoutInfo = listState.layoutInfo
+            val totalItems = layoutInfo.totalItemsCount
+            val lastVisible = layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
+            totalItems > 0 && lastVisible >= totalItems - 6
+        }.distinctUntilChanged()
+            .filter { shouldLoad -> shouldLoad && !currentLoading && !currentHasReachedEnd }
+            .collect {
+                onLoadMore()
+            }
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -568,7 +573,11 @@ fun PortfolioTabContent(
                 verticalItemSpacing = 8.dp,
                 userScrollEnabled = false, // Scroll is controlled by parent vertical scroll
             ) {
-                itemsIndexed(photos, key = { _, photo -> photo.id }) { index, photo ->
+                itemsIndexed(
+                    photos,
+                    key = { _, photo -> photo.id },
+                    contentType = { _, _ -> "photo_card" },
+                ) { index, photo ->
                     PhotoCard(
                         sharedTransitionScope = sharedTransitionScope,
                         animatedVisibilityScope = animatedVisibilityScope,
@@ -580,7 +589,7 @@ fun PortfolioTabContent(
                 }
 
                 if (isLoading) {
-                    item {
+                    item(span = StaggeredGridItemSpan.FullLine, contentType = "loading_indicator") {
                         Box(
                             modifier =
                                 Modifier
@@ -601,27 +610,25 @@ fun PortfolioTabContent(
 fun CollectionsTabContent(
     collections: List<PhotoCollection>,
     isLoading: Boolean,
+    hasReachedEnd: Boolean = false,
     onLoadMore: () -> Unit,
     onCollectionClick: (PhotoCollection) -> Unit,
 ) {
     val listState = rememberLazyStaggeredGridState()
-    val shouldLoadMore =
-        remember {
-            derivedStateOf {
-                val lastVisibleItem = listState.layoutInfo.visibleItemsInfo.lastOrNull()
-                val totalItems = listState.layoutInfo.totalItemsCount
-                if (lastVisibleItem == null || totalItems == 0) {
-                    false
-                } else {
-                    lastVisibleItem.index >= totalItems - 4
-                }
-            }
-        }
+    val currentLoading by rememberUpdatedState(isLoading)
+    val currentHasReachedEnd by rememberUpdatedState(hasReachedEnd)
 
-    LaunchedEffect(shouldLoadMore.value) {
-        if (shouldLoadMore.value) {
-            onLoadMore()
-        }
+    LaunchedEffect(listState) {
+        snapshotFlow {
+            val layoutInfo = listState.layoutInfo
+            val totalItems = layoutInfo.totalItemsCount
+            val lastVisible = layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
+            totalItems > 0 && lastVisible >= totalItems - 4
+        }.distinctUntilChanged()
+            .filter { shouldLoad -> shouldLoad && !currentLoading && !currentHasReachedEnd }
+            .collect {
+                onLoadMore()
+            }
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -664,7 +671,11 @@ fun CollectionsTabContent(
                 verticalItemSpacing = 16.dp,
                 userScrollEnabled = false,
             ) {
-                itemsIndexed(collections, key = { _, col -> col.id }) { index, col ->
+                itemsIndexed(
+                    collections,
+                    key = { _, col -> col.id },
+                    contentType = { _, _ -> "collection_card" },
+                ) { index, col ->
                     CollectionRowLayout(
                         collection = col,
                         modifier = Modifier.staggeredEntrance(index),
@@ -673,7 +684,7 @@ fun CollectionsTabContent(
                 }
 
                 if (isLoading) {
-                    item {
+                    item(span = StaggeredGridItemSpan.FullLine, contentType = "loading_indicator") {
                         Box(
                             modifier =
                                 Modifier

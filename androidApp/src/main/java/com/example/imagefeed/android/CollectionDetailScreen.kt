@@ -28,7 +28,6 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
-import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.foundation.lazy.staggeredgrid.itemsIndexed
 import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.foundation.shape.CircleShape
@@ -51,6 +50,8 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
@@ -77,6 +78,8 @@ import com.example.imagefeed.presentation.collection.CollectionDetailEffect
 import com.example.imagefeed.presentation.collection.CollectionDetailIntent
 import com.example.imagefeed.presentation.collection.CollectionDetailState
 import com.example.imagefeed.presentation.collection.CollectionDetailViewModel
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filter
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
@@ -108,23 +111,20 @@ fun CollectionDetailScreen(
     val gridState = rememberLazyStaggeredGridState()
 
     // Determine when to trigger infinite pre-fetching
-    val shouldLoadMore =
-        remember {
-            derivedStateOf {
-                val lastVisibleItem = gridState.layoutInfo.visibleItemsInfo.lastOrNull()
-                val totalItems = gridState.layoutInfo.totalItemsCount
-                if (lastVisibleItem == null || totalItems == 0) {
-                    false
-                } else {
-                    lastVisibleItem.index >= totalItems - 5
-                }
-            }
-        }
+    val currentLoading by rememberUpdatedState(state.isLoadingPhotos)
+    val currentHasReachedEnd by rememberUpdatedState(state.hasReachedEnd)
 
-    LaunchedEffect(shouldLoadMore.value) {
-        if (shouldLoadMore.value) {
-            viewModel.dispatch(CollectionDetailIntent.LoadNextPage)
-        }
+    LaunchedEffect(gridState) {
+        snapshotFlow {
+            val layoutInfo = gridState.layoutInfo
+            val totalItems = layoutInfo.totalItemsCount
+            val lastVisible = layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
+            totalItems > 0 && lastVisible >= totalItems - 5
+        }.distinctUntilChanged()
+            .filter { shouldLoad -> shouldLoad && !currentLoading && !currentHasReachedEnd }
+            .collect {
+                viewModel.dispatch(CollectionDetailIntent.LoadNextPage)
+            }
     }
 
     // Sticky Header transparency control based on scroll position
@@ -214,7 +214,7 @@ fun CollectionDetailScreen(
                     verticalItemSpacing = 8.dp,
                 ) {
                     // Header Item: Spans full width
-                    item(span = StaggeredGridItemSpan.FullLine) {
+                    item(span = StaggeredGridItemSpan.FullLine, contentType = "header") {
                         CollectionDetailHeader(
                             sharedTransitionScope = sharedTransitionScope,
                             animatedVisibilityScope = animatedVisibilityScope,
@@ -224,7 +224,7 @@ fun CollectionDetailScreen(
 
                     // Related Collections Carousel: Spans full width
                     if (state.related.isNotEmpty()) {
-                        item(span = StaggeredGridItemSpan.FullLine) {
+                        item(span = StaggeredGridItemSpan.FullLine, contentType = "related_carousel") {
                             RelatedCollectionsCarousel(
                                 related = state.related,
                                 onCollectionClick = onCollectionClick,
@@ -234,7 +234,7 @@ fun CollectionDetailScreen(
 
                     // Title separator for photos list
                     if (state.photos.isNotEmpty()) {
-                        item(span = StaggeredGridItemSpan.FullLine) {
+                        item(span = StaggeredGridItemSpan.FullLine, contentType = "section_title") {
                             Text(
                                 text = "Photos",
                                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
@@ -245,7 +245,11 @@ fun CollectionDetailScreen(
                     }
 
                     // Photos grid
-                    itemsIndexed(state.photos, key = { _, photo -> photo.id }) { index, photo ->
+                    itemsIndexed(
+                        state.photos,
+                        key = { _, photo -> photo.id },
+                        contentType = { _, _ -> "photo_card" },
+                    ) { index, photo ->
                         Box(modifier = Modifier.padding(horizontal = 4.dp)) {
                             PhotoCard(
                                 sharedTransitionScope = sharedTransitionScope,
@@ -263,7 +267,7 @@ fun CollectionDetailScreen(
                     }
 
                     if (state.isLoadingPhotos) {
-                        item(span = StaggeredGridItemSpan.FullLine) {
+                        item(span = StaggeredGridItemSpan.FullLine, contentType = "loading_indicator") {
                             Box(
                                 modifier =
                                     Modifier

@@ -770,7 +770,7 @@ These are the spec files that the implementation notes and planning references s
 4.  **Reference Specification:**
     *   Track blueprint in `specs/50_image_pipeline_and_blurhash_caching.md`.
 
-### Step 53: Android Lazy Grid Motion, Modifier Overhead & Scroll Optimization
+### Step 53: Android Lazy Grid Motion, Modifier Overhead & Scroll Optimization (Completed)
 1.  **Motion & Modifier Performance Hardening:**
     *   Scope `Modifier.staggeredEntrance` strictly to initial screen appearance batch (`index < 6`), bypassing translation and alpha springs for scrolled/recycled items.
     *   Remove `.shadow()` dynamic elevation from `Modifier.bounceClick` and migrate scale animation to Draw-phase lambda `graphicsLayer { ... }`.

@@ -35,15 +35,18 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -52,37 +55,50 @@ fun Modifier.staggeredEntrance(
     index: Int,
     baseDelayMs: Int = 40,
     stepDelayMs: Int = 25,
+    maxAnimatedIndex: Int = 6,
 ): Modifier {
+    if (index >= maxAnimatedIndex) {
+        return this
+    }
+
+    var hasEntered by rememberSaveable { mutableStateOf(false) }
+    if (hasEntered) {
+        return this
+    }
+
     val alpha = remember { Animatable(0f) }
     val translationY = remember { Animatable(80f) }
 
     LaunchedEffect(key1 = index) {
-        val cappedIndex = index % 6
+        val cappedIndex = index % maxAnimatedIndex
         val delay = baseDelayMs + (cappedIndex * stepDelayMs)
         kotlinx.coroutines.delay(delay.toLong().milliseconds)
 
-        launch {
-            alpha.animateTo(
-                targetValue = 1f,
-                animationSpec = tween(durationMillis = 350),
-            )
+        coroutineScope {
+            launch {
+                alpha.animateTo(
+                    targetValue = 1f,
+                    animationSpec = tween(durationMillis = 350),
+                )
+            }
+            launch {
+                translationY.animateTo(
+                    targetValue = 0f,
+                    animationSpec =
+                        spring(
+                            dampingRatio = Spring.DampingRatioLowBouncy,
+                            stiffness = Spring.StiffnessLow,
+                        ),
+                )
+            }
         }
-        launch {
-            translationY.animateTo(
-                targetValue = 0f,
-                animationSpec =
-                    spring(
-                        dampingRatio = Spring.DampingRatioLowBouncy,
-                        stiffness = Spring.StiffnessLow,
-                    ),
-            )
-        }
+        hasEntered = true
     }
 
-    return this.graphicsLayer(
-        alpha = alpha.value,
-        translationY = translationY.value,
-    )
+    return this.graphicsLayer {
+        this.alpha = alpha.value
+        this.translationY = translationY.value
+    }
 }
 
 @Composable
@@ -103,24 +119,11 @@ fun Modifier.bounceClick(
         label = "bounceScale",
     )
 
-    val elevation by animateFloatAsState(
-        targetValue = if (isPressed && enabled) 8f else 2f,
-        animationSpec =
-            spring(
-                dampingRatio = Spring.DampingRatioNoBouncy,
-                stiffness = Spring.StiffnessHigh,
-            ),
-        label = "bounceShadow",
-    )
-
     return this
-        .shadow(
-            elevation = elevation.dp,
-            shape = MaterialTheme.shapes.medium,
-        ).graphicsLayer(
-            scaleX = scale,
-            scaleY = scale,
-        ).clickable(
+        .graphicsLayer {
+            scaleX = scale
+            scaleY = scale
+        }.clickable(
             interactionSource = interactionSource,
             indication = null,
             enabled = enabled,
