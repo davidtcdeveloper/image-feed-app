@@ -833,6 +833,38 @@ These are the spec files that the implementation notes and planning references s
 4.  **Reference Specification:**
     *   Track blueprint in `specs/55_android_material3_expressive_floating_navigation_and_bento_discovery.md`.
 
+### Step 58: iOS Glass Contrast, Navigation Chrome & Legibility Fixes (Proposed)
+1.  **Search Screen & Tab Bar Contrast Fixes:**
+    *   Update `SearchSuggestionsView` in `SearchView.swift` to ensure popular topic pills have crisp, high-contrast labels across Light and Dark modes.
+    *   Fix Tab Bar wash-out by removing hardcoded white tinting on light backgrounds in `ContentView.swift`.
+2.  **Navigation Chrome Normalization & Pushed Sheet Hygiene:**
+    *   Remove forced `.toolbarColorScheme(.dark, for: .navigationBar)` from `ContentView.swift`, `CollectionsFeedView.swift`, `SearchView.swift`, `UserProfileView.swift`, and `CollectionDetailView.swift`.
+    *   Attach `.toolbar(.hidden, for: .tabBar)` to pushed views (`UserProfileView`, `SearchView`, `CollectionDetailView`).
+3.  **Feed Author Badge Dark Vibrancy:**
+    *   Apply dark vibrancy and backing scrim to `PhotoCard` author capsule in `ContentView.swift`.
+4.  **Reference Specification:**
+    *   Track blueprint in `specs/56_ios_glass_contrast_and_navigation_chrome_fixes.md`.
+
+### Step 59: iOS Immersive Photo Detail Canvas & Interactive Sparkline (Proposed)
+1.  **Ambient Backdrop Layer:**
+    *   Implement full-bleed ambient blurred backdrop using downsampled photo with dark scrim on `PhotoDetailsView.swift`, eliminating top white void.
+2.  **Interactive Views Sparkline Scrubbing:**
+    *   Add touch gesture dragging, closest-date mapping, glowing `PointMark` indicator, and haptic feedback to `HistoricalStatsChart`.
+3.  **Tactile Glass Orbs for Action Buttons:**
+    *   Modernize `GlassToolbarButton` in `GlassTheme.swift` to 40x40 single-layer `.thinMaterial` circles with hierarchical SF Symbols.
+4.  **Reference Specification:**
+    *   Track blueprint in `specs/57_ios_immersive_photo_detail_and_interactive_sparkline.md`.
+
+### Step 60: iOS Floating Glass Tab Capsule & Profile Refinements (Proposed)
+1.  **Floating Specular Glass Tab Capsule:**
+    *   Implement `FloatingTabCapsule` with sliding indicator (`matchedGeometryEffect`), spring physics, and `.regularMaterial` glass.
+2.  **Profile Social Chips & Search Topic Cards:**
+    *   Convert verbose text buttons in `UserProfileView.swift` to compact icon-led glass chips.
+    *   Upgrade popular search topics into visual cards with bold typography.
+3.  **Reference Specification:**
+    *   Track blueprint in `specs/58_ios_floating_glass_capsule_and_profile_refinements.md`.
+
+
 
 
 
