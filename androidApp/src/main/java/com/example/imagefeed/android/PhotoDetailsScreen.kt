@@ -60,7 +60,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -92,7 +91,10 @@ import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.example.imagefeed.android.adaptive.DevicePosture
 import com.example.imagefeed.android.adaptive.LocalAdaptiveLayoutInfo
-import com.example.imagefeed.android.util.BlurHashDecoder
+import com.example.imagefeed.android.util.BLURHASH_PLACEHOLDER_MAX_HEIGHT
+import com.example.imagefeed.android.util.BLURHASH_PLACEHOLDER_MIN_HEIGHT
+import com.example.imagefeed.android.util.BLURHASH_PLACEHOLDER_WIDTH
+import com.example.imagefeed.android.util.rememberBlurHashPlaceholder
 import com.example.imagefeed.di.MetroHelper
 import com.example.imagefeed.model.Photo
 import com.example.imagefeed.model.PhotoStats
@@ -277,10 +279,21 @@ fun PhotoDetailsContent(
             }
         val imageWidthPx = with(density) { canvasWidthDp.roundToPx() }
         val aspectRatio = photo.width.toFloat() / photo.height.toFloat()
+        val placeholderHeight =
+            (
+                if (aspectRatio > 0f && aspectRatio.isFinite()) {
+                    (BLURHASH_PLACEHOLDER_WIDTH / aspectRatio).toInt()
+                } else {
+                    BLURHASH_PLACEHOLDER_WIDTH
+                }
+            ).coerceIn(BLURHASH_PLACEHOLDER_MIN_HEIGHT, BLURHASH_PLACEHOLDER_MAX_HEIGHT)
 
-        val placeholderBitmap by produceState<android.graphics.Bitmap?>(initialValue = null, photo.blurHash) {
-            value = BlurHashDecoder.decode(photo.blurHash, 32, (32 / aspectRatio).toInt())
-        }
+        val placeholderBitmap =
+            rememberBlurHashPlaceholder(
+                blurHash = photo.blurHash,
+                width = BLURHASH_PLACEHOLDER_WIDTH,
+                height = placeholderHeight,
+            )
 
         val painter =
             rememberAsyncImagePainter(

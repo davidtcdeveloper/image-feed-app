@@ -48,7 +48,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
@@ -70,8 +69,8 @@ import coil3.compose.LocalPlatformContext
 import coil3.compose.rememberAsyncImagePainter
 import coil3.request.ImageRequest
 import coil3.request.crossfade
-import com.example.imagefeed.android.util.BlurHashDecoder
 import com.example.imagefeed.android.util.bounceClick
+import com.example.imagefeed.android.util.rememberBlurHashPlaceholder
 import com.example.imagefeed.model.Photo
 import com.example.imagefeed.model.PhotoCollection
 import com.example.imagefeed.presentation.collection.CollectionDetailEffect
@@ -305,11 +304,7 @@ fun CollectionDetailHeader(
     }
 
     val blurHash = collection.coverPhoto?.blurHash
-    val placeholderBitmap by produceState<android.graphics.Bitmap?>(initialValue = null, blurHash) {
-        if (blurHash != null) {
-            value = BlurHashDecoder.decode(blurHash, 16, 12)
-        }
-    }
+    val placeholderBitmap = rememberBlurHashPlaceholder(blurHash, 16, 12)
 
     Box(
         modifier =

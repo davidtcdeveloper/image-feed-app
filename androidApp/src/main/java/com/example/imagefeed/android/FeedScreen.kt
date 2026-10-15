@@ -46,7 +46,6 @@ import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -71,9 +70,12 @@ import coil3.compose.rememberAsyncImagePainter
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.example.imagefeed.android.navigation.AppRoute
-import com.example.imagefeed.android.util.BlurHashDecoder
+import com.example.imagefeed.android.util.BLURHASH_PLACEHOLDER_MAX_HEIGHT
+import com.example.imagefeed.android.util.BLURHASH_PLACEHOLDER_MIN_HEIGHT
+import com.example.imagefeed.android.util.BLURHASH_PLACEHOLDER_WIDTH
 import com.example.imagefeed.android.util.PhotoGridSkeleton
 import com.example.imagefeed.android.util.bounceClick
+import com.example.imagefeed.android.util.rememberBlurHashPlaceholder
 import com.example.imagefeed.android.util.staggeredEntrance
 import com.example.imagefeed.model.Photo
 import com.example.imagefeed.model.User
@@ -312,11 +314,22 @@ fun PhotoCard(
     val context = LocalPlatformContext.current
     val itemWidthPx = calculatePhotoItemWidthPx()
     val aspectRatio = photo.width.toFloat() / photo.height.toFloat()
+    val placeholderHeight =
+        (
+            if (aspectRatio > 0f && aspectRatio.isFinite()) {
+                (BLURHASH_PLACEHOLDER_WIDTH / aspectRatio).toInt()
+            } else {
+                BLURHASH_PLACEHOLDER_WIDTH
+            }
+        ).coerceIn(BLURHASH_PLACEHOLDER_MIN_HEIGHT, BLURHASH_PLACEHOLDER_MAX_HEIGHT)
 
-    // Decode BlurHash placeholder in background
-    val placeholderBitmap by produceState<android.graphics.Bitmap?>(initialValue = null, photo.blurHash) {
-        value = BlurHashDecoder.decode(photo.blurHash, 32, (32 / aspectRatio).toInt())
-    }
+    // Decode BlurHash placeholder in background with LRU cache
+    val placeholderBitmap =
+        rememberBlurHashPlaceholder(
+            blurHash = photo.blurHash,
+            width = BLURHASH_PLACEHOLDER_WIDTH,
+            height = placeholderHeight,
+        )
 
     val painter =
         rememberAsyncImagePainter(

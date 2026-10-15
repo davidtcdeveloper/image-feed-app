@@ -23,7 +23,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
-import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.foundation.lazy.staggeredgrid.itemsIndexed
 import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.foundation.shape.CircleShape
@@ -45,7 +44,6 @@ import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -68,9 +66,10 @@ import coil3.compose.LocalPlatformContext
 import coil3.compose.rememberAsyncImagePainter
 import coil3.request.ImageRequest
 import coil3.request.crossfade
-import com.example.imagefeed.android.util.BlurHashDecoder
+import com.example.imagefeed.android.util.BLURHASH_PLACEHOLDER_WIDTH
 import com.example.imagefeed.android.util.CollectionMosaicCardSkeleton
 import com.example.imagefeed.android.util.bounceClick
+import com.example.imagefeed.android.util.rememberBlurHashPlaceholder
 import com.example.imagefeed.android.util.staggeredEntrance
 import com.example.imagefeed.model.PhotoCollection
 import com.example.imagefeed.presentation.collections.CollectionsFeedEffect
@@ -256,13 +255,9 @@ fun CollectionMosaicCard(
     val cardWidthPx = with(density) { (screenWidthDp - 24).dp.roundToPx() }
     val sideWidthPx = cardWidthPx / 3
 
-    // Use BlurHash from cover photo as card background placeholder
+    // Use BlurHash from cover photo as card background placeholder with LRU cache
     val blurHash = collection.coverPhoto?.blurHash
-    val placeholderBitmap by produceState<android.graphics.Bitmap?>(initialValue = null, blurHash) {
-        if (blurHash != null) {
-            value = BlurHashDecoder.decode(blurHash, 32, 18)
-        }
-    }
+    val placeholderBitmap = rememberBlurHashPlaceholder(blurHash, BLURHASH_PLACEHOLDER_WIDTH, 18)
 
     Card(
         shape = MaterialTheme.shapes.medium,

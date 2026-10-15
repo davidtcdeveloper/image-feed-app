@@ -1,6 +1,6 @@
 # Specification 50: Android Image Pipeline & BlurHash Decoding Cache
 
-**Status:** Approved
+**Status:** Implemented
 
 ## 1. Overview & Problem Statement
 
@@ -138,10 +138,10 @@ graph TD
 
 ## 5. Acceptance Criteria
 
-- [ ] `ImageFeedApplication` implements `SingletonImageLoader.Factory` configuring Coil 3 with a 25% heap `MemoryCache` and 100MB `DiskCache`.
-- [ ] `BlurHashDecoder` contains an in-memory `LruCache` preventing repeated decoding of previously decoded placeholders.
-- [ ] All BlurHash decoding computations execute strictly on background threads (`Dispatchers.Default`) with zero UI thread overhead.
-- [ ] Dimension boundaries are strictly validated and clamped to prevent zero/negative size crashes on extreme aspect ratios.
-- [ ] Screens (`FeedScreen`, `CollectionsFeedScreen`, `CollectionDetailScreen`, `PhotoDetailsScreen`) read cached placeholders synchronously during initial composition.
-- [ ] Complies fully with Unsplash API hotlink and attribution requirements.
-- [ ] Dual-platform compilation passes without errors or warnings.
+- [x] `ImageFeedApplication` implements `SingletonImageLoader.Factory` configuring Coil 3 with a 25% heap `MemoryCache` and 100MB `DiskCache`.
+- [x] `BlurHashDecoder` contains an in-memory `LruCache` preventing repeated decoding of previously decoded placeholders.
+- [x] All BlurHash decoding computations execute strictly on background threads (`Dispatchers.Default`) with zero UI thread overhead.
+- [x] Dimension boundaries are strictly validated and clamped to prevent zero/negative size crashes on extreme aspect ratios.
+- [x] Screens (`FeedScreen`, `CollectionsFeedScreen`, `CollectionDetailScreen`, `PhotoDetailsScreen`) read cached placeholders synchronously during initial composition.
+- [x] Complies fully with Unsplash API hotlink and attribution requirements.
+- [x] Dual-platform compilation passes without errors or warnings.
