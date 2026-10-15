@@ -702,7 +702,7 @@ These are the spec files that the implementation notes and planning references s
 5.  **Reference Specification:**
     *   Track blueprint in `specs/45_mvi_architecture_cleanup_and_finalization.md`.
 
-### Step 48: Modularization Phase 1 - Foundation & Core Extraction
+### Step 48: Modularization Phase 1 - Foundation & Core Extraction (Completed)
 1.  **Module Directory & Build Script Scaffolding:**
     *   Register `:core:model`, `:core:mvi`, and `:core:network` in `settings.gradle.kts` (eliminating centralized `:core:data` under Option B).
     *   Create KMP build scripts using `com.android.kotlin.multiplatform.library` and Apple Silicon targets (`iosArm64`, `iosSimulatorArm64`, `macosArm64`).

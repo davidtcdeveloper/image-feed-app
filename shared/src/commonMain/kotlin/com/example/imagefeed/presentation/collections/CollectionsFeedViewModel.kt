@@ -1,9 +1,9 @@
 package com.example.imagefeed.presentation.collections
 
 import androidx.lifecycle.viewModelScope
+import com.example.imagefeed.core.network.filterDistinctAgainst
 import com.example.imagefeed.presentation.mvi.MviViewModel
 import com.example.imagefeed.repository.UnsplashRepository
-import com.example.imagefeed.util.filterDistinctAgainst
 import dev.zacsweers.metro.Inject
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job

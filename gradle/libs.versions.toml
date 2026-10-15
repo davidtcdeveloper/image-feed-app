@@ -72,6 +72,7 @@ maps-compose = { group = "com.google.maps.android", name = "maps-compose", versi
 
 # Testing
 kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutines" }
+ktor-client-mock = { group = "io.ktor", name = "ktor-client-mock", version.ref = "ktor" }
 
 [bundles]
 # Grouping related dependencies for concise import blocks

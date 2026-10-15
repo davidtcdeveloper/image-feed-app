@@ -15,5 +15,9 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "image-feed-app"
+include(":core:model")
+include(":core:mvi")
+include(":core:network")
 include(":shared")
 include(":androidApp")
+

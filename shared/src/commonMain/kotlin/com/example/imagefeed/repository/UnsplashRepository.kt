@@ -1,6 +1,7 @@
 package com.example.imagefeed.repository
 
 import com.example.imagefeed.api.UnsplashApiClient
+import com.example.imagefeed.core.network.PhotoDownloadTracker
 import com.example.imagefeed.model.CollectionSummary
 import com.example.imagefeed.model.Photo
 import com.example.imagefeed.model.PhotoCollection
@@ -103,6 +104,7 @@ interface UnsplashRepository {
 
 class UnsplashRepositoryImpl(
     private val apiClient: UnsplashApiClient,
+    private val downloadTracker: PhotoDownloadTracker,
 ) : UnsplashRepository {
     override suspend fun getPhotos(
         page: Int,
@@ -192,12 +194,6 @@ class UnsplashRepositoryImpl(
     ): SearchResponse<User> = apiClient.searchUsers(query, page, perPage)
 
     override suspend fun trackDownload(downloadLocationUrl: String) {
-        // Run asynchronously to not block UI/user flow since it is a background tracking call
-        try {
-            apiClient.trackDownload(downloadLocationUrl)
-        } catch (e: Exception) {
-            // Log or ignore tracking failures so it doesn't crash the app
-            println("Download tracking failed: ${e.message}")
-        }
+        downloadTracker.trackDownload(downloadLocationUrl)
     }
 }

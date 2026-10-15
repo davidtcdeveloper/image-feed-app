@@ -1,10 +1,10 @@
 package com.example.imagefeed.presentation.profile
 
 import androidx.lifecycle.viewModelScope
+import com.example.imagefeed.core.network.filterDistinctAgainst
 import com.example.imagefeed.model.Photo
 import com.example.imagefeed.presentation.mvi.MviViewModel
 import com.example.imagefeed.repository.UnsplashRepository
-import com.example.imagefeed.util.filterDistinctAgainst
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
 import dev.zacsweers.metro.AssistedInject

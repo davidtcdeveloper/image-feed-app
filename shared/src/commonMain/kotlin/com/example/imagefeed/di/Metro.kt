@@ -1,7 +1,9 @@
 package com.example.imagefeed.di
 
 import com.example.imagefeed.api.UnsplashApiClient
-import com.example.imagefeed.api.createUnsplashHttpClient
+import com.example.imagefeed.core.network.KtorPhotoDownloadTracker
+import com.example.imagefeed.core.network.PhotoDownloadTracker
+import com.example.imagefeed.core.network.createUnsplashHttpClient
 import com.example.imagefeed.presentation.collection.CollectionDetailViewModel
 import com.example.imagefeed.presentation.collections.CollectionsFeedViewModel
 import com.example.imagefeed.presentation.details.PhotoDetailsViewModel
@@ -30,17 +32,25 @@ object AppModule {
 
     @Provides
     @SingleIn(AppScope::class)
+    fun providePhotoDownloadTracker(client: HttpClient): PhotoDownloadTracker = KtorPhotoDownloadTracker(client)
+
+    @Provides
+    @SingleIn(AppScope::class)
     fun provideApiClient(client: HttpClient): UnsplashApiClient = UnsplashApiClient(client)
 
     @Provides
     @SingleIn(AppScope::class)
-    fun provideRepository(apiClient: UnsplashApiClient): UnsplashRepository = UnsplashRepositoryImpl(apiClient)
+    fun provideRepository(
+        apiClient: UnsplashApiClient,
+        photoDownloadTracker: PhotoDownloadTracker,
+    ): UnsplashRepository = UnsplashRepositoryImpl(apiClient, photoDownloadTracker)
 }
 
 @SingleIn(AppScope::class)
 @DependencyGraph(scope = AppScope::class, bindingContainers = [AppModule::class])
 interface ApplicationGraph {
     val httpClient: HttpClient
+    val photoDownloadTracker: PhotoDownloadTracker
     val apiClient: UnsplashApiClient
     val repository: UnsplashRepository
 

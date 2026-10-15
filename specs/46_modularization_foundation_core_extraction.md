@@ -1,6 +1,7 @@
 # Specification 46: Modularization Phase 1 - Foundation & Core Extraction
 
-**Status:** Approved
+**Status:** Implemented
+
 
 ## 1. Overview & Problem Statement
 
@@ -89,27 +90,27 @@ graph TD
 
 ## 3. Implementation Steps
 
-- [ ] **Step 1: Module Directory & Build Script Scaffolding**
+- [x] **Step 1: Module Directory & Build Script Scaffolding**
   - Register `:core:model`, `:core:mvi`, and `:core:network` in `settings.gradle.kts`.
   - Create standard KMP `build.gradle.kts` files using the `com.android.kotlin.multiplatform.library` plugin and Apple Silicon targets (`iosArm64`, `iosSimulatorArm64`, `macosArm64`).
   - Configure distinct Android namespaces: `com.example.imagefeed.core.model`, `com.example.imagefeed.core.mvi`, and `com.example.imagefeed.core.network`.
-- [ ] **Step 2: Extract `:core:model`**
+- [x] **Step 2: Extract `:core:model`**
   - Move universal model files from `shared/src/commonMain/kotlin/com/example/imagefeed/model/` to `core/model/src/commonMain/kotlin/com/example/imagefeed/model/`.
   - Verify serialization annotations and package structures.
-- [ ] **Step 3: Extract `:core:mvi`**
+- [x] **Step 3: Extract `:core:mvi`**
   - Move `MviViewModel.kt`, `UiState.kt`, `UiIntent.kt`, `UiEffect.kt`, and `CommonFlow.kt` to `core/mvi/src/commonMain/kotlin/com/example/imagefeed/presentation/mvi/`.
   - Migrate corresponding unit tests from [`shared/src/commonTest/kotlin/com/example/imagefeed/presentation/mvi/MviViewModelTest.kt`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/src/commonTest/kotlin/com/example/imagefeed/presentation/mvi/MviViewModelTest.kt) to `core/mvi/src/commonTest`.
-- [ ] **Step 4: Extract `:core:network`**
+- [x] **Step 4: Extract `:core:network`**
   - Move Ktor client instantiation and `BuildKonfig` configuration from `:shared` to `core/network` with `packageName = "com.example.imagefeed.core.network"`.
   - Replicate `generateBuildKonfig` Gradle post-processing task in `core/network/build.gradle.kts` for `ktlint` compliance.
   - Implement `PhotoDownloadTracker` in `core/network` to encapsulate Unsplash download tracking requests.
   - Relocate [`CollectionsExt.kt`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/src/commonMain/kotlin/com/example/imagefeed/util/CollectionsExt.kt) into `core/network`.
   - Wire platform engines in `androidMain` (OkHttp) and `appleMain` (Darwin).
-- [ ] **Step 5: Update `:shared` Dependencies & Re-exports**
+- [x] **Step 5: Update `:shared` Dependencies & Re-exports**
   - Configure `:shared/build.gradle.kts` to depend on `:core:mvi`, `:core:model`, and `:core:network`.
   - Update imports in legacy `UnsplashApiClient.kt`, `UnsplashRepository.kt`, and Metro graph in `:shared`.
   - Expose core contracts via `api(...)` in `commonMain` and via `export(...)` in the native binary framework block.
-- [ ] **Step 6: Verification & Build Validation**
+- [x] **Step 6: Verification & Build Validation**
   - Run `./gradlew :core:model:allTests :core:mvi:allTests :core:network:allTests :shared:allTests`.
   - Execute full dual-platform verification:
     - Android: `./gradlew :androidApp:assembleDebug`
@@ -120,11 +121,12 @@ graph TD
 
 ## 4. Acceptance Criteria
 
-- [ ] `:core:model`, `:core:mvi`, and `:core:network` are isolated Gradle modules compiling cleanly with unique Android namespaces (`com.example.imagefeed.core.*`).
-- [ ] Centralized `:core:data` is eliminated from Phase 1 scope; data access will be vertically owned by features.
-- [ ] `PhotoDownloadTracker` and `CollectionsExt` are cleanly extracted into `:core:network`.
-- [ ] `BuildKonfig` generates cleanly in `:core:network` with package `com.example.imagefeed.core.network` and satisfies `ktlint`.
-- [ ] `:core:model` has zero dependencies on Ktor, Coroutines, or UI lifecycle libraries.
-- [ ] `:shared` compiles successfully as an assembly umbrella and exports symbols to Xcode without Swift compilation errors.
-- [ ] Existing Android, iOS, and macOS applications build and run with zero regression in functionality.
-- [ ] All unit tests pass across all newly extracted modules and `:shared`.
+- [x] `:core:model`, `:core:mvi`, and `:core:network` are isolated Gradle modules compiling cleanly with unique Android namespaces (`com.example.imagefeed.core.*`).
+- [x] Centralized `:core:data` is eliminated from Phase 1 scope; data access will be vertically owned by features.
+- [x] `PhotoDownloadTracker` and `CollectionsExt` are cleanly extracted into `:core:network`.
+- [x] `BuildKonfig` generates cleanly in `:core:network` with package `com.example.imagefeed.core.network` and satisfies `ktlint`.
+- [x] `:core:model` has zero dependencies on Ktor, Coroutines, or UI lifecycle libraries.
+- [x] `:shared` compiles successfully as an assembly umbrella and exports symbols to Xcode without Swift compilation errors.
+- [x] Existing Android, iOS, and macOS applications build and run with zero regression in functionality.
+- [x] All unit tests pass across all newly extracted modules and `:shared`.
+

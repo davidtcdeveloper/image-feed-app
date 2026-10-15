@@ -1,4 +1,4 @@
-package com.example.imagefeed.util
+package com.example.imagefeed.presentation.mvi
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

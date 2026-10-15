@@ -1,4 +1,4 @@
-package com.example.imagefeed.util
+package com.example.imagefeed.core.network
 
 /**
  * Filters [this] to only those elements whose key (determined by [selector]) does not already exist

@@ -60,13 +60,6 @@ data class Social(
 )
 
 @Serializable
-data class UserStats(
-    val username: String,
-    val downloads: StatMetric,
-    val views: StatMetric,
-)
-
-@Serializable
 data class ProfileImage(
     val small: String,
     val medium: String,
@@ -115,33 +108,4 @@ data class Position(
 @Serializable
 data class Tag(
     val title: String,
-)
-
-@Serializable
-data class StatsValue(
-    val date: String,
-    val value: Int,
-)
-
-@Serializable
-data class HistoricalStats(
-    val change: Int? = null,
-    val average: Int? = null,
-    val resolution: String? = null,
-    val quantity: Int? = null,
-    val values: List<StatsValue> = emptyList(),
-)
-
-@Serializable
-data class StatMetric(
-    val total: Int,
-    val historical: HistoricalStats? = null,
-)
-
-@Serializable
-data class PhotoStats(
-    val id: String,
-    val downloads: StatMetric,
-    val views: StatMetric,
-    val likes: StatMetric? = null,
 )
