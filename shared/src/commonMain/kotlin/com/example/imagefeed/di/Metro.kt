@@ -1,10 +1,14 @@
 package com.example.imagefeed.di
 
-import com.example.imagefeed.api.UnsplashApiClient
+import com.example.imagefeed.collections.data.CollectionsRepository
+import com.example.imagefeed.collections.di.CollectionsModule
 import com.example.imagefeed.core.network.KtorPhotoDownloadTracker
 import com.example.imagefeed.core.network.PhotoDownloadTracker
 import com.example.imagefeed.core.network.createUnsplashHttpClient
+import com.example.imagefeed.details.data.PhotoDetailsRepository
 import com.example.imagefeed.details.di.PhotoDetailsModule
+import com.example.imagefeed.feed.data.FeedRepository
+import com.example.imagefeed.feed.di.FeedModule
 import com.example.imagefeed.presentation.collection.CollectionDetailViewModel
 import com.example.imagefeed.presentation.collections.CollectionsFeedViewModel
 import com.example.imagefeed.presentation.details.PhotoDetailsViewModel
@@ -12,8 +16,10 @@ import com.example.imagefeed.presentation.feed.FeedViewModel
 import com.example.imagefeed.presentation.profile.UserProfileViewModel
 import com.example.imagefeed.presentation.random.RandomPhotoViewModel
 import com.example.imagefeed.presentation.search.UnifiedSearchViewModel
-import com.example.imagefeed.repository.UnsplashRepository
-import com.example.imagefeed.repository.UnsplashRepositoryImpl
+import com.example.imagefeed.profile.data.ProfileRepository
+import com.example.imagefeed.profile.di.ProfileModule
+import com.example.imagefeed.search.data.SearchRepository
+import com.example.imagefeed.search.di.SearchModule
 import dev.zacsweers.metro.BindingContainer
 import dev.zacsweers.metro.DependencyGraph
 import dev.zacsweers.metro.Provides
@@ -34,26 +40,28 @@ object AppModule {
     @Provides
     @SingleIn(AppScope::class)
     fun providePhotoDownloadTracker(client: HttpClient): PhotoDownloadTracker = KtorPhotoDownloadTracker(client)
-
-    @Provides
-    @SingleIn(AppScope::class)
-    fun provideApiClient(client: HttpClient): UnsplashApiClient = UnsplashApiClient(client)
-
-    @Provides
-    @SingleIn(AppScope::class)
-    fun provideRepository(
-        apiClient: UnsplashApiClient,
-        photoDownloadTracker: PhotoDownloadTracker,
-    ): UnsplashRepository = UnsplashRepositoryImpl(apiClient, photoDownloadTracker)
 }
 
 @SingleIn(AppScope::class)
-@DependencyGraph(scope = AppScope::class, bindingContainers = [AppModule::class, PhotoDetailsModule::class])
+@DependencyGraph(
+    scope = AppScope::class,
+    bindingContainers = [
+        AppModule::class,
+        PhotoDetailsModule::class,
+        FeedModule::class,
+        SearchModule::class,
+        CollectionsModule::class,
+        ProfileModule::class,
+    ],
+)
 interface ApplicationGraph {
     val httpClient: HttpClient
     val photoDownloadTracker: PhotoDownloadTracker
-    val apiClient: UnsplashApiClient
-    val repository: UnsplashRepository
+    val photoDetailsRepository: PhotoDetailsRepository
+    val feedRepository: FeedRepository
+    val searchRepository: SearchRepository
+    val collectionsRepository: CollectionsRepository
+    val profileRepository: ProfileRepository
 
     val photoDetailsViewModelFactory: PhotoDetailsViewModel.Factory
     val feedViewModel: FeedViewModel

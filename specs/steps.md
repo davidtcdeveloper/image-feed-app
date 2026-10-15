@@ -732,7 +732,7 @@ These are the spec files that the implementation notes and planning references s
 4.  **Reference Specification & Research:**
     *   Track blueprint in `specs/47_modularization_pilot_feature_details.md` and `specs/researches/modularization_evaluation.md`.
 
-### Step 50: Modularization Phase 3 - Remaining Feature Extractions
+### Step 50: Modularization Phase 3 - Remaining Feature Extractions (Completed)
 1.  **Scaffold Vertical Feature Modules:**
     *   Register and configure `:feature:feed`, `:feature:search`, `:feature:collections`, and `:feature:profile` in `settings.gradle.kts` with dependencies on `:core:model`, `:core:mvi`, and `:core:network`.
 2.  **Migrate Vertical Feature Slices & Tests:**

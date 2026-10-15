@@ -26,9 +26,13 @@ kotlin {
         binaries.framework {
             baseName = "shared"
             isStatic = true
-            export(project(":core:model"))
-            export(project(":core:mvi"))
-            export(project(":feature:details"))
+            export(project.dependencies.project(mapOf("path" to ":core:model")))
+            export(project.dependencies.project(mapOf("path" to ":core:mvi")))
+            export(project.dependencies.project(mapOf("path" to ":feature:details")))
+            export(project.dependencies.project(mapOf("path" to ":feature:feed")))
+            export(project.dependencies.project(mapOf("path" to ":feature:search")))
+            export(project.dependencies.project(mapOf("path" to ":feature:collections")))
+            export(project.dependencies.project(mapOf("path" to ":feature:profile")))
         }
     }
 
@@ -38,6 +42,10 @@ kotlin {
             api(project(":core:mvi"))
             api(project(":core:network"))
             api(project(":feature:details"))
+            api(project(":feature:feed"))
+            api(project(":feature:search"))
+            api(project(":feature:collections"))
+            api(project(":feature:profile"))
 
             // Lifecycle ViewModel (KMP)
             implementation(libs.androidx.lifecycle.viewmodel)

@@ -62,12 +62,12 @@ import com.example.imagefeed.android.navigation.searchSection
 import com.example.imagefeed.android.navigation.userProfileSection
 import com.example.imagefeed.android.theme.ImageFeedTheme
 import com.example.imagefeed.di.MetroHelper
-import com.example.imagefeed.repository.UnsplashRepository
+import com.example.imagefeed.feed.data.FeedRepository
 import kotlinx.coroutines.launch
 import kotlin.math.sqrt
 
 class MainActivity : ComponentActivity() {
-    private val repository: UnsplashRepository by lazy { MetroHelper.graph.repository }
+    private val repository: FeedRepository by lazy { MetroHelper.graph.feedRepository }
 
     private var sensorManager: SensorManager? = null
     private var shakeDetector: ShakeDetector? = null
