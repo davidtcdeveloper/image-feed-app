@@ -29,10 +29,12 @@ import dev.zacsweers.metro.createGraph
 import io.ktor.client.HttpClient
 
 @Scope
-annotation class AppScope
+internal annotation class AppScope
 
+@OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
+@kotlin.native.HiddenFromObjC
 @BindingContainer
-object AppModule {
+internal object AppModule {
     @Provides
     @SingleIn(AppScope::class)
     fun provideHttpClient(): HttpClient = createUnsplashHttpClient()
@@ -54,9 +56,7 @@ object AppModule {
         ProfileModule::class,
     ],
 )
-interface ApplicationGraph {
-    val httpClient: HttpClient
-    val photoDownloadTracker: PhotoDownloadTracker
+internal interface ApplicationGraph {
     val photoDetailsRepository: PhotoDetailsRepository
     val feedRepository: FeedRepository
     val searchRepository: SearchRepository
@@ -73,7 +73,7 @@ interface ApplicationGraph {
 }
 
 object MetroHelper {
-    val graph: ApplicationGraph by lazy {
+    internal val graph: ApplicationGraph by lazy {
         createGraph<ApplicationGraph>()
     }
 
@@ -91,4 +91,8 @@ object MetroHelper {
         graph.collectionDetailViewModelFactory.create(collectionId)
 
     fun getUserProfileViewModel(username: String): UserProfileViewModel = graph.userProfileViewModelFactory.create(username)
+
+    @OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
+    @kotlin.native.HiddenFromObjC
+    fun getFeedRepository(): FeedRepository = graph.feedRepository
 }

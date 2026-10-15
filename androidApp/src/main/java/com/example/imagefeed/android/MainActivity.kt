@@ -67,7 +67,7 @@ import kotlinx.coroutines.launch
 import kotlin.math.sqrt
 
 class MainActivity : ComponentActivity() {
-    private val repository: FeedRepository by lazy { MetroHelper.graph.feedRepository }
+    private val repository: FeedRepository by lazy { MetroHelper.getFeedRepository() }
 
     private var sensorManager: SensorManager? = null
     private var shakeDetector: ShakeDetector? = null

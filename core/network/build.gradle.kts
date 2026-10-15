@@ -31,6 +31,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             api(project(":core:model"))
+            api(libs.ktor.client.core)
             implementation(libs.bundles.ktor.common)
             implementation(libs.kotlin.coroutines.core)
         }
@@ -55,16 +56,5 @@ buildkonfig {
     packageName = "com.example.imagefeed.core.network"
     defaultConfigs {
         buildConfigField(Type.STRING, "UNSPLASH_API_KEY", unsplashApiKey)
-    }
-}
-
-tasks.named("generateBuildKonfig") {
-    doLast {
-        val generatedFile = file("build/generated/source/buildkonfig/commonMain/com/example/imagefeed/core/network/BuildKonfig.kt")
-        if (generatedFile.exists()) {
-            generatedFile.writeText(
-                generatedFile.readText().replace(Regex("^  (?=public|internal)", RegexOption.MULTILINE), "    "),
-            )
-        }
     }
 }

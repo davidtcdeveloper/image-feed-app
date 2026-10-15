@@ -749,7 +749,7 @@ These are the spec files that the implementation notes and planning references s
 4.  **Reference Specification & Research:**
     *   Track blueprint in `specs/48_modularization_remaining_features_extraction.md` and `specs/researches/modularization_evaluation.md`.
 
-### Step 51: Modularization Phase 4 - Umbrella Framework & Linking Optimization
+### Step 51: Modularization Phase 4 - Umbrella Framework & Linking Optimization (Completed)
 1.  **Selective Binary Export & Internal Visibility Benefits:**
     *   Restrict Apple framework `export(...)` declarations in `:shared` strictly to public feature ViewModels and core model/MVI contracts.
     *   Keep internal networking engines (`:core:network`), feature repository implementations, and feature API clients unexported (enforced via `internal` visibility) to minimize Objective-C bridging stubs and reduce link times.

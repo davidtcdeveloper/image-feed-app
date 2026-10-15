@@ -1,7 +1,6 @@
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.android.kotlin.multiplatform.library)
-    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.metro)
 }
 
@@ -26,13 +25,13 @@ kotlin {
         binaries.framework {
             baseName = "shared"
             isStatic = true
-            export(project.dependencies.project(mapOf("path" to ":core:model")))
-            export(project.dependencies.project(mapOf("path" to ":core:mvi")))
-            export(project.dependencies.project(mapOf("path" to ":feature:details")))
-            export(project.dependencies.project(mapOf("path" to ":feature:feed")))
-            export(project.dependencies.project(mapOf("path" to ":feature:search")))
-            export(project.dependencies.project(mapOf("path" to ":feature:collections")))
-            export(project.dependencies.project(mapOf("path" to ":feature:profile")))
+            export(project(":core:model"))
+            export(project(":core:mvi"))
+            export(project(":feature:details"))
+            export(project(":feature:feed"))
+            export(project(":feature:search"))
+            export(project(":feature:collections"))
+            export(project(":feature:profile"))
         }
     }
 
@@ -40,7 +39,7 @@ kotlin {
         commonMain.dependencies {
             api(project(":core:model"))
             api(project(":core:mvi"))
-            api(project(":core:network"))
+            implementation(project(":core:network"))
             api(project(":feature:details"))
             api(project(":feature:feed"))
             api(project(":feature:search"))
@@ -52,12 +51,6 @@ kotlin {
 
             // Coroutines & Concurrency
             implementation(libs.kotlin.coroutines.core)
-
-            // Networking (Ktor) - using bundle
-            implementation(libs.bundles.ktor.common)
-
-            // Serialization
-            implementation(libs.kotlin.serialization.json)
         }
 
         commonTest.dependencies {

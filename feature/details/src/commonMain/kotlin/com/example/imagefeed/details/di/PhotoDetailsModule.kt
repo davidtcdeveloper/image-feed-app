@@ -7,6 +7,8 @@ import dev.zacsweers.metro.BindingContainer
 import dev.zacsweers.metro.Provides
 import io.ktor.client.HttpClient
 
+@OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
+@kotlin.native.HiddenFromObjC
 @BindingContainer
 object PhotoDetailsModule {
     @Provides

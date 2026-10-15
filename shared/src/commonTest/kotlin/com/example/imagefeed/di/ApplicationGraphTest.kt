@@ -9,17 +9,17 @@ class ApplicationGraphTest {
     fun graphInstantiatesAndResolvesAllFeatureViewModelsAndFactories() {
         val graph = MetroHelper.graph
         assertNotNull(graph, "ApplicationGraph should not be null")
-        assertNotNull(graph.httpClient, "HttpClient should not be null")
-        assertNotNull(graph.photoDownloadTracker, "PhotoDownloadTracker should not be null")
         assertNotNull(graph.photoDetailsRepository, "PhotoDetailsRepository should not be null")
         assertNotNull(graph.feedRepository, "FeedRepository should not be null")
         assertNotNull(graph.searchRepository, "SearchRepository should not be null")
         assertNotNull(graph.collectionsRepository, "CollectionsRepository should not be null")
         assertNotNull(graph.profileRepository, "ProfileRepository should not be null")
-
         val feedVm = MetroHelper.getFeedViewModel()
         assertNotNull(feedVm, "FeedViewModel should be resolvable")
         feedVm.clear()
+
+        val feedRepo = MetroHelper.getFeedRepository()
+        assertNotNull(feedRepo, "FeedRepository should be resolvable via MetroHelper")
 
         val randomVm = MetroHelper.getRandomPhotoViewModel()
         assertNotNull(randomVm, "RandomPhotoViewModel should be resolvable")

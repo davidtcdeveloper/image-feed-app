@@ -1,6 +1,7 @@
 # Specification 49: Modularization Phase 4 - Umbrella Framework & Linking Optimization
 
-**Status:** Approved
+**Status:** Implemented
+
 
 ## 1. Overview & Problem Statement
 
@@ -90,16 +91,16 @@ Align CI workflow execution with the optimized matrix from research section 6.3:
 
 ## 3. Implementation Steps
 
-- [ ] **Step 1: Configure Selective Framework Exports in `:shared`**
+- [x] **Step 1: Configure Selective Framework Exports in `:shared`**
   - Restrict `export(...)` declarations in `shared/build.gradle.kts` strictly to public feature modules and core model/MVI contracts.
   - Exclude `:core:network` and internal feature repositories/clients from binary export.
-- [ ] **Step 2: Optimize `gradle.properties` Performance Settings**
+- [x] **Step 2: Optimize `gradle.properties` Performance Settings**
   - Verify `org.gradle.parallel=true`, `org.gradle.caching=true`, and `org.gradle.configuration-cache=true`.
   - Validate that multi-module builds successfully hit the Gradle build cache on repeated invocations.
-- [ ] **Step 3: Measure & Validate Linking Overhead**
+- [x] **Step 3: Measure & Validate Linking Overhead**
   - Verify compilation time of `:shared:compileKotlinIosSimulatorArm64` and Xcode build.
   - Inspect generated Objective-C bridging header stubs to ensure no internal Ktor, DTO, or internal repository types leak into the Swift interface.
-- [ ] **Step 4: Audit Dual-Platform Build & Verification**
+- [x] **Step 4: Audit Dual-Platform Build & Verification**
   - Verify Android assembly: `./gradlew :androidApp:assembleDebug`.
   - Verify Apple build: `xcodegen generate --spec iosApp/project.yml && xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp -destination 'generic/platform=iOS Simulator' build CODE_SIGNING_ALLOWED=NO`.
   - Run all tests across the repository: `./gradlew check`.
@@ -109,9 +110,10 @@ Align CI workflow execution with the optimized matrix from research section 6.3:
 
 ## 4. Acceptance Criteria
 
-- [ ] `:shared` exports only public feature and domain contracts to the Apple framework.
-- [ ] Internal feature repositories, feature API clients, and network engine classes are hidden via `internal` visibility and generate zero Objective-C bridging stubs.
-- [ ] Centralized `:core:data` is completely absent from the module graph and build configuration.
-- [ ] Gradle build caching and parallel execution operate cleanly without configuration cache failures.
-- [ ] Android, iOS, and macOS applications build cleanly with zero warnings or linking errors.
-- [ ] All tests pass across the entire multi-module graph.
+- [x] `:shared` exports only public feature and domain contracts to the Apple framework.
+- [x] Internal feature repositories, feature API clients, and network engine classes are hidden via `internal` visibility and generate zero Objective-C bridging stubs.
+- [x] Centralized `:core:data` is completely absent from the module graph and build configuration.
+- [x] Gradle build caching and parallel execution operate cleanly without configuration cache failures.
+- [x] Android, iOS, and macOS applications build cleanly with zero warnings or linking errors.
+- [x] All tests pass across the entire multi-module graph.
+
