@@ -13,7 +13,7 @@ The Photo Details screen ([`PhotoDetailsScreen.kt`](file:///Users/davidtiagoconc
    * On mobile devices with metadata-rich photos, the button is buried beneath multiple scroll viewports.
 2. **Static Surface Theming vs. Photography Atmosphere**:
    * All photo details screens currently render over an identical static dark surface with cold periwinkle accent buttons, failing to adapt to the warmth, earthiness, or mood of the photograph.
-   * The Unsplash API already delivers [`photo.color: String?`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/src/commonMain/kotlin/com/example/imagefeed/model/Photo.kt#L12) (e.g. `"#EAA83B"`), but this seed color is ignored in the Android theme.
+   * The Unsplash API already delivers [`photo.color: String?`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/core/model/src/commonMain/kotlin/com/example/imagefeed/model/Photo.kt#L12) (e.g. `"#EAA83B"`), but this seed color is ignored in the Android theme.
 3. **Flat EXIF Presentation**:
    * Camera and lens specifications ([`PhotoDetailsScreen.kt#L831-L856`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/androidApp/src/main/java/com/example/imagefeed/android/PhotoDetailsScreen.kt#L831-L856)) are rendered as a plain key-value text list, missing the scannable visual hierarchy of a modern photographic bento layout.
 4. **Missing Creative Palette Swatches**:
@@ -31,8 +31,8 @@ This specification modernizes [`PhotoDetailsScreen.kt`](file:///Users/davidtiago
 graph TD
     subgraph DataInputs["Photo Model & Seed"]
         PhotoHex["photo.color ('#EAA83B')"]
-        PhotoExif["photo.exif (make, model, aperture, shutter, iso, lens)"]
-        PhotoStats["photo.stats (historical views)"]
+        PhotoExif["photo.exif (make, model, aperture, exposureTime, iso, focalLength)"]
+        PhotoStats["state.stats (PhotoStats: historical views)"]
     end
 
     subgraph NativeTonalEngine["Native Tonal Generation (Theme.kt)"]
@@ -45,7 +45,7 @@ graph TD
         ThemeWrap["Scoped MaterialTheme(colorScheme = dynamicScheme)"]
         ExifBento["2x2 Mini-Bento Grid with Photographic Glyphs"]
         Swatches["Interactive 5-Swatch Palette Pill Row"]
-        FloatingCta["Anchored Floating Action Toolbar (Download RAW/Full, Like, Share)"]
+        FloatingCta["Anchored Floating Action Toolbar (Download RAW/Full, Share)"]
         BezierChart["Glowing Bezier Analytics Curve with Gradient Area"]
     end
 
@@ -75,10 +75,10 @@ graph TD
 1. **Grid Geometry & Tokens**:
    * Replace the single vertical card with a 2x2 grid inside `SurfaceContainerLow` containers with `MaterialTheme.shapes.medium`.
 2. **Cell Structure & Micro-Icons**:
-   * **Aperture**: `Icons.Default.Camera` / iris glyph $\rightarrow$ `f/7.1` (`titleMedium`), label `"Aperture"` (`labelSmall`).
-   * **Shutter Speed**: `Icons.Default.Timer` $\rightarrow$ `1/160s` (`titleMedium`), label `"Shutter"` (`labelSmall`).
-   * **Focal Length**: `Icons.Default.Lens` $\rightarrow$ `59.0mm` (`titleMedium`), label `"Lens"` (`labelSmall`).
-   * **ISO**: `Icons.Default.Iso` $\rightarrow$ `250` (`titleMedium`), label `"ISO"` (`labelSmall`).
+   * **Aperture**: `Icons.Default.Camera` / iris glyph $\rightarrow$ `photo.exif.aperture` (e.g. `f/7.1`, `titleMedium`), label `"Aperture"` (`labelSmall`).
+   * **Shutter Speed**: `Icons.Default.Timer` $\rightarrow$ `photo.exif.exposureTime` (e.g. `1/160s`, `titleMedium`), label `"Shutter"` (`labelSmall`).
+   * **Focal Length**: `Icons.Default.Lens` $\rightarrow$ `photo.exif.focalLength?.let { "${it}mm" }` (e.g. `59.0mm`, `titleMedium`), label `"Lens"` (`labelSmall`).
+   * **ISO**: `Icons.Default.Iso` $\rightarrow$ `photo.exif.iso?.toString()` (e.g. `250`, `titleMedium`), label `"ISO"` (`labelSmall`).
 3. **Camera & Lens Header**:
    * Format the camera body and lens model (`"${exif.make} ${exif.model}"`) into an editorial subtitle header above the 2x2 grid.
 
@@ -94,9 +94,10 @@ graph TD
 
 1. **Bottom Action Bar Positioning**:
    * Relocate the primary download action from below the chart to an anchored floating action bar positioned over/under the photo canvas or pinned at the bottom viewport.
-2. **Action Layout**:
-   * Primary action: Split pill button for download with Unsplash download tracking (`onTrackDownload()`), offering quick resolution selection (`Full` / `Raw`).
-   * Secondary toggles: Rounded icon buttons for Like and Bookmark / Share.
+   * **Dual-Pane Adaptive Layout**: On tablets and foldables ([`PhotoDetailsScreen.kt#L273-L330`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/androidApp/src/main/java/com/example/imagefeed/android/PhotoDetailsScreen.kt#L273-L330)), anchor the floating toolbar inside the scrollable details sheet rather than across the full window, keeping the photo canvas unobstructed.
+2. **Action Layout & MVI Boundaries**:
+   * Primary action: Split pill button for download with Unsplash download tracking ([`PhotoDetailsIntent.TrackDownload(photo)`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/feature/details/src/commonMain/kotlin/com/example/imagefeed/presentation/details/PhotoDetailsIntent.kt)), offering quick resolution selection (`Full` / `Raw`).
+   * Secondary toggles: Rounded icon buttons for system Share (`Intent(Intent.ACTION_SEND)`) and local Bookmark toggle. (Note: Unsplash API user likes require OAuth user authentication, which is not supported; secondary actions must not dispatch unauthenticated like calls).
    * Container styled with high-alpha `surfaceContainerHigh` and subtle border stroke.
 
 ### E. Glowing Bezier Analytics Curve ([`PhotoDetailsScreen.kt`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/androidApp/src/main/java/com/example/imagefeed/android/PhotoDetailsScreen.kt))
@@ -116,11 +117,13 @@ graph TD
 ### Acceptance Criteria
 - [ ] `generatePhotoColorScheme` derives a stable, WCAG-compliant dynamic `ColorScheme` from `photo.color` with zero external dependencies.
 - [ ] `PhotoDetailsScreen` reflects photo seed color across background containers, chips, and button accents.
-- [ ] Camera and lens specs render as a 2x2 Bento grid with micro-icons and clean typography.
+- [ ] Camera and lens specs render as a 2x2 Bento grid using `exposureTime` and `focalLength` with micro-icons and clean typography.
 - [ ] 5-swatch color palette row renders with tap-to-copy hex functionality and haptic feedback.
-- [ ] Primary download CTA is anchored at the bottom in an expressive floating action bar; Unsplash download tracking triggers reliably.
+- [ ] Primary download CTA is anchored at the bottom in an expressive floating action bar; Unsplash download tracking dispatches via `PhotoDetailsIntent.TrackDownload(photo)`.
+- [ ] Secondary actions provide system Share and local bookmarking without unauthenticated network calls.
 - [ ] Historical views chart renders a smooth cubic Bezier curve with multi-stop area gradient and min/max reference bounds.
-- [ ] Dual-pane adaptive layout for tablets and foldables continues to operate smoothly.
+- [ ] Dual-pane adaptive layout for tablets and foldables anchors the floating action bar within the details pane without bisecting the image canvas.
+- [ ] Existing Spec 50 Coil 3 BlurHash placeholder caching pipeline is preserved.
 
 ### Verification Commands
 ```bash

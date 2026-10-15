@@ -82,11 +82,14 @@ graph TD
 ### C. Attribution Scoping in Photo Grids ([`FeedScreen.kt`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/androidApp/src/main/java/com/example/imagefeed/android/FeedScreen.kt), [`UserProfileScreen.kt`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/androidApp/src/main/java/com/example/imagefeed/android/UserProfileScreen.kt))
 
 1. **`PhotoCard` Parameter Addition**:
-   * Add `showAttribution: Boolean = true` to `PhotoCard` in [`FeedScreen.kt#L300`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/androidApp/src/main/java/com/example/imagefeed/android/FeedScreen.kt#L300).
+   * Add `showAttribution: Boolean = true` to `PhotoCard` in [`FeedScreen.kt#L306`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/androidApp/src/main/java/com/example/imagefeed/android/FeedScreen.kt#L306).
    * Wrap the bottom photographer attribution gradient and row inside `if (showAttribution) { ... }`.
-2. **Profile Portfolio Scoping**:
-   * In `PortfolioTabContent` ([`UserProfileScreen.kt#L572`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/androidApp/src/main/java/com/example/imagefeed/android/UserProfileScreen.kt#L572)), supply `showAttribution = false`.
-   * Feed and search screens continue to supply `showAttribution = true` to comply with Unsplash terms.
+2. **Profile Portfolio vs. Likes Scoping (Unsplash Compliance Guard)**:
+   * In [`UserProfileScreen.kt`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/androidApp/src/main/java/com/example/imagefeed/android/UserProfileScreen.kt), `PortfolioTabContent` is reused for both `ProfileTab.PORTFOLIO` (lines 280–290) and `ProfileTab.LIKES` (lines 291–301).
+   * Add `showAttribution: Boolean = true` parameter to `PortfolioTabContent`.
+   * For `ProfileTab.PORTFOLIO`, pass `showAttribution = false` (creator identity is already prominent in the profile header).
+   * For `ProfileTab.LIKES`, pass `showAttribution = true` — liked photos are taken by other creators and **must** retain photographer attribution to comply with Unsplash API terms ([`AGENTS.md` Invariant 4](file:///Users/davidtiagoconceicao/Developer/image-feed-app/AGENTS.md#L45)).
+   * Main feed, collections, and search screens continue to supply `showAttribution = true`.
 
 ### D. Navigation Chrome & Icon Semantic Alignment ([`FeedScreen.kt`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/androidApp/src/main/java/com/example/imagefeed/android/FeedScreen.kt), [`PhotoDetailsScreen.kt`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/androidApp/src/main/java/com/example/imagefeed/android/PhotoDetailsScreen.kt))
 
@@ -95,10 +98,10 @@ graph TD
    * Retain the randomize/refresh action.
    * Update top bar title from uppercase `"FEED"` to left-aligned `headlineMedium` (`"Feed"`).
 2. **Details Icon Alignment**:
-   * In `StatItem` invocations in [`PhotoDetailsScreen.kt#L758-L775`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/androidApp/src/main/java/com/example/imagefeed/android/PhotoDetailsScreen.kt#L758-L775):
+   * In `StatItem` invocations in [`PhotoDetailsScreen.kt#L775-L785`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/androidApp/src/main/java/com/example/imagefeed/android/PhotoDetailsScreen.kt#L775-L785):
      * Views: `Icons.Default.Visibility` (Material eye symbol).
      * Downloads: `Icons.Default.FileDownload` (Material download arrow).
-   * In download action button in [`PhotoDetailsScreen.kt#L825`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/androidApp/src/main/java/com/example/imagefeed/android/PhotoDetailsScreen.kt#L825):
+   * In download action button in [`PhotoDetailsScreen.kt#L838`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/androidApp/src/main/java/com/example/imagefeed/android/PhotoDetailsScreen.kt#L838):
      * Replace `Icons.Default.Done` with `Icons.Default.Download`.
 
 ---
@@ -108,7 +111,7 @@ graph TD
 ### Acceptance Criteria
 - [ ] Profile tab row uses `LazyRow` with pill/squircle shape morphing and inline `Badge`s; text wrapping like `"COLLECTIO / NS (6)"` is eliminated across all font scaling settings.
 - [ ] Social links in `UserProfileScreen.kt` render as M3 `AssistChip`s with icons.
-- [ ] `PhotoCard` supports `showAttribution: Boolean`; creator portfolio grid hides photographer overlay while main feed and search retain it.
+- [ ] `PhotoCard` supports `showAttribution: Boolean`; creator portfolio grid hides photographer overlay while main feed, search, and user `ProfileTab.LIKES` retain it per Unsplash compliance.
 - [ ] Feed top bar omits redundant Search action icon.
 - [ ] Photo details screen displays `Visibility` for Views, `FileDownload` for Downloads, and `Download` for the CTA button.
 - [ ] Top bar titles adopt Material 3 typography standards (`headlineMedium` title case).

@@ -88,6 +88,9 @@ The `specs/` folder currently contains the following implementation and design d
 *   `specs/53_android_material3_expressive_core_friction_fixes.md`
 *   `specs/54_android_material3_expressive_photo_details_and_dynamic_theming.md`
 *   `specs/55_android_material3_expressive_floating_navigation_and_bento_discovery.md`
+*   `specs/56_ios_glass_contrast_and_navigation_chrome_fixes.md`
+*   `specs/57_ios_immersive_photo_detail_and_interactive_sparkline.md`
+*   `specs/58_ios_floating_glass_capsule_and_profile_refinements.md`
 *   `specs/researches/modularization_evaluation.md`
 *   `specs/implementation_plan.md`
 *   `specs/steps.md`
@@ -792,12 +795,13 @@ These are the spec files that the implementation notes and planning references s
 3.  **Reference Specification:**
     *   Track blueprint in `specs/52_macos_title_and_ios_sheet_navigation_fixes.md`.
 
-### Step 55: Android Material 3 Expressive Core Friction Fixes & Screen Hygiene (Proposed)
+### Step 53: Android Material 3 Expressive Core Friction Fixes & Screen Hygiene (Proposed)
 1.  **Profile Tab Row Wrapping Fix & Morphing Badges:**
     *   Replace fixed 4-slot `SecondaryTabRow` with horizontally scrollable `LazyRow` pill chips and inline count `Badge`s in `UserProfileScreen.kt`.
     *   Eliminate mid-word text wrapping like `"COLLECTIO / NS (6)"` across dynamic font scales.
-2.  **Attribution Scoping & Social Assist Chips:**
-    *   Add `showAttribution: Boolean = true` parameter to `PhotoCard` and pass `false` in creator's own portfolio grid on `UserProfileScreen.kt`.
+2.  **Attribution Scoping & Social Assist Chips (Unsplash Guard):**
+    *   Add `showAttribution: Boolean = true` parameter to `PhotoCard` and `PortfolioTabContent`.
+    *   Pass `false` in creator's own portfolio grid (`ProfileTab.PORTFOLIO`) on `UserProfileScreen.kt`, while strictly keeping `showAttribution = true` on `ProfileTab.LIKES` (`likedPhotos`) to comply with Unsplash API terms.
     *   Convert custom uppercase social badges (`"INSTAGRAM: @..."`) to compact Material 3 `AssistChip`s with leading icons.
 3.  **Icon Semantic Alignment & Header Streamlining:**
     *   Remove redundant Search action icon from Feed top bar in `FeedScreen.kt`; migrate title to collapsible `headlineMedium`.
@@ -806,34 +810,35 @@ These are the spec files that the implementation notes and planning references s
 4.  **Reference Specification:**
     *   Track blueprint in `specs/53_android_material3_expressive_core_friction_fixes.md`.
 
-### Step 56: Android Material 3 Expressive Photo Details & Content-Driven Dynamic Theming (Proposed)
+### Step 54: Android Material 3 Expressive Photo Details & Content-Driven Dynamic Theming (Proposed)
 1.  **Lightweight Native Dynamic Tonal Generation:**
     *   Implement `generatePhotoColorScheme` in `Theme.kt` seeded from Unsplash `photo.color` using native HSL/tonal calculations (zero external dependencies).
     *   Scope `PhotoDetailsScreen.kt` with dynamic `ColorScheme` tinting surface containers, chips, and button accents.
 2.  **Visual EXIF 2x2 Bento Box Grid:**
-    *   Reconstruct camera and lens metadata into a 2x2 mini-bento grid with micro-icons (Aperture, Shutter, Focal Length, ISO) in `SurfaceContainerLow` containers.
+    *   Reconstruct camera and lens metadata into a 2x2 mini-bento grid with micro-icons (Aperture, Shutter/`exposureTime`, Focal Length/`focalLength`, ISO) in `SurfaceContainerLow` containers.
 3.  **Interactive Color Palette Swatches & Floating Action Bar:**
     *   Render interactive 5-swatch color palette row derived from photo seed color with tap-to-copy hex and haptics.
-    *   Anchor primary download action into a floating bottom action toolbar (Download RAW/Full, Like, Share) with Unsplash download tracking.
+    *   Anchor primary download action into a floating bottom action toolbar (Download RAW/Full, Share) with Unsplash download tracking (`TrackDownload`). Anchor inside details sheet on wide-screen dual-pane layouts.
 4.  **Glowing Bezier Analytics Curve:**
-    *   Upgrade views chart to smooth cubic Bezier path (`Path.cubicTo`) with multi-stop area gradient fill and min/max reference bounds.
+    *   Upgrade views chart to smooth cubic Bezier path (`Path.cubicTo`) with multi-stop area gradient fill and min/max reference bounds, bound to `state.stats`.
 5.  **Reference Specification:**
     *   Track blueprint in `specs/54_android_material3_expressive_photo_details_and_dynamic_theming.md`.
 
-### Step 57: Android Material 3 Expressive Floating Navigation Chrome & Bento Discovery (Proposed)
+### Step 55: Android Material 3 Expressive Floating Navigation Chrome & Bento Discovery (Proposed)
 1.  **Floating Translucent Pill Navigation Bar:**
     *   Replace docked `NavigationBar` on phones in `MainActivity.kt` with a floating pill container (`height = 68.dp`, `shape = CircleShape`, `SurfaceContainerHigh` at ~88% alpha, subtle gradient border).
     *   Configure edge-to-edge content underlay with compensatory bottom padding so photography scrolls visibly underneath.
     *   Preserve start-docked `NavigationRail` for tablets and foldables (`AdaptiveLayoutInfo.kt`).
 2.  **Curated Collections Proportional Bento Previews:**
-    *   Formalize collection preview card to `1.4f` aspect ratio (62% hero, 38% stacked pair) with 28dp squircle corners in `CollectionsFeedScreen.kt`.
-    *   Upgrade Trending Topics text chips to visual image capsules with dark scrims.
-3.  **Search by Color Exploration Dial:**
-    *   Implement horizontal color dot selector in `SearchScreen.kt` connecting directly to Unsplash API color filter parameter.
+    *   Formalize collection preview card to `1.4f` aspect ratio (62% hero, 38% stacked pair) with 28dp squircle corners in `CollectionsFeedScreen.kt`, preserving Coil 3 BlurHash caching.
+    *   Upgrade category topic tabs in `FeedScreen.kt` to visual image capsules with dark scrims.
+3.  **Dark Photographic Gradient Suggestions & Color Exploration Dial:**
+    *   Upgrade search suggestions in `SearchScreen.kt` to rich dark photographic gradient cards with bold typography.
+    *   Implement horizontal color dot selector in `SearchScreen.kt` dispatching `UnifiedSearchIntent.SelectColor(color)`.
 4.  **Reference Specification:**
     *   Track blueprint in `specs/55_android_material3_expressive_floating_navigation_and_bento_discovery.md`.
 
-### Step 58: iOS Glass Contrast, Navigation Chrome & Legibility Fixes (Proposed)
+### Step 56: iOS Glass Contrast, Navigation Chrome & Legibility Fixes (Proposed)
 1.  **Search Screen & Tab Bar Contrast Fixes:**
     *   Update `SearchSuggestionsView` in `SearchView.swift` to ensure popular topic pills have crisp, high-contrast labels across Light and Dark modes.
     *   Fix Tab Bar wash-out by removing hardcoded white tinting on light backgrounds in `ContentView.swift`.
@@ -845,9 +850,9 @@ These are the spec files that the implementation notes and planning references s
 4.  **Reference Specification:**
     *   Track blueprint in `specs/56_ios_glass_contrast_and_navigation_chrome_fixes.md`.
 
-### Step 59: iOS Immersive Photo Detail Canvas & Interactive Sparkline (Proposed)
+### Step 57: iOS Immersive Photo Detail Canvas & Interactive Sparkline (Proposed)
 1.  **Ambient Backdrop Layer:**
-    *   Implement full-bleed ambient blurred backdrop using downsampled photo with dark scrim on `PhotoDetailsView.swift`, eliminating top white void.
+    *   Implement full-bleed ambient blurred backdrop using downsampled photo with dark scrim on `PhotoDetailsView.swift`, eliminating top white void and providing contrast for Spec 52's promoted top overlay buttons.
 2.  **Interactive Views Sparkline Scrubbing:**
     *   Add touch gesture dragging, closest-date mapping, glowing `PointMark` indicator, and haptic feedback to `HistoricalStatsChart`.
 3.  **Tactile Glass Orbs for Action Buttons:**
@@ -855,11 +860,13 @@ These are the spec files that the implementation notes and planning references s
 4.  **Reference Specification:**
     *   Track blueprint in `specs/57_ios_immersive_photo_detail_and_interactive_sparkline.md`.
 
-### Step 60: iOS Floating Glass Tab Capsule & Profile Refinements (Proposed)
-1.  **Floating Specular Glass Tab Capsule:**
+### Step 58: iOS Floating Glass Tab Capsule & Profile Refinements (Proposed)
+1.  **Floating Specular Glass Tab Capsule & Navigation Suppression:**
     *   Implement `FloatingTabCapsule` with sliding indicator (`matchedGeometryEffect`), spring physics, and `.regularMaterial` glass.
-2.  **Profile Social Chips & Search Topic Cards:**
+    *   Suppress `FloatingTabCapsule` when navigation path is not empty (`path.isEmpty == false`) so it never hovers over pushed child screens.
+2.  **Profile Social Chips & Tab Picker Wrapping Fix:**
     *   Convert verbose text buttons in `UserProfileView.swift` to compact icon-led glass chips.
+    *   Refactor `ProfileTabPicker` to eliminate label truncation on compact iPhone viewports.
     *   Upgrade popular search topics into visual cards with bold typography.
 3.  **Reference Specification:**
     *   Track blueprint in `specs/58_ios_floating_glass_capsule_and_profile_refinements.md`.

@@ -19,7 +19,7 @@ In [`PhotoDetailsView.swift`](file:///Users/davidtiagoconceicao/Developer/image-
 * When the detented sheet is partially collapsed (detent `.fraction(0.35)`), the photo sits in the center, creating an uninspired white void in the upper portion of the viewport.
 * **Solution**:
   * Layer a full-bleed background image using a downsampled photo URL (`photo.urls.small` or `thumb`) with `.scaleEffect(1.3)`, `.blur(radius: 60)`, and `Color.black.opacity(0.35)`.
-  * This guarantees photographic continuity, eliminates the empty white space, provides contrast for top navigation buttons, and avoids GPU fill-rate penalties.
+  * This guarantees photographic continuity, eliminates the empty white space, provides contrast for the top overlay navigation buttons promoted in Spec 52 (`chevron.left` and `info.circle`), and avoids GPU fill-rate penalties.
 
 ### 2. Interactive Historical Views Sparkline
 In [`PhotoDetailsView.swift`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/iosApp/iosApp/PhotoDetailsView.swift#L715-L742):

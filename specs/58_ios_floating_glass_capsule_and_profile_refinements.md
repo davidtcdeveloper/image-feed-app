@@ -13,25 +13,31 @@ This specification details the visionOS-inspired floating tab capsule and profil
 
 ## Technical Root Cause & Design Solution
 
-### 1. visionOS Floating Specular Glass Tab Capsule
+### 1. visionOS Floating Specular Glass Tab Capsule & Navigation Suppression
 In [`ContentView.swift`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/iosApp/iosApp/ContentView.swift):
 * Currently relies on standard `TabView` with `UITabBarAppearance`.
 * A photography application benefits significantly from full-bleed content extending down to the bottom home indicator edge, with chrome floating cleanly above.
-* **Solution**:
+* **Navigation Suppression on Pushed Screens**:
+  * In SwiftUI, `.toolbar(.hidden, for: .tabBar)` only hides the native `UITabBar`; it **does not** hide custom floating overlays.
+  * `PhotosFeedTabView` and `CollectionsFeedTabView` manage their own navigation stacks (`path: NavigationPath`).
+  * `FloatingTabCapsule` must be suppressed (hidden via opacity/transition or conditional rendering) whenever `path.isEmpty == false` or when a sheet/search is actively presented, ensuring it never hovers over pushed screens ([`UserProfileView`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/iosApp/iosApp/UserProfileView.swift), [`CollectionDetailView`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/iosApp/iosApp/CollectionDetailView.swift), [`SearchView`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/iosApp/iosApp/SearchView.swift)).
+* **Design & Geometry**:
   * Build `FloatingTabCapsule` with `Photos` and `Collections` options.
   * Use `.regularMaterial` with `LinearGradient` specular border (`white.opacity(0.40)` to `white.opacity(0.05)`).
   * Animate active tab indicator via `matchedGeometryEffect(id: "ActiveTabIndicator", in: animation)` with a responsive spring (`response: 0.35, dampingFraction: 0.75`).
   * Ensure Dynamic Type and VoiceOver accessibility remain fully functional.
 
-### 2. Profile Social Chips Modernization
-In [`UserProfileView.swift`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/iosApp/iosApp/UserProfileView.swift#L223-L239):
-* `SocialButton` outputs verbose labels (`"INSTAGRAM: @..."`) causing horizontal overflow and mid-text wrapping on smaller screens.
+### 2. Profile Social Chips & Tab Picker Wrapping
+In [`UserProfileView.swift`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/iosApp/iosApp/UserProfileView.swift#L223-L282):
+* `SocialButton` (lines 223–239) outputs verbose labels (`"INSTAGRAM: @..."`) causing horizontal overflow and mid-text wrapping on smaller screens.
+* `ProfileTabPicker` (lines 241–282) divides width across 4 fixed columns (`HStack(spacing: 0)`), causing labels like `"COLLECTIONS (6)"` to truncate on compact iPhone viewports (e.g. SE / 13 mini).
 * **Solution**:
-  * Transform into icon-led chips:
+  * Transform social links into icon-led chips:
     * Instagram: SF Symbol `camera` or custom glyph with `@handle`
     * Twitter/X: SF Symbol `bubble.left` with `@handle`
     * Website: SF Symbol `globe` with `"Website"`
-  * Encase in a compact glass capsule.
+    * Encase in a compact glass capsule.
+  * Refactor `ProfileTabPicker` to support horizontal scrolling (`ScrollView(.horizontal, showsIndicators: false)`) with decoupled count badges, matching the Material 3 fix in Android Spec 53.
 
 ### 3. Visual Search Topic Cards
 In [`SearchView.swift`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/iosApp/iosApp/SearchView.swift):
@@ -50,6 +56,8 @@ In [`SearchView.swift`](file:///Users/davidtiagoconceicao/Developer/image-feed-a
 
 ## Acceptance Criteria
 - [ ] Floating glass tab capsule floats above full-bleed content with smooth sliding indicator animation.
+- [ ] Floating tab capsule automatically hides when child views are pushed (`path.isEmpty == false`), preventing overlap on detail screens.
 - [ ] Tab switching triggers light sensory feedback.
 - [ ] User profile social links render as compact, icon-led glass chips without text wrapping.
+- [ ] User profile tab picker eliminates label truncation on compact iOS viewports.
 - [ ] Popular topics in Search feature visual cards with bold typography.

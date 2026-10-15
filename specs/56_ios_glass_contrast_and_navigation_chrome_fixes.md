@@ -32,7 +32,7 @@ Across:
 * [`CollectionsFeedView.swift`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/iosApp/iosApp/CollectionsFeedView.swift#L129-L131)
 * [`SearchView.swift`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/iosApp/iosApp/SearchView.swift#L227-L229)
 * [`UserProfileView.swift`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/iosApp/iosApp/UserProfileView.swift#L101-L103)
-* [`CollectionDetailView.swift`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/iosApp/iosApp/CollectionDetailView.swift#L243-L245)
+* [`CollectionDetailView.swift`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/iosApp/iosApp/CollectionDetailView.swift#L247)
 * Each screen attaches `.toolbarColorScheme(.dark, for: .navigationBar)` regardless of system color scheme. Over a light background, this forces Apple's material shader to render dark gray chrome rather than natural glass.
 * **Fix**: Remove forced `.toolbarColorScheme(.dark, for: .navigationBar)` so navigation bars dynamically adapt to system Light/Dark appearance and let photography scroll naturally underneath.
 
