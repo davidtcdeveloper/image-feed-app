@@ -1,5 +1,6 @@
 package com.example.imagefeed.android.theme
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -10,6 +11,7 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 
+@SuppressLint("NewApi")
 fun resolveColorScheme(
     darkTheme: Boolean,
     dynamicColor: Boolean,

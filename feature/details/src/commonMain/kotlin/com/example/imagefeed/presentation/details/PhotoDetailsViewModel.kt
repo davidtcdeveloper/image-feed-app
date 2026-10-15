@@ -1,9 +1,10 @@
 package com.example.imagefeed.presentation.details
 
 import androidx.lifecycle.viewModelScope
+import com.example.imagefeed.core.network.PhotoDownloadTracker
+import com.example.imagefeed.details.data.PhotoDetailsRepository
 import com.example.imagefeed.model.Photo
 import com.example.imagefeed.presentation.mvi.MviViewModel
-import com.example.imagefeed.repository.UnsplashRepository
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
 import dev.zacsweers.metro.AssistedInject
@@ -13,8 +14,9 @@ import kotlinx.coroutines.launch
 
 @AssistedInject
 class PhotoDetailsViewModel(
-    private val repository: UnsplashRepository,
     @Assisted private val photoId: String,
+    private val repository: PhotoDetailsRepository,
+    private val downloadTracker: PhotoDownloadTracker,
 ) : MviViewModel<PhotoDetailsState, PhotoDetailsIntent, PhotoDetailsEffect>(PhotoDetailsState()) {
     @AssistedFactory
     interface Factory {
@@ -68,7 +70,7 @@ class PhotoDetailsViewModel(
 
     private fun trackDownload(photo: Photo) {
         viewModelScope.launch {
-            repository.trackDownload(photo.links.downloadLocation)
+            downloadTracker.trackDownload(photo.links.downloadLocation)
         }
     }
 

@@ -717,7 +717,7 @@ These are the spec files that the implementation notes and planning references s
 4.  **Reference Specification & Research:**
     *   Track blueprint in `specs/46_modularization_foundation_core_extraction.md` and `specs/researches/modularization_evaluation.md`.
 
-### Step 49: Modularization Phase 2 - Pilot Feature Migration (`:feature:details`)
+### Step 49: Modularization Phase 2 - Pilot Feature Migration (`:feature:details`) (Completed)
 1.  **Scaffold Feature Module:**
     *   Register `:feature:details` in `settings.gradle.kts` and configure `build.gradle.kts` with Metro compiler plugin and dependencies on `:core:model`, `:core:mvi`, and `:core:network`.
 2.  **Migrate Photo Details Vertical Slice:**

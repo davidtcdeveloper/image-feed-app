@@ -4,6 +4,7 @@ import com.example.imagefeed.api.UnsplashApiClient
 import com.example.imagefeed.core.network.KtorPhotoDownloadTracker
 import com.example.imagefeed.core.network.PhotoDownloadTracker
 import com.example.imagefeed.core.network.createUnsplashHttpClient
+import com.example.imagefeed.details.di.PhotoDetailsModule
 import com.example.imagefeed.presentation.collection.CollectionDetailViewModel
 import com.example.imagefeed.presentation.collections.CollectionsFeedViewModel
 import com.example.imagefeed.presentation.details.PhotoDetailsViewModel
@@ -47,7 +48,7 @@ object AppModule {
 }
 
 @SingleIn(AppScope::class)
-@DependencyGraph(scope = AppScope::class, bindingContainers = [AppModule::class])
+@DependencyGraph(scope = AppScope::class, bindingContainers = [AppModule::class, PhotoDetailsModule::class])
 interface ApplicationGraph {
     val httpClient: HttpClient
     val photoDownloadTracker: PhotoDownloadTracker

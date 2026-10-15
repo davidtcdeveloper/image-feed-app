@@ -1,6 +1,6 @@
 # Specification 47: Modularization Phase 2 - Pilot Feature Migration (`:feature:details`)
 
-**Status:** Approved
+**Status:** Implemented
 
 ## 1. Overview & Problem Statement
 
@@ -63,7 +63,7 @@ graph TD
 
 #### 1. Presentation
 Move the following files from `shared/src/commonMain/kotlin/com/example/imagefeed/presentation/details/` to `feature/details/src/commonMain/kotlin/com/example/imagefeed/presentation/details/`:
-- [`PhotoDetailsViewModel.kt`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/src/commonMain/kotlin/com/example/imagefeed/presentation/details/PhotoDetailsViewModel.kt)
+- [`PhotoDetailsViewModel.kt`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/feature/details/src/commonMain/kotlin/com/example/imagefeed/presentation/details/PhotoDetailsViewModel.kt)
 - `PhotoDetailsState.kt`
 - `PhotoDetailsIntent.kt`
 - `PhotoDetailsEffect.kt`
@@ -86,7 +86,7 @@ Move the following files from `shared/src/commonMain/kotlin/com/example/imagefee
 - `PhotoDetailsViewModel` injects `PhotoDownloadTracker` (from `:core:network`), delegating `trackDownload` directly rather than routing through a generic domain repository.
 
 #### 5. Lean Unit Test Harness
-- Relocate and modernize unit tests from [`shared/src/commonTest/kotlin/com/example/imagefeed/presentation/details/PhotoDetailsViewModelTest.kt`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/src/commonTest/kotlin/com/example/imagefeed/presentation/details/PhotoDetailsViewModelTest.kt) to `feature/details/src/commonTest/kotlin/com/example/imagefeed/presentation/details/PhotoDetailsViewModelTest.kt`.
+- Relocate and modernize unit tests to [`feature/details/src/commonTest/kotlin/com/example/imagefeed/presentation/details/PhotoDetailsViewModelTest.kt`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/feature/details/src/commonTest/kotlin/com/example/imagefeed/presentation/details/PhotoDetailsViewModelTest.kt).
 - Replace the fragile 17-method `FakeUnsplashRepository` with a concise, targeted `FakePhotoDetailsRepository` implementing only `getPhotoDetails` and `getPhotoStats`.
 
 ### C. Metro Compile-Time DI Across Module Boundaries
@@ -133,27 +133,27 @@ To allow Swift views (`PhotoDetailsViewModel.swift`, `PhotoDetailsView.swift`) t
 
 ## 3. Implementation Steps
 
-- [ ] **Step 1: Create `:feature:details` Gradle Module**
+- [x] **Step 1: Create `:feature:details` Gradle Module**
   - Add `include(":feature:details")` to `settings.gradle.kts`.
   - Author `feature/details/build.gradle.kts` targeting Android (namespace `com.example.imagefeed.feature.details`), iOS, and macOS with Metro plugin and dependencies on `:core:model`, `:core:mvi`, and `:core:network`.
-- [ ] **Step 2: Migrate Feature Domain Models**
+- [x] **Step 2: Migrate Feature Domain Models**
   - Relocate `PhotoStats`, `StatMetric`, `HistoricalStats`, and `StatsValue` from `Photo.kt` to `feature/details/src/commonMain/kotlin/com/example/imagefeed/details/model/PhotoStats.kt`.
-- [ ] **Step 3: Extract Feature Data Layer & Download Tracker Integration**
+- [x] **Step 3: Extract Feature Data Layer & Download Tracker Integration**
   - Create `PhotoDetailsRepository` interface and `internal class PhotoDetailsRepositoryImpl`.
   - Create `internal class PhotoDetailsApiClient` encapsulating photo details and statistics HTTP calls.
   - Wire `PhotoDownloadTracker` from `:core:network` for download tracking triggers.
-- [ ] **Step 4: Migrate Presentation & Modernize Test Harness**
+- [x] **Step 4: Migrate Presentation & Modernize Test Harness**
   - Relocate `PhotoDetailsViewModel`, state, intent, and effect classes from `:shared` to `:feature:details`.
-  - Relocate unit tests from [`shared/src/commonTest/kotlin/com/example/imagefeed/presentation/details/PhotoDetailsViewModelTest.kt`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/src/commonTest/kotlin/com/example/imagefeed/presentation/details/PhotoDetailsViewModelTest.kt) to `feature/details/src/commonTest/kotlin/com/example/imagefeed/presentation/details/PhotoDetailsViewModelTest.kt`.
+  - Relocate unit tests to [`feature/details/src/commonTest/kotlin/com/example/imagefeed/presentation/details/PhotoDetailsViewModelTest.kt`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/feature/details/src/commonTest/kotlin/com/example/imagefeed/presentation/details/PhotoDetailsViewModelTest.kt).
   - Replace the 17-method `FakeUnsplashRepository` in tests with a lean, 2-method `FakePhotoDetailsRepository`.
-- [ ] **Step 5: Configure `:shared` Umbrella and Metro Wiring**
+- [x] **Step 5: Configure `:shared` Umbrella and Metro Wiring**
   - Add `:feature:details` dependency to `:shared/build.gradle.kts` with `api` scope.
   - Re-export `:feature:details` in Apple framework binaries.
   - Verify Metro graph generation in `:shared` resolves `PhotoDetailsViewModel.Factory` without warnings.
-- [ ] **Step 6: Platform UI Shell Verification**
+- [x] **Step 6: Platform UI Shell Verification**
   - Verify Android Compose navigation: `PhotoDetailsScreen` receives ViewModel from `MetroHelper.getPhotoDetailsViewModel(photoId)`.
   - Verify Swift wrapper: `PhotoDetailsViewModel.swift` compiles and observes `iosState` and `iosEffects` from the re-exported framework.
-- [ ] **Step 7: Test Execution & Linting**
+- [x] **Step 7: Test Execution & Linting**
   - Run `./gradlew :feature:details:allTests`.
   - Verify dual-platform compilation:
     - Android: `./gradlew :androidApp:assembleDebug`
@@ -164,10 +164,10 @@ To allow Swift views (`PhotoDetailsViewModel.swift`, `PhotoDetailsView.swift`) t
 
 ## 4. Acceptance Criteria
 
-- [ ] `:feature:details` is an independent Gradle module vertically owning its presentation, repository, API client, and domain model (`PhotoStats`), configured with Android namespace `com.example.imagefeed.feature.details`.
-- [ ] Centralized `:core:data` is bypassed; `:feature:details` depends only on `:core:model`, `:core:mvi`, and `:core:network`.
-- [ ] Monolithic test fakes are eliminated in favor of a lean `FakePhotoDetailsRepository`.
-- [ ] Metro successfully generates assisted injection factories across module boundaries with clean container visibility.
-- [ ] `:shared` exports `PhotoDetailsViewModel` cleanly into the Apple framework without breaking Swift code.
-- [ ] Dual-pane view on Android and detented inspector sheet on iOS function identically to baseline.
-- [ ] All unit tests pass under `:feature:details:allTests`.
+- [x] `:feature:details` is an independent Gradle module vertically owning its presentation, repository, API client, and domain model (`PhotoStats`), configured with Android namespace `com.example.imagefeed.feature.details`.
+- [x] Centralized `:core:data` is bypassed; `:feature:details` depends only on `:core:model`, `:core:mvi`, and `:core:network`.
+- [x] Monolithic test fakes are eliminated in favor of a lean `FakePhotoDetailsRepository`.
+- [x] Metro successfully generates assisted injection factories across module boundaries with clean container visibility.
+- [x] `:shared` exports `PhotoDetailsViewModel` cleanly into the Apple framework without breaking Swift code.
+- [x] Dual-pane view on Android and detented inspector sheet on iOS function identically to baseline.
+- [x] All unit tests pass under `:feature:details:allTests`.

@@ -18,6 +18,7 @@ rootProject.name = "image-feed-app"
 include(":core:model")
 include(":core:mvi")
 include(":core:network")
+include(":feature:details")
 include(":shared")
 include(":androidApp")
 

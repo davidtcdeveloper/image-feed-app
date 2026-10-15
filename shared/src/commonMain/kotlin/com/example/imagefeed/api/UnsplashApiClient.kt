@@ -1,9 +1,9 @@
 package com.example.imagefeed.api
 
+import com.example.imagefeed.details.model.PhotoStats
 import com.example.imagefeed.model.CollectionSummary
 import com.example.imagefeed.model.Photo
 import com.example.imagefeed.model.PhotoCollection
-import com.example.imagefeed.model.PhotoStats
 import com.example.imagefeed.model.SearchResponse
 import com.example.imagefeed.model.Topic
 import com.example.imagefeed.model.User

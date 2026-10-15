@@ -1,32 +1,6 @@
 package com.example.imagefeed.model
 
-import kotlinx.serialization.Serializable
-
-@Serializable
-data class StatsValue(
-    val date: String,
-    val value: Int,
-)
-
-@Serializable
-data class HistoricalStats(
-    val change: Int? = null,
-    val average: Int? = null,
-    val resolution: String? = null,
-    val quantity: Int? = null,
-    val values: List<StatsValue> = emptyList(),
-)
-
-@Serializable
-data class StatMetric(
-    val total: Int,
-    val historical: HistoricalStats? = null,
-)
-
-@Serializable
-data class PhotoStats(
-    val id: String,
-    val downloads: StatMetric,
-    val views: StatMetric,
-    val likes: StatMetric? = null,
-)
+typealias StatsValue = com.example.imagefeed.details.model.StatsValue
+typealias HistoricalStats = com.example.imagefeed.details.model.HistoricalStats
+typealias StatMetric = com.example.imagefeed.details.model.StatMetric
+typealias PhotoStats = com.example.imagefeed.details.model.PhotoStats

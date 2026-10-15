@@ -545,7 +545,7 @@ graph TD
 #### 2. Vertical Feature Modules
 Each feature module encapsulates its entire vertical slice:
 - **`:feature:details`**:
-  - **Presentation**: [`PhotoDetailsViewModel`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/src/commonMain/kotlin/com/example/imagefeed/presentation/details/PhotoDetailsViewModel.kt), `PhotoDetailsState`, `PhotoDetailsIntent`, `PhotoDetailsEffect`.
+  - **Presentation**: [`PhotoDetailsViewModel`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/feature/details/src/commonMain/kotlin/com/example/imagefeed/presentation/details/PhotoDetailsViewModel.kt), `PhotoDetailsState`, `PhotoDetailsIntent`, `PhotoDetailsEffect`.
   - **Data / Domain**: `PhotoDetailsRepository` contract, `internal class PhotoDetailsRepositoryImpl`, `internal class PhotoDetailsApiClient`.
   - **Feature Models**: `PhotoStats`, `StatMetric`, `HistoricalStats`, `StatsValue`.
   - **Testing**: `FakePhotoDetailsRepository` in `commonTest`.

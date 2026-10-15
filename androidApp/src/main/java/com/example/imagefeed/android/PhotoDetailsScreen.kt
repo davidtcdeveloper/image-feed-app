@@ -95,9 +95,9 @@ import com.example.imagefeed.android.util.BLURHASH_PLACEHOLDER_MAX_HEIGHT
 import com.example.imagefeed.android.util.BLURHASH_PLACEHOLDER_MIN_HEIGHT
 import com.example.imagefeed.android.util.BLURHASH_PLACEHOLDER_WIDTH
 import com.example.imagefeed.android.util.rememberBlurHashPlaceholder
+import com.example.imagefeed.details.model.PhotoStats
 import com.example.imagefeed.di.MetroHelper
 import com.example.imagefeed.model.Photo
-import com.example.imagefeed.model.PhotoStats
 import com.example.imagefeed.presentation.details.PhotoDetailsEffect
 import com.example.imagefeed.presentation.details.PhotoDetailsIntent
 import com.example.imagefeed.presentation.details.PhotoDetailsState
@@ -1000,7 +1000,7 @@ fun PhotoInspectorPane(
                                         ),
                                 ) {
                                     Marker(
-                                        state = MarkerState(position = positionLatLng),
+                                        state = remember(positionLatLng) { MarkerState(position = positionLatLng) },
                                         title = location.name ?: "Captured Location",
                                     )
                                 }

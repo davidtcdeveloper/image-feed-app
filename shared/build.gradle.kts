@@ -28,6 +28,7 @@ kotlin {
             isStatic = true
             export(project(":core:model"))
             export(project(":core:mvi"))
+            export(project(":feature:details"))
         }
     }
 
@@ -36,6 +37,7 @@ kotlin {
             api(project(":core:model"))
             api(project(":core:mvi"))
             api(project(":core:network"))
+            api(project(":feature:details"))
 
             // Lifecycle ViewModel (KMP)
             implementation(libs.androidx.lifecycle.viewmodel)
