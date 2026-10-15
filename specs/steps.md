@@ -85,6 +85,9 @@ The `specs/` folder currently contains the following implementation and design d
 *   `specs/50_image_pipeline_and_blurhash_caching.md`
 *   `specs/51_lazy_grid_motion_and_scroll_optimization.md`
 *   `specs/52_macos_title_and_ios_sheet_navigation_fixes.md`
+*   `specs/53_android_material3_expressive_core_friction_fixes.md`
+*   `specs/54_android_material3_expressive_photo_details_and_dynamic_theming.md`
+*   `specs/55_android_material3_expressive_floating_navigation_and_bento_discovery.md`
 *   `specs/researches/modularization_evaluation.md`
 *   `specs/implementation_plan.md`
 *   `specs/steps.md`
@@ -756,7 +759,7 @@ These are the spec files that the implementation notes and planning references s
 3.  **Reference Specification & Research:**
     *   Track blueprint in `specs/49_modularization_umbrella_and_linking_optimization.md` and `specs/researches/modularization_evaluation.md`.
 
-### Step 52: Android Image Pipeline & BlurHash Decoding Cache
+### Step 52: Android Image Pipeline & BlurHash Decoding Cache (Completed)
 1.  **Coil 3 Application ImageLoader Configuration:**
     *   Implement `SingletonImageLoader.Factory` in `ImageFeedApplication.kt`.
     *   Configure `MemoryCache` with 25% heap sizing and strong reference caching.
@@ -788,6 +791,48 @@ These are the spec files that the implementation notes and planning references s
     *   Hide navigation bar chrome on iOS via `.toolbar(.hidden, for: .navigationBar)` and add empty `.navigationTitle("")` in `PhotoDetailsView.swift` to prevent background bar from overlapping bottom sheet and stealing gestures.
 3.  **Reference Specification:**
     *   Track blueprint in `specs/52_macos_title_and_ios_sheet_navigation_fixes.md`.
+
+### Step 55: Android Material 3 Expressive Core Friction Fixes & Screen Hygiene (Proposed)
+1.  **Profile Tab Row Wrapping Fix & Morphing Badges:**
+    *   Replace fixed 4-slot `SecondaryTabRow` with horizontally scrollable `LazyRow` pill chips and inline count `Badge`s in `UserProfileScreen.kt`.
+    *   Eliminate mid-word text wrapping like `"COLLECTIO / NS (6)"` across dynamic font scales.
+2.  **Attribution Scoping & Social Assist Chips:**
+    *   Add `showAttribution: Boolean = true` parameter to `PhotoCard` and pass `false` in creator's own portfolio grid on `UserProfileScreen.kt`.
+    *   Convert custom uppercase social badges (`"INSTAGRAM: @..."`) to compact Material 3 `AssistChip`s with leading icons.
+3.  **Icon Semantic Alignment & Header Streamlining:**
+    *   Remove redundant Search action icon from Feed top bar in `FeedScreen.kt`; migrate title to collapsible `headlineMedium`.
+    *   Replace confusing stats icons in `PhotoDetailsScreen.kt` (`Icons.Default.Info` -> `Icons.Default.Visibility`, `Icons.Default.PlayArrow` -> `Icons.Default.FileDownload`).
+    *   Replace download CTA icon (`Icons.Default.Done` -> `Icons.Default.Download`).
+4.  **Reference Specification:**
+    *   Track blueprint in `specs/53_android_material3_expressive_core_friction_fixes.md`.
+
+### Step 56: Android Material 3 Expressive Photo Details & Content-Driven Dynamic Theming (Proposed)
+1.  **Lightweight Native Dynamic Tonal Generation:**
+    *   Implement `generatePhotoColorScheme` in `Theme.kt` seeded from Unsplash `photo.color` using native HSL/tonal calculations (zero external dependencies).
+    *   Scope `PhotoDetailsScreen.kt` with dynamic `ColorScheme` tinting surface containers, chips, and button accents.
+2.  **Visual EXIF 2x2 Bento Box Grid:**
+    *   Reconstruct camera and lens metadata into a 2x2 mini-bento grid with micro-icons (Aperture, Shutter, Focal Length, ISO) in `SurfaceContainerLow` containers.
+3.  **Interactive Color Palette Swatches & Floating Action Bar:**
+    *   Render interactive 5-swatch color palette row derived from photo seed color with tap-to-copy hex and haptics.
+    *   Anchor primary download action into a floating bottom action toolbar (Download RAW/Full, Like, Share) with Unsplash download tracking.
+4.  **Glowing Bezier Analytics Curve:**
+    *   Upgrade views chart to smooth cubic Bezier path (`Path.cubicTo`) with multi-stop area gradient fill and min/max reference bounds.
+5.  **Reference Specification:**
+    *   Track blueprint in `specs/54_android_material3_expressive_photo_details_and_dynamic_theming.md`.
+
+### Step 57: Android Material 3 Expressive Floating Navigation Chrome & Bento Discovery (Proposed)
+1.  **Floating Translucent Pill Navigation Bar:**
+    *   Replace docked `NavigationBar` on phones in `MainActivity.kt` with a floating pill container (`height = 68.dp`, `shape = CircleShape`, `SurfaceContainerHigh` at ~88% alpha, subtle gradient border).
+    *   Configure edge-to-edge content underlay with compensatory bottom padding so photography scrolls visibly underneath.
+    *   Preserve start-docked `NavigationRail` for tablets and foldables (`AdaptiveLayoutInfo.kt`).
+2.  **Curated Collections Proportional Bento Previews:**
+    *   Formalize collection preview card to `1.4f` aspect ratio (62% hero, 38% stacked pair) with 28dp squircle corners in `CollectionsFeedScreen.kt`.
+    *   Upgrade Trending Topics text chips to visual image capsules with dark scrims.
+3.  **Search by Color Exploration Dial:**
+    *   Implement horizontal color dot selector in `SearchScreen.kt` connecting directly to Unsplash API color filter parameter.
+4.  **Reference Specification:**
+    *   Track blueprint in `specs/55_android_material3_expressive_floating_navigation_and_bento_discovery.md`.
+
 
 
 
