@@ -91,6 +91,7 @@ The `specs/` folder currently contains the following implementation and design d
 *   `specs/56_ios_glass_contrast_and_navigation_chrome_fixes.md`
 *   `specs/57_ios_immersive_photo_detail_and_interactive_sparkline.md`
 *   `specs/58_ios_floating_glass_capsule_and_profile_refinements.md`
+*   `specs/59_cross_platform_localization_architecture.md`
 *   `specs/researches/modularization_evaluation.md`
 *   `specs/implementation_plan.md`
 *   `specs/steps.md`
@@ -810,7 +811,7 @@ These are the spec files that the implementation notes and planning references s
 4.  **Reference Specification:**
     *   Track blueprint in `specs/53_android_material3_expressive_core_friction_fixes.md`.
 
-### Step 54: Android Material 3 Expressive Photo Details & Content-Driven Dynamic Theming (Proposed)
+### Step 54: Android Material 3 Expressive Photo Details & Content-Driven Dynamic Theming (Completed)
 1.  **Lightweight Native Dynamic Tonal Generation:**
     *   Implement `generatePhotoColorScheme` in `Theme.kt` seeded from Unsplash `photo.color` using native HSL/tonal calculations (zero external dependencies).
     *   Scope `PhotoDetailsScreen.kt` with dynamic `ColorScheme` tinting surface containers, chips, and button accents.
@@ -871,7 +872,23 @@ These are the spec files that the implementation notes and planning references s
 3.  **Reference Specification:**
     *   Track blueprint in `specs/58_ios_floating_glass_capsule_and_profile_refinements.md`.
 
-
-
-
-
+### Step 59: Cross-Platform Localization Architecture (Phase 1: English Extraction & Foundation) (Proposed)
+1.  **Shared Domain Error Modeling & ViewModel Decoupling:**
+    *   Define `sealed class AppError` in `:core:model` (or `:core:mvi`) and central exception mapper `Throwable.toAppError()` in `:core:network`.
+    *   Refactor all 7 KMP feature ViewModels (`FeedViewModel`, `CollectionsFeedViewModel`, `CollectionDetailViewModel`, `UnifiedSearchViewModel`, `PhotoDetailsViewModel`, `UserProfileViewModel`, `RandomPhotoViewModel`) to emit typed `AppError` in state and effect flows instead of hardcoded English fallback strings.
+    *   Purge hardcoded mock search terms from default `SearchState.searchHistory`.
+    *   Update `commonTest` suites to assert typed `AppError` instances with 100% test pass rate (`./gradlew allTests`).
+2.  **Android Resource Architecture (`:androidApp`):**
+    *   Create `res/values/strings.xml` and `res/values/plurals.xml` covering the unified 85-key catalog.
+    *   Replace hardcoded literals across all Compose screens with `stringResource()` and `pluralStringResource()`.
+    *   Replace `formatStatValue` in `PhotoDetailsScreen.kt` with Android ICU `CompactDecimalFormat` (API 29+ safe, avoiding API 34 crash).
+    *   Format sparkline timeline dates using `java.time.LocalDate` and localized `FormatStyle.MEDIUM`.
+    *   Localize Toast errors in `MainActivity.kt` on device shake.
+3.  **Apple Platforms Architecture (`:iosApp` & `macosApp`):**
+    *   Configure `iosApp/project.yml` with `developmentLanguage: en` and `knownRegions: [en]`.
+    *   Create `iosApp/iosApp/Localizable.xcstrings` String Catalog with all 85 keys and plural format variations.
+    *   Implement Swift extension on `shared.AppError` for localized string resolution.
+    *   Adopt native Swift Foundation metric formatting (`.formatted(.number.notation(.compactName))`) and date formatting (`ISO8601DateFormatter`).
+    *   Replace hardcoded `chevron.left` back buttons with auto-mirroring `chevron.backward`.
+4.  **Reference Specification:**
+    *   Track blueprint in `specs/59_cross_platform_localization_architecture.md`.

@@ -1,6 +1,6 @@
 # Specification 54: Android Material 3 Expressive Photo Details & Content-Driven Dynamic Theming
 
-**Status:** Proposed
+**Status:** Implemented
 
 ---
 
@@ -115,15 +115,15 @@ graph TD
 ## 3. Acceptance Criteria & Verification Plan
 
 ### Acceptance Criteria
-- [ ] `generatePhotoColorScheme` derives a stable, WCAG-compliant dynamic `ColorScheme` from `photo.color` with zero external dependencies.
-- [ ] `PhotoDetailsScreen` reflects photo seed color across background containers, chips, and button accents.
-- [ ] Camera and lens specs render as a 2x2 Bento grid using `exposureTime` and `focalLength` with micro-icons and clean typography.
-- [ ] 5-swatch color palette row renders with tap-to-copy hex functionality and haptic feedback.
-- [ ] Primary download CTA is anchored at the bottom in an expressive floating action bar; Unsplash download tracking dispatches via `PhotoDetailsIntent.TrackDownload(photo)`.
-- [ ] Secondary actions provide system Share and local bookmarking without unauthenticated network calls.
-- [ ] Historical views chart renders a smooth cubic Bezier curve with multi-stop area gradient and min/max reference bounds.
-- [ ] Dual-pane adaptive layout for tablets and foldables anchors the floating action bar within the details pane without bisecting the image canvas.
-- [ ] Existing Spec 50 Coil 3 BlurHash placeholder caching pipeline is preserved.
+- [x] `generatePhotoColorScheme` derives a stable, WCAG-compliant dynamic `ColorScheme` from `photo.color` with zero external dependencies.
+- [x] `PhotoDetailsScreen` reflects photo seed color across background containers, chips, and button accents.
+- [x] Camera and lens specs render as a 2x2 Bento grid using `exposureTime` and `focalLength` with micro-icons and clean typography.
+- [x] 5-swatch color palette row renders with tap-to-copy hex functionality and haptic feedback.
+- [x] Primary download CTA is anchored at the bottom in an expressive floating action bar; Unsplash download tracking dispatches via `PhotoDetailsIntent.TrackDownload(photo)`.
+- [x] Secondary actions provide system Share and local bookmarking without unauthenticated network calls.
+- [x] Historical views chart renders a smooth cubic Bezier curve with multi-stop area gradient and min/max reference bounds.
+- [x] Dual-pane adaptive layout for tablets and foldables anchors the floating action bar within the details pane without bisecting the image canvas.
+- [x] Existing Spec 50 Coil 3 BlurHash placeholder caching pipeline is preserved.
 
 ### Verification Commands
 ```bash
