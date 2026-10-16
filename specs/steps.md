@@ -787,7 +787,7 @@ These are the spec files that the implementation notes and planning references s
 4.  **Reference Specification:**
     *   Track blueprint in `specs/51_lazy_grid_motion_and_scroll_optimization.md`.
 
-### Step 54: macOS Window Title & iOS Navigation Bar Sheet Overlap Fixes (Completed)
+### Step 52: macOS Window Title & iOS Navigation Bar Sheet Overlap Fixes (Completed)
 1.  **macOS Collection Detail Window Title:**
     *   Add `.navigationTitle(viewModel.collection?.title ?? "Collection")` and iOS inline title display mode to `CollectionDetailView.swift`.
 2.  **iOS Photo Details Navigation Bar Overlap & Focus:**
@@ -795,7 +795,7 @@ These are the spec files that the implementation notes and planning references s
 3.  **Reference Specification:**
     *   Track blueprint in `specs/52_macos_title_and_ios_sheet_navigation_fixes.md`.
 
-### Step 53: Android Material 3 Expressive Core Friction Fixes & Screen Hygiene (Proposed)
+### Step 53: Android Material 3 Expressive Core Friction Fixes & Screen Hygiene (Completed)
 1.  **Profile Tab Row Wrapping Fix & Morphing Badges:**
     *   Replace fixed 4-slot `SecondaryTabRow` with horizontally scrollable `LazyRow` pill chips and inline count `Badge`s in `UserProfileScreen.kt`.
     *   Eliminate mid-word text wrapping like `"COLLECTIO / NS (6)"` across dynamic font scales.

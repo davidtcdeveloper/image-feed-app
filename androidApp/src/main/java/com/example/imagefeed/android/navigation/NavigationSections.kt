@@ -59,10 +59,6 @@ fun EntryProviderScope<NavKey>.feedSection(
                 dropUnlessResumedWithArg { user ->
                     navigator.navigate(AppRoute.UserProfile(user.username))
                 },
-            onSearchClick =
-                dropUnlessResumed {
-                    navigator.navigate(AppRoute.Search())
-                },
             onRandomClick = onRandomClick,
         )
     }
@@ -207,6 +203,12 @@ fun EntryProviderScope<NavKey>.userProfileSection(
             onCollectionClick =
                 dropUnlessResumedWithArg { collection ->
                     navigator.navigate(AppRoute.CollectionDetails(collection.id))
+                },
+            onUserClick =
+                dropUnlessResumedWithArg { user ->
+                    if (user.username != key.username) {
+                        navigator.navigate(AppRoute.UserProfile(user.username))
+                    }
                 },
         )
     }

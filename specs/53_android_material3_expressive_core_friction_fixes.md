@@ -1,6 +1,6 @@
 # Specification 53: Android Material 3 Expressive Core Friction Fixes & Screen Hygiene
 
-**Status:** Proposed
+**Status:** Implemented
 
 ---
 
@@ -109,13 +109,13 @@ graph TD
 ## 3. Acceptance Criteria & Verification Plan
 
 ### Acceptance Criteria
-- [ ] Profile tab row uses `LazyRow` with pill/squircle shape morphing and inline `Badge`s; text wrapping like `"COLLECTIO / NS (6)"` is eliminated across all font scaling settings.
-- [ ] Social links in `UserProfileScreen.kt` render as M3 `AssistChip`s with icons.
-- [ ] `PhotoCard` supports `showAttribution: Boolean`; creator portfolio grid hides photographer overlay while main feed, search, and user `ProfileTab.LIKES` retain it per Unsplash compliance.
-- [ ] Feed top bar omits redundant Search action icon.
-- [ ] Photo details screen displays `Visibility` for Views, `FileDownload` for Downloads, and `Download` for the CTA button.
-- [ ] Top bar titles adopt Material 3 typography standards (`headlineMedium` title case).
-- [ ] Zero compiler warnings and zero dead code introduced.
+- [x] Profile tab row uses `LazyRow` with pill/squircle shape morphing and inline `Badge`s; text wrapping like `"COLLECTIO / NS (6)"` is eliminated across all font scaling settings.
+- [x] Social links in `UserProfileScreen.kt` render as M3 `AssistChip`s with icons.
+- [x] `PhotoCard` supports `showAttribution: Boolean`; creator portfolio grid hides photographer overlay while main feed, search, and user `ProfileTab.LIKES` retain it per Unsplash compliance.
+- [x] Feed top bar omits redundant Search action icon.
+- [x] Photo details screen displays `Visibility` for Views, `FileDownload` for Downloads, and `Download` for the CTA button.
+- [x] Top bar titles adopt Material 3 typography standards (`headlineMedium` title case).
+- [x] Zero compiler warnings and zero dead code introduced.
 
 ### Verification Commands
 ```bash

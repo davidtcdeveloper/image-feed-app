@@ -22,7 +22,10 @@ class Navigator(
             }
         } else {
             // Push sub-route onto current top-level back stack
-            state.backStacks[state.topLevelRoute]?.add(route)
+            val currentStack = state.backStacks[state.topLevelRoute]
+            if (currentStack?.lastOrNull() != route) {
+                currentStack?.add(route)
+            }
         }
     }
 

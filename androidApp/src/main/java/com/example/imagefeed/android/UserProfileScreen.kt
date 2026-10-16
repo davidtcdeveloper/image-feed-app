@@ -10,8 +10,11 @@ import android.os.VibratorManager
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -20,6 +23,7 @@ import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -31,18 +35,29 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.foundation.lazy.staggeredgrid.itemsIndexed
 import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.AlternateEmail
+import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.AssistChipDefaults
+import androidx.compose.material3.Badge
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -53,9 +68,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SecondaryTabRow
-import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRowDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -80,6 +93,10 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -120,6 +137,7 @@ fun UserProfileScreen(
     onBack: () -> Unit,
     onPhotoClick: (Photo) -> Unit,
     onCollectionClick: (PhotoCollection) -> Unit,
+    onUserClick: (User) -> Unit = {},
 ) {
     val context = LocalPlatformContext.current
     val state by viewModel.state.collectAsStateWithLifecycle(initialValue = UserProfileState())
@@ -138,11 +156,10 @@ fun UserProfileScreen(
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        text = state.user?.name?.uppercase() ?: "PHOTOGRAPHER",
+                        text = state.user?.name ?: "Profile",
                         style =
-                            MaterialTheme.typography.titleMedium.copy(
+                            MaterialTheme.typography.titleLarge.copy(
                                 fontWeight = FontWeight.Bold,
-                                letterSpacing = 1.5.sp,
                             ),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -159,9 +176,13 @@ fun UserProfileScreen(
                 actions = {
                     state.user?.let { user ->
                         IconButton(onClick = {
-                            val profileUrl = "${user.links.html}?utm_source=ImageFeedApp&utm_medium=referral"
-                            val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(profileUrl))
-                            context.startActivity(browserIntent)
+                            try {
+                                val profileUrl = "${user.links.html}?utm_source=ImageFeedApp&utm_medium=referral"
+                                val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(profileUrl))
+                                context.startActivity(browserIntent)
+                            } catch (_: Exception) {
+                                // Ignore if browser is not available
+                            }
                         }) {
                             Icon(
                                 imageVector = Icons.Default.Share,
@@ -228,6 +249,7 @@ fun UserProfileScreen(
                         onLoadMore = { viewModel.dispatch(UserProfileIntent.LoadNextPage) },
                         onPhotoClick = onPhotoClick,
                         onCollectionClick = onCollectionClick,
+                        onUserClick = onUserClick,
                     )
                 }
             }
@@ -246,6 +268,7 @@ fun UserProfileContent(
     onLoadMore: () -> Unit,
     onPhotoClick: (Photo) -> Unit,
     onCollectionClick: (PhotoCollection) -> Unit,
+    onUserClick: (User) -> Unit = {},
 ) {
     val scrollState = rememberScrollState()
 
@@ -286,6 +309,8 @@ fun UserProfileContent(
                         hasReachedEnd = state.portfolioReachedEnd,
                         onLoadMore = onLoadMore,
                         onPhotoClick = onPhotoClick,
+                        onUserClick = onUserClick,
+                        showAttribution = false,
                     )
                 }
                 ProfileTab.LIKES -> {
@@ -297,6 +322,8 @@ fun UserProfileContent(
                         hasReachedEnd = state.likesReachedEnd,
                         onLoadMore = onLoadMore,
                         onPhotoClick = onPhotoClick,
+                        onUserClick = onUserClick,
+                        showAttribution = true,
                     )
                 }
                 ProfileTab.COLLECTIONS -> {
@@ -391,80 +418,125 @@ fun ProfileHeaderSection(user: User) {
             )
         }
 
-        // Social Media Badges
-        val hasInstagram = !user.social?.instagramUsername.isNullOrEmpty()
-        val hasTwitter = !user.social?.twitterUsername.isNullOrEmpty()
-        val hasPortfolio = !user.social?.portfolioUrl.isNullOrEmpty()
+        // Social Media Assist Chips
+        val instagramHandle =
+            user.social
+                ?.instagramUsername
+                ?.trim()
+                ?.removePrefix("@")
+                ?.ifBlank { null }
+        val twitterHandle =
+            user.social
+                ?.twitterUsername
+                ?.trim()
+                ?.removePrefix("@")
+                ?.ifBlank { null }
+        val portfolioUrl =
+            user.social
+                ?.portfolioUrl
+                ?.trim()
+                ?.ifBlank { null }
+                ?: user.portfolioUrl?.trim()?.ifBlank { null }
+
+        val hasInstagram = instagramHandle != null
+        val hasTwitter = twitterHandle != null
+        val hasPortfolio = portfolioUrl != null
 
         if (hasInstagram || hasTwitter || hasPortfolio) {
             Spacer(modifier = Modifier.height(16.dp))
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically,
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                if (hasInstagram) {
-                    SocialBadge(label = "Instagram", handle = user.social?.instagramUsername ?: "") {
-                        val igUrl = "instagram://user?username=${user.social?.instagramUsername}"
-                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(igUrl))
-                        intent.setPackage("com.instagram.android")
-                        try {
-                            context.startActivity(intent)
-                        } catch (_: Exception) {
-                            // Fallback to web browser
-                            context.startActivity(
-                                Intent(Intent.ACTION_VIEW, Uri.parse("https://instagram.com/${user.social?.instagramUsername}")),
+                if (instagramHandle != null) {
+                    AssistChip(
+                        onClick = {
+                            val igUrl = "instagram://user?username=$instagramHandle"
+                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(igUrl))
+                            intent.setPackage("com.instagram.android")
+                            try {
+                                context.startActivity(intent)
+                            } catch (_: Exception) {
+                                try {
+                                    // Fallback to web browser
+                                    context.startActivity(
+                                        Intent(Intent.ACTION_VIEW, Uri.parse("https://instagram.com/$instagramHandle")),
+                                    )
+                                } catch (_: Exception) {
+                                    // Ignore if no handler available
+                                }
+                            }
+                        },
+                        label = { Text("@$instagramHandle") },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.CameraAlt,
+                                contentDescription = "Instagram",
+                                modifier = Modifier.size(AssistChipDefaults.IconSize),
                             )
-                        }
-                    }
+                        },
+                    )
                 }
-                if (hasTwitter) {
-                    SocialBadge(label = "Twitter", handle = user.social?.twitterUsername ?: "") {
-                        val twUrl = "twitter://user?screen_name=${user.social?.twitterUsername}"
-                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(twUrl))
-                        intent.setPackage("com.twitter.android")
-                        try {
-                            context.startActivity(intent)
-                        } catch (_: Exception) {
-                            // Fallback to web browser
-                            context.startActivity(
-                                Intent(Intent.ACTION_VIEW, Uri.parse("https://twitter.com/${user.social?.twitterUsername}")),
+                if (twitterHandle != null) {
+                    AssistChip(
+                        onClick = {
+                            val twUrl = "twitter://user?screen_name=$twitterHandle"
+                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(twUrl))
+                            intent.setPackage("com.twitter.android")
+                            try {
+                                context.startActivity(intent)
+                            } catch (_: Exception) {
+                                try {
+                                    // Fallback to web browser
+                                    context.startActivity(
+                                        Intent(Intent.ACTION_VIEW, Uri.parse("https://twitter.com/$twitterHandle")),
+                                    )
+                                } catch (_: Exception) {
+                                    // Ignore if no handler available
+                                }
+                            }
+                        },
+                        label = { Text("@$twitterHandle") },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.AlternateEmail,
+                                contentDescription = "Twitter",
+                                modifier = Modifier.size(AssistChipDefaults.IconSize),
                             )
-                        }
-                    }
+                        },
+                    )
                 }
-                if (hasPortfolio) {
-                    SocialBadge(label = "Website", handle = "Link") {
-                        val webIntent = Intent(Intent.ACTION_VIEW, Uri.parse(user.social?.portfolioUrl))
-                        context.startActivity(webIntent)
-                    }
+                if (portfolioUrl != null) {
+                    val formattedUrl =
+                        when {
+                            portfolioUrl.startsWith(
+                                "http://",
+                                ignoreCase = true,
+                            ) ||
+                                portfolioUrl.startsWith("https://", ignoreCase = true) -> portfolioUrl
+                            else -> "https://$portfolioUrl"
+                        }
+                    AssistChip(
+                        onClick = {
+                            try {
+                                val webIntent = Intent(Intent.ACTION_VIEW, Uri.parse(formattedUrl))
+                                context.startActivity(webIntent)
+                            } catch (_: Exception) {
+                                // Ignore if no handler available
+                            }
+                        },
+                        label = { Text("Website") },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Language,
+                                contentDescription = "Website",
+                                modifier = Modifier.size(AssistChipDefaults.IconSize),
+                            )
+                        },
+                    )
                 }
             }
         }
-    }
-}
-
-@Composable
-fun SocialBadge(
-    label: String,
-    handle: String,
-    onClick: () -> Unit,
-) {
-    Box(
-        modifier =
-            Modifier
-                .background(MaterialTheme.colorScheme.surfaceContainer, MaterialTheme.shapes.small)
-                .bounceClick { onClick() }
-                .padding(horizontal = 12.dp, vertical = 6.dp),
-    ) {
-        Text(
-            text = "$label: @$handle".uppercase(),
-            color = MaterialTheme.colorScheme.onSurface,
-            style =
-                MaterialTheme.typography.labelSmall.copy(
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 0.5.sp,
-                ),
-        )
     }
 }
 
@@ -474,43 +546,118 @@ fun ProfileTabSelector(
     user: User,
     onTabSelect: (ProfileTab) -> Unit,
 ) {
-    SecondaryTabRow(
-        selectedTabIndex = activeTab.ordinal,
-        containerColor = MaterialTheme.colorScheme.surface,
-        contentColor = MaterialTheme.colorScheme.primary,
-        indicator = {
-            TabRowDefaults.SecondaryIndicator(
-                modifier = Modifier.tabIndicatorOffset(activeTab.ordinal),
-                color = MaterialTheme.colorScheme.primary,
-            )
-        },
+    val listState = rememberLazyListState()
+
+    LaunchedEffect(activeTab) {
+        val index = ProfileTab.entries.indexOf(activeTab)
+        if (index >= 0) {
+            listState.animateScrollToItem(index)
+        }
+    }
+
+    LazyRow(
+        state = listState,
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        contentPadding = PaddingValues(horizontal = 16.dp),
     ) {
-        ProfileTab.entries.forEach { tab ->
+        items(
+            items = ProfileTab.entries,
+            key = { it.name },
+        ) { tab ->
             val isSelected = activeTab == tab
-            val tabLabel =
+            val (label, count) =
                 when (tab) {
-                    ProfileTab.PORTFOLIO -> "PHOTOS (${user.totalPhotos ?: 0})"
-                    ProfileTab.LIKES -> "LIKES (${user.totalLikes ?: 0})"
-                    ProfileTab.COLLECTIONS -> "COLLECTIONS (${user.totalCollections ?: 0})"
-                    ProfileTab.INSIGHTS -> "INSIGHTS"
+                    ProfileTab.PORTFOLIO -> "Photos" to (user.totalPhotos ?: 0)
+                    ProfileTab.LIKES -> "Likes" to (user.totalLikes ?: 0)
+                    ProfileTab.COLLECTIONS -> "Collections" to (user.totalCollections ?: 0)
+                    ProfileTab.INSIGHTS -> "Insights" to null
                 }
-            Tab(
-                selected = isSelected,
-                onClick = { onTabSelect(tab) },
-                text = {
-                    Text(
-                        text = tabLabel,
-                        style =
-                            if (isSelected) {
-                                MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold)
-                            } else {
-                                MaterialTheme.typography.labelMedium
-                            },
-                    )
-                },
-                selectedContentColor = MaterialTheme.colorScheme.primary,
-                unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+
+            val cornerRadius by animateDpAsState(
+                targetValue = if (isSelected) 16.dp else 28.dp,
+                label = "tabCornerRadius",
             )
+            val containerColor by animateColorAsState(
+                targetValue =
+                    if (isSelected) {
+                        MaterialTheme.colorScheme.primaryContainer
+                    } else {
+                        MaterialTheme.colorScheme.surfaceContainerHigh
+                    },
+                label = "tabContainerColor",
+            )
+            val contentColor by animateColorAsState(
+                targetValue =
+                    if (isSelected) {
+                        MaterialTheme.colorScheme.onPrimaryContainer
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
+                label = "tabContentColor",
+            )
+
+            Surface(
+                onClick = { onTabSelect(tab) },
+                shape = RoundedCornerShape(cornerRadius),
+                color = containerColor,
+                contentColor = contentColor,
+                border =
+                    if (!isSelected) {
+                        BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                    } else {
+                        null
+                    },
+                modifier =
+                    Modifier.semantics {
+                        role = Role.Tab
+                        selected = isSelected
+                    },
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text(
+                        text = label,
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    if (count != null) {
+                        val badgeContainerColor by animateColorAsState(
+                            targetValue =
+                                if (isSelected) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.surfaceContainerHighest
+                                },
+                            label = "tabBadgeContainerColor",
+                        )
+                        val badgeContentColor by animateColorAsState(
+                            targetValue =
+                                if (isSelected) {
+                                    MaterialTheme.colorScheme.onPrimary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                },
+                            label = "tabBadgeContentColor",
+                        )
+                        Badge(
+                            containerColor = badgeContainerColor,
+                            contentColor = badgeContentColor,
+                        ) {
+                            Text(
+                                text = count.toString(),
+                                style = MaterialTheme.typography.labelSmall,
+                                maxLines = 1,
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -525,6 +672,8 @@ fun PortfolioTabContent(
     hasReachedEnd: Boolean = false,
     onLoadMore: () -> Unit,
     onPhotoClick: (Photo) -> Unit,
+    onUserClick: (User) -> Unit = {},
+    showAttribution: Boolean = true,
 ) {
     val listState = rememberLazyStaggeredGridState()
     val currentLoading by rememberUpdatedState(isLoading)
@@ -584,7 +733,8 @@ fun PortfolioTabContent(
                         index = index,
                         photo = photo,
                         onClick = { onPhotoClick(photo) },
-                        onUserClick = {}, // Disable click on same user to avoid looping
+                        onUserClick = { onUserClick(photo.user) },
+                        showAttribution = showAttribution,
                     )
                 }
 
@@ -812,7 +962,7 @@ fun InsightsTabContent(
                         modifier = Modifier.weight(1f),
                         label = "Total Views",
                         value = formatStatValue(stats.views.total),
-                        icon = Icons.Default.Info,
+                        icon = Icons.Default.Visibility,
                         valueStyle = MaterialTheme.typography.titleMedium,
                         labelStyle = MaterialTheme.typography.bodySmall,
                     )
@@ -820,7 +970,7 @@ fun InsightsTabContent(
                         modifier = Modifier.weight(1f),
                         label = "Total Downloads",
                         value = formatStatValue(stats.downloads.total),
-                        icon = Icons.Default.LocationOn, // placeholder icon
+                        icon = Icons.Default.FileDownload,
                         valueStyle = MaterialTheme.typography.titleMedium,
                         labelStyle = MaterialTheme.typography.bodySmall,
                     )

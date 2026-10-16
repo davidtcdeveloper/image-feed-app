@@ -25,12 +25,13 @@ import androidx.compose.foundation.lazy.staggeredgrid.itemsIndexed
 import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Attribution
+import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -40,6 +41,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SecondaryScrollableTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
@@ -62,7 +64,6 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavKey
 import coil3.compose.LocalPlatformContext
@@ -96,7 +97,6 @@ fun FeedScreen(
     reselectEvents: SharedFlow<NavKey>? = null,
     onPhotoClick: (Photo) -> Unit,
     onUserClick: (User) -> Unit,
-    onSearchClick: () -> Unit,
     onRandomClick: () -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle(initialValue = FeedState())
@@ -149,25 +149,18 @@ fun FeedScreen(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             Column {
-                CenterAlignedTopAppBar(
+                TopAppBar(
                     title = {
                         Text(
-                            "FEED",
-                            style = MaterialTheme.typography.titleMedium,
+                            "Feed",
+                            style = MaterialTheme.typography.headlineMedium,
                             fontWeight = FontWeight.Bold,
-                            letterSpacing = 2.sp,
                         )
                     },
                     actions = {
-                        IconButton(onClick = onSearchClick) {
-                            Icon(
-                                imageVector = Icons.Default.Search,
-                                contentDescription = "Search",
-                            )
-                        }
                         IconButton(onClick = onRandomClick) {
                             Icon(
-                                imageVector = Icons.Default.Refresh,
+                                imageVector = Icons.Default.Lightbulb,
                                 contentDescription = "Randomize",
                             )
                         }
@@ -310,6 +303,7 @@ fun PhotoCard(
     photo: Photo,
     onClick: () -> Unit,
     onUserClick: () -> Unit,
+    showAttribution: Boolean = true,
 ) {
     val context = LocalPlatformContext.current
     val itemWidthPx = calculatePhotoItemWidthPx()
@@ -370,54 +364,56 @@ fun PhotoCard(
                 )
             }
 
-            // Dynamic bottom overlay containing photographer attribution
-            Box(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .align(Alignment.BottomCenter)
-                        .background(
-                            Brush.verticalGradient(
-                                colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.75f)),
-                            ),
-                        ).padding(8.dp),
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
+            if (showAttribution) {
+                // Dynamic bottom overlay containing photographer attribution
+                Box(
                     modifier =
                         Modifier
                             .fillMaxWidth()
-                            .clickable { onUserClick() },
+                            .align(Alignment.BottomCenter)
+                            .background(
+                                Brush.verticalGradient(
+                                    colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.75f)),
+                                ),
+                            ).padding(8.dp),
                 ) {
-                    val userProfileImagePainter =
-                        rememberAsyncImagePainter(
-                            model =
-                                ImageRequest
-                                    .Builder(context)
-                                    .data(photo.user.profileImage.small)
-                                    .crossfade(true)
-                                    .build(),
-                        )
-
-                    Image(
-                        painter = userProfileImagePainter,
-                        contentDescription = "User profile",
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
                         modifier =
                             Modifier
-                                .size(24.dp)
-                                .clip(CircleShape),
-                    )
+                                .fillMaxWidth()
+                                .clickable { onUserClick() },
+                    ) {
+                        val userProfileImagePainter =
+                            rememberAsyncImagePainter(
+                                model =
+                                    ImageRequest
+                                        .Builder(context)
+                                        .data(photo.user.profileImage.small)
+                                        .crossfade(true)
+                                        .build(),
+                            )
 
-                    Spacer(modifier = Modifier.width(6.dp))
+                        Image(
+                            painter = userProfileImagePainter,
+                            contentDescription = "User profile",
+                            modifier =
+                                Modifier
+                                    .size(24.dp)
+                                    .clip(CircleShape),
+                        )
 
-                    Text(
-                        text = photo.user.name,
-                        color = Color.White,
-                        style = MaterialTheme.typography.titleSmall,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f),
-                    )
+                        Spacer(modifier = Modifier.width(6.dp))
+
+                        Text(
+                            text = photo.user.name,
+                            color = Color.White,
+                            style = MaterialTheme.typography.titleSmall,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
                 }
             }
         }

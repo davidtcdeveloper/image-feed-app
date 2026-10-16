@@ -33,12 +33,12 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.Done
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -153,10 +153,11 @@ fun PhotoDetailsScreen(
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        text = "DETAILS",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 2.sp,
+                        text = "Details",
+                        style =
+                            MaterialTheme.typography.titleLarge.copy(
+                                fontWeight = FontWeight.Bold,
+                            ),
                         color = MaterialTheme.colorScheme.onSurface,
                     )
                 },
@@ -172,9 +173,13 @@ fun PhotoDetailsScreen(
                 actions = {
                     state.photo?.let { photo ->
                         IconButton(onClick = {
-                            val webUrl = "${photo.links.html}?utm_source=ImageFeedApp&utm_medium=referral"
-                            val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(webUrl))
-                            context.startActivity(browserIntent)
+                            try {
+                                val webUrl = "${photo.links.html}?utm_source=ImageFeedApp&utm_medium=referral"
+                                val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(webUrl))
+                                context.startActivity(browserIntent)
+                            } catch (_: Exception) {
+                                // Ignore if browser is not available
+                            }
                         }) {
                             Icon(
                                 imageVector = Icons.Default.Share,
@@ -772,13 +777,13 @@ fun PhotoInspectorPane(
                 modifier = Modifier.weight(1f),
                 label = "Views",
                 value = stats?.views?.total?.let { formatStatValue(it) } ?: "--",
-                icon = Icons.Default.Info,
+                icon = Icons.Default.Visibility,
             )
             StatItem(
                 modifier = Modifier.weight(1f),
                 label = "Downloads",
                 value = stats?.downloads?.total?.let { formatStatValue(it) } ?: "--",
-                icon = Icons.Default.PlayArrow,
+                icon = Icons.Default.FileDownload,
             )
             StatItem(
                 modifier = Modifier.weight(1f),
@@ -826,8 +831,12 @@ fun PhotoInspectorPane(
             onClick = {
                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                 onTrackDownload()
-                val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(photo.urls.full))
-                context.startActivity(browserIntent)
+                try {
+                    val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(photo.urls.full))
+                    context.startActivity(browserIntent)
+                } catch (_: Exception) {
+                    // Ignore if browser is not available
+                }
             },
             modifier =
                 Modifier
@@ -835,7 +844,7 @@ fun PhotoInspectorPane(
                     .height(50.dp),
             shape = MaterialTheme.shapes.small,
         ) {
-            Icon(imageVector = Icons.Default.Done, contentDescription = "Download")
+            Icon(imageVector = Icons.Default.Download, contentDescription = "Download")
             Spacer(modifier = Modifier.width(8.dp))
             Text(text = "Download High Resolution Image", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
         }
@@ -899,14 +908,18 @@ fun PhotoInspectorPane(
                                     } else {
                                         Uri.parse("geo:0,0?q=${Uri.encode(query)}")
                                     }
-                                val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
-                                mapIntent.setPackage("com.google.android.apps.maps")
-                                if (mapIntent.resolveActivity(context.packageManager) != null) {
-                                    context.startActivity(mapIntent)
-                                } else {
-                                    val webMapUrl = "https://www.google.com/maps/search/?api=1&query=${Uri.encode(query)}"
-                                    val webMapIntent = Intent(Intent.ACTION_VIEW, Uri.parse(webMapUrl))
-                                    context.startActivity(webMapIntent)
+                                try {
+                                    val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
+                                    mapIntent.setPackage("com.google.android.apps.maps")
+                                    if (mapIntent.resolveActivity(context.packageManager) != null) {
+                                        context.startActivity(mapIntent)
+                                    } else {
+                                        val webMapUrl = "https://www.google.com/maps/search/?api=1&query=${Uri.encode(query)}"
+                                        val webMapIntent = Intent(Intent.ACTION_VIEW, Uri.parse(webMapUrl))
+                                        context.startActivity(webMapIntent)
+                                    }
+                                } catch (_: Exception) {
+                                    // Ignore if map cannot be opened
                                 }
                             },
                 ) {
@@ -956,7 +969,7 @@ fun PhotoInspectorPane(
                                 )
                             }
                             Icon(
-                                imageVector = Icons.Default.PlayArrow,
+                                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                                 contentDescription = "Map Launcher",
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(16.dp),

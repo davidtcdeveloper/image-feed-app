@@ -69,6 +69,18 @@ class NavigatorTest {
     }
 
     @Test
+    fun duplicateConsecutiveSubRoutesAreNotPushed() {
+        val (navigator, state) = createTestNavigator()
+
+        val photoRoute = AppRoute.PhotoDetails("test_photo_1")
+        navigator.navigate(photoRoute)
+        navigator.navigate(photoRoute)
+
+        val feedStack = state.backStacks[AppRoute.Feed]
+        assertEquals(listOf(AppRoute.Feed, photoRoute), feedStack?.toList())
+    }
+
+    @Test
     fun exitThroughHomeBackNavigationSemantics() {
         val (navigator, state) = createTestNavigator()
 
