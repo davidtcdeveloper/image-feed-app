@@ -825,7 +825,7 @@ These are the spec files that the implementation notes and planning references s
 5.  **Reference Specification:**
     *   Track blueprint in `specs/54_android_material3_expressive_photo_details_and_dynamic_theming.md`.
 
-### Step 55: Android Material 3 Expressive Floating Navigation Chrome & Bento Discovery (Proposed)
+### Step 55: Android Material 3 Expressive Floating Navigation Chrome & Bento Discovery (Completed)
 1.  **Floating Translucent Pill Navigation Bar:**
     *   Replace docked `NavigationBar` on phones in `MainActivity.kt` with a floating pill container (`height = 68.dp`, `shape = CircleShape`, `SurfaceContainerHigh` at ~88% alpha, subtle gradient border).
     *   Configure edge-to-edge content underlay with compensatory bottom padding so photography scrolls visibly underneath.

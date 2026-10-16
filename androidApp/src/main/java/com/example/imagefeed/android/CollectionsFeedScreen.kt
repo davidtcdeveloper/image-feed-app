@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -185,7 +186,13 @@ fun CollectionsFeedScreen(
                 LazyVerticalStaggeredGrid(
                     columns = calculateCollectionGridColumns(),
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(12.dp),
+                    contentPadding =
+                        PaddingValues(
+                            start = 12.dp,
+                            top = 12.dp,
+                            end = 12.dp,
+                            bottom = calculateBottomContentPadding(12.dp),
+                        ),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalItemSpacing = 16.dp,
                 ) {
@@ -200,7 +207,13 @@ fun CollectionsFeedScreen(
                     columns = calculateCollectionGridColumns(),
                     state = listState,
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(12.dp),
+                    contentPadding =
+                        PaddingValues(
+                            start = 12.dp,
+                            top = 12.dp,
+                            end = 12.dp,
+                            bottom = calculateBottomContentPadding(12.dp),
+                        ),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalItemSpacing = 16.dp,
                 ) {
@@ -260,7 +273,7 @@ fun CollectionMosaicCard(
     val placeholderBitmap = rememberBlurHashPlaceholder(blurHash, BLURHASH_PLACEHOLDER_WIDTH, 18)
 
     Card(
-        shape = MaterialTheme.shapes.medium,
+        shape = MaterialTheme.shapes.extraLarge,
         modifier =
             Modifier
                 .fillMaxWidth()
@@ -274,9 +287,9 @@ fun CollectionMosaicCard(
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .height(200.dp),
+                        .aspectRatio(1.4f),
             ) {
-                // Left Image: Cover Photo (weight 2f)
+                // Left Image: Cover Photo (weight 0.62f)
                 val coverUrl =
                     collection.coverPhoto
                         ?.urls
@@ -290,7 +303,7 @@ fun CollectionMosaicCard(
                 Box(
                     modifier =
                         Modifier
-                            .weight(2f)
+                            .weight(0.62f)
                             .fillMaxHeight()
                             .background(MaterialTheme.colorScheme.surfaceContainerHighest),
                 ) {
@@ -326,23 +339,22 @@ fun CollectionMosaicCard(
 
                 Spacer(modifier = Modifier.width(4.dp))
 
-                // Right Column: Two thumbnails (weight 1f)
+                // Right Column: Two thumbnails (weight 0.38f)
                 Column(
                     modifier =
                         Modifier
-                            .weight(1f)
+                            .weight(0.38f)
                             .fillMaxHeight(),
                 ) {
                     // Top Thumbnail
-                    val topThumbUrl =
+                    val topThumbPhoto =
                         collection.previewPhotos
                             ?.getOrNull(1)
-                            ?.urls
-                            ?.small
                             ?: collection.previewPhotos
                                 ?.getOrNull(0)
-                                ?.urls
-                                ?.small
+                    val topThumbUrl = topThumbPhoto?.urls?.small
+                    val topPlaceholderBitmap =
+                        rememberBlurHashPlaceholder(topThumbPhoto?.blurHash, BLURHASH_PLACEHOLDER_WIDTH / 2, 12)
                     Box(
                         modifier =
                             Modifier
@@ -360,6 +372,7 @@ fun CollectionMosaicCard(
                                                 .data("$topThumbUrl&w=$sideWidthPx&q=80&auto=format")
                                                 .crossfade(true)
                                                 .build(),
+                                        placeholder = topPlaceholderBitmap?.let { BitmapPainter(it.asImageBitmap()) },
                                     ),
                                 contentDescription = "Preview photo 1",
                                 modifier = Modifier.fillMaxSize(),
@@ -371,15 +384,14 @@ fun CollectionMosaicCard(
                     Spacer(modifier = Modifier.height(4.dp))
 
                     // Bottom Thumbnail
-                    val bottomThumbUrl =
+                    val bottomThumbPhoto =
                         collection.previewPhotos
                             ?.getOrNull(2)
-                            ?.urls
-                            ?.small
                             ?: collection.previewPhotos
                                 ?.getOrNull(1)
-                                ?.urls
-                                ?.small
+                    val bottomThumbUrl = bottomThumbPhoto?.urls?.small
+                    val bottomPlaceholderBitmap =
+                        rememberBlurHashPlaceholder(bottomThumbPhoto?.blurHash, BLURHASH_PLACEHOLDER_WIDTH / 2, 12)
                     Box(
                         modifier =
                             Modifier
@@ -397,6 +409,7 @@ fun CollectionMosaicCard(
                                                 .data("$bottomThumbUrl&w=$sideWidthPx&q=80&auto=format")
                                                 .crossfade(true)
                                                 .build(),
+                                        placeholder = bottomPlaceholderBitmap?.let { BitmapPainter(it.asImageBitmap()) },
                                     ),
                                 contentDescription = "Preview photo 2",
                                 modifier = Modifier.fillMaxSize(),

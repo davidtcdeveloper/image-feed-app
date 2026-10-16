@@ -45,7 +45,8 @@ class PaginationFlowTest {
             layoutInfoFlow.value = MockLayoutInfo(totalItems = 20, lastVisibleIndex = 14)
             assertEquals(1, loadNextPageDispatches.size)
 
-            // User scrolls a bit more to index 15 of 20 -> still above threshold, distinctUntilChanged prevents duplicate
+            // User scrolls a bit more to index 15 of 20 -> still above threshold,
+            // distinctUntilChanged prevents duplicate
             layoutInfoFlow.value = MockLayoutInfo(totalItems = 20, lastVisibleIndex = 15)
             assertEquals(1, loadNextPageDispatches.size)
 

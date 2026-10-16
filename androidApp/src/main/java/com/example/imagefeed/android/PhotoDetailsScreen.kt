@@ -5,8 +5,10 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
@@ -69,7 +71,10 @@ import androidx.compose.material3.SuggestionChipDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
+import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -99,6 +104,8 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -106,6 +113,7 @@ import coil3.compose.LocalPlatformContext
 import coil3.compose.rememberAsyncImagePainter
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import com.example.imagefeed.android.adaptive.AdaptiveLayoutInfo
 import com.example.imagefeed.android.adaptive.DevicePosture
 import com.example.imagefeed.android.adaptive.LocalAdaptiveLayoutInfo
 import com.example.imagefeed.android.theme.PhotoSwatch
@@ -116,26 +124,18 @@ import com.example.imagefeed.android.util.BLURHASH_PLACEHOLDER_MIN_HEIGHT
 import com.example.imagefeed.android.util.BLURHASH_PLACEHOLDER_WIDTH
 import com.example.imagefeed.android.util.rememberBlurHashPlaceholder
 import com.example.imagefeed.details.model.PhotoStats
+import com.example.imagefeed.details.model.StatMetric
 import com.example.imagefeed.di.MetroHelper
-import com.example.imagefeed.model.Photo
-import com.example.imagefeed.model.User
-import com.example.imagefeed.model.ProfileImage
-import com.example.imagefeed.model.UserLinks
-import com.example.imagefeed.model.PhotoUrls
-import com.example.imagefeed.model.PhotoLinks
 import com.example.imagefeed.model.Exif
 import com.example.imagefeed.model.Location
+import com.example.imagefeed.model.Photo
+import com.example.imagefeed.model.PhotoLinks
+import com.example.imagefeed.model.PhotoUrls
 import com.example.imagefeed.model.Position
+import com.example.imagefeed.model.ProfileImage
 import com.example.imagefeed.model.Tag
-import com.example.imagefeed.details.model.StatMetric
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.SharedTransitionLayout
-import androidx.compose.runtime.CompositionLocalProvider
-import com.example.imagefeed.android.adaptive.AdaptiveLayoutInfo
-import androidx.compose.material3.windowsizeclass.WindowSizeClass
-import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
-import androidx.compose.ui.unit.DpSize
+import com.example.imagefeed.model.User
+import com.example.imagefeed.model.UserLinks
 import com.example.imagefeed.presentation.details.PhotoDetailsEffect
 import com.example.imagefeed.presentation.details.PhotoDetailsIntent
 import com.example.imagefeed.presentation.details.PhotoDetailsState
@@ -1796,28 +1796,30 @@ fun PhotoDetailsScreenPreview() {
             tags = listOf(Tag(title = "nature")),
         )
 
-    val sampleStats = 
+    val sampleStats =
         PhotoStats(
             id = "photo_123",
             downloads = StatMetric(total = 120),
             views = StatMetric(total = 5000),
-            likes = StatMetric(total = 350)
+            likes = StatMetric(total = 350),
         )
 
-    val sampleState = PhotoDetailsState(
-        photo = samplePhoto,
-        stats = sampleStats,
-        isLoading = false,
-        error = null
-    )
+    val sampleState =
+        PhotoDetailsState(
+            photo = samplePhoto,
+            stats = sampleStats,
+            isLoading = false,
+            error = null,
+        )
 
     CompositionLocalProvider(
-        LocalAdaptiveLayoutInfo provides AdaptiveLayoutInfo(
-            windowSizeClass = WindowSizeClass.calculateFromSize(DpSize(400.dp, 800.dp)),
-            posture = DevicePosture.Normal,
-            screenWidthDp = 400,
-            screenHeightDp = 800
-        )
+        LocalAdaptiveLayoutInfo provides
+            AdaptiveLayoutInfo(
+                windowSizeClass = WindowSizeClass.calculateFromSize(DpSize(400.dp, 800.dp)),
+                posture = DevicePosture.Normal,
+                screenWidthDp = 400,
+                screenHeightDp = 800,
+            ),
     ) {
         SharedTransitionLayout {
             AnimatedVisibility(visible = true) {
@@ -1829,7 +1831,7 @@ fun PhotoDetailsScreenPreview() {
                     onTrackDownload = {},
                     onBack = {},
                     onUserClick = {},
-                    onTagClick = {}
+                    onTagClick = {},
                 )
             }
         }

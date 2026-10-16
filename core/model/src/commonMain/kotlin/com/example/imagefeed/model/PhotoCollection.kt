@@ -23,5 +23,6 @@ data class PreviewPhoto(
     val id: String,
     @SerialName("created_at") val createdAt: String? = null,
     @SerialName("updated_at") val updatedAt: String? = null,
+    @SerialName("blur_hash") val blurHash: String? = null,
     val urls: PhotoUrls,
 )

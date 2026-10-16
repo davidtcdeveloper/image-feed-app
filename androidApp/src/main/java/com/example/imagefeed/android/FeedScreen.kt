@@ -3,6 +3,7 @@ package com.example.imagefeed.android
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -19,6 +20,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.foundation.lazy.staggeredgrid.itemsIndexed
@@ -35,8 +38,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SecondaryScrollableTabRow
-import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -58,7 +59,12 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -134,7 +140,7 @@ fun FeedScreen(
             val layoutInfo = listState.layoutInfo
             val totalItems = layoutInfo.totalItemsCount
             val lastVisible = layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
-            totalItems > 0 && lastVisible >= totalItems - 6
+            totalItems > 0 && lastVisible >= totalItems - PAGINATION_THRESHOLD
         }.distinctUntilChanged()
             .filter { shouldLoad -> shouldLoad && !currentLoading && !currentHasReachedEnd }
             .collect {
@@ -172,56 +178,42 @@ fun FeedScreen(
                     scrollBehavior = scrollBehavior,
                 )
 
-                val activeIndex =
-                    if (state.selectedTopicSlug == "editorial") {
-                        0
-                    } else {
-                        val idx = state.topics.indexOfFirst { it.slug == state.selectedTopicSlug }
-                        if (idx >= 0) idx + 1 else 0
-                    }
-
-                SecondaryScrollableTabRow(
-                    selectedTabIndex = activeIndex,
-                    containerColor =
-                        if (scrollBehavior.state.contentOffset < 0f) {
-                            MaterialTheme.colorScheme.surfaceContainer
-                        } else {
-                            MaterialTheme.colorScheme.surface
-                        },
-                    contentColor = MaterialTheme.colorScheme.primary,
-                    edgePadding = 12.dp,
+                Box(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .background(
+                                if (scrollBehavior.state.contentOffset < 0f) {
+                                    MaterialTheme.colorScheme.surfaceContainer
+                                } else {
+                                    MaterialTheme.colorScheme.surface
+                                },
+                            ).padding(vertical = 8.dp),
                 ) {
-                    Tab(
-                        selected = state.selectedTopicSlug == "editorial",
-                        onClick = { viewModel.dispatch(FeedIntent.SelectTopic("editorial")) },
-                        text = {
-                            Text(
-                                "Editorial",
-                                style = MaterialTheme.typography.labelLarge,
-                                fontWeight =
-                                    if (state.selectedTopicSlug == "editorial") {
-                                        FontWeight.Bold
-                                    } else {
-                                        FontWeight.Normal
-                                    },
+                    LazyRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentPadding = PaddingValues(horizontal = 12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        item(key = "topic_editorial") {
+                            TopicCapsuleCard(
+                                title = "Editorial",
+                                coverPhoto = null,
+                                isSelected = state.selectedTopicSlug == "editorial",
+                                onClick = { viewModel.dispatch(FeedIntent.SelectTopic("editorial")) },
                             )
-                        },
-                    )
-                    state.topics.forEach { topic ->
-                        val isSelected = state.selectedTopicSlug == topic.slug
-                        Tab(
-                            selected = isSelected,
-                            onClick = { viewModel.dispatch(FeedIntent.SelectTopic(topic.slug)) },
-                            text = {
-                                Text(
-                                    topic.title,
-                                    style = MaterialTheme.typography.labelLarge,
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                )
-                            },
-                        )
+                        }
+                        items(
+                            items = state.topics,
+                            key = { it.id },
+                        ) { topic ->
+                            TopicCapsuleCard(
+                                title = topic.title,
+                                coverPhoto = topic.coverPhoto,
+                                isSelected = state.selectedTopicSlug == topic.slug,
+                                onClick = { viewModel.dispatch(FeedIntent.SelectTopic(topic.slug)) },
+                            )
+                        }
                     }
                 }
             }
@@ -249,7 +241,13 @@ fun FeedScreen(
                     columns = calculateGridColumns(),
                     state = listState,
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(8.dp),
+                    contentPadding =
+                        PaddingValues(
+                            start = 8.dp,
+                            top = 8.dp,
+                            end = 8.dp,
+                            bottom = calculateBottomContentPadding(8.dp),
+                        ),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalItemSpacing = 8.dp,
                 ) {
@@ -451,3 +449,103 @@ fun ErrorView(
         }
     }
 }
+
+@Suppress("MagicNumber")
+@Composable
+private fun TopicCapsuleCard(
+    title: String,
+    coverPhoto: Photo?,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val context = LocalPlatformContext.current
+    val blurHash = coverPhoto?.blurHash
+    val placeholderBitmap = rememberBlurHashPlaceholder(blurHash, 16, 12)
+    val coverUrl = coverPhoto?.urls?.small ?: coverPhoto?.urls?.regular
+
+    Card(
+        shape = MaterialTheme.shapes.large,
+        border =
+            if (isSelected) {
+                BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+            } else {
+                BorderStroke(1.dp, Color.White.copy(alpha = 0.15f))
+            },
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHighest),
+        modifier =
+            modifier
+                .width(110.dp)
+                .height(60.dp)
+                .semantics {
+                    role = Role.Tab
+                    selected = isSelected
+                }.bounceClick(onClick = onClick),
+    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            if (coverUrl != null) {
+                Image(
+                    painter =
+                        rememberAsyncImagePainter(
+                            model =
+                                ImageRequest
+                                    .Builder(context)
+                                    .data(coverUrl)
+                                    .crossfade(true)
+                                    .build(),
+                            placeholder = placeholderBitmap?.let { BitmapPainter(it.asImageBitmap()) },
+                        ),
+                    contentDescription = title,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize(),
+                )
+                Box(
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .background(
+                                Brush.verticalGradient(
+                                    listOf(
+                                        Color.Black.copy(alpha = 0.35f),
+                                        Color.Black.copy(alpha = 0.70f),
+                                    ),
+                                ),
+                            ),
+                )
+            } else {
+                Box(
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .background(
+                                Brush.linearGradient(
+                                    listOf(
+                                        Color(0xFF1E293B),
+                                        Color(0xFF0F172A),
+                                    ),
+                                ),
+                            ),
+                )
+            }
+
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 6.dp, vertical = 4.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                    color = Color.White,
+                    textAlign = TextAlign.Center,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+    }
+}
+
+private const val PAGINATION_THRESHOLD = 6

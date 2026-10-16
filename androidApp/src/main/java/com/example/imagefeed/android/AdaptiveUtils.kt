@@ -1,10 +1,16 @@
 package com.example.imagefeed.android
 
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.max
+import com.example.imagefeed.android.adaptive.LocalAdaptiveLayoutInfo
 
 private const val WIDTH_EXPANDED_ULTRA_DP = 1200
 private const val WIDTH_EXPANDED_LARGE_DP = 840
@@ -86,4 +92,30 @@ fun calculatePhotoItemWidthPx(columnCount: Int = calculateGridColumnCount()): In
     val density = LocalDensity.current
     val itemWidthDp = (configuration.screenWidthDp / columnCount.coerceAtLeast(1)).dp
     return with(density) { itemWidthDp.roundToPx() }
+}
+
+internal val MIN_PHONE_PILL_BOTTOM_PADDING = 96.dp
+internal val PILL_CONTAINER_BASE_OFFSET = 80.dp
+internal val PILL_CONTENT_BREATHING_GAP = 16.dp
+
+fun computeBottomContentPadding(
+    useNavigationRail: Boolean,
+    navBarBottomInset: Dp,
+    defaultPadding: Dp = 12.dp,
+): Dp =
+    if (useNavigationRail) {
+        defaultPadding
+    } else {
+        max(MIN_PHONE_PILL_BOTTOM_PADDING, PILL_CONTAINER_BASE_OFFSET + navBarBottomInset + PILL_CONTENT_BREATHING_GAP)
+    }
+
+@Composable
+fun calculateBottomContentPadding(defaultPadding: Dp = 12.dp): Dp {
+    val adaptiveLayoutInfo = LocalAdaptiveLayoutInfo.current
+    val navBarBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+    return computeBottomContentPadding(
+        useNavigationRail = adaptiveLayoutInfo.useNavigationRail,
+        navBarBottomInset = navBarBottom,
+        defaultPadding = defaultPadding,
+    )
 }

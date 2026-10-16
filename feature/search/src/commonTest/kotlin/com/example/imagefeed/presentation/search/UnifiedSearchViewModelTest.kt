@@ -153,11 +153,81 @@ class UnifiedSearchViewModelTest {
             )
         }
 
+    @Test
+    fun selectColorUpdatesFilterAndTogglesOffCleanly() =
+        runTest(testDispatcher) {
+            val repository = FakeSearchRepository()
+            val viewModel = UnifiedSearchViewModel(repository)
+
+            // Select color
+            viewModel.dispatch(UnifiedSearchIntent.SelectColor("teal"))
+            advanceUntilIdle()
+            assertEquals("teal", viewModel.state.value.filters.color)
+
+            // Toggle off cleanly
+            viewModel.dispatch(UnifiedSearchIntent.SelectColor(null))
+            advanceUntilIdle()
+            assertEquals(null, viewModel.state.value.filters.color)
+        }
+
+    @Test
+    fun selectColorAppliesFilterToActiveSearch() =
+        runTest(testDispatcher) {
+            val repository = FakeSearchRepository(photoResults = listOf(photo("p-colored")))
+            val viewModel = UnifiedSearchViewModel(repository)
+
+            viewModel.dispatch(UnifiedSearchIntent.SubmitSearch("nature"))
+            advanceUntilIdle()
+            assertEquals(null, repository.lastColor)
+
+            viewModel.dispatch(UnifiedSearchIntent.SelectColor("green"))
+            advanceUntilIdle()
+            assertEquals("green", viewModel.state.value.filters.color)
+            assertEquals("green", repository.lastColor)
+        }
+
+    @Test
+    fun selectColorSwitchesToPhotosTabWhenNonPhotoTabActive() =
+        runTest(testDispatcher) {
+            val repository = FakeSearchRepository()
+            val viewModel = UnifiedSearchViewModel(repository)
+
+            viewModel.dispatch(UnifiedSearchIntent.SelectSearchType(SearchTab.COLLECTIONS))
+            advanceUntilIdle()
+            assertEquals(SearchTab.COLLECTIONS, viewModel.state.value.activeTab)
+
+            viewModel.dispatch(UnifiedSearchIntent.SelectColor("red"))
+            advanceUntilIdle()
+            assertEquals(SearchTab.PHOTOS, viewModel.state.value.activeTab)
+            assertEquals("red", viewModel.state.value.filters.color)
+        }
+
+    @Test
+    fun rapidColorSelectionCancelsPriorSearchJobAndAppliesLatest() =
+        runTest(testDispatcher) {
+            val repository = FakeSearchRepository(photoResults = listOf(photo("p1")))
+            val viewModel = UnifiedSearchViewModel(repository)
+
+            viewModel.dispatch(UnifiedSearchIntent.SubmitSearch("nature"))
+            advanceUntilIdle()
+
+            // Rapidly select different colors
+            viewModel.dispatch(UnifiedSearchIntent.SelectColor("teal"))
+            viewModel.dispatch(UnifiedSearchIntent.SelectColor("orange"))
+            viewModel.dispatch(UnifiedSearchIntent.SelectColor("blue"))
+            advanceUntilIdle()
+
+            assertEquals("blue", viewModel.state.value.filters.color)
+            assertEquals("blue", repository.lastColor)
+        }
+
     private class FakeSearchRepository(
         private val photoResults: List<Photo> = emptyList(),
         private val collectionResults: List<CollectionSummary> = emptyList(),
         private val userResults: List<User> = emptyList(),
     ) : SearchRepository {
+        var lastColor: String? = null
+
         override suspend fun searchPhotos(
             query: String,
             page: Int,
@@ -166,12 +236,14 @@ class UnifiedSearchViewModelTest {
             color: String?,
             orientation: String?,
             contentFilter: String?,
-        ): SearchResponse<Photo> =
-            SearchResponse(
+        ): SearchResponse<Photo> {
+            lastColor = color
+            return SearchResponse(
                 total = photoResults.size,
                 totalPages = 1,
                 results = photoResults,
             )
+        }
 
         override suspend fun searchCollections(
             query: String,

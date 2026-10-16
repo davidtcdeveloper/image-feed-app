@@ -18,20 +18,30 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Scaffold
@@ -42,7 +52,11 @@ import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.material3.adaptive.layout.calculatePaneScaffoldDirective
 import androidx.compose.material3.adaptive.navigation3.rememberListDetailSceneStrategy
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation3.runtime.NavKey
@@ -147,26 +161,71 @@ class MainActivity : ComponentActivity() {
                                 contentWindowInsets = WindowInsets(0, 0, 0, 0),
                                 bottomBar = {
                                     if (useBottomBar) {
-                                        NavigationBar {
-                                            TOP_LEVEL_DESTINATIONS.forEach { destination ->
-                                                val isSelected = navigationState.topLevelRoute == destination.route
-                                                NavigationBarItem(
-                                                    selected = isSelected,
-                                                    onClick = {
-                                                        if (isSelected) {
-                                                            navigator.onReselect(destination.route)
-                                                        } else {
-                                                            navigator.navigate(destination.route)
-                                                        }
-                                                    },
-                                                    icon = {
-                                                        Icon(
-                                                            imageVector = destination.icon,
-                                                            contentDescription = destination.label,
+                                        Box(
+                                            modifier =
+                                                Modifier
+                                                    .fillMaxWidth()
+                                                    .navigationBarsPadding()
+                                                    .padding(bottom = 12.dp, start = 24.dp, end = 24.dp),
+                                            contentAlignment = Alignment.Center,
+                                        ) {
+                                            Surface(
+                                                modifier =
+                                                    Modifier
+                                                        .fillMaxWidth()
+                                                        .height(68.dp),
+                                                shape = CircleShape,
+                                                color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.88f),
+                                                shadowElevation = 8.dp,
+                                                border =
+                                                    BorderStroke(
+                                                        width = 1.dp,
+                                                        brush =
+                                                            Brush.verticalGradient(
+                                                                listOf(
+                                                                    Color.White.copy(alpha = 0.20f),
+                                                                    Color.White.copy(alpha = 0.05f),
+                                                                ),
+                                                            ),
+                                                    ),
+                                            ) {
+                                                Row(
+                                                    modifier =
+                                                        Modifier
+                                                            .fillMaxSize()
+                                                            .selectableGroup(),
+                                                    horizontalArrangement = Arrangement.SpaceEvenly,
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                ) {
+                                                    TOP_LEVEL_DESTINATIONS.forEach { destination ->
+                                                        val isSelected = navigationState.topLevelRoute == destination.route
+                                                        NavigationBarItem(
+                                                            selected = isSelected,
+                                                            onClick = {
+                                                                if (isSelected) {
+                                                                    navigator.onReselect(destination.route)
+                                                                } else {
+                                                                    navigator.navigate(destination.route)
+                                                                }
+                                                            },
+                                                            icon = {
+                                                                Icon(
+                                                                    imageVector = destination.icon,
+                                                                    contentDescription = null,
+                                                                )
+                                                            },
+                                                            label = { Text(destination.label) },
+                                                            colors =
+                                                                NavigationBarItemDefaults.colors(
+                                                                    indicatorColor = MaterialTheme.colorScheme.secondaryContainer,
+                                                                    selectedIconColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                                                                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                                    selectedTextColor = MaterialTheme.colorScheme.onSurface,
+                                                                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                                ),
                                                         )
-                                                    },
-                                                    label = { Text(destination.label) },
-                                                )
+                                                    }
+                                                }
                                             }
                                         }
                                     }
@@ -211,6 +270,18 @@ class MainActivity : ComponentActivity() {
                                         }
                                     val listDetailStrategy = rememberListDetailSceneStrategy<NavKey>(directive = directive)
 
+                                    val navDisplayPadding =
+                                        if (useBottomBar) {
+                                            PaddingValues(
+                                                start = innerPadding.calculateStartPadding(LocalLayoutDirection.current),
+                                                top = innerPadding.calculateTopPadding(),
+                                                end = innerPadding.calculateEndPadding(LocalLayoutDirection.current),
+                                                bottom = 0.dp,
+                                            )
+                                        } else {
+                                            innerPadding
+                                        }
+
                                     NavDisplay(
                                         entries = entries,
                                         sceneStrategies = listOf(listDetailStrategy),
@@ -222,8 +293,8 @@ class MainActivity : ComponentActivity() {
                                         sharedTransitionScope = sharedTransitionScope,
                                         modifier =
                                             Modifier
-                                                .padding(innerPadding)
-                                                .consumeWindowInsets(innerPadding),
+                                                .padding(navDisplayPadding)
+                                                .consumeWindowInsets(navDisplayPadding),
                                         transitionSpec = {
                                             (
                                                 slideInHorizontally(

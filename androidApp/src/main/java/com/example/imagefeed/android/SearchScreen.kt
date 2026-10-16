@@ -3,6 +3,11 @@ package com.example.imagefeed.android
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -15,6 +20,7 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -54,8 +60,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SearchBar
 import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.SecondaryTabRow
-import androidx.compose.material3.SuggestionChip
-import androidx.compose.material3.SuggestionChipDefaults
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.Text
@@ -72,11 +76,21 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -87,9 +101,11 @@ import androidx.navigationevent.compose.rememberNavigationEventState
 import coil3.compose.rememberAsyncImagePainter
 import com.example.imagefeed.android.adaptive.LocalAdaptiveLayoutInfo
 import com.example.imagefeed.android.navigation.AppRoute
+import com.example.imagefeed.android.util.BLURHASH_PLACEHOLDER_WIDTH
 import com.example.imagefeed.android.util.CollectionMosaicCardSkeleton
 import com.example.imagefeed.android.util.PhotoGridSkeleton
 import com.example.imagefeed.android.util.bounceClick
+import com.example.imagefeed.android.util.rememberBlurHashPlaceholder
 import com.example.imagefeed.android.util.staggeredEntrance
 import com.example.imagefeed.di.MetroHelper
 import com.example.imagefeed.model.CollectionSummary
@@ -268,6 +284,14 @@ fun SearchScreen(
                 }
 
                 if (!state.isSearchActive) {
+                    SearchColorDial(
+                        selectedColor = state.filters.color,
+                        onSelectColor = { color ->
+                            viewModel.dispatch(UnifiedSearchIntent.SelectColor(color))
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+
                     // Search Category Tabs
                     SecondaryTabRow(
                         selectedTabIndex = state.activeTab.ordinal,
@@ -336,8 +360,12 @@ fun SearchScreen(
                                     modifier =
                                         Modifier
                                             .fillMaxSize()
-                                            .padding(12.dp)
-                                            .verticalScroll(rememberScrollState()),
+                                            .padding(
+                                                start = 12.dp,
+                                                top = 12.dp,
+                                                end = 12.dp,
+                                                bottom = calculateBottomContentPadding(12.dp),
+                                            ).verticalScroll(rememberScrollState()),
                                     verticalArrangement = Arrangement.spacedBy(16.dp),
                                 ) {
                                     repeat(SKELETON_COLLECTION_COUNT) {
@@ -437,31 +465,36 @@ fun SearchScreen(
     }
 }
 
+private val POPULAR_TOPICS =
+    listOf(
+        "nature",
+        "travel",
+        "architecture",
+        "wallpapers",
+        "neon",
+        "minimalist",
+        "urban",
+        "textures",
+    )
+
 @Composable
 fun SearchSuggestionsAndHistory(
     history: List<String>,
     onItemClick: (String) -> Unit,
     onDeleteClick: (String) -> Unit,
     onClearAll: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    val suggestions =
-        listOf(
-            "nature",
-            "travel",
-            "architecture",
-            "wallpapers",
-            "neon",
-            "minimalist",
-            "urban",
-            "textures",
-        )
-
     Column(
         modifier =
-            Modifier
+            modifier
                 .fillMaxSize()
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState()),
+                .padding(
+                    start = 16.dp,
+                    top = 16.dp,
+                    end = 16.dp,
+                    bottom = calculateBottomContentPadding(16.dp),
+                ).verticalScroll(rememberScrollState()),
     ) {
         if (history.isNotEmpty()) {
             Row(
@@ -537,27 +570,31 @@ fun SearchSuggestionsAndHistory(
         @OptIn(ExperimentalLayoutApi::class)
         FlowRow(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            suggestions.forEach { topic ->
-                SuggestionChip(
-                    onClick = { onItemClick(topic) },
-                    label = {
-                        Text(
-                            text = topic,
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.Medium,
-                        )
-                    },
-                    shape = MaterialTheme.shapes.small,
-                    colors =
-                        SuggestionChipDefaults.suggestionChipColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                            labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                        ),
-                    border = null,
-                )
+            POPULAR_TOPICS.forEach { topic ->
+                Box(
+                    modifier =
+                        Modifier
+                            .width(120.dp)
+                            .height(64.dp)
+                            .clip(MaterialTheme.shapes.large)
+                            .background(suggestionGradient(topic))
+                            .border(
+                                BorderStroke(1.dp, Color.White.copy(alpha = 0.15f)),
+                                shape = MaterialTheme.shapes.large,
+                            ).bounceClick { onItemClick(topic) }
+                            .padding(8.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = topic.replaceFirstChar { it.uppercase() },
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                        color = Color.White,
+                        textAlign = TextAlign.Center,
+                    )
+                }
             }
         }
     }
@@ -593,7 +630,7 @@ fun PhotosResultGrid(
             val layoutInfo = listState.layoutInfo
             val totalItems = layoutInfo.totalItemsCount
             val lastVisible = layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
-            totalItems > 0 && lastVisible >= totalItems - 6
+            totalItems > 0 && lastVisible >= totalItems - PAGINATION_PHOTO_THRESHOLD
         }.distinctUntilChanged()
             .filter { shouldLoad -> shouldLoad && !currentLoading && !currentHasReachedEnd }
             .collect {
@@ -605,7 +642,13 @@ fun PhotosResultGrid(
         columns = calculateGridColumns(),
         state = listState,
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(8.dp),
+        contentPadding =
+            PaddingValues(
+                start = 8.dp,
+                top = 8.dp,
+                end = 8.dp,
+                bottom = calculateBottomContentPadding(8.dp),
+            ),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalItemSpacing = 8.dp,
     ) {
@@ -669,7 +712,7 @@ fun CollectionsResultList(
             val layoutInfo = listState.layoutInfo
             val totalItems = layoutInfo.totalItemsCount
             val lastVisible = layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
-            totalItems > 0 && lastVisible >= totalItems - 4
+            totalItems > 0 && lastVisible >= totalItems - PAGINATION_COLLECTION_THRESHOLD
         }.distinctUntilChanged()
             .filter { shouldLoad -> shouldLoad && !currentLoading && !currentHasReachedEnd }
             .collect {
@@ -681,7 +724,13 @@ fun CollectionsResultList(
         columns = calculateCollectionGridColumns(),
         state = listState,
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(12.dp),
+        contentPadding =
+            PaddingValues(
+                start = 12.dp,
+                top = 12.dp,
+                end = 12.dp,
+                bottom = calculateBottomContentPadding(12.dp),
+            ),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalItemSpacing = 16.dp,
     ) {
@@ -719,21 +768,28 @@ fun CollectionRowCard(
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
+    val blurHash = collection.coverPhoto?.blurHash
+    val placeholderBitmap = rememberBlurHashPlaceholder(blurHash, BLURHASH_PLACEHOLDER_WIDTH, 18)
+
     Card(
-        shape = MaterialTheme.shapes.medium,
+        shape = MaterialTheme.shapes.extraLarge,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
         modifier =
             modifier
                 .fillMaxWidth()
-                .height(200.dp)
-                .clip(MaterialTheme.shapes.medium)
+                .aspectRatio(1.4f)
+                .clip(MaterialTheme.shapes.extraLarge)
                 .bounceClick { onClick() },
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             val coverPhoto = collection.coverPhoto
             if (coverPhoto != null) {
                 Image(
-                    painter = rememberAsyncImagePainter(model = coverPhoto.urls.regular),
+                    painter =
+                        rememberAsyncImagePainter(
+                            model = coverPhoto.urls.regular,
+                            placeholder = placeholderBitmap?.let { BitmapPainter(it.asImageBitmap()) },
+                        ),
                     contentDescription = collection.title,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop,
@@ -746,8 +802,14 @@ fun CollectionRowCard(
                 modifier =
                     Modifier
                         .fillMaxSize()
-                        .background(Color.Black.copy(alpha = 0.45f))
-                        .padding(16.dp),
+                        .background(
+                            Brush.verticalGradient(
+                                listOf(
+                                    Color.Transparent,
+                                    Color.Black.copy(alpha = 0.65f),
+                                ),
+                            ),
+                        ).padding(16.dp),
                 contentAlignment = Alignment.BottomStart,
             ) {
                 Column {
@@ -797,7 +859,7 @@ fun UsersResultList(
             val layoutInfo = listState.layoutInfo
             val totalItems = layoutInfo.totalItemsCount
             val lastVisible = layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
-            totalItems > 0 && lastVisible >= totalItems - 4
+            totalItems > 0 && lastVisible >= totalItems - PAGINATION_USER_THRESHOLD
         }.distinctUntilChanged()
             .filter { shouldLoad -> shouldLoad && !currentLoading && !currentHasReachedEnd }
             .collect {
@@ -809,7 +871,13 @@ fun UsersResultList(
         columns = calculateUserGridColumns(),
         state = listState,
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(12.dp),
+        contentPadding =
+            PaddingValues(
+                start = 12.dp,
+                top = 12.dp,
+                end = 12.dp,
+                bottom = calculateBottomContentPadding(12.dp),
+            ),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalItemSpacing = 12.dp,
     ) {
@@ -915,6 +983,7 @@ fun NoResultsView() {
     }
 }
 
+@Suppress("MagicNumber")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchFiltersSheet(
@@ -1162,3 +1231,204 @@ fun SearchFiltersSheet(
 }
 
 private const val SKELETON_COLLECTION_COUNT = 4
+private const val PAGINATION_PHOTO_THRESHOLD = 6
+private const val PAGINATION_COLLECTION_THRESHOLD = 4
+private const val PAGINATION_USER_THRESHOLD = 4
+
+@Suppress("MagicNumber")
+private fun suggestionGradient(topic: String): Brush =
+    when (topic.lowercase()) {
+        "nature" ->
+            Brush.linearGradient(
+                listOf(
+                    Color(0xFF1B4332),
+                    Color(0xFF2D6A4F),
+                    Color(0xFF081C15),
+                ),
+            )
+        "travel" ->
+            Brush.linearGradient(
+                listOf(
+                    Color(0xFF1E1B4B),
+                    Color(0xFF4338CA),
+                    Color(0xFF831843),
+                ),
+            )
+        "architecture" ->
+            Brush.linearGradient(
+                listOf(
+                    Color(0xFF1E293B),
+                    Color(0xFF334155),
+                    Color(0xFF475569),
+                ),
+            )
+        "wallpapers" ->
+            Brush.linearGradient(
+                listOf(
+                    Color(0xFF3B0764),
+                    Color(0xFF581C87),
+                    Color(0xFF701A75),
+                ),
+            )
+        "neon" ->
+            Brush.linearGradient(
+                listOf(
+                    Color(0xFF0F172A),
+                    Color(0xFF0369A1),
+                    Color(0xFF4C1D95),
+                ),
+            )
+        "minimalist" ->
+            Brush.linearGradient(
+                listOf(
+                    Color(0xFF18181B),
+                    Color(0xFF27272A),
+                    Color(0xFF3F3F46),
+                ),
+            )
+        "urban" ->
+            Brush.linearGradient(
+                listOf(
+                    Color(0xFF451A03),
+                    Color(0xFF78350F),
+                    Color(0xFF1C1917),
+                ),
+            )
+        "textures" ->
+            Brush.linearGradient(
+                listOf(
+                    Color(0xFF292524),
+                    Color(0xFF44403C),
+                    Color(0xFF57534E),
+                ),
+            )
+        else ->
+            Brush.linearGradient(
+                listOf(
+                    Color(0xFF1E293B),
+                    Color(0xFF0F172A),
+                ),
+            )
+    }
+
+@Suppress("MagicNumber")
+@Composable
+private fun SearchColorDial(
+    selectedColor: String?,
+    onSelectColor: (String?) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val haptic = LocalHapticFeedback.current
+    val colors =
+        remember {
+            listOf(
+                "black_and_white",
+                "black",
+                "white",
+                "yellow",
+                "orange",
+                "red",
+                "purple",
+                "magenta",
+                "green",
+                "teal",
+                "blue",
+            )
+        }
+
+    LazyRow(
+        modifier = modifier,
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        items(colors, key = { it }) { colorKey ->
+            val isSelected = selectedColor == colorKey
+            val ringBorderWidth by animateDpAsState(
+                targetValue = if (isSelected) 2.dp else 0.dp,
+                animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+                label = "color_selection_ring",
+            )
+            val ringPadding by animateDpAsState(
+                targetValue = if (isSelected) 3.dp else 0.dp,
+                animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+                label = "color_selection_padding",
+            )
+            val ringColor by animateColorAsState(
+                targetValue = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
+                animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+                label = "color_selection_ring_color",
+            )
+
+            val brush =
+                remember(colorKey) {
+                    when (colorKey) {
+                        "black_and_white" ->
+                            Brush.linearGradient(listOf(Color(0xFF1A1A1A), Color(0xFFF0F0F0)))
+                        "black" -> SolidColor(Color.Black)
+                        "white" -> SolidColor(Color.White)
+                        "yellow" -> SolidColor(Color(0xFFFFEB3B))
+                        "orange" -> SolidColor(Color(0xFFFF9800))
+                        "red" -> SolidColor(Color(0xFFF44336))
+                        "purple" -> SolidColor(Color(0xFF9C27B0))
+                        "magenta" -> SolidColor(Color(0xFFE91E63))
+                        "green" -> SolidColor(Color(0xFF4CAF50))
+                        "teal" -> SolidColor(Color(0xFF009688))
+                        "blue" -> SolidColor(Color(0xFF2196F3))
+                        else -> SolidColor(Color.Gray)
+                    }
+                }
+
+            val colorLabel =
+                remember(colorKey) {
+                    colorKey.replace('_', ' ').replaceFirstChar { it.uppercase() }
+                }
+
+            Box(
+                modifier =
+                    Modifier
+                        .size(44.dp)
+                        .semantics {
+                            contentDescription = colorLabel
+                            role = Role.RadioButton
+                            selected = isSelected
+                        }.clip(CircleShape)
+                        .clickable {
+                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            val target = if (isSelected) null else colorKey
+                            onSelectColor(target)
+                        },
+                contentAlignment = Alignment.Center,
+            ) {
+                Box(
+                    modifier =
+                        Modifier
+                            .size(34.dp)
+                            .border(
+                                width = ringBorderWidth,
+                                color = ringColor,
+                                shape = CircleShape,
+                            ).padding(ringPadding)
+                            .clip(CircleShape)
+                            .then(
+                                if (colorKey == "white" && !isSelected) {
+                                    Modifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape)
+                                } else {
+                                    Modifier
+                                },
+                            ).background(brush),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    if (isSelected) {
+                        Icon(
+                            imageVector = Icons.Default.Check,
+                            contentDescription = null,
+                            tint = if (colorKey == "white" || colorKey == "yellow") Color.Black else Color.White,
+                            modifier = Modifier.size(14.dp),
+                        )
+                    }
+                }
+            }
+        }
+    }
+}

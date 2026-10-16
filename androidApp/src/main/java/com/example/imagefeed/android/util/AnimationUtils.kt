@@ -31,6 +31,8 @@ import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.CornerSize
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -46,6 +48,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
+import com.example.imagefeed.android.calculateBottomContentPadding
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.milliseconds
@@ -211,7 +214,13 @@ fun PhotoGridSkeleton() {
     LazyVerticalStaggeredGrid(
         columns = StaggeredGridCells.Adaptive(160.dp),
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(8.dp),
+        contentPadding =
+            PaddingValues(
+                start = 8.dp,
+                top = 8.dp,
+                end = 8.dp,
+                bottom = calculateBottomContentPadding(8.dp),
+            ),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalItemSpacing = 8.dp,
     ) {
@@ -224,83 +233,91 @@ fun PhotoGridSkeleton() {
 
 @Composable
 fun CollectionMosaicCardSkeleton() {
-    Column(
+    Card(
+        shape = MaterialTheme.shapes.extraLarge,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
         modifier =
             Modifier
                 .fillMaxWidth()
-                .clip(MaterialTheme.shapes.medium)
-                .shimmerEffect()
-                .padding(12.dp),
+                .clip(MaterialTheme.shapes.extraLarge),
     ) {
-        Row(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .height(180.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            val smallShape = MaterialTheme.shapes.small
-            Box(
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Row(
                 modifier =
                     Modifier
-                        .weight(1f)
-                        .fillMaxSize()
-                        .clip(smallShape.copy(topEnd = CornerSize(0.dp), bottomEnd = CornerSize(0.dp)))
-                        .shimmerEffect(),
-            )
+                        .fillMaxWidth()
+                        .aspectRatio(1.4f),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                val smallShape = MaterialTheme.shapes.small
+                Box(
+                    modifier =
+                        Modifier
+                            .weight(0.62f)
+                            .fillMaxSize()
+                            .clip(smallShape.copy(topEnd = CornerSize(0.dp), bottomEnd = CornerSize(0.dp)))
+                            .shimmerEffect(),
+                )
+                Column(
+                    modifier =
+                        Modifier
+                            .weight(0.38f)
+                            .fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Box(
+                        modifier =
+                            Modifier
+                                .weight(1f)
+                                .fillMaxWidth()
+                                .clip(
+                                    smallShape.copy(
+                                        topStart = CornerSize(0.dp),
+                                        bottomStart = CornerSize(0.dp),
+                                        bottomEnd = CornerSize(0.dp),
+                                    ),
+                                ).shimmerEffect(),
+                    )
+                    Box(
+                        modifier =
+                            Modifier
+                                .weight(1f)
+                                .fillMaxWidth()
+                                .clip(
+                                    smallShape.copy(
+                                        topStart = CornerSize(0.dp),
+                                        bottomStart = CornerSize(0.dp),
+                                        topEnd = CornerSize(0.dp),
+                                    ),
+                                ).shimmerEffect(),
+                    )
+                }
+            }
             Column(
                 modifier =
                     Modifier
-                        .width(110.dp)
-                        .fillMaxSize(),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
+                        .fillMaxWidth()
+                        .padding(12.dp),
             ) {
                 Box(
                     modifier =
                         Modifier
-                            .weight(1f)
-                            .fillMaxWidth()
-                            .clip(
-                                smallShape.copy(
-                                    topStart = CornerSize(0.dp),
-                                    bottomStart = CornerSize(0.dp),
-                                    bottomEnd = CornerSize(0.dp),
-                                ),
-                            ).shimmerEffect(),
+                            .width(180.dp)
+                            .height(16.dp)
+                            .clip(MaterialTheme.shapes.extraSmall)
+                            .shimmerEffect(),
                 )
+                Spacer(modifier = Modifier.height(6.dp))
                 Box(
                     modifier =
                         Modifier
-                            .weight(1f)
-                            .fillMaxWidth()
-                            .clip(
-                                smallShape.copy(
-                                    topStart = CornerSize(0.dp),
-                                    bottomStart = CornerSize(0.dp),
-                                    topEnd = CornerSize(0.dp),
-                                ),
-                            ).shimmerEffect(),
+                            .width(240.dp)
+                            .height(12.dp)
+                            .clip(MaterialTheme.shapes.extraSmall)
+                            .shimmerEffect(),
                 )
             }
         }
-        Spacer(modifier = Modifier.height(12.dp))
-        Box(
-            modifier =
-                Modifier
-                    .width(180.dp)
-                    .height(16.dp)
-                    .clip(MaterialTheme.shapes.extraSmall)
-                    .shimmerEffect(),
-        )
-        Spacer(modifier = Modifier.height(4.dp))
-        Box(
-            modifier =
-                Modifier
-                    .width(260.dp)
-                    .height(12.dp)
-                    .clip(MaterialTheme.shapes.extraSmall)
-                    .shimmerEffect(),
-        )
     }
 }
 

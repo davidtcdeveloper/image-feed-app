@@ -22,7 +22,12 @@ class UnifiedSearchViewModel(
         when (intent) {
             is UnifiedSearchIntent.UpdateQuery -> updateQuery(intent.query)
             is UnifiedSearchIntent.SelectSearchType -> setTab(intent.type)
-            is UnifiedSearchIntent.SelectColor -> applyFilters(state.value.filters.copy(color = intent.color))
+            is UnifiedSearchIntent.SelectColor -> {
+                if (intent.color != null && state.value.activeTab != SearchTab.PHOTOS) {
+                    updateState { it.copy(activeTab = SearchTab.PHOTOS) }
+                }
+                applyFilters(state.value.filters.copy(color = intent.color))
+            }
             is UnifiedSearchIntent.SelectOrientation -> applyFilters(state.value.filters.copy(orientation = intent.orientation))
             is UnifiedSearchIntent.ApplyFilters -> applyFilters(intent.filters)
             is UnifiedSearchIntent.SetSearchActive -> setSearchActive(intent.active)
@@ -321,62 +326,64 @@ class UnifiedSearchViewModel(
             )
         }
 
-        viewModelScope.launch {
-            try {
-                when (state.value.activeTab) {
-                    SearchTab.PHOTOS -> {
-                        val response =
-                            repository.searchPhotos(
-                                query = query,
-                                page = 1,
-                                perPage = 15,
-                                orderBy = state.value.filters.orderBy,
-                                color = state.value.filters.color,
-                                orientation = state.value.filters.orientation,
-                                contentFilter = state.value.filters.contentFilter,
-                            )
-                        updateState {
-                            it.copy(
-                                photos = response.results.distinctBy { photo -> photo.id },
-                                hasReachedEnd = response.results.isEmpty() || response.totalPages <= 1,
-                                isLoading = false,
-                            )
+        searchJob?.cancel()
+        searchJob =
+            viewModelScope.launch {
+                try {
+                    when (state.value.activeTab) {
+                        SearchTab.PHOTOS -> {
+                            val response =
+                                repository.searchPhotos(
+                                    query = query,
+                                    page = 1,
+                                    perPage = 15,
+                                    orderBy = state.value.filters.orderBy,
+                                    color = state.value.filters.color,
+                                    orientation = state.value.filters.orientation,
+                                    contentFilter = state.value.filters.contentFilter,
+                                )
+                            updateState {
+                                it.copy(
+                                    photos = response.results.distinctBy { photo -> photo.id },
+                                    hasReachedEnd = response.results.isEmpty() || response.totalPages <= 1,
+                                    isLoading = false,
+                                )
+                            }
+                        }
+                        SearchTab.COLLECTIONS -> {
+                            val response = repository.searchCollections(query, 1, 15)
+                            updateState {
+                                it.copy(
+                                    collections = response.results.distinctBy { col -> col.id },
+                                    hasReachedEnd = response.results.isEmpty() || response.totalPages <= 1,
+                                    isLoading = false,
+                                )
+                            }
+                        }
+                        SearchTab.USERS -> {
+                            val response = repository.searchUsers(query, 1, 15)
+                            updateState {
+                                it.copy(
+                                    users = response.results.distinctBy { user -> user.id },
+                                    hasReachedEnd = response.results.isEmpty() || response.totalPages <= 1,
+                                    isLoading = false,
+                                )
+                            }
                         }
                     }
-                    SearchTab.COLLECTIONS -> {
-                        val response = repository.searchCollections(query, 1, 15)
-                        updateState {
-                            it.copy(
-                                collections = response.results.distinctBy { col -> col.id },
-                                hasReachedEnd = response.results.isEmpty() || response.totalPages <= 1,
-                                isLoading = false,
-                            )
-                        }
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    val message = e.message ?: "Search failed"
+                    updateState {
+                        it.copy(
+                            isLoading = false,
+                            error = message,
+                        )
                     }
-                    SearchTab.USERS -> {
-                        val response = repository.searchUsers(query, 1, 15)
-                        updateState {
-                            it.copy(
-                                users = response.results.distinctBy { user -> user.id },
-                                hasReachedEnd = response.results.isEmpty() || response.totalPages <= 1,
-                                isLoading = false,
-                            )
-                        }
-                    }
+                    sendEffect(UnifiedSearchEffect.ShowError(message))
                 }
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                val message = e.message ?: "Search failed"
-                updateState {
-                    it.copy(
-                        isLoading = false,
-                        error = message,
-                    )
-                }
-                sendEffect(UnifiedSearchEffect.ShowError(message))
             }
-        }
     }
 
     override fun teardown() {

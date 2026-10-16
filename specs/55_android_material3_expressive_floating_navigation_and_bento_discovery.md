@@ -1,6 +1,6 @@
 # Specification 55: Android Material 3 Expressive Floating Navigation Chrome & Bento Discovery
 
-**Status:** Proposed
+**Status:** Implemented
 
 ---
 
@@ -107,14 +107,14 @@ graph TD
 ## 3. Acceptance Criteria & Verification Plan
 
 ### Acceptance Criteria
-- [ ] On phone viewports, the bottom navigation bar renders as a floating translucent pill bar with subtle gradient border.
-- [ ] Staggered grid content scrolls smoothly beneath the floating pill bar with appropriate bottom content padding.
-- [ ] On tablets and foldables, the start-docked `NavigationRail` remains intact and fully functional.
-- [ ] Curated Collections previews render with proportional `1.4f` aspect ratio and `extraLarge` squircle corners, preserving Coil 3 BlurHash placeholders.
-- [ ] Trending topics in `FeedScreen.kt` render as visual image capsules with dark scrims.
-- [ ] Popular suggestions in `SearchScreen.kt` render as dark photographic gradient cards.
-- [ ] "Search by Color" row dispatches `UnifiedSearchIntent.SelectColor(color)` and toggles off cleanly on repeat tap.
-- [ ] Zero compiler warnings and zero dead code introduced.
+- [x] On phone viewports, the bottom navigation bar renders as a floating translucent pill bar with subtle gradient border.
+- [x] Staggered grid content scrolls smoothly beneath the floating pill bar with appropriate bottom content padding.
+- [x] On tablets and foldables, the start-docked `NavigationRail` remains intact and fully functional.
+- [x] Curated Collections previews render with proportional `1.4f` aspect ratio and `extraLarge` squircle corners, preserving Coil 3 BlurHash placeholders.
+- [x] Trending topics in `FeedScreen.kt` render as visual image capsules with dark scrims.
+- [x] Popular suggestions in `SearchScreen.kt` render as dark photographic gradient cards.
+- [x] "Search by Color" row dispatches `UnifiedSearchIntent.SelectColor(color)` and toggles off cleanly on repeat tap.
+- [x] Zero compiler warnings and zero dead code introduced.
 
 ### Verification Commands
 ```bash

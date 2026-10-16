@@ -1,3 +1,5 @@
+@file:Suppress("MagicNumber")
+
 package com.example.imagefeed.android.theme
 
 import androidx.compose.material3.darkColorScheme
