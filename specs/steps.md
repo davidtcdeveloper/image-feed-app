@@ -890,5 +890,8 @@ These are the spec files that the implementation notes and planning references s
     *   Implement Swift extension on `shared.AppError` for localized string resolution.
     *   Adopt native Swift Foundation metric formatting (`.formatted(.number.notation(.compactName))`) and date formatting (`ISO8601DateFormatter`).
     *   Replace hardcoded `chevron.left` back buttons with auto-mirroring `chevron.backward`.
-4.  **Reference Specification:**
+4.  **Agent Instructions & Skill Governance:**
+    *   Author `.agents/skills/localization/SKILL.md` defining string extraction patterns, plural syntax differences, and format token conventions.
+    *   Update `AGENTS.md` and `GEMINI.md` with the Zero Hardcoded Strings Policy and skill link while preserving root brevity (< 75 lines).
+5.  **Reference Specification:**
     *   Track blueprint in `specs/59_cross_platform_localization_architecture.md`.
