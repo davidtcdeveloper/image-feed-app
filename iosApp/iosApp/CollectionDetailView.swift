@@ -244,7 +244,7 @@ struct CollectionDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
-        .toolbarColorScheme(.dark, for: .navigationBar)
+        .toolbar(.hidden, for: .tabBar)
         #endif
         .toolbar {
             #if os(iOS)
@@ -359,7 +359,12 @@ struct CollectionPhotoGridCard: View {
                 }
                 .padding(.horizontal, 8)
                 .padding(.vertical, 5)
+                .background {
+                    Capsule()
+                        .fill(Color.black.opacity(0.35))
+                }
                 .glassCapsule(style: .ultraThin, showBorder: true, hasShadow: true)
+                .environment(\.colorScheme, .dark)
             }
             .buttonStyle(.plain)
             .contentShape(Capsule())

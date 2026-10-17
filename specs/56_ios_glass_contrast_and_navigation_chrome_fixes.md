@@ -1,6 +1,6 @@
 # iOS Glass Contrast, Navigation Chrome & Legibility Fixes Spec
 
-**Status:** Proposed
+**Status:** Implemented
 
 ## Overview
 This specification addresses critical contrast bugs, muddy navigation bar chrome, and navigation bar/tab bar leaks identified during visual inspection of the iOS client:
@@ -57,8 +57,8 @@ In [`ContentView.swift`](file:///Users/davidtiagoconceicao/Developer/image-feed-
 ---
 
 ## Acceptance Criteria
-- [ ] Popular Topics pill buttons in `SearchView` have crisp, high-contrast text in both Light and Dark modes.
-- [ ] Tab bar icons and text are sharp and legible across all scroll positions and color modes.
-- [ ] Top navigation bars remove forced dark scheme overrides, rendering clean Apple glass.
-- [ ] Pushed views (`UserProfileView`, `SearchView`, `CollectionDetailView`) hide the bottom tab bar.
-- [ ] Feed author capsules on `PhotoCard` maintain high contrast and legibility over bright and dark imagery.
+- [x] Popular Topics pill buttons in `SearchView` have crisp, high-contrast text in both Light and Dark modes.
+- [x] Tab bar icons and text are sharp and legible across all scroll positions and color modes.
+- [x] Top navigation bars remove forced dark scheme overrides, rendering clean Apple glass.
+- [x] Pushed views (`UserProfileView`, `SearchView`, `CollectionDetailView`) hide the bottom tab bar.
+- [x] Feed author capsules on `PhotoCard` maintain high contrast and legibility over bright and dark imagery.

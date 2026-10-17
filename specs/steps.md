@@ -839,7 +839,7 @@ These are the spec files that the implementation notes and planning references s
 4.  **Reference Specification:**
     *   Track blueprint in `specs/55_android_material3_expressive_floating_navigation_and_bento_discovery.md`.
 
-### Step 56: iOS Glass Contrast, Navigation Chrome & Legibility Fixes (Proposed)
+### Step 56: iOS Glass Contrast, Navigation Chrome & Legibility Fixes (Completed)
 1.  **Search Screen & Tab Bar Contrast Fixes:**
     *   Update `SearchSuggestionsView` in `SearchView.swift` to ensure popular topic pills have crisp, high-contrast labels across Light and Dark modes.
     *   Fix Tab Bar wash-out by removing hardcoded white tinting on light backgrounds in `ContentView.swift`.

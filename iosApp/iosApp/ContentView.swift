@@ -27,12 +27,11 @@ struct ContentView: View {
                 }
                 .tag(1)
         }
-        .tint(.white)
+        .tint(Color.primary)
         .sensoryFeedback(.selection, trigger: selectedTab)
         #if os(iOS)
         .toolbarBackground(.ultraThinMaterial, for: .tabBar)
         .toolbarBackground(.visible, for: .tabBar)
-        .toolbarColorScheme(.dark, for: .tabBar)
         #endif
     }
 }
@@ -51,51 +50,56 @@ struct CollectionsFeedTabView: View {
                     path.append(CollectionPathItem(id: "", type: .search))
                 })
                 .navigationDestination(for: CollectionPathItem.self) { item in
-                    switch item.type {
-                    case .collection:
-                        CollectionDetailView(
-                            collectionId: item.id,
-                            onPhotoSelect: { photoId in
-                                path.append(CollectionPathItem(id: photoId, type: .photo))
-                            },
-                            onCollectionSelect: { relId in
-                                path.append(CollectionPathItem(id: relId, type: .collection))
-                            },
-                            onUserSelect: { username in
-                                path.append(CollectionPathItem(id: username, type: .user))
-                            })
-                    case .photo:
-                        PhotoDetailsView(
-                            photoId: item.id,
-                            heroNamespace: dummyNamespace,
-                            onUserSelect: { username in
-                                path.append(CollectionPathItem(id: username, type: .user))
-                            },
-                            onTagSelect: { tag in
-                                path.append(CollectionPathItem(id: tag, type: .search))
-                            })
-                    case .user:
-                        UserProfileView(
-                            username: item.id,
-                            onPhotoSelect: { photoId in
-                                path.append(CollectionPathItem(id: photoId, type: .photo))
-                            },
-                            onCollectionSelect: { colId in
-                                path.append(CollectionPathItem(id: colId, type: .collection))
-                            })
-                    case .search:
-                        SearchView(
-                            initialQuery: item.id,
-                            onPhotoSelect: { photoId in
-                                path.append(CollectionPathItem(id: photoId, type: .photo))
-                            },
-                            onUserSelect: { username in
-                                path.append(CollectionPathItem(id: username, type: .user))
-                            },
-                            onCollectionSelect: { colId in
-                                path.append(CollectionPathItem(id: colId, type: .collection))
-                            })
+                    Group {
+                        switch item.type {
+                        case .collection:
+                            CollectionDetailView(
+                                collectionId: item.id,
+                                onPhotoSelect: { photoId in
+                                    path.append(CollectionPathItem(id: photoId, type: .photo))
+                                },
+                                onCollectionSelect: { relId in
+                                    path.append(CollectionPathItem(id: relId, type: .collection))
+                                },
+                                onUserSelect: { username in
+                                    path.append(CollectionPathItem(id: username, type: .user))
+                                })
+                        case .photo:
+                            PhotoDetailsView(
+                                photoId: item.id,
+                                heroNamespace: dummyNamespace,
+                                onUserSelect: { username in
+                                    path.append(CollectionPathItem(id: username, type: .user))
+                                },
+                                onTagSelect: { tag in
+                                    path.append(CollectionPathItem(id: tag, type: .search))
+                                })
+                        case .user:
+                            UserProfileView(
+                                username: item.id,
+                                onPhotoSelect: { photoId in
+                                    path.append(CollectionPathItem(id: photoId, type: .photo))
+                                },
+                                onCollectionSelect: { colId in
+                                    path.append(CollectionPathItem(id: colId, type: .collection))
+                                })
+                        case .search:
+                            SearchView(
+                                initialQuery: item.id,
+                                onPhotoSelect: { photoId in
+                                    path.append(CollectionPathItem(id: photoId, type: .photo))
+                                },
+                                onUserSelect: { username in
+                                    path.append(CollectionPathItem(id: username, type: .user))
+                                },
+                                onCollectionSelect: { colId in
+                                    path.append(CollectionPathItem(id: colId, type: .collection))
+                                })
+                        }
                     }
+                    #if os(iOS)
+                    .toolbar(.hidden, for: .tabBar)
+                    #endif
                 }
         }
     }
@@ -259,7 +263,6 @@ struct PhotosFeedTabView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
-            .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar(selectedPhotoForHero != nil ? .hidden : .visible, for: .navigationBar)
             .toolbar(selectedPhotoForHero != nil ? .hidden : .automatic, for: .tabBar)
             #endif
@@ -295,51 +298,56 @@ struct PhotosFeedTabView: View {
             .sensoryFeedback(.selection, trigger: viewModel.selectedTopicSlug)
             .sensoryFeedback(.impact(weight: .medium), trigger: shakeFeedbackTrigger)
             .navigationDestination(for: FeedPathItem.self) { item in
-                switch item.type {
-                case .photo:
-                    PhotoDetailsView(
-                        photoId: item.id,
-                        heroNamespace: heroNamespace,
-                        onUserSelect: { username in
-                            path.append(FeedPathItem(id: username, type: .user))
-                        },
-                        onTagSelect: { tag in
-                            path.append(FeedPathItem(id: tag, type: .search))
-                        })
-                case .user:
-                    UserProfileView(
-                        username: item.id,
-                        onPhotoSelect: { photoId in
-                            path.append(FeedPathItem(id: photoId, type: .photo))
-                        },
-                        onCollectionSelect: { colId in
-                            path.append(FeedPathItem(id: colId, type: .collection))
-                        })
-                case .collection:
-                    CollectionDetailView(
-                        collectionId: item.id,
-                        onPhotoSelect: { photoId in
-                            path.append(FeedPathItem(id: photoId, type: .photo))
-                        },
-                        onCollectionSelect: { colId in
-                            path.append(FeedPathItem(id: colId, type: .collection))
-                        },
-                        onUserSelect: { username in
-                            path.append(FeedPathItem(id: username, type: .user))
-                        })
-                case .search:
-                    SearchView(
-                        initialQuery: item.id,
-                        onPhotoSelect: { photoId in
-                            path.append(FeedPathItem(id: photoId, type: .photo))
-                        },
-                        onUserSelect: { username in
-                            path.append(FeedPathItem(id: username, type: .user))
-                        },
-                        onCollectionSelect: { colId in
-                            path.append(FeedPathItem(id: colId, type: .collection))
-                        })
+                Group {
+                    switch item.type {
+                    case .photo:
+                        PhotoDetailsView(
+                            photoId: item.id,
+                            heroNamespace: heroNamespace,
+                            onUserSelect: { username in
+                                path.append(FeedPathItem(id: username, type: .user))
+                            },
+                            onTagSelect: { tag in
+                                path.append(FeedPathItem(id: tag, type: .search))
+                            })
+                    case .user:
+                        UserProfileView(
+                            username: item.id,
+                            onPhotoSelect: { photoId in
+                                path.append(FeedPathItem(id: photoId, type: .photo))
+                            },
+                            onCollectionSelect: { colId in
+                                path.append(FeedPathItem(id: colId, type: .collection))
+                            })
+                    case .collection:
+                        CollectionDetailView(
+                            collectionId: item.id,
+                            onPhotoSelect: { photoId in
+                                path.append(FeedPathItem(id: photoId, type: .photo))
+                            },
+                            onCollectionSelect: { colId in
+                                path.append(FeedPathItem(id: colId, type: .collection))
+                            },
+                            onUserSelect: { username in
+                                path.append(FeedPathItem(id: username, type: .user))
+                            })
+                    case .search:
+                        SearchView(
+                            initialQuery: item.id,
+                            onPhotoSelect: { photoId in
+                                path.append(FeedPathItem(id: photoId, type: .photo))
+                            },
+                            onUserSelect: { username in
+                                path.append(FeedPathItem(id: username, type: .user))
+                            },
+                            onCollectionSelect: { colId in
+                                path.append(FeedPathItem(id: colId, type: .collection))
+                            })
+                    }
                 }
+                #if os(iOS)
+                .toolbar(.hidden, for: .tabBar)
+                #endif
             }
             .onShake {
                 handleShake()
@@ -512,7 +520,12 @@ struct PhotoCard: View {
                 }
                 .padding(.horizontal, 8)
                 .padding(.vertical, 5)
+                .background {
+                    Capsule()
+                        .fill(Color.black.opacity(0.35))
+                }
                 .glassCapsule(style: .ultraThin, showBorder: true, hasShadow: true)
+                .environment(\.colorScheme, .dark)
             }
             .buttonStyle(.plain)
             .contentShape(Capsule())

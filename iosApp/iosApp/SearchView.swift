@@ -226,7 +226,7 @@ struct SearchView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
-        .toolbarColorScheme(.dark, for: .navigationBar)
+        .toolbar(.hidden, for: .tabBar)
         #endif
         .toolbar {
             #if os(iOS)
@@ -315,7 +315,12 @@ struct SearchPhotoGridCard: View {
                 }
                 .padding(.horizontal, 8)
                 .padding(.vertical, 5)
+                .background {
+                    Capsule()
+                        .fill(Color.black.opacity(0.35))
+                }
                 .glassCapsule(style: .ultraThin, showBorder: true, hasShadow: true)
+                .environment(\.colorScheme, .dark)
             }
             .buttonStyle(.plain)
             .contentShape(Capsule())
@@ -380,12 +385,23 @@ struct SearchSuggestionsView: View {
                         ForEach(popularTopics, id: \.self) { topic in
                             Button(action: { onSelect(topic) }) {
                                 Text(topic)
-                                    .font(.caption.weight(.medium))
-                                    .glassVibrancy(.primary)
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(.primary)
                                     .padding(.horizontal, 14)
                                     .padding(.vertical, 8)
-                                    .glassCapsule(style: .ultraThin, showBorder: true)
+                                    .background(
+                                        Capsule()
+                                            .fill(GlassTheme.surfaceBackgroundColor))
+                                    .overlay(
+                                        Capsule()
+                                            .strokeBorder(
+                                                LinearGradient(
+                                                    colors: [Color.primary.opacity(0.18), Color.primary.opacity(0.06)],
+                                                    startPoint: .topLeading,
+                                                    endPoint: .bottomTrailing),
+                                                lineWidth: GlassTheme.specularBorderWidth))
                             }
+                            .buttonStyle(.plain)
                         }
                     }
                 }
