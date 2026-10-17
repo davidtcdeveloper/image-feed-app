@@ -872,7 +872,7 @@ These are the spec files that the implementation notes and planning references s
 3.  **Reference Specification:**
     *   Track blueprint in `specs/58_ios_floating_glass_capsule_and_profile_refinements.md`.
 
-### Step 59: Cross-Platform Localization Architecture (Phase 1: English Extraction & Foundation) (Proposed)
+### Step 59: Cross-Platform Localization Architecture (Phase 1: English Extraction & Foundation) (Completed)
 1.  **Shared Domain Error Modeling & ViewModel Decoupling:**
     *   Define `sealed class AppError` in `:core:model` (or `:core:mvi`) and central exception mapper `Throwable.toAppError()` in `:core:network`.
     *   Refactor all 7 KMP feature ViewModels (`FeedViewModel`, `CollectionsFeedViewModel`, `CollectionDetailViewModel`, `UnifiedSearchViewModel`, `PhotoDetailsViewModel`, `UserProfileViewModel`, `RandomPhotoViewModel`) to emit typed `AppError` in state and effect flows instead of hardcoded English fallback strings.
@@ -895,3 +895,38 @@ These are the spec files that the implementation notes and planning references s
     *   Update `AGENTS.md` and `GEMINI.md` with the Zero Hardcoded Strings Policy and skill link while preserving root brevity (< 75 lines).
 5.  **Reference Specification:**
     *   Track blueprint in `specs/59_cross_platform_localization_architecture.md`.
+
+### Step 60: Android Shimmer & Skeleton Rendering Optimization (Planned)
+1.  **Draw-Phase Shimmer:**
+    *   Replace per-element composition-phase `shimmerEffect` with a draw-phase modifier driven by one shared infinite transition per skeleton screen.
+    *   Remove nested shimmering containers and make the sweep density-independent.
+2.  **Reference Specification:**
+    *   Track blueprint in `specs/60_android_shimmer_skeleton_rendering_optimization.md`.
+
+### Step 61: Android Media Card Hot-Path Optimization (Planned)
+1.  **PhotoCard & CollectionMosaicCard:**
+    *   Hoist grid-invariant item width, remember `ImageRequest`/URL and scrim brush, gate `sharedElement`/`sharedBounds` per item.
+    *   Memoize `calculate*GridColumns` helpers; decide on `staggeredEntrance` as `Modifier.Node` (low priority).
+2.  **Reference Specification:**
+    *   Track blueprint in `specs/61_android_media_card_hot_path_optimization.md`.
+
+### Step 62: Android Scroll-Driven Chrome & Horizontal Row Hygiene (Planned)
+1.  **Feed Chrome & Rows:**
+    *   Remove composition-phase `contentOffset` read for the topic strip background.
+    *   Key the unkeyed Search colour `LazyRow`; document verified rows left unchanged; profile nested-grid profiling note.
+2.  **Reference Specification:**
+    *   Track blueprint in `specs/62_android_scroll_chrome_and_horizontal_row_hygiene.md`.
+
+### Step 63: Android Photo Details Layout & Chart Rendering Optimization (Planned)
+1.  **Details & Charts:**
+    *   Keep pane-width awareness for `BoxWithConstraints` (window-level `LocalAdaptiveLayoutInfo` is not a safe replacement); remember the details `ImageRequest`.
+    *   Cache chart geometry in draw cache, derive hover index, fix the 300dp hover bug and no-op `animProgress`, cache `CompactDecimalFormat`.
+2.  **Reference Specification:**
+    *   Track blueprint in `specs/63_android_photo_details_and_chart_rendering_optimization.md`.
+
+### Step 64: Android Release Optimization, Baseline Profiles & Macrobenchmark (Planned)
+1.  **Release Build & Profiles:**
+    *   Create missing `proguard-rules.pro`, enable R8 minification and resource shrinking for release.
+    *   Add macrobenchmark module, baseline profile generation, and `androidx.profileinstaller`; record before/after metrics.
+2.  **Reference Specification:**
+    *   Track blueprint in `specs/64_android_release_optimization_and_baseline_profiles.md`.
