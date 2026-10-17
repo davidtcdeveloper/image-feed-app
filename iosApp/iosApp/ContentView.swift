@@ -3,51 +3,101 @@ import SwiftUI
 
 struct ContentView: View {
     @State private var selectedTab = 0
+    @State private var photosPath = NavigationPath()
+    @State private var collectionsPath = NavigationPath()
+    @State private var isPhotosDetailPresented = false
+    @State private var isCapsuleMinimized = false
 
     init() {
         #if os(iOS)
         let appearance = UITabBarAppearance()
         appearance.configureWithDefaultBackground()
+        appearance.backgroundColor = .clear
         UITabBar.appearance().standardAppearance = appearance
         UITabBar.appearance().scrollEdgeAppearance = appearance
+        UITabBar.appearance().isHidden = true
         #endif
     }
 
-    var body: some View {
-        TabView(selection: $selectedTab) {
-            PhotosFeedTabView()
-                .tabItem {
-                    Label("Photos", systemImage: "photo.stack")
-                }
-                .tag(0)
-
-            CollectionsFeedTabView()
-                .tabItem {
-                    Label("Collections", systemImage: "square.grid.2x2")
-                }
-                .tag(1)
+    private var isCapsuleVisible: Bool {
+        if selectedTab == 0 {
+            photosPath.isEmpty && !isPhotosDetailPresented
+        } else {
+            collectionsPath.isEmpty
         }
-        .tint(Color.primary)
-        .sensoryFeedback(.selection, trigger: selectedTab)
-        #if os(iOS)
-        .toolbarBackground(.ultraThinMaterial, for: .tabBar)
-        .toolbarBackground(.visible, for: .tabBar)
-        #endif
+    }
+
+    var body: some View {
+        ZStack(alignment: .bottom) {
+            TabView(selection: $selectedTab) {
+                PhotosFeedTabView(
+                    path: $photosPath,
+                    isDetailPresented: $isPhotosDetailPresented,
+                    isCapsuleMinimized: $isCapsuleMinimized)
+                    .tabItem {
+                        Label("Photos", systemImage: "photo.stack")
+                    }
+                    .tag(0)
+
+                CollectionsFeedTabView(path: $collectionsPath)
+                    .tabItem {
+                        Label("Collections", systemImage: "square.grid.2x2")
+                    }
+                    .tag(1)
+            }
+            .tint(Color.primary)
+            #if os(iOS)
+            .toolbar(.hidden, for: .tabBar)
+            #endif
+
+            #if os(iOS)
+            if isCapsuleVisible {
+                FloatingTabCapsule(
+                    selectedTab: $selectedTab,
+                    isMinimized: isCapsuleMinimized)
+                    .padding(.bottom, 16)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .zIndex(10)
+            }
+            #endif
+        }
+        .onChange(of: selectedTab) { _, _ in
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                isCapsuleMinimized = false
+            }
+        }
+        .onChange(of: isPhotosDetailPresented) { _, isPresented in
+            if !isPresented {
+                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                    isCapsuleMinimized = false
+                }
+            }
+        }
+        .animation(.spring(response: 0.35, dampingFraction: 0.8), value: isCapsuleVisible)
     }
 }
 
 struct CollectionsFeedTabView: View {
-    @State private var path = NavigationPath()
+    private var externalPath: Binding<NavigationPath>?
+    @State private var internalPath = NavigationPath()
+    private var activePath: Binding<NavigationPath> {
+        externalPath ?? $internalPath
+    }
+
     @Namespace private var dummyNamespace
 
+    init(path: Binding<NavigationPath>? = nil) {
+        self.externalPath = path
+    }
+
     var body: some View {
-        NavigationStack(path: $path) {
+        NavigationStack(path: activePath) {
             CollectionsFeedView(
                 onCollectionSelect: { collectionId in
-                    path.append(CollectionPathItem(id: collectionId, type: .collection))
+                    activePath.wrappedValue.append(CollectionPathItem(id: collectionId, type: .collection))
                 },
                 onSearchClick: {
-                    path.append(CollectionPathItem(id: "", type: .search))
+                    activePath.wrappedValue.append(CollectionPathItem(id: "", type: .search))
                 })
                 .navigationDestination(for: CollectionPathItem.self) { item in
                     Group {
@@ -56,44 +106,44 @@ struct CollectionsFeedTabView: View {
                             CollectionDetailView(
                                 collectionId: item.id,
                                 onPhotoSelect: { photoId in
-                                    path.append(CollectionPathItem(id: photoId, type: .photo))
+                                    activePath.wrappedValue.append(CollectionPathItem(id: photoId, type: .photo))
                                 },
                                 onCollectionSelect: { relId in
-                                    path.append(CollectionPathItem(id: relId, type: .collection))
+                                    activePath.wrappedValue.append(CollectionPathItem(id: relId, type: .collection))
                                 },
                                 onUserSelect: { username in
-                                    path.append(CollectionPathItem(id: username, type: .user))
+                                    activePath.wrappedValue.append(CollectionPathItem(id: username, type: .user))
                                 })
                         case .photo:
                             PhotoDetailsView(
                                 photoId: item.id,
                                 heroNamespace: dummyNamespace,
                                 onUserSelect: { username in
-                                    path.append(CollectionPathItem(id: username, type: .user))
+                                    activePath.wrappedValue.append(CollectionPathItem(id: username, type: .user))
                                 },
                                 onTagSelect: { tag in
-                                    path.append(CollectionPathItem(id: tag, type: .search))
+                                    activePath.wrappedValue.append(CollectionPathItem(id: tag, type: .search))
                                 })
                         case .user:
                             UserProfileView(
                                 username: item.id,
                                 onPhotoSelect: { photoId in
-                                    path.append(CollectionPathItem(id: photoId, type: .photo))
+                                    activePath.wrappedValue.append(CollectionPathItem(id: photoId, type: .photo))
                                 },
                                 onCollectionSelect: { colId in
-                                    path.append(CollectionPathItem(id: colId, type: .collection))
+                                    activePath.wrappedValue.append(CollectionPathItem(id: colId, type: .collection))
                                 })
                         case .search:
                             SearchView(
                                 initialQuery: item.id,
                                 onPhotoSelect: { photoId in
-                                    path.append(CollectionPathItem(id: photoId, type: .photo))
+                                    activePath.wrappedValue.append(CollectionPathItem(id: photoId, type: .photo))
                                 },
                                 onUserSelect: { username in
-                                    path.append(CollectionPathItem(id: username, type: .user))
+                                    activePath.wrappedValue.append(CollectionPathItem(id: username, type: .user))
                                 },
                                 onCollectionSelect: { colId in
-                                    path.append(CollectionPathItem(id: colId, type: .collection))
+                                    activePath.wrappedValue.append(CollectionPathItem(id: colId, type: .collection))
                                 })
                         }
                     }
@@ -129,17 +179,54 @@ struct FeedPathItem: Hashable {
     }
 }
 
+private struct FeedScrollOffsetKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
+    }
+}
+
 struct PhotosFeedTabView: View {
     #if os(iOS)
     @Environment(\.horizontalSizeClass) var sizeClass
     #endif
     @State private var viewModel = FeedViewModel()
-    @State private var path = NavigationPath()
+
+    private var externalPath: Binding<NavigationPath>?
+    @State private var internalPath = NavigationPath()
+    private var activePath: Binding<NavigationPath> {
+        externalPath ?? $internalPath
+    }
+
+    private var externalDetailPresented: Binding<Bool>?
+    @State private var internalDetailPresented = false
+    private var activeDetailPresented: Binding<Bool> {
+        externalDetailPresented ?? $internalDetailPresented
+    }
+
+    private var externalCapsuleMinimized: Binding<Bool>?
+    @State private var internalCapsuleMinimized = false
+    private var activeCapsuleMinimized: Binding<Bool> {
+        externalCapsuleMinimized ?? $internalCapsuleMinimized
+    }
+
     @State private var isShaking = false
     @State private var shakeFeedbackTrigger = 0
     @Namespace private var categoryNamespace
     @Namespace private var heroNamespace
     @State private var selectedPhotoForHero: Photo?
+    @State private var lastScrollOffset: CGFloat = 0
+    @State private var scrollResetTask: Task<Void, Never>?
+
+    init(
+        path: Binding<NavigationPath>? = nil,
+        isDetailPresented: Binding<Bool>? = nil,
+        isCapsuleMinimized: Binding<Bool>? = nil)
+    {
+        self.externalPath = path
+        self.externalDetailPresented = isDetailPresented
+        self.externalCapsuleMinimized = isCapsuleMinimized
+    }
 
     private var columnCount: Int {
         #if os(iOS)
@@ -150,7 +237,7 @@ struct PhotosFeedTabView: View {
     }
 
     var body: some View {
-        NavigationStack(path: $path) {
+        NavigationStack(path: activePath) {
             ZStack {
                 GlassTheme.canvasBackgroundColor
                     .ignoresSafeArea()
@@ -175,6 +262,15 @@ struct PhotosFeedTabView: View {
                 } else {
                     ScrollView {
                         LazyVStack(spacing: 8) {
+                            #if os(iOS)
+                            GeometryReader { proxy in
+                                Color.clear.preference(
+                                    key: FeedScrollOffsetKey.self,
+                                    value: proxy.frame(in: .named("photoFeedScroll")).minY)
+                            }
+                            .frame(height: 0)
+                            #endif
+
                             HStack(alignment: .top, spacing: 8) {
                                 ForEach(0..<columnCount, id: \.self) { colIndex in
                                     LazyVStack(spacing: 8) {
@@ -193,7 +289,7 @@ struct PhotosFeedTabView: View {
                                                     }
                                                 },
                                                 onUserSelect: { username in
-                                                    path.append(FeedPathItem(id: username, type: .user))
+                                                    activePath.wrappedValue.append(FeedPathItem(id: username, type: .user))
                                                 })
                                         }
                                     }
@@ -209,7 +305,14 @@ struct PhotosFeedTabView: View {
                                     .padding(.vertical, 16)
                             }
                         }
+                        .padding(.bottom, 80)
                     }
+                    #if os(iOS)
+                    .coordinateSpace(name: "photoFeedScroll")
+                    .onPreferenceChange(FeedScrollOffsetKey.self) { offset in
+                        handleScroll(offset: offset)
+                    }
+                    #endif
                     .refreshable {
                         viewModel.refresh()
                     }
@@ -246,13 +349,13 @@ struct PhotosFeedTabView: View {
                             withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
                                 selectedPhotoForHero = nil
                             }
-                            path.append(FeedPathItem(id: username, type: .user))
+                            activePath.wrappedValue.append(FeedPathItem(id: username, type: .user))
                         },
                         onTagSelect: { tag in
                             withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
                                 selectedPhotoForHero = nil
                             }
-                            path.append(FeedPathItem(id: tag, type: .search))
+                            activePath.wrappedValue.append(FeedPathItem(id: tag, type: .search))
                         })
                         .transition(.asymmetric(insertion: .identity, removal: .identity))
                         .zIndex(1)
@@ -264,13 +367,13 @@ struct PhotosFeedTabView: View {
             .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
             .toolbar(selectedPhotoForHero != nil ? .hidden : .visible, for: .navigationBar)
-            .toolbar(selectedPhotoForHero != nil ? .hidden : .automatic, for: .tabBar)
+            .toolbar(.hidden, for: .tabBar)
             #endif
             .toolbar {
                 #if os(iOS)
                 ToolbarItem(placement: .navigationBarLeading) {
                     GlassToolbarButton(systemName: "magnifyingglass", accessibilityLabel: "Search") {
-                        path.append(FeedPathItem(id: "", type: .search))
+                        activePath.wrappedValue.append(FeedPathItem(id: "", type: .search))
                     }
                     .keyboardShortcut("f", modifiers: .command)
                 }
@@ -283,7 +386,7 @@ struct PhotosFeedTabView: View {
                 #else
                 ToolbarItem(placement: .navigation) {
                     GlassToolbarButton(systemName: "magnifyingglass", accessibilityLabel: "Search") {
-                        path.append(FeedPathItem(id: "", type: .search))
+                        activePath.wrappedValue.append(FeedPathItem(id: "", type: .search))
                     }
                     .keyboardShortcut("f", modifiers: .command)
                 }
@@ -297,6 +400,9 @@ struct PhotosFeedTabView: View {
             }
             .sensoryFeedback(.selection, trigger: viewModel.selectedTopicSlug)
             .sensoryFeedback(.impact(weight: .medium), trigger: shakeFeedbackTrigger)
+            .onChange(of: selectedPhotoForHero) { _, newValue in
+                activeDetailPresented.wrappedValue = (newValue != nil)
+            }
             .navigationDestination(for: FeedPathItem.self) { item in
                 Group {
                     switch item.type {
@@ -305,43 +411,43 @@ struct PhotosFeedTabView: View {
                             photoId: item.id,
                             heroNamespace: heroNamespace,
                             onUserSelect: { username in
-                                path.append(FeedPathItem(id: username, type: .user))
+                                activePath.wrappedValue.append(FeedPathItem(id: username, type: .user))
                             },
                             onTagSelect: { tag in
-                                path.append(FeedPathItem(id: tag, type: .search))
+                                activePath.wrappedValue.append(FeedPathItem(id: tag, type: .search))
                             })
                     case .user:
                         UserProfileView(
                             username: item.id,
                             onPhotoSelect: { photoId in
-                                path.append(FeedPathItem(id: photoId, type: .photo))
+                                activePath.wrappedValue.append(FeedPathItem(id: photoId, type: .photo))
                             },
                             onCollectionSelect: { colId in
-                                path.append(FeedPathItem(id: colId, type: .collection))
+                                activePath.wrappedValue.append(FeedPathItem(id: colId, type: .collection))
                             })
                     case .collection:
                         CollectionDetailView(
                             collectionId: item.id,
                             onPhotoSelect: { photoId in
-                                path.append(FeedPathItem(id: photoId, type: .photo))
+                                activePath.wrappedValue.append(FeedPathItem(id: photoId, type: .photo))
                             },
                             onCollectionSelect: { colId in
-                                path.append(FeedPathItem(id: colId, type: .collection))
+                                activePath.wrappedValue.append(FeedPathItem(id: colId, type: .collection))
                             },
                             onUserSelect: { username in
-                                path.append(FeedPathItem(id: username, type: .user))
+                                activePath.wrappedValue.append(FeedPathItem(id: username, type: .user))
                             })
                     case .search:
                         SearchView(
                             initialQuery: item.id,
                             onPhotoSelect: { photoId in
-                                path.append(FeedPathItem(id: photoId, type: .photo))
+                                activePath.wrappedValue.append(FeedPathItem(id: photoId, type: .photo))
                             },
                             onUserSelect: { username in
-                                path.append(FeedPathItem(id: username, type: .user))
+                                activePath.wrappedValue.append(FeedPathItem(id: username, type: .user))
                             },
                             onCollectionSelect: { colId in
-                                path.append(FeedPathItem(id: colId, type: .collection))
+                                activePath.wrappedValue.append(FeedPathItem(id: colId, type: .collection))
                             })
                     }
                 }
@@ -352,23 +458,89 @@ struct PhotosFeedTabView: View {
             .onShake {
                 handleShake()
             }
+            .onDisappear {
+                #if os(iOS)
+                scrollResetTask?.cancel()
+                #endif
+            }
         }
     }
 
+    #if os(iOS)
+    private func handleScroll(offset: CGFloat) {
+        let delta = offset - lastScrollOffset
+        lastScrollOffset = offset
+
+        if offset >= -20 {
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                activeCapsuleMinimized.wrappedValue = false
+            }
+        } else if delta < -15 {
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                activeCapsuleMinimized.wrappedValue = true
+            }
+        } else if delta > 15 {
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                activeCapsuleMinimized.wrappedValue = false
+            }
+        }
+
+        scrollResetTask?.cancel()
+        scrollResetTask = Task {
+            try? await Task.sleep(nanoseconds: 1200000000)
+            guard !Task.isCancelled else { return }
+            await MainActor.run {
+                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                    activeCapsuleMinimized.wrappedValue = false
+                }
+            }
+        }
+    }
+    #endif
+
     private var categoryBar: some View {
+        FeedCategoryBar(
+            topics: viewModel.topics,
+            selectedTopicSlug: viewModel.selectedTopicSlug,
+            isLoadingTopics: viewModel.isLoadingTopics,
+            namespace: categoryNamespace)
+        { slug in
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                viewModel.selectTopic(slug: slug)
+            }
+        }
+    }
+
+    private func handleShake() {
+        guard !isShaking else { return }
+        shakeFeedbackTrigger += 1
+        isShaking = true
+        viewModel.fetchRandomPhotoId { photoId in
+            isShaking = false
+            activePath.wrappedValue.append(FeedPathItem(id: photoId, type: .photo))
+        }
+    }
+}
+
+struct FeedCategoryBar: View {
+    let topics: [Topic]
+    let selectedTopicSlug: String
+    let isLoadingTopics: Bool
+    let namespace: Namespace.ID
+    let onSelect: (String) -> Void
+
+    var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             LazyHStack(spacing: 8) {
                 CategoryTabButton(
                     title: "Editorial",
-                    isSelected: viewModel.selectedTopicSlug == "editorial",
-                    namespace: categoryNamespace)
+                    isSelected: selectedTopicSlug == "editorial",
+                    namespace: namespace)
                 {
-                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                        viewModel.selectTopic(slug: "editorial")
-                    }
+                    onSelect("editorial")
                 }
 
-                if viewModel.topics.isEmpty, viewModel.isLoadingTopics {
+                if topics.isEmpty, isLoadingTopics {
                     ForEach(0..<6, id: \.self) { _ in
                         Capsule()
                             .fill(Color.white.opacity(0.08))
@@ -376,15 +548,13 @@ struct PhotosFeedTabView: View {
                             .opacity(0.5)
                     }
                 } else {
-                    ForEach(viewModel.topics, id: \.slug) { topic in
+                    ForEach(topics, id: \.slug) { topic in
                         CategoryTabButton(
                             title: topic.title,
-                            isSelected: viewModel.selectedTopicSlug == topic.slug,
-                            namespace: categoryNamespace)
+                            isSelected: selectedTopicSlug == topic.slug,
+                            namespace: namespace)
                         {
-                            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                                viewModel.selectTopic(slug: topic.slug)
-                            }
+                            onSelect(topic.slug)
                         }
                     }
                 }
@@ -409,16 +579,6 @@ struct PhotosFeedTabView: View {
         .padding(.top, 4)
         .padding(.bottom, 6)
     }
-
-    private func handleShake() {
-        guard !isShaking else { return }
-        shakeFeedbackTrigger += 1
-        isShaking = true
-        viewModel.fetchRandomPhotoId { photoId in
-            isShaking = false
-            path.append(FeedPathItem(id: photoId, type: .photo))
-        }
-    }
 }
 
 struct CategoryTabButton: View {
@@ -431,8 +591,7 @@ struct CategoryTabButton: View {
         Button(action: action) {
             Text(title)
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundColor(isSelected ? .black : nil)
-                .glassVibrancy(isSelected ? .primary : .secondary)
+                .foregroundStyle(isSelected ? Color.black : Color.secondary)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 6)
                 .background {

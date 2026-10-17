@@ -84,6 +84,7 @@ struct CollectionsFeedView: View {
                             }
                             .padding(.horizontal, 12)
                             .padding(.top, 10)
+                            .padding(.bottom, 80)
 
                             if viewModel.isLoading {
                                 ProgressView()
@@ -115,6 +116,7 @@ struct CollectionsFeedView: View {
                             }
                             .padding(.horizontal, 12)
                             .padding(.top, 10)
+                            .padding(.bottom, 80)
                         }
                     }
                     .refreshable {
@@ -128,6 +130,7 @@ struct CollectionsFeedView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
+        .toolbar(.hidden, for: .tabBar)
         #endif
         .toolbar {
             #if os(iOS)

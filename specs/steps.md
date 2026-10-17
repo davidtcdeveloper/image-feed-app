@@ -861,7 +861,7 @@ These are the spec files that the implementation notes and planning references s
 4.  **Reference Specification:**
     *   Track blueprint in `specs/57_ios_immersive_photo_detail_and_interactive_sparkline.md`.
 
-### Step 58: iOS Floating Glass Tab Capsule & Profile Refinements (Proposed)
+### Step 58: iOS Floating Glass Tab Capsule & Profile Refinements (Completed)
 1.  **Floating Specular Glass Tab Capsule & Navigation Suppression:**
     *   Implement `FloatingTabCapsule` with sliding indicator (`matchedGeometryEffect`), spring physics, and `.regularMaterial` glass.
     *   Suppress `FloatingTabCapsule` when navigation path is not empty (`path.isEmpty == false`) so it never hovers over pushed child screens.

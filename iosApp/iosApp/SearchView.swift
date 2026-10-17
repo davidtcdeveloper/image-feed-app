@@ -381,27 +381,17 @@ struct SearchSuggestionsView: View {
                         .glassVibrancy(.secondary)
                         .tracking(1)
 
-                    FlowLayout(spacing: 8) {
+                    LazyVGrid(
+                        columns: [
+                            GridItem(.flexible(), spacing: 10),
+                            GridItem(.flexible(), spacing: 10),
+                        ],
+                        spacing: 10)
+                    {
                         ForEach(popularTopics, id: \.self) { topic in
-                            Button(action: { onSelect(topic) }) {
-                                Text(topic)
-                                    .font(.caption.weight(.semibold))
-                                    .foregroundStyle(.primary)
-                                    .padding(.horizontal, 14)
-                                    .padding(.vertical, 8)
-                                    .background(
-                                        Capsule()
-                                            .fill(GlassTheme.surfaceBackgroundColor))
-                                    .overlay(
-                                        Capsule()
-                                            .strokeBorder(
-                                                LinearGradient(
-                                                    colors: [Color.primary.opacity(0.18), Color.primary.opacity(0.06)],
-                                                    startPoint: .topLeading,
-                                                    endPoint: .bottomTrailing),
-                                                lineWidth: GlassTheme.specularBorderWidth))
+                            SearchTopicCard(topic: topic) {
+                                onSelect(topic)
                             }
-                            .buttonStyle(.plain)
                         }
                     }
                 }

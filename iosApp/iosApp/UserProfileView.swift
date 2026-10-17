@@ -52,9 +52,7 @@ struct UserProfileView: View {
 
                         // 2. Multi-Tab Segment Bar
                         ProfileTabPicker(activeTab: viewModel.activeTab, user: user) { selectedTab in
-                            withAnimation(.easeInOut(duration: 0.2)) {
-                                viewModel.selectTab(tab: selectedTab)
-                            }
+                            viewModel.selectTab(tab: selectedTab)
                         }
 
                         // 3. Tab Specific Content View
@@ -186,55 +184,76 @@ struct ProfileHeaderView: View {
                     .padding(.horizontal, 24)
             }
 
-            // Social scheme buttons
-            HStack(spacing: 12) {
-                if let instagram = user.social?.instagramUsername, !instagram.isEmpty {
-                    SocialButton(title: "Instagram", handle: instagram) {
-                        let schemeUrl = URL(string: "instagram://user?username=\(instagram)")!
-                        if URLHelper.canOpen(schemeUrl) {
-                            URLHelper.open(schemeUrl)
-                        } else {
-                            URLHelper.open(URL(string: "https://instagram.com/\(instagram)")!)
+            // Social scheme chips
+            let hasSocials = (user.social?.instagramUsername?.isEmpty == false) ||
+                (user.social?.twitterUsername?.isEmpty == false) ||
+                (user.social?.portfolioUrl?.isEmpty == false)
+
+            if hasSocials {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        if let instagram = user.social?.instagramUsername?.trimmingCharacters(in: .whitespacesAndNewlines), !instagram.isEmpty {
+                            let handle = instagram.trimmingCharacters(in: CharacterSet(charactersIn: "@"))
+                            SocialChip(systemImage: "camera", label: "@\(handle)") {
+                                if let schemeUrl = URL(string: "instagram://user?username=\(handle)"), URLHelper.canOpen(schemeUrl) {
+                                    URLHelper.open(schemeUrl)
+                                } else if let webUrl = URL(string: "https://instagram.com/\(handle)") {
+                                    URLHelper.open(webUrl)
+                                }
+                            }
+                        }
+                        if let twitter = user.social?.twitterUsername?.trimmingCharacters(in: .whitespacesAndNewlines), !twitter.isEmpty {
+                            let handle = twitter.trimmingCharacters(in: CharacterSet(charactersIn: "@"))
+                            SocialChip(systemImage: "bubble.left", label: "@\(handle)") {
+                                if let schemeUrl = URL(string: "twitter://user?screen_name=\(handle)"), URLHelper.canOpen(schemeUrl) {
+                                    URLHelper.open(schemeUrl)
+                                } else if let webUrl = URL(string: "https://twitter.com/\(handle)") {
+                                    URLHelper.open(webUrl)
+                                }
+                            }
+                        }
+                        if let web = user.social?.portfolioUrl?.trimmingCharacters(in: .whitespacesAndNewlines), !web.isEmpty {
+                            let normalizedWeb = web.lowercased().hasPrefix("http://") || web.lowercased().hasPrefix("https://") ? web : "https://\(web)"
+                            if let webUrl = URL(string: normalizedWeb) {
+                                SocialChip(systemImage: "globe", label: "Website") {
+                                    URLHelper.open(webUrl)
+                                }
+                            }
                         }
                     }
+                    .padding(.horizontal, 16)
                 }
-                if let twitter = user.social?.twitterUsername, !twitter.isEmpty {
-                    SocialButton(title: "Twitter", handle: twitter) {
-                        let schemeUrl = URL(string: "twitter://user?screen_name=\(twitter)")!
-                        if URLHelper.canOpen(schemeUrl) {
-                            URLHelper.open(schemeUrl)
-                        } else {
-                            URLHelper.open(URL(string: "https://twitter.com/\(twitter)")!)
-                        }
-                    }
-                }
-                if let web = user.social?.portfolioUrl, !web.isEmpty, let webUrl = URL(string: web) {
-                    SocialButton(title: "Website", handle: "Link") {
-                        URLHelper.open(webUrl)
-                    }
-                }
+                .padding(.top, 4)
             }
-            .padding(.top, 4)
         }
         .padding(.vertical, 16)
     }
 }
 
-struct SocialButton: View {
-    let title: String
-    let handle: String
+struct SocialChip: View {
+    let systemImage: String
+    let label: String
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            Text("\(title): @\(handle)".uppercased())
-                .font(.caption2.weight(.bold))
-                .glassVibrancy(.primary)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .glassCapsule(style: .ultraThin)
+            HStack(spacing: 5) {
+                Image(systemName: systemImage)
+                    .font(.caption2.weight(.semibold))
+                    .glassVibrancy(.primary)
+                Text(label)
+                    .font(.caption2.weight(.medium))
+                    .glassVibrancy(.primary)
+                    .lineLimit(1)
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .glassCapsule(style: .ultraThin, showBorder: true, hasShadow: false)
         }
         .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(label)
+        .accessibilityAddTraits(.isButton)
     }
 }
 
@@ -242,42 +261,101 @@ struct ProfileTabPicker: View {
     let activeTab: ProfileTab
     let user: User
     let onSelect: (ProfileTab) -> Void
+    @Namespace private var tabIndicatorNamespace
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.colorSchemeContrast) private var colorSchemeContrast
 
     var body: some View {
-        HStack(spacing: 0) {
-            ForEach([ProfileTab.portfolio, ProfileTab.likes, ProfileTab.collections, ProfileTab.insights], id: \.self) { tab in
-                let isSelected = activeTab == tab
-                Button(action: { onSelect(tab) }) {
-                    VStack(spacing: 6) {
-                        Text(tabLabel(for: tab))
-                            .font(.caption2.weight(isSelected ? .bold : .medium))
-                            .glassVibrancy(isSelected ? .primary : .secondary)
-                            .frame(maxWidth: .infinity)
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach([ProfileTab.portfolio, ProfileTab.likes, ProfileTab.collections, ProfileTab.insights], id: \.self) { tab in
+                    let isSelected = activeTab == tab
+                    Button(action: {
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                            onSelect(tab)
+                        }
+                    }) {
+                        HStack(spacing: 6) {
+                            Text(tabTitle(for: tab))
+                                .font(.caption.weight(isSelected ? .bold : .medium))
+                                .glassVibrancy(isSelected ? .primary : .secondary)
 
-                        Rectangle()
-                            .fill(isSelected ? Color.primary : Color.clear)
-                            .frame(height: 2)
+                            if let count = tabCount(for: tab) {
+                                Text("\(count)")
+                                    .font(.caption2.weight(.bold))
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 2)
+                                    .background(
+                                        Capsule()
+                                            .fill(isSelected ? Color.white.opacity(0.20) : Color.white.opacity(0.08)))
+                                    .glassVibrancy(isSelected ? .primary : .secondary)
+                            }
+                        }
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 8)
+                        .background {
+                            if isSelected {
+                                Capsule()
+                                    .fill(Color.white.opacity(0.14))
+                                    .overlay {
+                                        if reduceTransparency || colorSchemeContrast == .increased {
+                                            Capsule()
+                                                .strokeBorder(GlassTheme.fallbackBorderColor, lineWidth: GlassTheme.fallbackBorderWidth)
+                                        } else {
+                                            Capsule()
+                                                .strokeBorder(GlassTheme.specularBorderGradient, lineWidth: GlassTheme.specularBorderWidth)
+                                        }
+                                    }
+                                    .matchedGeometryEffect(id: "ActiveProfileTab", in: tabIndicatorNamespace)
+                            } else {
+                                Capsule()
+                                    .fill(Color.white.opacity(0.04))
+                            }
+                        }
                     }
+                    .buttonStyle(.plain)
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel(tabAccessibilityLabel(for: tab))
+                    .accessibilityAddTraits(isSelected ? [.isSelected, .isButton] : .isButton)
                 }
-                .buttonStyle(PlainButtonStyle())
             }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
         }
         .glassBackground(material: .ultraThinMaterial, shape: Rectangle(), showBorder: false)
     }
 
-    private func tabLabel(for tab: ProfileTab) -> String {
+    private func tabTitle(for tab: ProfileTab) -> String {
+        switch tab {
+        case .portfolio: "Photos"
+        case .likes: "Likes"
+        case .collections: "Collections"
+        case .insights: "Insights"
+        default: ""
+        }
+    }
+
+    private func tabCount(for tab: ProfileTab) -> Int? {
         switch tab {
         case .portfolio:
-            "PHOTOS (\(user.totalPhotos ?? 0))"
+            user.totalPhotos.map { Int(truncating: $0) }
         case .likes:
-            "LIKES (\(user.totalLikes ?? 0))"
+            user.totalLikes.map { Int(truncating: $0) }
         case .collections:
-            "COLLECTIONS (\(user.totalCollections ?? 0))"
+            user.totalCollections.map { Int(truncating: $0) }
         case .insights:
-            "INSIGHTS"
+            nil
         default:
-            ""
+            nil
         }
+    }
+
+    private func tabAccessibilityLabel(for tab: ProfileTab) -> String {
+        let title = tabTitle(for: tab)
+        if let count = tabCount(for: tab) {
+            return "\(title), \(count) items"
+        }
+        return title
     }
 }
 

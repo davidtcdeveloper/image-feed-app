@@ -1,6 +1,6 @@
 # iOS Floating Glass Tab Capsule & Profile Refinements Spec
 
-**Status:** Proposed
+**Status:** Implemented
 
 ## Overview
 This specification details the visionOS-inspired floating tab capsule and profile screen enhancements:
@@ -55,9 +55,9 @@ In [`SearchView.swift`](file:///Users/davidtiagoconceicao/Developer/image-feed-a
 ---
 
 ## Acceptance Criteria
-- [ ] Floating glass tab capsule floats above full-bleed content with smooth sliding indicator animation.
-- [ ] Floating tab capsule automatically hides when child views are pushed (`path.isEmpty == false`), preventing overlap on detail screens.
-- [ ] Tab switching triggers light sensory feedback.
-- [ ] User profile social links render as compact, icon-led glass chips without text wrapping.
-- [ ] User profile tab picker eliminates label truncation on compact iOS viewports.
-- [ ] Popular topics in Search feature visual cards with bold typography.
+- [x] Floating glass tab capsule floats above full-bleed content with smooth sliding indicator animation.
+- [x] Floating tab capsule automatically hides when child views are pushed (`path.isEmpty == false`), preventing overlap on detail screens.
+- [x] Tab switching triggers light sensory feedback.
+- [x] User profile social links render as compact, icon-led glass chips without text wrapping.
+- [x] User profile tab picker eliminates label truncation on compact iOS viewports.
+- [x] Popular topics in Search feature visual cards with bold typography.
