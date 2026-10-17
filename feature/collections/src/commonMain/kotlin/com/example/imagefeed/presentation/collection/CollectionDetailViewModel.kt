@@ -4,6 +4,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.imagefeed.collections.data.CollectionsRepository
 import com.example.imagefeed.core.network.PhotoDownloadTracker
 import com.example.imagefeed.core.network.filterDistinctAgainst
+import com.example.imagefeed.core.network.toAppError
 import com.example.imagefeed.model.Photo
 import com.example.imagefeed.presentation.mvi.MviViewModel
 import dev.zacsweers.metro.Assisted
@@ -52,9 +53,9 @@ class CollectionDetailViewModel(
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {
-                    val message = e.message ?: "Failed to load collection details"
-                    updateState { it.copy(error = message) }
-                    sendEffect(CollectionDetailEffect.ShowError(message))
+                    val appError = e.toAppError()
+                    updateState { it.copy(error = appError) }
+                    sendEffect(CollectionDetailEffect.ShowError(appError))
                 }
 
                 try {
@@ -98,14 +99,14 @@ class CollectionDetailViewModel(
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {
-                    val message = e.message ?: "Failed to load collection photos"
+                    val appError = e.toAppError()
                     updateState {
                         it.copy(
                             isLoadingPhotos = false,
-                            error = message,
+                            error = appError,
                         )
                     }
-                    sendEffect(CollectionDetailEffect.ShowError(message))
+                    sendEffect(CollectionDetailEffect.ShowError(appError))
                 }
             }
     }

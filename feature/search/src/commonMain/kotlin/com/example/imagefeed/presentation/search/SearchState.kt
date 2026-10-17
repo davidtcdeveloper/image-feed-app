@@ -1,5 +1,6 @@
 package com.example.imagefeed.presentation.search
 
+import com.example.imagefeed.model.AppError
 import com.example.imagefeed.model.CollectionSummary
 import com.example.imagefeed.model.Photo
 import com.example.imagefeed.model.User
@@ -27,8 +28,8 @@ data class UnifiedSearchState(
     val users: List<User> = emptyList(),
     val isLoading: Boolean = false,
     val isLoadingMore: Boolean = false,
-    val error: String? = null,
-    val searchHistory: List<String> = listOf("nature", "wallpapers", "minimalist", "neon", "architecture"),
+    val error: AppError? = null,
+    val searchHistory: List<String> = emptyList(),
     val photoPage: Int = 1,
     val collectionPage: Int = 1,
     val userPage: Int = 1,

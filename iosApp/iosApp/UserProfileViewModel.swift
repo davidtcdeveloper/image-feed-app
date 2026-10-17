@@ -33,7 +33,7 @@ class UserProfileViewModel {
             self.isLoadingContent = state.isLoadingContent
             self.isHeaderLoading = state.isHeaderLoading
             self.isLoadingStats = state.isLoadingStats
-            self.error = state.error
+            self.error = state.error?.localizedMessage
         }
 
         self.effectsCloseable = viewModel.iosEffects.watch { [weak self] effect in
@@ -45,7 +45,7 @@ class UserProfileViewModel {
     private func handleEffect(_ effect: UserProfileEffect) {
         switch effect {
         case let showError as UserProfileEffectShowError:
-            error = showError.message
+            error = showError.error.localizedMessage
         default:
             break
         }

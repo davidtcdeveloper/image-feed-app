@@ -129,11 +129,11 @@ class PhotoDetailsViewModelTest {
             val state = viewModel.state.value
             assertEquals(false, state.isLoading)
             assertNull(state.photo)
-            assertEquals("Network error occurred", state.error)
+            assertEquals(com.example.imagefeed.model.AppError.Network, state.error)
 
             val effect = viewModel.effects.first()
             assertTrue(effect is PhotoDetailsEffect.ShowErrorSnackbar)
-            assertEquals("Network error occurred", effect.message)
+            assertEquals(com.example.imagefeed.model.AppError.Network, effect.error)
         }
 
     @Test
@@ -163,7 +163,7 @@ class PhotoDetailsViewModelTest {
                 )
 
             advanceUntilIdle()
-            assertEquals("Network error occurred", viewModel.state.value.error)
+            assertEquals(com.example.imagefeed.model.AppError.Network, viewModel.state.value.error)
 
             repository.shouldFail = false
             viewModel.dispatch(PhotoDetailsIntent.Retry)

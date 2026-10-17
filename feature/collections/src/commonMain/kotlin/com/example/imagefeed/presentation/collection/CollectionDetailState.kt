@@ -1,5 +1,6 @@
 package com.example.imagefeed.presentation.collection
 
+import com.example.imagefeed.model.AppError
 import com.example.imagefeed.model.Photo
 import com.example.imagefeed.model.PhotoCollection
 import com.example.imagefeed.presentation.mvi.UiState
@@ -10,7 +11,7 @@ data class CollectionDetailState(
     val related: List<PhotoCollection> = emptyList(),
     val isLoadingPhotos: Boolean = false,
     val isHeaderLoading: Boolean = false,
-    val error: String? = null,
+    val error: AppError? = null,
     val photosPage: Int = 1,
     val hasReachedEnd: Boolean = false,
 ) : UiState

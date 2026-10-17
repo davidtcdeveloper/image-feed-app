@@ -1,5 +1,6 @@
 package com.example.imagefeed.presentation.random
 
+import com.example.imagefeed.model.AppError
 import com.example.imagefeed.presentation.mvi.UiEffect
 
 sealed interface RandomPhotoEffect : UiEffect {
@@ -8,6 +9,6 @@ sealed interface RandomPhotoEffect : UiEffect {
     ) : RandomPhotoEffect
 
     data class FetchFailed(
-        val error: String,
+        val error: AppError,
     ) : RandomPhotoEffect
 }

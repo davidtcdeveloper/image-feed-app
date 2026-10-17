@@ -3,6 +3,7 @@ package com.example.imagefeed.presentation.feed
 import androidx.lifecycle.viewModelScope
 import com.example.imagefeed.core.network.PhotoDownloadTracker
 import com.example.imagefeed.core.network.filterDistinctAgainst
+import com.example.imagefeed.core.network.toAppError
 import com.example.imagefeed.feed.data.FeedRepository
 import com.example.imagefeed.model.Photo
 import com.example.imagefeed.presentation.mvi.MviViewModel
@@ -51,14 +52,14 @@ class FeedViewModel(
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {
-                    val message = e.message ?: "Failed to load categories"
+                    val appError = e.toAppError()
                     updateState {
                         it.copy(
                             isLoadingTopics = false,
-                            error = message,
+                            error = appError,
                         )
                     }
-                    sendEffect(FeedEffect.ShowToast(message))
+                    sendEffect(FeedEffect.ShowToast(appError))
                 }
             }
     }
@@ -116,14 +117,14 @@ class FeedViewModel(
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {
-                    val message = e.message ?: "Failed to refresh feed"
+                    val appError = e.toAppError()
                     updateState {
                         it.copy(
                             isRefreshing = false,
-                            error = message,
+                            error = appError,
                         )
                     }
-                    sendEffect(FeedEffect.ShowToast(message))
+                    sendEffect(FeedEffect.ShowToast(appError))
                 }
             }
     }
@@ -161,14 +162,14 @@ class FeedViewModel(
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {
-                    val message = e.message ?: "Failed to load photos"
+                    val appError = e.toAppError()
                     updateState {
                         it.copy(
                             isLoading = false,
-                            error = message,
+                            error = appError,
                         )
                     }
-                    sendEffect(FeedEffect.ShowToast(message))
+                    sendEffect(FeedEffect.ShowToast(appError))
                 }
             }
     }

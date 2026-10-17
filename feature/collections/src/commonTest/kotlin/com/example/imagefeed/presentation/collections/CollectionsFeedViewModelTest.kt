@@ -73,7 +73,7 @@ class CollectionsFeedViewModelTest {
             val viewModel = CollectionsFeedViewModel(repository)
             advanceUntilIdle()
 
-            assertEquals("Network error", viewModel.state.value.error)
+            assertEquals(com.example.imagefeed.model.AppError.Network, viewModel.state.value.error)
             assertFalse(viewModel.state.value.isLoading)
         }
 

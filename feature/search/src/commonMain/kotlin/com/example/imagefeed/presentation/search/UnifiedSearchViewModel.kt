@@ -2,6 +2,7 @@ package com.example.imagefeed.presentation.search
 
 import androidx.lifecycle.viewModelScope
 import com.example.imagefeed.core.network.filterDistinctAgainst
+import com.example.imagefeed.core.network.toAppError
 import com.example.imagefeed.presentation.mvi.MviViewModel
 import com.example.imagefeed.search.data.SearchRepository
 import dev.zacsweers.metro.Inject
@@ -197,14 +198,14 @@ class UnifiedSearchViewModel(
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {
-                    val message = e.message ?: "Failed to load more results"
+                    val appError = e.toAppError()
                     updateState {
                         it.copy(
                             isLoadingMore = false,
-                            error = message,
+                            error = appError,
                         )
                     }
-                    sendEffect(UnifiedSearchEffect.ShowError(message))
+                    sendEffect(UnifiedSearchEffect.ShowError(appError))
                 }
             }
     }
@@ -295,14 +296,14 @@ class UnifiedSearchViewModel(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                val message = e.message ?: "Failed to refresh search"
+                val appError = e.toAppError()
                 updateState {
                     it.copy(
                         isRefreshing = false,
-                        error = message,
+                        error = appError,
                     )
                 }
-                sendEffect(UnifiedSearchEffect.ShowError(message))
+                sendEffect(UnifiedSearchEffect.ShowError(appError))
             }
         }
     }
@@ -374,14 +375,14 @@ class UnifiedSearchViewModel(
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {
-                    val message = e.message ?: "Search failed"
+                    val appError = e.toAppError()
                     updateState {
                         it.copy(
                             isLoading = false,
-                            error = message,
+                            error = appError,
                         )
                     }
-                    sendEffect(UnifiedSearchEffect.ShowError(message))
+                    sendEffect(UnifiedSearchEffect.ShowError(appError))
                 }
             }
     }

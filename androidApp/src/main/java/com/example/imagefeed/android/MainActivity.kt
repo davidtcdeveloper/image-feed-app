@@ -57,6 +57,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation3.runtime.NavKey
@@ -126,7 +127,7 @@ class MainActivity : ComponentActivity() {
                                         ) {
                                             Icon(
                                                 imageVector = Icons.Default.Refresh,
-                                                contentDescription = "Randomize",
+                                                contentDescription = stringResource(R.string.feed_randomize_accessibility),
                                                 tint = MaterialTheme.colorScheme.onSurface,
                                             )
                                         }
@@ -147,10 +148,10 @@ class MainActivity : ComponentActivity() {
                                             icon = {
                                                 Icon(
                                                     imageVector = destination.icon,
-                                                    contentDescription = destination.label,
+                                                    contentDescription = stringResource(destination.labelRes),
                                                 )
                                             },
-                                            label = { Text(destination.label) },
+                                            label = { Text(stringResource(destination.labelRes)) },
                                         )
                                     }
                                 }
@@ -214,7 +215,7 @@ class MainActivity : ComponentActivity() {
                                                                     contentDescription = null,
                                                                 )
                                                             },
-                                                            label = { Text(destination.label) },
+                                                            label = { Text(stringResource(destination.labelRes)) },
                                                             colors =
                                                                 NavigationBarItemDefaults.colors(
                                                                     indicatorColor = MaterialTheme.colorScheme.secondaryContainer,
@@ -367,6 +368,7 @@ class MainActivity : ComponentActivity() {
     private fun handleShake() {
         if (isFetchingRandom) return
         isFetchingRandom = true
+        Toast.makeText(this@MainActivity, getString(R.string.feed_shake_loading), Toast.LENGTH_SHORT).show()
         lifecycleScope.launch {
             try {
                 val photos = repository.getRandomPhotos(count = 1)
@@ -376,7 +378,7 @@ class MainActivity : ComponentActivity() {
                 Toast
                     .makeText(
                         this@MainActivity,
-                        "Failed to fetch random photo: ${e.message}",
+                        getString(R.string.error_random_photo),
                         Toast.LENGTH_SHORT,
                     ).show()
             } finally {

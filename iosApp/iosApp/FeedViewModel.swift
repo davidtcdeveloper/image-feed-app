@@ -28,7 +28,7 @@ class FeedViewModel {
             self.isLoading = state.isLoading
             self.isLoadingTopics = state.isLoadingTopics
             self.isRefreshing = state.isRefreshing
-            self.error = state.error
+            self.error = state.error?.localizedMessage
             self.hasReachedEnd = state.hasReachedEnd
         }
 
@@ -41,7 +41,7 @@ class FeedViewModel {
     private func handleEffect(_ effect: FeedEffect) {
         switch effect {
         case let toast as FeedEffectShowToast:
-            error = toast.message
+            error = toast.error.localizedMessage
         default:
             break
         }

@@ -58,6 +58,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -70,6 +72,7 @@ import coil3.request.crossfade
 import com.example.imagefeed.android.util.BLURHASH_PLACEHOLDER_WIDTH
 import com.example.imagefeed.android.util.CollectionMosaicCardSkeleton
 import com.example.imagefeed.android.util.bounceClick
+import com.example.imagefeed.android.util.localizedMessage
 import com.example.imagefeed.android.util.rememberBlurHashPlaceholder
 import com.example.imagefeed.android.util.staggeredEntrance
 import com.example.imagefeed.model.PhotoCollection
@@ -142,7 +145,7 @@ fun CollectionsFeedScreen(
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        text = "CURATED COLLECTIONS",
+                        text = stringResource(R.string.collections_title),
                         style =
                             MaterialTheme.typography.titleMedium.copy(
                                 fontWeight = FontWeight.Bold,
@@ -154,7 +157,7 @@ fun CollectionsFeedScreen(
                     IconButton(onClick = onSearchClick) {
                         Icon(
                             imageVector = Icons.Default.Search,
-                            contentDescription = "Search",
+                            contentDescription = stringResource(R.string.nav_search_accessibility),
                         )
                     }
                 },
@@ -201,7 +204,7 @@ fun CollectionsFeedScreen(
                     }
                 }
             } else if (state.collections.isEmpty() && state.error != null) {
-                ErrorView(error = state.error!!, onRetry = { viewModel.dispatch(CollectionsFeedIntent.Refresh) })
+                ErrorView(error = state.error!!.localizedMessage(), onRetry = { viewModel.dispatch(CollectionsFeedIntent.Refresh) })
             } else {
                 LazyVerticalStaggeredGrid(
                     columns = calculateCollectionGridColumns(),
@@ -374,7 +377,7 @@ fun CollectionMosaicCard(
                                                 .build(),
                                         placeholder = topPlaceholderBitmap?.let { BitmapPainter(it.asImageBitmap()) },
                                     ),
-                                contentDescription = "Preview photo 1",
+                                contentDescription = stringResource(R.string.collections_preview_1_accessibility),
                                 modifier = Modifier.fillMaxSize(),
                                 contentScale = ContentScale.Crop,
                             )
@@ -411,7 +414,7 @@ fun CollectionMosaicCard(
                                                 .build(),
                                         placeholder = bottomPlaceholderBitmap?.let { BitmapPainter(it.asImageBitmap()) },
                                     ),
-                                contentDescription = "Preview photo 2",
+                                contentDescription = stringResource(R.string.collections_preview_2_accessibility),
                                 modifier = Modifier.fillMaxSize(),
                                 contentScale = ContentScale.Crop,
                             )
@@ -478,7 +481,7 @@ fun CollectionMosaicCard(
 
                         Image(
                             painter = avatarPainter,
-                            contentDescription = "Curator profile image",
+                            contentDescription = stringResource(R.string.collections_curator_avatar_accessibility),
                             modifier =
                                 Modifier
                                     .size(24.dp)
@@ -489,7 +492,7 @@ fun CollectionMosaicCard(
 
                         Column {
                             Text(
-                                text = "Curated by",
+                                text = stringResource(R.string.collections_curated_by),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -511,7 +514,7 @@ fun CollectionMosaicCard(
                                 .padding(horizontal = 10.dp, vertical = 4.dp),
                     ) {
                         Text(
-                            text = "${collection.totalPhotos} Photos",
+                            text = pluralStringResource(R.plurals.collections_photos_count, collection.totalPhotos, collection.totalPhotos),
                             color = MaterialTheme.colorScheme.onSurface,
                             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                         )

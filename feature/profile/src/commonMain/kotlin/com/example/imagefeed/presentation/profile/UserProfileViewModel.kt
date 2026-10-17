@@ -3,6 +3,7 @@ package com.example.imagefeed.presentation.profile
 import androidx.lifecycle.viewModelScope
 import com.example.imagefeed.core.network.PhotoDownloadTracker
 import com.example.imagefeed.core.network.filterDistinctAgainst
+import com.example.imagefeed.core.network.toAppError
 import com.example.imagefeed.model.Photo
 import com.example.imagefeed.presentation.mvi.MviViewModel
 import com.example.imagefeed.profile.data.ProfileRepository
@@ -57,14 +58,14 @@ class UserProfileViewModel(
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {
-                    val message = e.message ?: "Failed to load user profile"
+                    val appError = e.toAppError()
                     updateState {
                         it.copy(
                             isHeaderLoading = false,
-                            error = message,
+                            error = appError,
                         )
                     }
-                    sendEffect(UserProfileEffect.ShowError(message))
+                    sendEffect(UserProfileEffect.ShowError(appError))
                 }
             }
     }
@@ -118,14 +119,14 @@ class UserProfileViewModel(
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {
-                    val message = e.message ?: "Failed to load stats"
+                    val appError = e.toAppError()
                     updateState {
                         it.copy(
                             isLoadingStats = false,
-                            error = message,
+                            error = appError,
                         )
                     }
-                    sendEffect(UserProfileEffect.ShowError(message))
+                    sendEffect(UserProfileEffect.ShowError(appError))
                 }
             }
     }
@@ -163,14 +164,14 @@ class UserProfileViewModel(
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {
-                    val message = e.message ?: "Failed to load uploaded photos"
+                    val appError = e.toAppError()
                     updateState {
                         it.copy(
                             isLoadingContent = false,
-                            error = message,
+                            error = appError,
                         )
                     }
-                    sendEffect(UserProfileEffect.ShowError(message))
+                    sendEffect(UserProfileEffect.ShowError(appError))
                 }
             }
     }
@@ -199,14 +200,14 @@ class UserProfileViewModel(
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {
-                    val message = e.message ?: "Failed to load liked photos"
+                    val appError = e.toAppError()
                     updateState {
                         it.copy(
                             isLoadingContent = false,
-                            error = message,
+                            error = appError,
                         )
                     }
-                    sendEffect(UserProfileEffect.ShowError(message))
+                    sendEffect(UserProfileEffect.ShowError(appError))
                 }
             }
     }
@@ -235,14 +236,14 @@ class UserProfileViewModel(
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {
-                    val message = e.message ?: "Failed to load user collections"
+                    val appError = e.toAppError()
                     updateState {
                         it.copy(
                             isLoadingContent = false,
-                            error = message,
+                            error = appError,
                         )
                     }
-                    sendEffect(UserProfileEffect.ShowError(message))
+                    sendEffect(UserProfileEffect.ShowError(appError))
                 }
             }
     }

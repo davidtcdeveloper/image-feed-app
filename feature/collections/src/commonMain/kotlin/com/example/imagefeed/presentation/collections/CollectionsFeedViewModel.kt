@@ -3,6 +3,7 @@ package com.example.imagefeed.presentation.collections
 import androidx.lifecycle.viewModelScope
 import com.example.imagefeed.collections.data.CollectionsRepository
 import com.example.imagefeed.core.network.filterDistinctAgainst
+import com.example.imagefeed.core.network.toAppError
 import com.example.imagefeed.presentation.mvi.MviViewModel
 import dev.zacsweers.metro.Inject
 import kotlinx.coroutines.CancellationException
@@ -52,14 +53,14 @@ class CollectionsFeedViewModel(
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {
-                    val message = e.message ?: "Failed to refresh collections"
+                    val appError = e.toAppError()
                     updateState {
                         it.copy(
                             isRefreshing = false,
-                            error = message,
+                            error = appError,
                         )
                     }
-                    sendEffect(CollectionsFeedEffect.ShowError(message))
+                    sendEffect(CollectionsFeedEffect.ShowError(appError))
                 }
             }
     }
@@ -89,14 +90,14 @@ class CollectionsFeedViewModel(
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {
-                    val message = e.message ?: "Failed to load collections"
+                    val appError = e.toAppError()
                     updateState {
                         it.copy(
                             isLoading = false,
-                            error = message,
+                            error = appError,
                         )
                     }
-                    sendEffect(CollectionsFeedEffect.ShowError(message))
+                    sendEffect(CollectionsFeedEffect.ShowError(appError))
                 }
             }
     }

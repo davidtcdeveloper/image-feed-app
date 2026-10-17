@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App & Navigation -->
+    <string name="app_name">Image Feed</string>
+    <string name="nav_tab_photos">Photos</string>
+    <string name="nav_tab_collections">Collections</string>
+    <string name="nav_tab_search">Search</string>
+    <string name="nav_back">Back</string>
+    <string name="nav_search_accessibility">Search</string>
+    <string name="nav_shuffle_accessibility">Shuffle</string>
+    <string name="macos_sidebar_prompt">Select a category from the sidebar</string>
+
+    <!-- Feed Screen -->
+    <string name="feed_title">Feed</string>
+    <string name="feed_editorial_tab">Editorial</string>
+    <string name="feed_randomize_accessibility">Randomize</string>
+    <string name="feed_user_profile_accessibility">User profile</string>
+    <string name="feed_shake_loading">🎲 Shaking up a random photo…</string>
+    <string name="feed_error_title">Error Loading Feed</string>
+    <string name="feed_error_unknown">Unknown error</string>
+    <string name="feed_action_retry">Retry</string>
+
+    <!-- Curated Collections Feed -->
+    <string name="collections_title">CURATED COLLECTIONS</string>
+    <string name="collections_curated_by">Curated by</string>
+    <string name="collections_preview_1_accessibility">Preview photo 1</string>
+    <string name="collections_preview_2_accessibility">Preview photo 2</string>
+    <string name="collections_curator_avatar_accessibility">Curator profile image</string>
+    <string name="collections_error_loading">Failed to load collections</string>
+
+    <!-- Collection Details -->
+    <string name="collection_detail_title_fallback">Collection</string>
+    <string name="collection_detail_related">Related Collections</string>
+    <string name="collection_detail_photos_header">Photos</string>
+
+    <!-- Search & Discovery -->
+    <string name="search_input_prompt">Search Photos, Collections, Users…</string>
+    <string name="search_tab_photos">Photos</string>
+    <string name="search_tab_collections">Collections</string>
+    <string name="search_tab_users">Users</string>
+    <string name="search_section_recents">RECENTS</string>
+    <string name="search_section_popular_topics">POPULAR TOPICS</string>
+    <string name="search_action_clear_all">CLEAR ALL</string>
+    <string name="search_action_clear_accessibility">Clear</string>
+    <string name="search_action_collapse_accessibility">Collapse Search</string>
+    <string name="search_action_filters_accessibility">Filters</string>
+    <string name="search_empty_history">No search history</string>
+    <string name="search_empty_results">No results found.</string>
+    <string name="search_filter_title">FILTERS</string>
+    <string name="search_filter_action_reset">RESET</string>
+    <string name="search_filter_action_apply">APPLY FILTERS</string>
+    <string name="search_filter_sort_by">SORT BY</string>
+    <string name="search_filter_sort_relevant">RELEVANT</string>
+    <string name="search_filter_sort_latest">LATEST</string>
+    <string name="search_filter_orientation">ORIENTATION</string>
+    <string name="search_filter_orientation_all">ALL</string>
+    <string name="search_filter_orientation_landscape">LANDSCAPE</string>
+    <string name="search_filter_orientation_portrait">PORTRAIT</string>
+    <string name="search_filter_color_tone">COLOR TONE</string>
+    <string name="search_filter_color_any">Any</string>
+    <string name="search_filter_color_bw">B&amp;W</string>
+    <string name="search_filter_color_black">Black</string>
+    <string name="search_filter_color_white">White</string>
+    <string name="search_filter_color_yellow">Yellow</string>
+    <string name="search_filter_color_orange">Orange</string>
+    <string name="search_filter_color_red">Red</string>
+    <string name="search_filter_color_purple">Purple</string>
+    <string name="search_filter_color_magenta">Magenta</string>
+    <string name="search_filter_color_green">Green</string>
+    <string name="search_filter_color_teal">Teal</string>
+    <string name="search_filter_color_blue">Blue</string>
+    <string name="search_user_card_view_profile_accessibility">View Profile</string>
+
+    <!-- Photo Details & EXIF Telemetry -->
+    <string name="details_title">Details</string>
+    <string name="details_action_open_web">Open in Web</string>
+    <string name="details_action_download">Download High Resolution</string>
+    <string name="details_action_download_accessibility">Download photo</string>
+    <string name="details_action_inspect_accessibility">Inspect photo details</string>
+    <string name="details_error_loading">Failed to load details</string>
+    <string name="details_placeholder_prompt">Select a photo to view high-resolution imagery, EXIF telemetry, and photographer insights.</string>
+    <string name="details_stat_views">Views</string>
+    <string name="details_stat_downloads">Downloads</string>
+    <string name="details_stat_likes">Likes</string>
+    <string name="details_views_trend_header">HISTORICAL VIEWS (LAST 30 DAYS)</string>
+    <string name="details_trend_30_day">30-Day Trend</string>
+    <string name="details_metric_peak">Peak: %1$s</string>
+    <string name="details_metric_min">Min: %1$s</string>
+    <string name="details_color_palette_header">COLOR PALETTE</string>
+    <string name="details_copied_to_clipboard">Copied %1$s to clipboard</string>
+    <string name="details_exif_header">CAMERA &amp; LENS SPECS</string>
+    <string name="details_exif_camera">Camera</string>
+    <string name="details_exif_aperture">Aperture</string>
+    <string name="details_exif_exposure">Exposure Time</string>
+    <string name="details_exif_focal_length">Focal Length</string>
+    <string name="details_exif_iso">ISO</string>
+    <string name="details_location_header">LOCATION</string>
+    <string name="details_location_pin_accessibility">Location Pin</string>
+    <string name="details_location_open_maps">Open in Google Maps</string>
+    <string name="details_location_fallback_title">Photo Location</string>
+    <string name="details_location_unknown">Unknown Coordinates</string>
+    <string name="details_related_tags_header">RELATED TAGS</string>
+
+    <!-- User Profile & Insights -->
+    <string name="profile_title_fallback">Profile</string>
+    <string name="profile_tab_photos">Photos</string>
+    <string name="profile_tab_likes">Likes</string>
+    <string name="profile_tab_collections">Collections</string>
+    <string name="profile_tab_insights">Insights</string>
+    <string name="profile_empty_photos">No photos found.</string>
+    <string name="profile_empty_collections">No collections found.</string>
+    <string name="profile_insights_error">Failed to load insights.</string>
+    <string name="profile_stat_total_views">Total Views</string>
+    <string name="profile_stat_total_downloads">Total Downloads</string>
+    <string name="profile_chart_views_trend">VIEWS TRENDS (LAST 30 DAYS)</string>
+    <string name="profile_chart_downloads_trend">DOWNLOADS TRENDS (LAST 30 DAYS)</string>
+    <string name="profile_chart_drag_prompt">Drag curve to inspect daily stats</string>
+    <string name="profile_chart_units">%1$d units</string>
+    <string name="profile_social_instagram_accessibility">Instagram</string>
+    <string name="profile_social_twitter_accessibility">Twitter</string>
+    <string name="profile_social_website_label">Website</string>
+    <string name="profile_social_website_accessibility">Website</string>
+    <string name="profile_action_open_browser_accessibility">Open Profile in Browser</string>
+
+    <!-- System Errors -->
+    <string name="error_network">No internet connection. Please check your network.</string>
+    <string name="error_timeout">The server took too long to respond. Please try again.</string>
+    <string name="error_not_found">The requested item could not be found.</string>
+    <string name="error_server">Server error (%1$d). Please try again later.</string>
+    <string name="error_random_photo">Failed to load random photo. Please try again.</string>
+    <string name="error_unknown">An unexpected error occurred.</string>
+
+    <!-- Additional UI Keys -->
+    <string name="action_retry">Retry</string>
+    <string name="search_failed">Search failed</string>
+    <string name="profile_error_loading">Failed to load profile</string>
+    <string name="details_error_photo">Failed to load photo</string>
+    <string name="details_metric_latest">Latest: %1$s</string>
+    <string name="details_download_full">Full</string>
+    <string name="details_download_raw">RAW</string>
+    <string name="details_share_title">Share Photo</string>
+    <string name="details_share_error">Unable to share photo</string>
+    <string name="details_share_subject_fallback">Unsplash Photo</string>
+    <string name="details_bookmark_saved">Saved to bookmarks</string>
+    <string name="details_bookmark_removed">Removed from bookmarks</string>
+    <string name="details_bookmark_add">Bookmark</string>
+    <string name="details_bookmark_remove">Remove Bookmark</string>
+    <string name="details_download_error">Could not open download link</string>
+    <string name="details_location_lat_lon">Lat: %1$s, Lon: %2$s</string>
+    <string name="details_location_captured">Captured Location</string>
+    <string name="details_clipboard_hex_label">Hex Color</string>
+    <string name="content_desc_photographer_avatar">Photographer avatar</string>
+    <string name="content_desc_map_launcher">Map Launcher</string>
+    <string name="content_desc_back">Back</string>
+    <string name="content_desc_history">History</string>
+    <string name="content_desc_delete">Delete</string>
+    <string name="content_desc_selected">Selected</string>
+    <string name="content_desc_location">Location</string>
+    <string name="content_desc_open_in_browser">Open in Browser</string>
+    <string name="content_desc_share">Share</string>
+</resources>
+

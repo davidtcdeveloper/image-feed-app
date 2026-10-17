@@ -53,7 +53,7 @@ struct CollectionsFeedView: View {
                         }
                     }
                 } else if viewModel.collections.isEmpty, viewModel.error != nil {
-                    ErrorView(error: viewModel.error ?? "Failed to load collections", onRetry: {
+                    ErrorView(error: viewModel.error ?? String(localized: "Failed to load collections"), onRetry: {
                         viewModel.refresh()
                     })
                 } else {

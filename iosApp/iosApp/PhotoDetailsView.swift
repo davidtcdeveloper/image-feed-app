@@ -110,7 +110,7 @@ struct PhotoDetailsView: View {
         }
         .overlay(alignment: .topLeading) {
             #if os(iOS)
-            GlassToolbarButton(systemName: "chevron.left", accessibilityLabel: "Back") {
+            GlassToolbarButton(systemName: "chevron.backward", accessibilityLabel: "Back") {
                 handleDismiss()
             }
             .padding(.top, 60)
@@ -118,7 +118,7 @@ struct PhotoDetailsView: View {
             .environment(\.colorScheme, .dark)
             #else
             if onDismiss != nil {
-                GlassToolbarButton(systemName: "chevron.left", accessibilityLabel: "Back") {
+                GlassToolbarButton(systemName: "chevron.backward", accessibilityLabel: "Back") {
                     handleDismiss()
                 }
                 .padding(.top, 60)
@@ -205,7 +205,7 @@ struct PhotoDetailsView: View {
         .toolbar {
             #if !os(iOS)
             ToolbarItem(placement: .navigation) {
-                GlassToolbarButton(systemName: "chevron.left", accessibilityLabel: "Back") {
+                GlassToolbarButton(systemName: "chevron.backward", accessibilityLabel: "Back") {
                     handleDismiss()
                 }
             }
@@ -275,6 +275,7 @@ private extension PhotoDetailsView {
                                 .font(.caption.weight(.bold))
                                 .glassVibrancy(.primary)
                         }
+                        .accessibilityLabel(Text("View Profile"))
                     }
                     .padding(12)
                     .background {
@@ -674,14 +675,7 @@ struct PhotoInspectorView: View {
 
     private func formatMetric(_ value: Int32?) -> String {
         guard let value else { return "--" }
-        let num = Int(value)
-        if num >= 1000000 {
-            return String(format: "%.1fM", Double(num) / 1000000.0)
-        } else if num >= 1000 {
-            return String(format: "%.1fK", Double(num) / 1000.0)
-        } else {
-            return "\(num)"
-        }
+        return Int(value).formatted(.number.notation(.compactName))
     }
 
     private func hasExif(_ exif: Exif) -> Bool {
@@ -706,7 +700,7 @@ struct PhotoInspectorView: View {
 }
 
 struct MetricCard: View {
-    let label: String
+    let label: LocalizedStringKey
     let value: String
     let systemImage: String
 
@@ -729,7 +723,7 @@ struct MetricCard: View {
 }
 
 struct ExifRowView: View {
-    let label: String
+    let label: LocalizedStringKey
     let value: String?
 
     var body: some View {
@@ -909,8 +903,7 @@ struct HistoricalStatsChart: View {
     }
 
     private func formatViewsCount(_ count: Int32) -> String {
-        let formattedNum = Int(count).formatted()
-        return count == 1 ? "\(formattedNum) view" : "\(formattedNum) views"
+        String(localized: "\(count) views")
     }
 }
 
@@ -934,7 +927,7 @@ struct MapCardView: View {
 
     var body: some View {
         Map(position: $position) {
-            Marker(name ?? "Photo Location", coordinate: CLLocationCoordinate2D(latitude: latitude, longitude: longitude))
+            Marker(name ?? String(localized: "Photo Location"), coordinate: CLLocationCoordinate2D(latitude: latitude, longitude: longitude))
                 .tint(.white)
         }
         .frame(height: 150)

@@ -1,6 +1,6 @@
 # Cross-Platform Localization Architecture (Phase 1: English Extraction & Foundation)
 
-**Status:** Proposed
+**Status:** Implemented
 
 ## Overview
 
@@ -286,18 +286,18 @@ The following structured keys form the canonical namespace across Android XML an
 
 ## Acceptance Criteria
 
-- [ ] `AppError` sealed class created in `:core:model` and central `toAppError()` mapper implemented in `:core:network`.
-- [ ] All 7 KMP feature ViewModels refactored to emit `AppError` in state and effects without constructing English fallback strings.
-- [ ] `SearchState.kt` default `searchHistory` purged of hardcoded English words.
-- [ ] All shared `commonTest` suites updated to assert typed `AppError` instances, with 100% test pass rate (`./gradlew allTests`).
-- [ ] `androidApp/src/main/res/values/strings.xml` and `plurals.xml` populated with all 85 unified keys in English.
-- [ ] Android screens updated to use `stringResource()` and `pluralStringResource()` with zero hardcoded UI strings.
-- [ ] Android number formatting updated to ICU `CompactDecimalFormat` and timeline dates updated to `java.time.LocalDate`.
-- [ ] `iosApp/project.yml` configured with `developmentLanguage: en` and `knownRegions: [en]`.
-- [ ] `Localizable.xcstrings` created in `iosApp/iosApp/` containing all 85 keys and plural variations.
-- [ ] SwiftUI views refactored to resolve localized keys with zero hardcoded English text.
-- [ ] Swift number formatting updated to `.formatted(.number.notation(.compactName))` and timeline dates to `ISO8601DateFormatter`.
-- [ ] Back buttons on iOS/macOS updated from `chevron.left` to `chevron.backward`.
-- [ ] `.agents/skills/localization/SKILL.md` authored with complete runbook for string catalogs, format specifiers, plural variations, and error mapping.
-- [ ] `AGENTS.md` and `GEMINI.md` updated to index the localization skill and enforce the Zero Hardcoded Strings Policy while strictly maintaining `AGENTS.md` under 75 lines.
-- [ ] Android and iOS builds compile cleanly without warnings or errors.
+- [x] `AppError` sealed class created in `:core:model` and central `toAppError()` mapper implemented in `:core:network`.
+- [x] All 7 KMP feature ViewModels refactored to emit `AppError` in state and effects without constructing English fallback strings.
+- [x] `SearchState.kt` default `searchHistory` purged of hardcoded English words.
+- [x] All shared `commonTest` suites updated to assert typed `AppError` instances, with 100% test pass rate (`./gradlew allTests`).
+- [x] `androidApp/src/main/res/values/strings.xml` and `plurals.xml` populated with all 85 unified keys in English.
+- [x] Android screens updated to use `stringResource()` and `pluralStringResource()` with zero hardcoded UI strings.
+- [x] Android number formatting updated to ICU `CompactDecimalFormat` and timeline dates updated to `java.time.LocalDate`.
+- [x] `iosApp/project.yml` configured with `developmentLanguage: en` and `knownRegions: [en]`.
+- [x] `Localizable.xcstrings` created in `iosApp/iosApp/` containing all 85 keys and plural variations.
+- [x] SwiftUI views refactored to resolve localized keys with zero hardcoded English text.
+- [x] Swift number formatting updated to `.formatted(.number.notation(.compactName))` and timeline dates to `ISO8601DateFormatter`.
+- [x] Back buttons on iOS/macOS updated from `chevron.left` to `chevron.backward`.
+- [x] `.agents/skills/localization/SKILL.md` authored with complete runbook for string catalogs, format specifiers, plural variations, and error mapping.
+- [x] `AGENTS.md` and `GEMINI.md` updated to index the localization skill and enforce the Zero Hardcoded Strings Policy while strictly maintaining `AGENTS.md` under 75 lines.
+- [x] Android and iOS builds compile cleanly without warnings or errors.

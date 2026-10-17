@@ -84,6 +84,8 @@ import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
@@ -105,6 +107,7 @@ import com.example.imagefeed.android.util.BLURHASH_PLACEHOLDER_WIDTH
 import com.example.imagefeed.android.util.CollectionMosaicCardSkeleton
 import com.example.imagefeed.android.util.PhotoGridSkeleton
 import com.example.imagefeed.android.util.bounceClick
+import com.example.imagefeed.android.util.localizedMessage
 import com.example.imagefeed.android.util.rememberBlurHashPlaceholder
 import com.example.imagefeed.android.util.staggeredEntrance
 import com.example.imagefeed.di.MetroHelper
@@ -184,7 +187,7 @@ fun SearchScreen(
             onExpandedChange = { viewModel.dispatch(UnifiedSearchIntent.SetSearchActive(it)) },
             placeholder = {
                 Text(
-                    "Search Photos, Collections, Users...",
+                    stringResource(R.string.search_input_prompt),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -194,14 +197,14 @@ fun SearchScreen(
                     IconButton(onClick = { viewModel.dispatch(UnifiedSearchIntent.SetSearchActive(false)) }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Collapse Search",
+                            contentDescription = stringResource(R.string.search_action_collapse_accessibility),
                         )
                     }
                 } else {
                     IconButton(onClick = onBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
+                            contentDescription = stringResource(R.string.content_desc_back),
                         )
                     }
                 }
@@ -212,7 +215,7 @@ fun SearchScreen(
                         IconButton(onClick = { viewModel.dispatch(UnifiedSearchIntent.UpdateQuery("")) }) {
                             Icon(
                                 Icons.Default.Clear,
-                                contentDescription = "Clear",
+                                contentDescription = stringResource(R.string.search_action_clear_accessibility),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
@@ -221,7 +224,7 @@ fun SearchScreen(
                         Icon(
                             // Standard List serves as an elegant filter icon
                             imageVector = Icons.AutoMirrored.Filled.List,
-                            contentDescription = "Filters",
+                            contentDescription = stringResource(R.string.search_action_filters_accessibility),
                             tint =
                                 if (state.filters !=
                                     SearchFilters()
@@ -305,12 +308,18 @@ fun SearchScreen(
                         },
                     ) {
                         SearchTab.entries.forEach { tab ->
+                            val tabLabel =
+                                when (tab) {
+                                    SearchTab.PHOTOS -> stringResource(R.string.search_tab_photos)
+                                    SearchTab.COLLECTIONS -> stringResource(R.string.search_tab_collections)
+                                    SearchTab.USERS -> stringResource(R.string.search_tab_users)
+                                }
                             Tab(
                                 selected = state.activeTab == tab,
                                 onClick = { viewModel.dispatch(UnifiedSearchIntent.SelectSearchType(tab)) },
                                 text = {
                                     Text(
-                                        text = tab.name,
+                                        text = tabLabel,
                                         style = MaterialTheme.typography.labelLarge,
                                         fontWeight = FontWeight.Bold,
                                     )
@@ -389,14 +398,14 @@ fun SearchScreen(
                             horizontalAlignment = Alignment.CenterHorizontally,
                         ) {
                             Text(
-                                text = "Search failed",
+                                text = stringResource(R.string.search_failed),
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Medium,
                                 color = MaterialTheme.colorScheme.onSurface,
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
-                                text = state.error ?: "",
+                                text = state.error?.localizedMessage() ?: "",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -503,14 +512,14 @@ fun SearchSuggestionsAndHistory(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    "RECENTS",
+                    stringResource(R.string.search_section_recents),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.sp,
                 )
                 Text(
-                    "CLEAR ALL",
+                    stringResource(R.string.search_action_clear_all),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Bold,
@@ -530,7 +539,7 @@ fun SearchSuggestionsAndHistory(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Refresh,
-                        contentDescription = "History",
+                        contentDescription = stringResource(R.string.content_desc_history),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(16.dp),
                     )
@@ -547,7 +556,7 @@ fun SearchSuggestionsAndHistory(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Clear,
-                            contentDescription = "Delete",
+                            contentDescription = stringResource(R.string.content_desc_delete),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(16.dp),
                         )
@@ -559,7 +568,7 @@ fun SearchSuggestionsAndHistory(
         }
 
         Text(
-            "POPULAR TOPICS",
+            stringResource(R.string.search_section_popular_topics),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontWeight = FontWeight.Bold,
@@ -821,8 +830,11 @@ fun CollectionRowCard(
                         letterSpacing = 1.sp,
                     )
                     Spacer(modifier = Modifier.height(4.dp))
+                    val photosCount =
+                        pluralStringResource(R.plurals.collections_photos_count, collection.totalPhotos, collection.totalPhotos)
+                    val curatedBy = stringResource(R.string.collections_curated_by)
                     Text(
-                        text = "${collection.totalPhotos} Photos  ·  Curated by ${collection.user.name}",
+                        text = "$photosCount  ·  $curatedBy ${collection.user.name}",
                         style = MaterialTheme.typography.bodySmall,
                         color = Color.White.copy(alpha = 0.8f),
                     )
@@ -961,7 +973,7 @@ fun UserRowCard(
 
             Icon(
                 imageVector = Icons.Default.PlayArrow,
-                contentDescription = "View Profile",
+                contentDescription = stringResource(R.string.search_user_card_view_profile_accessibility),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(16.dp),
             )
@@ -976,7 +988,7 @@ fun NoResultsView() {
         contentAlignment = Alignment.Center,
     ) {
         Text(
-            "No results found.",
+            stringResource(R.string.search_empty_results),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -998,18 +1010,18 @@ fun SearchFiltersSheet(
 
     val colors =
         listOf(
-            Pair("Any", null),
-            Pair("B&W", "black_and_white"),
-            Pair("Black", "black"),
-            Pair("White", "white"),
-            Pair("Yellow", "yellow"),
-            Pair("Orange", "orange"),
-            Pair("Red", "red"),
-            Pair("Purple", "purple"),
-            Pair("Magenta", "magenta"),
-            Pair("Green", "green"),
-            Pair("Teal", "teal"),
-            Pair("Blue", "blue"),
+            Pair(stringResource(R.string.search_filter_color_any), null),
+            Pair(stringResource(R.string.search_filter_color_bw), "black_and_white"),
+            Pair(stringResource(R.string.search_filter_color_black), "black"),
+            Pair(stringResource(R.string.search_filter_color_white), "white"),
+            Pair(stringResource(R.string.search_filter_color_yellow), "yellow"),
+            Pair(stringResource(R.string.search_filter_color_orange), "orange"),
+            Pair(stringResource(R.string.search_filter_color_red), "red"),
+            Pair(stringResource(R.string.search_filter_color_purple), "purple"),
+            Pair(stringResource(R.string.search_filter_color_magenta), "magenta"),
+            Pair(stringResource(R.string.search_filter_color_green), "green"),
+            Pair(stringResource(R.string.search_filter_color_teal), "teal"),
+            Pair(stringResource(R.string.search_filter_color_blue), "blue"),
         )
 
     val colorHexes =
@@ -1046,13 +1058,13 @@ fun SearchFiltersSheet(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    "FILTERS",
+                    stringResource(R.string.search_filter_title),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
-                    "RESET",
+                    stringResource(R.string.search_filter_action_reset),
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
@@ -1070,7 +1082,7 @@ fun SearchFiltersSheet(
 
             // Sort Order Section
             Text(
-                "SORT BY",
+                stringResource(R.string.search_filter_sort_by),
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -1084,7 +1096,7 @@ fun SearchFiltersSheet(
                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                         selectedOrderBy = "relevant"
                     },
-                    label = { Text("RELEVANT") },
+                    label = { Text(stringResource(R.string.search_filter_sort_relevant)) },
                     colors = FilterChipDefaults.filterChipColors(),
                 )
                 FilterChip(
@@ -1093,7 +1105,7 @@ fun SearchFiltersSheet(
                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                         selectedOrderBy = "latest"
                     },
-                    label = { Text("LATEST") },
+                    label = { Text(stringResource(R.string.search_filter_sort_latest)) },
                     colors = FilterChipDefaults.filterChipColors(),
                 )
             }
@@ -1102,7 +1114,7 @@ fun SearchFiltersSheet(
 
             // Orientation Section
             Text(
-                "ORIENTATION",
+                stringResource(R.string.search_filter_orientation),
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -1116,7 +1128,7 @@ fun SearchFiltersSheet(
                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                         selectedOrientation = null
                     },
-                    label = { Text("ALL") },
+                    label = { Text(stringResource(R.string.search_filter_orientation_all)) },
                     colors = FilterChipDefaults.filterChipColors(),
                 )
                 FilterChip(
@@ -1125,7 +1137,7 @@ fun SearchFiltersSheet(
                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                         selectedOrientation = "landscape"
                     },
-                    label = { Text("LANDSCAPE") },
+                    label = { Text(stringResource(R.string.search_filter_orientation_landscape)) },
                     colors = FilterChipDefaults.filterChipColors(),
                 )
                 FilterChip(
@@ -1134,7 +1146,7 @@ fun SearchFiltersSheet(
                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                         selectedOrientation = "portrait"
                     },
-                    label = { Text("PORTRAIT") },
+                    label = { Text(stringResource(R.string.search_filter_orientation_portrait)) },
                     colors = FilterChipDefaults.filterChipColors(),
                 )
             }
@@ -1143,7 +1155,7 @@ fun SearchFiltersSheet(
 
             // Color Section
             Text(
-                "COLOR TONE",
+                stringResource(R.string.search_filter_color_tone),
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -1187,7 +1199,7 @@ fun SearchFiltersSheet(
                             if (selectedColor == value) {
                                 Icon(
                                     imageVector = Icons.Default.Check,
-                                    contentDescription = "Selected",
+                                    contentDescription = stringResource(R.string.content_desc_selected),
                                     tint = if (value == "white" || value == "yellow") Color.Black else Color.White,
                                     modifier = Modifier.size(16.dp),
                                 )
@@ -1222,7 +1234,11 @@ fun SearchFiltersSheet(
                         .height(48.dp),
                 shape = MaterialTheme.shapes.small,
             ) {
-                Text("APPLY FILTERS", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                Text(
+                    stringResource(R.string.search_filter_action_apply),
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold,
+                )
             }
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -1380,8 +1396,19 @@ private fun SearchColorDial(
                 }
 
             val colorLabel =
-                remember(colorKey) {
-                    colorKey.replace('_', ' ').replaceFirstChar { it.uppercase() }
+                when (colorKey) {
+                    "black_and_white" -> stringResource(R.string.search_filter_color_bw)
+                    "black" -> stringResource(R.string.search_filter_color_black)
+                    "white" -> stringResource(R.string.search_filter_color_white)
+                    "yellow" -> stringResource(R.string.search_filter_color_yellow)
+                    "orange" -> stringResource(R.string.search_filter_color_orange)
+                    "red" -> stringResource(R.string.search_filter_color_red)
+                    "purple" -> stringResource(R.string.search_filter_color_purple)
+                    "magenta" -> stringResource(R.string.search_filter_color_magenta)
+                    "green" -> stringResource(R.string.search_filter_color_green)
+                    "teal" -> stringResource(R.string.search_filter_color_teal)
+                    "blue" -> stringResource(R.string.search_filter_color_blue)
+                    else -> colorKey
                 }
 
             Box(

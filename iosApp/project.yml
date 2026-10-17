@@ -1,6 +1,9 @@
 name: iosApp
 options:
   bundleIdPrefix: com.example.imagefeed
+  developmentLanguage: en
+  knownRegions:
+    - en
 targets:
   iosApp:
     type: application

@@ -26,7 +26,7 @@ class CollectionDetailViewModel {
             self.related = state.related
             self.isLoadingPhotos = state.isLoadingPhotos
             self.isHeaderLoading = state.isHeaderLoading
-            self.error = state.error
+            self.error = state.error?.localizedMessage
             self.hasReachedEnd = state.hasReachedEnd
         }
 
@@ -39,7 +39,7 @@ class CollectionDetailViewModel {
     private func handleEffect(_ effect: CollectionDetailEffect) {
         switch effect {
         case let showError as CollectionDetailEffectShowError:
-            error = showError.message
+            error = showError.error.localizedMessage
         default:
             break
         }

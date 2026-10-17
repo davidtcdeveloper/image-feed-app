@@ -231,19 +231,19 @@ struct SearchView: View {
         .toolbar {
             #if os(iOS)
             ToolbarItem(placement: .navigationBarTrailing) {
-                GlassToolbarButton(systemName: "line.3.horizontal.decrease", accessibilityLabel: "Filter") {
+                GlassToolbarButton(systemName: "line.3.horizontal.decrease", accessibilityLabel: "Filters") {
                     showFilters = true
                 }
             }
             #else
             ToolbarItem(placement: .primaryAction) {
-                GlassToolbarButton(systemName: "line.3.horizontal.decrease", accessibilityLabel: "Filter") {
+                GlassToolbarButton(systemName: "line.3.horizontal.decrease", accessibilityLabel: "Filters") {
                     showFilters = true
                 }
             }
             #endif
         }
-        .searchable(text: $searchText, prompt: "Photos, collections, or users")
+        .searchable(text: $searchText, prompt: Text("Search Photos, Collections, Users…"))
         .onSubmit(of: .search) {
             viewModel.submitSearch(query: searchText)
         }
@@ -369,6 +369,7 @@ struct SearchSuggestionsView: View {
                                         .glassVibrancy(.secondary)
                                         .font(.caption)
                                 }
+                                .accessibilityLabel("Clear")
                             }
                             .padding(.vertical, 8)
                         }
@@ -424,9 +425,14 @@ struct CollectionCardView: View {
                     .glassVibrancy(.primary)
                     .tracking(1)
 
-                Text("\(collection.totalPhotos) Photos  ·  Curated by \(collection.user.name)")
-                    .font(.caption)
-                    .glassVibrancy(.secondary)
+                HStack(spacing: 4) {
+                    Text("\(collection.totalPhotos) Photos")
+                    Text("·")
+                    Text("Curated by")
+                    Text(collection.user.name)
+                }
+                .font(.caption)
+                .glassVibrancy(.secondary)
             }
             .padding(16)
         }
@@ -460,6 +466,7 @@ struct UserCardView: View {
             Image(systemName: "arrow.up.right")
                 .glassVibrancy(.secondary)
                 .font(.footnote.weight(.semibold))
+                .accessibilityLabel("View Profile")
         }
         .padding(12)
         .glassCard(cornerRadius: 12, style: .ultraThin)
@@ -486,7 +493,7 @@ struct SearchFiltersSheetView: View {
     @State private var orientation: String? = nil
     @State private var color: String? = nil
 
-    private let colors: [(String, String?)] = [
+    private let colors: [(LocalizedStringKey, String?)] = [
         ("Any", nil),
         ("B&W", "black_and_white"),
         ("Black", "black"),
@@ -585,9 +592,9 @@ struct SearchFiltersSheetView: View {
 
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 12) {
-                            ForEach(colors, id: \.0) { item in
-                                let name = item.0
-                                let val = item.1
+                            ForEach(0..<colors.count, id: \.self) { idx in
+                                let name = colors[idx].0
+                                let val = colors[idx].1
 
                                 Button(action: {
                                     withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
@@ -639,7 +646,7 @@ struct SearchFiltersSheetView: View {
 }
 
 struct FilterButtonView: View {
-    let title: String
+    let title: LocalizedStringKey
     let isSelected: Bool
     let action: () -> Void
 

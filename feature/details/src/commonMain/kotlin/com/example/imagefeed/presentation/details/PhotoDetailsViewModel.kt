@@ -2,6 +2,7 @@ package com.example.imagefeed.presentation.details
 
 import androidx.lifecycle.viewModelScope
 import com.example.imagefeed.core.network.PhotoDownloadTracker
+import com.example.imagefeed.core.network.toAppError
 import com.example.imagefeed.details.data.PhotoDetailsRepository
 import com.example.imagefeed.model.Photo
 import com.example.imagefeed.presentation.mvi.MviViewModel
@@ -56,14 +57,14 @@ class PhotoDetailsViewModel(
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {
-                    val errorMessage = e.message ?: "Failed to load photo details"
+                    val appError = e.toAppError()
                     updateState {
                         it.copy(
                             isLoading = false,
-                            error = errorMessage,
+                            error = appError,
                         )
                     }
-                    sendEffect(PhotoDetailsEffect.ShowErrorSnackbar(errorMessage))
+                    sendEffect(PhotoDetailsEffect.ShowErrorSnackbar(appError))
                 }
             }
     }

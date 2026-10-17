@@ -12,3 +12,4 @@ This repository uses [AGENTS.md](AGENTS.md) as the single source of truth for al
 > - [KMP Testing Strategy](.agents/skills/kmp-testing/SKILL.md) — Shared MVI ViewModel test harness, fake repositories, and coroutine testing.
 > - [Android Material 3 & Navigation 3](.agents/skills/android-m3-design/SKILL.md) — Compose M3 tokens, Navigation 3 scenes, predictive back, adaptive layouts.
 > - [Apple Glass Design & HIG](.agents/skills/ios-glass-design/SKILL.md) — SwiftUI GlassTheme, materials, detents, dark scrims, sensory feedback.
+> - [Localization](.agents/skills/localization/SKILL.md) — Multiplatform string tables, AppError mapping, native formatters, RTL safety.

@@ -93,6 +93,8 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
@@ -109,6 +111,7 @@ import com.example.imagefeed.android.util.CollectionMosaicCardSkeleton
 import com.example.imagefeed.android.util.PhotoGridSkeleton
 import com.example.imagefeed.android.util.UserProfileHeaderSkeleton
 import com.example.imagefeed.android.util.bounceClick
+import com.example.imagefeed.android.util.localizedMessage
 import com.example.imagefeed.android.util.staggeredEntrance
 import com.example.imagefeed.di.MetroHelper
 import com.example.imagefeed.model.Photo
@@ -156,7 +159,7 @@ fun UserProfileScreen(
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        text = state.user?.name ?: "Profile",
+                        text = state.user?.name ?: stringResource(R.string.profile_title_fallback),
                         style =
                             MaterialTheme.typography.titleLarge.copy(
                                 fontWeight = FontWeight.Bold,
@@ -169,7 +172,7 @@ fun UserProfileScreen(
                     IconButton(onClick = onBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
+                            contentDescription = stringResource(R.string.content_desc_back),
                         )
                     }
                 },
@@ -186,7 +189,7 @@ fun UserProfileScreen(
                         }) {
                             Icon(
                                 imageVector = Icons.Default.Share,
-                                contentDescription = "Open in Browser",
+                                contentDescription = stringResource(R.string.profile_action_open_browser_accessibility),
                             )
                         }
                     }
@@ -220,13 +223,13 @@ fun UserProfileScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Text(
-                        text = "Failed to load profile",
+                        text = stringResource(R.string.profile_error_loading),
                         color = MaterialTheme.colorScheme.onSurface,
                         style = MaterialTheme.typography.titleMedium,
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = state.error ?: "",
+                        text = state.error?.localizedMessage() ?: "",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.bodyMedium,
                         textAlign = TextAlign.Center,
@@ -235,7 +238,7 @@ fun UserProfileScreen(
                     Button(
                         onClick = { viewModel.dispatch(UserProfileIntent.LoadProfile) },
                     ) {
-                        Text("Retry")
+                        Text(stringResource(R.string.action_retry))
                     }
                 }
             } else {
@@ -394,7 +397,7 @@ fun ProfileHeaderSection(user: User) {
             ) {
                 Icon(
                     imageVector = Icons.Default.LocationOn,
-                    contentDescription = "Location",
+                    contentDescription = stringResource(R.string.content_desc_location),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(14.dp),
                 )
@@ -471,7 +474,7 @@ fun ProfileHeaderSection(user: User) {
                         leadingIcon = {
                             Icon(
                                 imageVector = Icons.Default.CameraAlt,
-                                contentDescription = "Instagram",
+                                contentDescription = stringResource(R.string.profile_social_instagram_accessibility),
                                 modifier = Modifier.size(AssistChipDefaults.IconSize),
                             )
                         },
@@ -500,7 +503,7 @@ fun ProfileHeaderSection(user: User) {
                         leadingIcon = {
                             Icon(
                                 imageVector = Icons.Default.AlternateEmail,
-                                contentDescription = "Twitter",
+                                contentDescription = stringResource(R.string.profile_social_twitter_accessibility),
                                 modifier = Modifier.size(AssistChipDefaults.IconSize),
                             )
                         },
@@ -525,11 +528,11 @@ fun ProfileHeaderSection(user: User) {
                                 // Ignore if no handler available
                             }
                         },
-                        label = { Text("Website") },
+                        label = { Text(stringResource(R.string.profile_social_website_label)) },
                         leadingIcon = {
                             Icon(
                                 imageVector = Icons.Default.Language,
-                                contentDescription = "Website",
+                                contentDescription = stringResource(R.string.profile_social_website_accessibility),
                                 modifier = Modifier.size(AssistChipDefaults.IconSize),
                             )
                         },
@@ -568,10 +571,10 @@ fun ProfileTabSelector(
             val isSelected = activeTab == tab
             val (label, count) =
                 when (tab) {
-                    ProfileTab.PORTFOLIO -> "Photos" to (user.totalPhotos ?: 0)
-                    ProfileTab.LIKES -> "Likes" to (user.totalLikes ?: 0)
-                    ProfileTab.COLLECTIONS -> "Collections" to (user.totalCollections ?: 0)
-                    ProfileTab.INSIGHTS -> "Insights" to null
+                    ProfileTab.PORTFOLIO -> stringResource(R.string.profile_tab_photos) to (user.totalPhotos ?: 0)
+                    ProfileTab.LIKES -> stringResource(R.string.profile_tab_likes) to (user.totalLikes ?: 0)
+                    ProfileTab.COLLECTIONS -> stringResource(R.string.profile_tab_collections) to (user.totalCollections ?: 0)
+                    ProfileTab.INSIGHTS -> stringResource(R.string.profile_tab_insights) to null
                 }
 
             val cornerRadius by animateDpAsState(
@@ -704,7 +707,7 @@ fun PortfolioTabContent(
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    text = "No photos found.",
+                    text = stringResource(R.string.profile_empty_photos),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodyMedium,
                 )
@@ -803,7 +806,7 @@ fun CollectionsTabContent(
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    text = "No collections found.",
+                    text = stringResource(R.string.profile_empty_collections),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodyMedium,
                 )
@@ -901,8 +904,11 @@ fun CollectionRowLayout(
                         letterSpacing = 1.sp,
                     )
                     Spacer(modifier = Modifier.height(4.dp))
+                    val photosCount =
+                        pluralStringResource(R.plurals.collections_photos_count, collection.totalPhotos, collection.totalPhotos)
+                    val curatedBy = stringResource(R.string.collections_curated_by)
                     Text(
-                        text = "${collection.totalPhotos} Photos  ·  Curated by ${collection.user.name}",
+                        text = "$photosCount  ·  $curatedBy ${collection.user.name}",
                         style = MaterialTheme.typography.bodySmall,
                         color = Color.White.copy(alpha = 0.8f),
                     )
@@ -916,7 +922,7 @@ fun CollectionRowLayout(
 fun InsightsTabContent(
     stats: UserStats?,
     isLoading: Boolean,
-    error: String?,
+    error: com.example.imagefeed.model.AppError?,
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         if (isLoading && stats == null) {
@@ -938,7 +944,7 @@ fun InsightsTabContent(
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    text = "Failed to load insights.",
+                    text = stringResource(R.string.profile_insights_error),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodyMedium,
                 )
@@ -960,7 +966,7 @@ fun InsightsTabContent(
                 ) {
                     StatItem(
                         modifier = Modifier.weight(1f),
-                        label = "Total Views",
+                        label = stringResource(R.string.profile_stat_total_views),
                         value = formatStatValue(stats.views.total),
                         icon = Icons.Default.Visibility,
                         valueStyle = MaterialTheme.typography.titleMedium,
@@ -968,7 +974,7 @@ fun InsightsTabContent(
                     )
                     StatItem(
                         modifier = Modifier.weight(1f),
-                        label = "Total Downloads",
+                        label = stringResource(R.string.profile_stat_total_downloads),
                         value = formatStatValue(stats.downloads.total),
                         icon = Icons.Default.FileDownload,
                         valueStyle = MaterialTheme.typography.titleMedium,
@@ -980,7 +986,7 @@ fun InsightsTabContent(
                 stats.views.historical?.values?.let { viewsList ->
                     if (viewsList.isNotEmpty()) {
                         Text(
-                            text = "VIEWS TRENDS (LAST 30 DAYS)",
+                            text = stringResource(R.string.profile_chart_views_trend),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             style =
                                 MaterialTheme.typography.labelSmall.copy(
@@ -1014,7 +1020,7 @@ fun InsightsTabContent(
                 stats.downloads.historical?.values?.let { downloadsList ->
                     if (downloadsList.isNotEmpty()) {
                         Text(
-                            text = "DOWNLOADS TRENDS (LAST 30 DAYS)",
+                            text = stringResource(R.string.profile_chart_downloads_trend),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             style =
                                 MaterialTheme.typography.labelSmall.copy(
@@ -1076,6 +1082,20 @@ fun InteractiveTimelineChart(
             val stepX = with(density) { (300.dp / (data.size - 1).coerceAtLeast(1)).toPx() }
             val index = (dragX!! / stepX).roundToInt().coerceIn(0, data.size - 1)
 
+            val formattedDate =
+                remember(dates, index) {
+                    try {
+                        java.time.LocalDate
+                            .parse(dates[index])
+                            .format(
+                                java.time.format.DateTimeFormatter
+                                    .ofLocalizedDate(java.time.format.FormatStyle.MEDIUM),
+                            )
+                    } catch (_: Exception) {
+                        dates[index]
+                    }
+                }
+
             Row(
                 modifier =
                     Modifier
@@ -1085,12 +1105,12 @@ fun InteractiveTimelineChart(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = dates[index],
+                    text = formattedDate,
                     color = onSurfaceVariantColor,
                     style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                 )
                 Text(
-                    text = "${data[index].toInt()} units",
+                    text = stringResource(R.string.profile_chart_units, data[index].toInt()),
                     color = onSurfaceColor,
                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.ExtraBold),
                 )
@@ -1104,12 +1124,12 @@ fun InteractiveTimelineChart(
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Text(
-                    text = "Drag curve to inspect daily stats",
+                    text = stringResource(R.string.profile_chart_drag_prompt),
                     color = onSurfaceVariantColor,
                     style = MaterialTheme.typography.labelSmall,
                 )
                 Text(
-                    text = "Peak: ${maxVal.toInt()}",
+                    text = stringResource(R.string.details_metric_peak, formatStatValue(maxVal.toInt())),
                     color = onSurfaceColor,
                     style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                 )

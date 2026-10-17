@@ -54,7 +54,7 @@ public struct FloatingTabCapsule: View {
         .sensoryFeedback(.impact(weight: .light), trigger: selectedTab)
     }
 
-    private func tabButton(index: Int, title: String, systemImage: String) -> some View {
+    private func tabButton(index: Int, title: LocalizedStringKey, systemImage: String) -> some View {
         let isSelected = selectedTab == index
 
         return Button {
@@ -85,7 +85,7 @@ public struct FloatingTabCapsule: View {
         }
         .buttonStyle(.plain)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(title)
+        .accessibilityLabel(Text(title))
         .accessibilityAddTraits(isSelected ? [.isSelected, .isButton] : .isButton)
     }
 }

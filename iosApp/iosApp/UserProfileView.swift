@@ -93,7 +93,7 @@ struct UserProfileView: View {
                 }
             }
         }
-        .navigationTitle(viewModel.user?.name ?? "Profile")
+        .navigationTitle(viewModel.user?.name ?? String(localized: "Profile"))
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
@@ -103,13 +103,13 @@ struct UserProfileView: View {
         .toolbar {
             #if os(iOS)
             ToolbarItem(placement: .navigationBarLeading) {
-                GlassToolbarButton(systemName: "chevron.left", accessibilityLabel: "Back") {
+                GlassToolbarButton(systemName: "chevron.backward", accessibilityLabel: "Back") {
                     dismiss()
                 }
             }
             #else
             ToolbarItem(placement: .navigation) {
-                GlassToolbarButton(systemName: "chevron.left", accessibilityLabel: "Back") {
+                GlassToolbarButton(systemName: "chevron.backward", accessibilityLabel: "Back") {
                     dismiss()
                 }
             }
@@ -194,7 +194,7 @@ struct ProfileHeaderView: View {
                     HStack(spacing: 8) {
                         if let instagram = user.social?.instagramUsername?.trimmingCharacters(in: .whitespacesAndNewlines), !instagram.isEmpty {
                             let handle = instagram.trimmingCharacters(in: CharacterSet(charactersIn: "@"))
-                            SocialChip(systemImage: "camera", label: "@\(handle)") {
+                            SocialChip(systemImage: "camera", label: "@\(handle)", accessibilityLabel: "Instagram") {
                                 if let schemeUrl = URL(string: "instagram://user?username=\(handle)"), URLHelper.canOpen(schemeUrl) {
                                     URLHelper.open(schemeUrl)
                                 } else if let webUrl = URL(string: "https://instagram.com/\(handle)") {
@@ -204,7 +204,7 @@ struct ProfileHeaderView: View {
                         }
                         if let twitter = user.social?.twitterUsername?.trimmingCharacters(in: .whitespacesAndNewlines), !twitter.isEmpty {
                             let handle = twitter.trimmingCharacters(in: CharacterSet(charactersIn: "@"))
-                            SocialChip(systemImage: "bubble.left", label: "@\(handle)") {
+                            SocialChip(systemImage: "bubble.left", label: "@\(handle)", accessibilityLabel: "Twitter") {
                                 if let schemeUrl = URL(string: "twitter://user?screen_name=\(handle)"), URLHelper.canOpen(schemeUrl) {
                                     URLHelper.open(schemeUrl)
                                 } else if let webUrl = URL(string: "https://twitter.com/\(handle)") {
@@ -215,7 +215,7 @@ struct ProfileHeaderView: View {
                         if let web = user.social?.portfolioUrl?.trimmingCharacters(in: .whitespacesAndNewlines), !web.isEmpty {
                             let normalizedWeb = web.lowercased().hasPrefix("http://") || web.lowercased().hasPrefix("https://") ? web : "https://\(web)"
                             if let webUrl = URL(string: normalizedWeb) {
-                                SocialChip(systemImage: "globe", label: "Website") {
+                                SocialChip(systemImage: "globe", label: "Website", accessibilityLabel: "Website") {
                                     URLHelper.open(webUrl)
                                 }
                             }
@@ -233,7 +233,15 @@ struct ProfileHeaderView: View {
 struct SocialChip: View {
     let systemImage: String
     let label: String
+    let accessibilityLabel: LocalizedStringKey?
     let action: () -> Void
+
+    init(systemImage: String, label: String, accessibilityLabel: LocalizedStringKey? = nil, action: @escaping () -> Void) {
+        self.systemImage = systemImage
+        self.label = label
+        self.accessibilityLabel = accessibilityLabel
+        self.action = action
+    }
 
     var body: some View {
         Button(action: action) {
@@ -241,7 +249,7 @@ struct SocialChip: View {
                 Image(systemName: systemImage)
                     .font(.caption2.weight(.semibold))
                     .glassVibrancy(.primary)
-                Text(label)
+                Text(LocalizedStringKey(label))
                     .font(.caption2.weight(.medium))
                     .glassVibrancy(.primary)
                     .lineLimit(1)
@@ -252,7 +260,7 @@ struct SocialChip: View {
         }
         .buttonStyle(.plain)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(label)
+        .accessibilityLabel(Text(accessibilityLabel ?? LocalizedStringKey(label)))
         .accessibilityAddTraits(.isButton)
     }
 }
@@ -325,7 +333,7 @@ struct ProfileTabPicker: View {
         .glassBackground(material: .ultraThinMaterial, shape: Rectangle(), showBorder: false)
     }
 
-    private func tabTitle(for tab: ProfileTab) -> String {
+    private func tabTitle(for tab: ProfileTab) -> LocalizedStringKey {
         switch tab {
         case .portfolio: "Photos"
         case .likes: "Likes"
@@ -350,12 +358,12 @@ struct ProfileTabPicker: View {
         }
     }
 
-    private func tabAccessibilityLabel(for tab: ProfileTab) -> String {
+    private func tabAccessibilityLabel(for tab: ProfileTab) -> Text {
         let title = tabTitle(for: tab)
         if let count = tabCount(for: tab) {
-            return "\(title), \(count) items"
+            return Text("\(title), \(count) items")
         }
-        return title
+        return Text(title)
     }
 }
 
@@ -391,7 +399,7 @@ struct GridPhotosList: View {
                 .padding(.horizontal, 8)
                 .padding(.top, 20)
             } else if photos.isEmpty {
-                Text("No photos to display.")
+                Text("No photos found.")
                     .font(.subheadline)
                     .glassVibrancy(.secondary)
                     .padding(.top, 40)
@@ -464,7 +472,7 @@ struct GridCollectionsList: View {
                 .padding(.horizontal, 12)
                 .padding(.top, 20)
             } else if collections.isEmpty {
-                Text("No collections to display.")
+                Text("No collections found.")
                     .font(.subheadline)
                     .glassVibrancy(.secondary)
                     .padding(.top, 40)
@@ -495,9 +503,14 @@ struct GridCollectionsList: View {
                                         .glassVibrancy(.primary)
                                         .tracking(1)
 
-                                    Text("\(col.totalPhotos) Photos · Curated by \(col.user.name)")
-                                        .font(.caption)
-                                        .glassVibrancy(.secondary)
+                                    HStack(spacing: 4) {
+                                        Text("\(col.totalPhotos) Photos")
+                                        Text("·")
+                                        Text("Curated by")
+                                        Text(col.user.name)
+                                    }
+                                    .font(.caption)
+                                    .glassVibrancy(.secondary)
                                 }
                                 .padding(16)
                             }
@@ -553,14 +566,14 @@ struct InsightsView: View {
 
                     // Interactive Views Chart
                     if let viewsHist = stats.views.historical, !viewsHist.values.isEmpty {
-                        InteractiveTimelineChart(title: "VIEWS TRENDS", values: viewsHist.values)
+                        InteractiveTimelineChart(title: "VIEWS TRENDS (LAST 30 DAYS)", values: viewsHist.values)
                             .padding(16)
                             .glassCard(cornerRadius: 12, style: .ultraThin)
                     }
 
                     // Interactive Downloads Chart
                     if let downHist = stats.downloads.historical, !downHist.values.isEmpty {
-                        InteractiveTimelineChart(title: "DOWNLOADS TRENDS", values: downHist.values)
+                        InteractiveTimelineChart(title: "DOWNLOADS TRENDS (LAST 30 DAYS)", values: downHist.values)
                             .padding(16)
                             .glassCard(cornerRadius: 12, style: .ultraThin)
                     }
@@ -572,21 +585,23 @@ struct InsightsView: View {
 
     private func formatMetric(_ value: Int32?) -> String {
         guard let value else { return "--" }
-        let num = Int(value)
-        if num >= 1000000 {
-            return String(format: "%.1fM", Double(num) / 1000000.0)
-        } else if num >= 1000 {
-            return String(format: "%.1fK", Double(num) / 1000.0)
-        } else {
-            return "\(num)"
-        }
+        return Int(value).formatted(.number.notation(.compactName))
     }
 }
 
 struct InteractiveTimelineChart: View {
-    let title: String
+    let title: LocalizedStringKey
     let values: [StatsValue]
     @State private var rawSelectedDate: String? = nil
+
+    private func formatTimelineDate(_ isoDate: String) -> String {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withFullDate]
+        if let d = formatter.date(from: isoDate) {
+            return d.formatted(date: .abbreviated, time: .omitted)
+        }
+        return isoDate
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -597,7 +612,7 @@ struct InteractiveTimelineChart: View {
                     .tracking(1)
                 Spacer()
                 if let selected = rawSelectedDate, let matched = values.first(where: { $0.date == selected }) {
-                    Text("\(matched.date): \(matched.value)")
+                    Text("\(formatTimelineDate(matched.date)): \(matched.value)")
                         .font(.caption.weight(.bold))
                         .glassVibrancy(.primary)
                 } else {

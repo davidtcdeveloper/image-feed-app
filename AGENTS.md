@@ -14,6 +14,7 @@ For detailed implementation runbooks and domain guidelines, consult the relevant
 * [KMP Testing Strategy](.agents/skills/kmp-testing/SKILL.md) — Shared MVI ViewModel test harness, fake repositories, and coroutine testing.
 * [Android Material 3 & Navigation 3](.agents/skills/android-m3-design/SKILL.md) — Compose M3 tokens, Navigation 3 scenes, predictive back, adaptive layouts.
 * [Apple Glass Design & HIG](.agents/skills/ios-glass-design/SKILL.md) — SwiftUI GlassTheme, materials, detents, dark scrims, sensory feedback.
+* [Localization](.agents/skills/localization/SKILL.md) — Multiplatform string tables, AppError mapping, native formatters, RTL safety.
 
 ---
 
@@ -47,6 +48,10 @@ These non-negotiable boundaries and policies must be observed on every change:
    * Preserve the `ixid` parameter on all photo requests.
    * Prominently display photographer attribution on all cards/screens and trigger download tracking on save.
    * Multiply layout points by display scale (`UIScreen.main.scale`) for CDN image requests to ensure sharp Retina rendering.
+
+5. **Platform Localization & Typed Errors**:
+   * Zero hardcoded UI strings; externalize to Android XML and Apple String Catalogs.
+   * Map typed `AppError` per-platform; use platform-native plural and compact number formatters.
 
 ---
 

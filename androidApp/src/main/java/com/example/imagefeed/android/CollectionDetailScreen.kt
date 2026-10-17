@@ -61,6 +61,8 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -145,7 +147,7 @@ fun CollectionDetailScreen(
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
-                                text = state.collection?.title ?: "Collection",
+                                text = state.collection?.title ?: stringResource(R.string.collection_detail_title_fallback),
                                 style =
                                     MaterialTheme.typography.titleMedium.copy(
                                         fontWeight = FontWeight.Bold,
@@ -157,7 +159,7 @@ fun CollectionDetailScreen(
                             )
                             state.collection?.let {
                                 Text(
-                                    text = "${it.totalPhotos} Photos",
+                                    text = pluralStringResource(R.plurals.collections_photos_count, it.totalPhotos, it.totalPhotos),
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
@@ -169,7 +171,7 @@ fun CollectionDetailScreen(
                     IconButton(onClick = onBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
+                            contentDescription = stringResource(R.string.nav_back),
                         )
                     }
                 },
@@ -235,7 +237,7 @@ fun CollectionDetailScreen(
                     if (state.photos.isNotEmpty()) {
                         item(span = StaggeredGridItemSpan.FullLine, contentType = "section_title") {
                             Text(
-                                text = "Photos",
+                                text = stringResource(R.string.collection_detail_photos_header),
                                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                                 color = MaterialTheme.colorScheme.onSurface,
                                 modifier = Modifier.padding(start = 12.dp, top = 16.dp, bottom = 8.dp),
@@ -389,7 +391,7 @@ fun CollectionDetailHeader(
 
                 Column {
                     Text(
-                        text = "Curated by",
+                        text = stringResource(R.string.collections_curated_by),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -416,7 +418,7 @@ fun CollectionDetailHeader(
             )
 
             Text(
-                text = "${collection.totalPhotos} Photos",
+                text = pluralStringResource(R.plurals.collections_photos_count, collection.totalPhotos, collection.totalPhotos),
                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 4.dp, bottom = 8.dp),
@@ -449,7 +451,7 @@ fun RelatedCollectionsCarousel(
                 .padding(top = 16.dp),
     ) {
         Text(
-            text = "Related Collections",
+            text = stringResource(R.string.collection_detail_related),
             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(start = 12.dp, bottom = 10.dp),
@@ -533,7 +535,7 @@ fun RelatedCollectionCard(
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    text = "${collection.totalPhotos} Photos",
+                    text = pluralStringResource(R.plurals.collections_photos_count, collection.totalPhotos, collection.totalPhotos),
                     style = MaterialTheme.typography.labelSmall,
                     color = Color.White.copy(alpha = 0.8f),
                 )

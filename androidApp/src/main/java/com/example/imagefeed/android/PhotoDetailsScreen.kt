@@ -102,6 +102,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -122,6 +123,7 @@ import com.example.imagefeed.android.theme.generatePhotoColorScheme
 import com.example.imagefeed.android.util.BLURHASH_PLACEHOLDER_MAX_HEIGHT
 import com.example.imagefeed.android.util.BLURHASH_PLACEHOLDER_MIN_HEIGHT
 import com.example.imagefeed.android.util.BLURHASH_PLACEHOLDER_WIDTH
+import com.example.imagefeed.android.util.localizedMessage
 import com.example.imagefeed.android.util.rememberBlurHashPlaceholder
 import com.example.imagefeed.details.model.PhotoStats
 import com.example.imagefeed.details.model.StatMetric
@@ -173,13 +175,14 @@ fun PhotoDetailsScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle(initialValue = PhotoDetailsState())
     val snackbarHostState = remember { SnackbarHostState() }
+    val context = LocalPlatformContext.current
 
     LaunchedEffect(viewModel) {
         viewModel.effects.collect { effect ->
             when (effect) {
                 is PhotoDetailsEffect.DismissScreen -> onBack()
                 is PhotoDetailsEffect.ShowErrorSnackbar -> {
-                    snackbarHostState.showSnackbar(effect.message)
+                    snackbarHostState.showSnackbar(effect.error.localizedMessage(context))
                 }
             }
         }
@@ -227,7 +230,7 @@ fun PhotoDetailsScreen(
                 CenterAlignedTopAppBar(
                     title = {
                         Text(
-                            text = "Details",
+                            text = stringResource(R.string.details_title),
                             style =
                                 MaterialTheme.typography.titleLarge.copy(
                                     fontWeight = FontWeight.Bold,
@@ -239,7 +242,7 @@ fun PhotoDetailsScreen(
                         IconButton(onClick = onBack) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Back",
+                                contentDescription = stringResource(R.string.content_desc_back),
                                 tint = MaterialTheme.colorScheme.onSurface,
                             )
                         }
@@ -257,7 +260,7 @@ fun PhotoDetailsScreen(
                             }) {
                                 Icon(
                                     imageVector = Icons.AutoMirrored.Filled.OpenInNew,
-                                    contentDescription = "Open in Web",
+                                    contentDescription = stringResource(R.string.details_action_open_web),
                                 )
                             }
                         }
@@ -293,14 +296,14 @@ fun PhotoDetailsScreen(
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
                         Text(
-                            text = "Failed to load photo",
+                            text = stringResource(R.string.details_error_photo),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Medium,
                             color = MaterialTheme.colorScheme.onSurface,
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = state.error ?: "",
+                            text = state.error?.localizedMessage() ?: "",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center,
@@ -310,7 +313,7 @@ fun PhotoDetailsScreen(
                             onClick = onRetry,
                             shape = MaterialTheme.shapes.small,
                         ) {
-                            Text("Retry")
+                            Text(stringResource(R.string.action_retry))
                         }
                     }
                 } else {
@@ -651,7 +654,7 @@ fun PhotoCanvasPane(
 
                     Image(
                         painter = avatarPainter,
-                        contentDescription = "Photographer avatar",
+                        contentDescription = stringResource(R.string.content_desc_photographer_avatar),
                         modifier =
                             Modifier
                                 .size(36.dp)
@@ -681,7 +684,7 @@ fun PhotoCanvasPane(
 
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                        contentDescription = "View Profile",
+                        contentDescription = stringResource(R.string.search_user_card_view_profile_accessibility),
                         tint = Color.White.copy(alpha = 0.7f),
                         modifier = Modifier.size(16.dp),
                     )
@@ -744,7 +747,7 @@ fun PhotoCanvasPane(
 
                     Image(
                         painter = avatarPainter,
-                        contentDescription = "Photographer avatar",
+                        contentDescription = stringResource(R.string.content_desc_photographer_avatar),
                         modifier =
                             Modifier
                                 .size(44.dp)
@@ -772,7 +775,7 @@ fun PhotoCanvasPane(
 
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                        contentDescription = "View Profile",
+                        contentDescription = stringResource(R.string.search_user_card_view_profile_accessibility),
                         tint = Color.White.copy(alpha = 0.7f),
                         modifier = Modifier.size(20.dp),
                     )
@@ -827,7 +830,7 @@ fun PhotoInspectorPane(
 
                     Image(
                         painter = avatarPainter,
-                        contentDescription = "Photographer avatar",
+                        contentDescription = stringResource(R.string.content_desc_photographer_avatar),
                         modifier =
                             Modifier
                                 .size(44.dp)
@@ -855,7 +858,7 @@ fun PhotoInspectorPane(
 
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                        contentDescription = "View Profile",
+                        contentDescription = stringResource(R.string.search_user_card_view_profile_accessibility),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(18.dp),
                     )
@@ -885,19 +888,19 @@ fun PhotoInspectorPane(
         ) {
             StatItem(
                 modifier = Modifier.weight(1f),
-                label = "Views",
+                label = stringResource(R.string.details_stat_views),
                 value = stats?.views?.total?.let { formatStatValue(it) } ?: "--",
                 icon = Icons.Default.Visibility,
             )
             StatItem(
                 modifier = Modifier.weight(1f),
-                label = "Downloads",
+                label = stringResource(R.string.details_stat_downloads),
                 value = stats?.downloads?.total?.let { formatStatValue(it) } ?: "--",
                 icon = Icons.Default.FileDownload,
             )
             StatItem(
                 modifier = Modifier.weight(1f),
-                label = "Likes",
+                label = stringResource(R.string.details_stat_likes),
                 value = stats?.likes?.total?.let { formatStatValue(it) } ?: "--",
                 icon = Icons.Default.Favorite,
             )
@@ -907,7 +910,7 @@ fun PhotoInspectorPane(
         if (stats != null) {
             Spacer(modifier = Modifier.height(16.dp))
             Text(
-                text = "HISTORICAL VIEWS (LAST 30 DAYS)",
+                text = stringResource(R.string.details_views_trend_header),
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -947,7 +950,7 @@ fun PhotoInspectorPane(
             if (hasExif) {
                 Spacer(modifier = Modifier.height(24.dp))
                 Text(
-                    text = "CAMERA & LENS SPECS",
+                    text = stringResource(R.string.details_exif_header),
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -998,13 +1001,13 @@ fun PhotoInspectorPane(
                     ) {
                         ExifBentoCell(
                             icon = Icons.Default.Camera,
-                            label = "Aperture",
+                            label = stringResource(R.string.details_exif_aperture),
                             value = apertureVal,
                             modifier = Modifier.weight(1f),
                         )
                         ExifBentoCell(
                             icon = Icons.Default.Timer,
-                            label = "Shutter",
+                            label = stringResource(R.string.details_exif_exposure),
                             value = shutterVal,
                             modifier = Modifier.weight(1f),
                         )
@@ -1015,13 +1018,13 @@ fun PhotoInspectorPane(
                     ) {
                         ExifBentoCell(
                             icon = Icons.Default.Lens,
-                            label = "Lens",
+                            label = stringResource(R.string.details_exif_focal_length),
                             value = focalVal,
                             modifier = Modifier.weight(1f),
                         )
                         ExifBentoCell(
                             icon = Icons.Default.Iso,
-                            label = "ISO",
+                            label = stringResource(R.string.details_exif_iso),
                             value = isoVal,
                             modifier = Modifier.weight(1f),
                         )
@@ -1035,7 +1038,7 @@ fun PhotoInspectorPane(
         if (swatches.isNotEmpty()) {
             Spacer(modifier = Modifier.height(24.dp))
             Text(
-                text = "COLOR PALETTE",
+                text = stringResource(R.string.details_color_palette_header),
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -1055,8 +1058,10 @@ fun PhotoInspectorPane(
                         onClick = {
                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                             val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
-                            clipboard?.setPrimaryClip(ClipData.newPlainText("Hex Color", swatch.hex))
-                            onShowSnackbar("Copied ${swatch.hex} to clipboard")
+                            clipboard?.setPrimaryClip(
+                                ClipData.newPlainText(context.getString(R.string.details_clipboard_hex_label), swatch.hex),
+                            )
+                            onShowSnackbar(context.getString(R.string.details_copied_to_clipboard, swatch.hex))
                         },
                     )
                 }
@@ -1071,7 +1076,7 @@ fun PhotoInspectorPane(
             if (!isZero && (!location.name.isNullOrEmpty() || (lat != null && lon != null))) {
                 Spacer(modifier = Modifier.height(24.dp))
                 Text(
-                    text = "LOCATION",
+                    text = stringResource(R.string.details_location_header),
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -1120,14 +1125,14 @@ fun PhotoInspectorPane(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.LocationOn,
-                                contentDescription = "Location Pin",
+                                contentDescription = stringResource(R.string.details_location_pin_accessibility),
                                 tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(28.dp),
                             )
                             Spacer(modifier = Modifier.width(16.dp))
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = location.name ?: "Unknown Coordinates",
+                                    text = location.name ?: stringResource(R.string.details_location_unknown),
                                     style = MaterialTheme.typography.titleSmall,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurface,
@@ -1145,9 +1150,9 @@ fun PhotoInspectorPane(
                                 Text(
                                     text =
                                         if (latStr != null && lonStr != null) {
-                                            "Lat: $latStr, Lon: $lonStr"
+                                            stringResource(R.string.details_location_lat_lon, latStr, lonStr)
                                         } else {
-                                            "Open in Google Maps"
+                                            stringResource(R.string.details_location_open_maps)
                                         },
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -1155,7 +1160,7 @@ fun PhotoInspectorPane(
                             }
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                                contentDescription = "Map Launcher",
+                                contentDescription = stringResource(R.string.content_desc_map_launcher),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(16.dp),
                             )
@@ -1197,9 +1202,10 @@ fun PhotoInspectorPane(
                                             rotationGesturesEnabled = false,
                                         ),
                                 ) {
+                                    val markerTitle = location.name ?: stringResource(R.string.details_location_captured)
                                     Marker(
                                         state = remember(positionLatLng) { MarkerState(position = positionLatLng) },
-                                        title = location.name ?: "Captured Location",
+                                        title = markerTitle,
                                     )
                                 }
                             }
@@ -1214,7 +1220,7 @@ fun PhotoInspectorPane(
             if (tags.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(24.dp))
                 Text(
-                    text = "RELATED TAGS",
+                    text = stringResource(R.string.details_related_tags_header),
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -1421,19 +1427,19 @@ fun FloatingActionToolbar(
                                         val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(photo.urls.full))
                                         context.startActivity(browserIntent)
                                     } catch (_: Exception) {
-                                        onShowSnackbar("Could not open download link")
+                                        onShowSnackbar(context.getString(R.string.details_download_error))
                                     }
                                 }.padding(horizontal = 12.dp, vertical = 9.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Icon(
                             imageVector = Icons.Default.Download,
-                            contentDescription = "Download Full Resolution",
+                            contentDescription = stringResource(R.string.details_action_download_accessibility),
                             modifier = Modifier.size(18.dp),
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = "Full",
+                            text = stringResource(R.string.details_download_full),
                             style = MaterialTheme.typography.labelLarge,
                             fontWeight = FontWeight.Bold,
                         )
@@ -1459,13 +1465,13 @@ fun FloatingActionToolbar(
                                         val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(photo.urls.raw))
                                         context.startActivity(browserIntent)
                                     } catch (_: Exception) {
-                                        onShowSnackbar("Could not open download link")
+                                        onShowSnackbar(context.getString(R.string.details_download_error))
                                     }
                                 }.padding(horizontal = 10.dp, vertical = 9.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
-                            text = "RAW",
+                            text = stringResource(R.string.details_download_raw),
                             style = MaterialTheme.typography.labelLarge,
                             fontWeight = FontWeight.Bold,
                         )
@@ -1481,16 +1487,19 @@ fun FloatingActionToolbar(
                         val sendIntent =
                             Intent(Intent.ACTION_SEND).apply {
                                 type = "text/plain"
-                                putExtra(Intent.EXTRA_SUBJECT, photo.description ?: "Unsplash Photo")
+                                putExtra(
+                                    Intent.EXTRA_SUBJECT,
+                                    photo.description ?: context.getString(R.string.details_share_subject_fallback),
+                                )
                                 putExtra(
                                     Intent.EXTRA_TEXT,
                                     "${photo.links.html}?utm_source=ImageFeedApp&utm_medium=referral",
                                 )
                             }
-                        val shareIntent = Intent.createChooser(sendIntent, "Share Photo")
+                        val shareIntent = Intent.createChooser(sendIntent, context.getString(R.string.details_share_title))
                         context.startActivity(shareIntent)
                     } catch (_: Exception) {
-                        onShowSnackbar("Unable to share photo")
+                        onShowSnackbar(context.getString(R.string.details_share_error))
                     }
                 },
                 modifier =
@@ -1501,7 +1510,7 @@ fun FloatingActionToolbar(
             ) {
                 Icon(
                     imageVector = Icons.Default.Share,
-                    contentDescription = "Share",
+                    contentDescription = stringResource(R.string.content_desc_share),
                     tint = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.size(20.dp),
                 )
@@ -1512,7 +1521,15 @@ fun FloatingActionToolbar(
                 onClick = {
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     isBookmarked = !isBookmarked
-                    onShowSnackbar(if (isBookmarked) "Saved to bookmarks" else "Removed from bookmarks")
+                    onShowSnackbar(
+                        if (isBookmarked) {
+                            context.getString(
+                                R.string.details_bookmark_saved,
+                            )
+                        } else {
+                            context.getString(R.string.details_bookmark_removed)
+                        },
+                    )
                 },
                 modifier =
                     Modifier
@@ -1522,7 +1539,14 @@ fun FloatingActionToolbar(
             ) {
                 Icon(
                     imageVector = if (isBookmarked) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
-                    contentDescription = if (isBookmarked) "Remove Bookmark" else "Bookmark",
+                    contentDescription =
+                        if (isBookmarked) {
+                            stringResource(
+                                R.string.details_bookmark_remove,
+                            )
+                        } else {
+                            stringResource(R.string.details_bookmark_add)
+                        },
                     tint = if (isBookmarked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.size(20.dp),
                 )
@@ -1555,13 +1579,13 @@ fun StatisticsLineChart(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = "Peak: ${formatStatValue(maxVal.toInt())}",
+                text = stringResource(R.string.details_metric_peak, formatStatValue(maxVal.toInt())),
                 style = MaterialTheme.typography.labelSmall,
                 color = onSurfaceVariant,
                 fontWeight = FontWeight.SemiBold,
             )
             Text(
-                text = "30-Day Trend",
+                text = stringResource(R.string.details_trend_30_day),
                 style = MaterialTheme.typography.labelSmall,
                 color = onSurfaceVariant.copy(alpha = 0.7f),
             )
@@ -1706,14 +1730,14 @@ fun StatisticsLineChart(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = "Min: ${formatStatValue(minVal.toInt())}",
+                text = stringResource(R.string.details_metric_min, formatStatValue(minVal.toInt())),
                 style = MaterialTheme.typography.labelSmall,
                 color = onSurfaceVariant,
                 fontWeight = FontWeight.Medium,
             )
             data.lastOrNull()?.let { latestVal ->
                 Text(
-                    text = "Latest: ${formatStatValue(latestVal.toInt())}",
+                    text = stringResource(R.string.details_metric_latest, formatStatValue(latestVal.toInt())),
                     style = MaterialTheme.typography.labelSmall,
                     color = onSurfaceVariant,
                     fontWeight = FontWeight.Medium,
@@ -1723,12 +1747,14 @@ fun StatisticsLineChart(
     }
 }
 
-fun formatStatValue(value: Int): String =
-    when {
-        value >= 1_000_000 -> String.format(Locale.US, "%.1fM", value / 1_000_000.0)
-        value >= 1_000 -> String.format(Locale.US, "%.1fK", value / 1_000.0)
-        else -> value.toString()
-    }
+fun formatStatValue(value: Int): String {
+    val formatter =
+        android.icu.text.CompactDecimalFormat.getInstance(
+            Locale.getDefault(),
+            android.icu.text.CompactDecimalFormat.CompactStyle.SHORT,
+        )
+    return formatter.format(value.toLong())
+}
 
 @Preview(showBackground = true, name = "Photo Details - Compact")
 @OptIn(ExperimentalSharedTransitionApi::class, ExperimentalMaterial3Api::class, ExperimentalMaterial3WindowSizeClassApi::class)

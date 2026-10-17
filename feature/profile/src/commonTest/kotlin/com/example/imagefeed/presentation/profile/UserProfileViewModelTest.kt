@@ -139,7 +139,7 @@ class UserProfileViewModelTest {
             val viewModel = UserProfileViewModel("alice", repository, tracker)
             advanceUntilIdle()
 
-            assertEquals("User error", viewModel.state.value.error)
+            assertEquals(com.example.imagefeed.model.AppError.Network, viewModel.state.value.error)
         }
 
     @Test

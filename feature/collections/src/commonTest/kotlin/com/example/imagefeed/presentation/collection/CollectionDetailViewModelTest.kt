@@ -114,11 +114,7 @@ class CollectionDetailViewModelTest {
             val viewModel = CollectionDetailViewModel("col-fail", repository, tracker)
             advanceUntilIdle()
 
-            assertNotNull(viewModel.state.value.error)
-            assertTrue(
-                viewModel.state.value.error
-                    ?.endsWith("failure") == true,
-            )
+            assertEquals(com.example.imagefeed.model.AppError.Network, viewModel.state.value.error)
         }
 
     @Test

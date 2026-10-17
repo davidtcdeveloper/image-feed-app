@@ -221,10 +221,23 @@ class UnifiedSearchViewModelTest {
             assertEquals("blue", repository.lastColor)
         }
 
+    @Test
+    fun searchFailureEmitsAppError() =
+        runTest(testDispatcher) {
+            val repository = FakeSearchRepository(shouldFail = true)
+            val viewModel = UnifiedSearchViewModel(repository)
+
+            viewModel.dispatch(UnifiedSearchIntent.SubmitSearch("nature"))
+            advanceUntilIdle()
+
+            assertEquals(com.example.imagefeed.model.AppError.Network, viewModel.state.value.error)
+        }
+
     private class FakeSearchRepository(
         private val photoResults: List<Photo> = emptyList(),
         private val collectionResults: List<CollectionSummary> = emptyList(),
         private val userResults: List<User> = emptyList(),
+        private val shouldFail: Boolean = false,
     ) : SearchRepository {
         var lastColor: String? = null
 
@@ -237,6 +250,7 @@ class UnifiedSearchViewModelTest {
             orientation: String?,
             contentFilter: String?,
         ): SearchResponse<Photo> {
+            if (shouldFail) throw RuntimeException("Network failure")
             lastColor = color
             return SearchResponse(
                 total = photoResults.size,

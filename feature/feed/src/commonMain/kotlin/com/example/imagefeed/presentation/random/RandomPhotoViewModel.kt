@@ -2,7 +2,9 @@ package com.example.imagefeed.presentation.random
 
 import androidx.lifecycle.viewModelScope
 import com.example.imagefeed.core.network.PhotoDownloadTracker
+import com.example.imagefeed.core.network.toAppError
 import com.example.imagefeed.feed.data.FeedRepository
+import com.example.imagefeed.model.AppError
 import com.example.imagefeed.presentation.mvi.MviViewModel
 import dev.zacsweers.metro.Inject
 import kotlinx.coroutines.CancellationException
@@ -49,21 +51,21 @@ class RandomPhotoViewModel(
                     if (photo != null) {
                         sendEffect(RandomPhotoEffect.PhotoFetched(photo.id))
                     } else {
-                        val message = "No random photo returned"
-                        updateState { it.copy(error = message) }
-                        sendEffect(RandomPhotoEffect.FetchFailed(message))
+                        val error = AppError.NotFound
+                        updateState { it.copy(error = error) }
+                        sendEffect(RandomPhotoEffect.FetchFailed(error))
                     }
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {
-                    val message = e.message ?: "Failed to load random photo"
+                    val appError = e.toAppError()
                     updateState {
                         it.copy(
                             isLoading = false,
-                            error = message,
+                            error = appError,
                         )
                     }
-                    sendEffect(RandomPhotoEffect.FetchFailed(message))
+                    sendEffect(RandomPhotoEffect.FetchFailed(appError))
                 }
             }
     }

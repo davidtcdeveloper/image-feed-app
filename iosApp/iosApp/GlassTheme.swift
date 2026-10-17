@@ -332,12 +332,12 @@ public struct GlassToolbarButton: View {
     @Environment(\.colorSchemeContrast) private var colorSchemeContrast
 
     public let systemName: String
-    public let accessibilityLabel: String?
+    public let accessibilityLabel: LocalizedStringKey?
     public let action: () -> Void
 
     public init(
         systemName: String,
-        accessibilityLabel: String? = nil,
+        accessibilityLabel: LocalizedStringKey? = nil,
         action: @escaping () -> Void)
     {
         self.systemName = systemName
@@ -370,7 +370,7 @@ public struct GlassToolbarButton: View {
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(Text(accessibilityLabel ?? systemName))
+        .accessibilityLabel(Text(accessibilityLabel ?? LocalizedStringKey(systemName)))
     }
 }
 

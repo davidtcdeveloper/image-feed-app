@@ -59,6 +59,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
@@ -79,6 +80,7 @@ import com.example.imagefeed.android.util.BLURHASH_PLACEHOLDER_MIN_HEIGHT
 import com.example.imagefeed.android.util.BLURHASH_PLACEHOLDER_WIDTH
 import com.example.imagefeed.android.util.PhotoGridSkeleton
 import com.example.imagefeed.android.util.bounceClick
+import com.example.imagefeed.android.util.localizedMessage
 import com.example.imagefeed.android.util.rememberBlurHashPlaceholder
 import com.example.imagefeed.android.util.staggeredEntrance
 import com.example.imagefeed.model.Photo
@@ -155,7 +157,7 @@ fun FeedScreen(
                 TopAppBar(
                     title = {
                         Text(
-                            "Feed",
+                            stringResource(R.string.feed_title),
                             style = MaterialTheme.typography.headlineMedium,
                             fontWeight = FontWeight.Bold,
                         )
@@ -164,7 +166,7 @@ fun FeedScreen(
                         IconButton(onClick = onRandomClick) {
                             Icon(
                                 imageVector = Icons.Default.Lightbulb,
-                                contentDescription = "Randomize",
+                                contentDescription = stringResource(R.string.feed_randomize_accessibility),
                             )
                         }
                     },
@@ -197,7 +199,7 @@ fun FeedScreen(
                     ) {
                         item(key = "topic_editorial") {
                             TopicCapsuleCard(
-                                title = "Editorial",
+                                title = stringResource(R.string.feed_editorial_tab),
                                 coverPhoto = null,
                                 isSelected = state.selectedTopicSlug == "editorial",
                                 onClick = { viewModel.dispatch(FeedIntent.SelectTopic("editorial")) },
@@ -234,7 +236,9 @@ fun FeedScreen(
             if (state.photos.isEmpty() && state.isLoading) {
                 PhotoGridSkeleton()
             } else if (state.photos.isEmpty() && state.error != null) {
-                ErrorView(error = state.error ?: "Unknown error", onRetry = { viewModel.dispatch(FeedIntent.Refresh) })
+                ErrorView(error = state.error?.localizedMessage() ?: stringResource(R.string.feed_error_unknown), onRetry = {
+                    viewModel.dispatch(FeedIntent.Refresh)
+                })
             } else {
                 // Main content: Photo Feed
                 LazyVerticalStaggeredGrid(
@@ -391,7 +395,7 @@ fun PhotoCard(
 
                         Image(
                             painter = userProfileImagePainter,
-                            contentDescription = "User profile",
+                            contentDescription = stringResource(R.string.feed_user_profile_accessibility),
                             modifier =
                                 Modifier
                                     .size(24.dp)
@@ -429,7 +433,7 @@ fun ErrorView(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(
-            text = "Error Loading Feed",
+            text = stringResource(R.string.feed_error_title),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface,
@@ -445,7 +449,7 @@ fun ErrorView(
             onClick = onRetry,
             shape = MaterialTheme.shapes.small,
         ) {
-            Text("Retry")
+            Text(stringResource(R.string.feed_action_retry))
         }
     }
 }

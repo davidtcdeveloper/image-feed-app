@@ -81,7 +81,7 @@ class RandomPhotoViewModelTest {
             val viewModel = RandomPhotoViewModel(repository, tracker)
             advanceUntilIdle()
 
-            assertEquals("Random failure", viewModel.state.value.error)
+            assertEquals(com.example.imagefeed.model.AppError.Network, viewModel.state.value.error)
         }
 
     @Test

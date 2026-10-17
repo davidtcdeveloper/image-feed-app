@@ -1,5 +1,6 @@
 package com.example.imagefeed.presentation.profile
 
+import com.example.imagefeed.model.AppError
 import com.example.imagefeed.model.Photo
 import com.example.imagefeed.model.PhotoCollection
 import com.example.imagefeed.model.User
@@ -17,7 +18,7 @@ data class UserProfileState(
     val stats: UserStats? = null,
     val isLoadingContent: Boolean = false,
     val isHeaderLoading: Boolean = false,
-    val error: String? = null,
+    val error: AppError? = null,
     val portfolioPage: Int = 1,
     val portfolioReachedEnd: Boolean = false,
     val likesPage: Int = 1,

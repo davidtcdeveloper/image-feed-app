@@ -41,7 +41,7 @@ class SearchViewModel {
             self.users = state.users
             self.isLoading = state.isLoading
             self.isLoadingMore = state.isLoadingMore
-            self.error = state.error
+            self.error = state.error?.localizedMessage
             self.searchHistory = state.searchHistory
             self.hasReachedEnd = state.hasReachedEnd
         }
@@ -55,7 +55,7 @@ class SearchViewModel {
     private func handleEffect(_ effect: UnifiedSearchEffect) {
         switch effect {
         case let showError as UnifiedSearchEffectShowError:
-            error = showError.message
+            error = showError.error.localizedMessage
         default:
             break
         }

@@ -254,7 +254,7 @@ struct PhotosFeedTabView: View {
                     VStack(spacing: 0) {
                         categoryBar
                         Spacer()
-                        ErrorView(error: viewModel.error ?? "Unknown error", onRetry: {
+                        ErrorView(error: viewModel.error ?? String(localized: "Unknown error"), onRetry: {
                             viewModel.refresh()
                         })
                         Spacer()
@@ -329,7 +329,7 @@ struct PhotosFeedTabView: View {
                                 ProgressView()
                                     .tint(.white)
                                     .controlSize(.large)
-                                Text("🎲 Shaking up a random photo...")
+                                Text("🎲 Shaking up a random photo…")
                                     .font(.headline)
                                     .glassVibrancy(.primary)
                             }
@@ -589,7 +589,7 @@ struct CategoryTabButton: View {
 
     var body: some View {
         Button(action: action) {
-            Text(title)
+            Text(LocalizedStringKey(title))
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(isSelected ? Color.black : Color.secondary)
                 .padding(.horizontal, 14)

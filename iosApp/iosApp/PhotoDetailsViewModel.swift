@@ -22,7 +22,7 @@ class PhotoDetailsViewModel {
             self.photo = state.photo
             self.stats = state.stats
             self.isLoading = state.isLoading
-            self.error = state.error
+            self.error = state.error?.localizedMessage
         }
 
         self.effectsCloseable = viewModel.iosEffects.watch { [weak self] effect in
@@ -36,7 +36,7 @@ class PhotoDetailsViewModel {
         case is PhotoDetailsEffectDismissScreen:
             shouldDismiss = true
         case let snackbar as PhotoDetailsEffectShowErrorSnackbar:
-            error = snackbar.message
+            error = snackbar.error.localizedMessage
         default:
             break
         }

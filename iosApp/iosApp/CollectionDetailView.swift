@@ -238,7 +238,7 @@ struct CollectionDetailView: View {
                 .ignoresSafeArea(edges: .top)
             }
         }
-        .navigationTitle(viewModel.collection?.title ?? "Collection")
+        .navigationTitle(viewModel.collection?.title ?? String(localized: "Collection"))
         .navigationBarBackButtonHidden(true)
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
@@ -249,13 +249,13 @@ struct CollectionDetailView: View {
         .toolbar {
             #if os(iOS)
             ToolbarItem(placement: .navigationBarLeading) {
-                GlassToolbarButton(systemName: "chevron.left", accessibilityLabel: "Back") {
+                GlassToolbarButton(systemName: "chevron.backward", accessibilityLabel: "Back") {
                     dismiss()
                 }
             }
             #else
             ToolbarItem(placement: .navigation) {
-                GlassToolbarButton(systemName: "chevron.left", accessibilityLabel: "Back") {
+                GlassToolbarButton(systemName: "chevron.backward", accessibilityLabel: "Back") {
                     dismiss()
                 }
             }

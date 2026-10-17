@@ -22,7 +22,7 @@ class CollectionsFeedViewModel {
             self.collections = state.collections
             self.isLoading = state.isLoading
             self.isRefreshing = state.isRefreshing
-            self.error = state.error
+            self.error = state.error?.localizedMessage
             self.hasReachedEnd = state.hasReachedEnd
         }
 
@@ -35,7 +35,7 @@ class CollectionsFeedViewModel {
     private func handleEffect(_ effect: CollectionsFeedEffect) {
         switch effect {
         case let showError as CollectionsFeedEffectShowError:
-            error = showError.message
+            error = showError.error.localizedMessage
         default:
             break
         }
