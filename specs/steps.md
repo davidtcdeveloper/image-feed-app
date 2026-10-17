@@ -930,3 +930,37 @@ These are the spec files that the implementation notes and planning references s
     *   Add macrobenchmark module, baseline profile generation, and `androidx.profileinstaller`; record before/after metrics.
 2.  **Reference Specification:**
     *   Track blueprint in `specs/64_android_release_optimization_and_baseline_profiles.md`.
+
+### Step 65: Runtime Memory Optimization Phase 1 — Image Caches, Grid Virtualization & ViewModel Scope Leaks (Planned)
+1.  **Android Profile Grid Virtualization:**
+    *   Replace nested `LazyVerticalStaggeredGrid` inside `Column(Modifier.verticalScroll)` + `.heightIn(max = 2000.dp)` in `UserProfileScreen.kt` with a single full-screen `LazyVerticalStaggeredGrid` using `StaggeredGridItemSpan.FullLine` header and tab items.
+2.  **iOS/macOS `KFImage` Downsampling & Bounded `NSCache`:**
+    *   Evaluate `.placeholder` lazily on cache misses, downsample images via `ImageIO` (`CGImageSourceCreateThumbnailAtIndex`), and cache decoded images in a byte-cost-bounded `NSCache` with memory-warning eviction.
+3.  **Android Coil Tuning & Memory Trim Handling:**
+    *   Lower `MemoryCache` `maxSizePercent` from `0.25` to `0.15`, enable `allowRgb565(true)`, remove the 100 MB local `DiskCache` for Unsplash hotlink compliance, and implement `onTrimMemory(level)` in `ImageFeedApplication.kt` to trim Coil's cache and call `BlurHashDecoder.clearCache()`.
+4.  **ViewModel Scope Hygiene:**
+    *   Make `iosState` and `iosEffects` `by lazy` in `MviViewModel.kt`, and deterministically close/clear `RandomPhotoViewModel` and its `Closeable` watcher across all paths in `FeedViewModel.swift`.
+5.  **Reference Specification:**
+    *   Track blueprint in `specs/65_memory_optimization_phase1_caches_grids_and_scopes.md`.
+
+### Step 66: Runtime Memory Optimization Phase 2 — Maps, Thumbnail Downsizing & BlurHash Cache Optimization (Planned)
+1.  **Static Map Previews:**
+    *   Enable Google Maps Lite Mode (`liteMode(true)`) and `remember` `MapStyleOptions` in `PhotoDetailsScreen.kt`; replace live `MapKit.Map` in `MapCardView` (`PhotoDetailsView.swift`) with a cached `MKMapSnapshotter` static snapshot.
+2.  **Thumbnail Sizing & Duplicate Query Parameter Fixes:**
+    *   Add `PhotoUrls.getOptimalUrl(targetWidthPx, quality)` in `:core:model`, replace oversized `urls.regular` loads in small collection/preview cards across Android and iOS, and fix duplicate `&w=` query parameters appended onto `urls.small` in `CollectionsFeedScreen.kt` and `CollectionsFeedView.swift`.
+3.  **BlurHash Painter & Byte-Bounded Cache:**
+    *   Return a remembered `BitmapPainter?` from `rememberBlurHashPlaceholder` across all Android call sites, quantize placeholder heights into discrete buckets, and bound `BlurHashDecoder.cache` by byte size (`sizeOf` / `allocationByteCount`).
+4.  **Reference Specification:**
+    *   Track blueprint in `specs/66_memory_optimization_phase2_maps_thumbnails_and_blurhash.md`.
+
+### Step 67: Runtime Memory Optimization Phase 3 — Network Buffering, Navigation Hygiene, DI Scoping & UI Frame Churn (Planned)
+1.  **Ktor Network & Metro DI Scoping:**
+    *   Replace `LogLevel.ALL` and `prettyPrint = true` with `LogLevel.NONE`, `prettyPrint = false`, and a shared `Json` instance in `HttpClientFactory.kt`.
+    *   Annotate all 5 feature repository `@Provides` methods (`FeedModule`, `CollectionsModule`, `SearchModule`, `ProfileModule`, `PhotoDetailsModule`) with `@SingleIn(AppScope::class)`.
+2.  **Navigation Backstack & Inactive Tab State Hygiene:**
+    *   Ensure `selectedPhotoForHero = nil` is cleared on all navigation transitions in `ContentView.swift`, bound Android detail backstack depth and `UnifiedSearchViewModel` keys (`NavigationSections.kt`, `Navigator.kt`), and cap inactive tab list retention in `UnifiedSearchState` and `UserProfileState`.
+3.  **UI Frame & Emission Churn Elimination:**
+    *   Guard Swift `@Observable` property/array reassignments, throttle `activeCapsuleMinimized` and `scrollResetTask` in `ContentView.swift`, replace $O(N^2)$ `firstIndex(where:)` masonry lookups with $O(1)$ indexed column items in `AdaptiveLayoutHelper.swift`, share a single `InfiniteTransition` across shimmer skeletons (`AnimationUtils.kt`), and `remember`/cache chart data and `Canvas` objects (`PhotoDetailsScreen.kt`, `UserProfileScreen.kt`).
+4.  **Reference Specification:**
+    *   Track blueprint in `specs/67_memory_optimization_phase3_network_navigation_di_and_ui_churn.md`.
+
