@@ -64,7 +64,7 @@ struct PhotoDetailsView: View {
 
     var body: some View {
         ZStack {
-            GlassTheme.canvasBackgroundColor
+            Color.black
                 .ignoresSafeArea()
 
             if viewModel.isLoading, viewModel.photo == nil {
@@ -89,6 +89,7 @@ struct PhotoDetailsView: View {
                             .glassBackground(style: .thin, shape: Capsule(), showBorder: true)
                     }
                 }
+                .environment(\.colorScheme, .dark)
             } else if let photo = viewModel.photo {
                 if isDualPane {
                     dualPaneLayout(photo: photo)
@@ -100,7 +101,7 @@ struct PhotoDetailsView: View {
         .navigationTitle("")
         .navigationBarBackButtonHidden(true)
         #if os(iOS)
-        .toolbar(.hidden, for: .navigationBar)
+        .toolbar(.hidden, for: .navigationBar, .tabBar)
         #endif
         .onChange(of: viewModel.shouldDismiss) { _, shouldDismiss in
             if shouldDismiss {
@@ -114,6 +115,7 @@ struct PhotoDetailsView: View {
             }
             .padding(.top, 60)
             .padding(.leading, 16)
+            .environment(\.colorScheme, .dark)
             #else
             if onDismiss != nil {
                 GlassToolbarButton(systemName: "chevron.left", accessibilityLabel: "Back") {
@@ -121,6 +123,7 @@ struct PhotoDetailsView: View {
                 }
                 .padding(.top, 60)
                 .padding(.leading, 16)
+                .environment(\.colorScheme, .dark)
             }
             #endif
         }
@@ -137,6 +140,7 @@ struct PhotoDetailsView: View {
                 }
                 .padding(.top, 60)
                 .padding(.trailing, 16)
+                .environment(\.colorScheme, .dark)
             }
             #else
             if onDismiss != nil, !isDualPane {
@@ -150,6 +154,7 @@ struct PhotoDetailsView: View {
                 }
                 .padding(.top, 60)
                 .padding(.trailing, 16)
+                .environment(\.colorScheme, .dark)
             }
             #endif
         }
@@ -226,8 +231,7 @@ private extension PhotoDetailsView {
             HStack(spacing: 0) {
                 // Left: Photo Canvas
                 ZStack(alignment: .bottomLeading) {
-                    GlassTheme.canvasBackgroundColor
-                        .ignoresSafeArea()
+                    ambientBackdrop(photo: photo)
 
                     GeometryReader { geo in
                         let aspectRatio = max(0.1, CGFloat(photo.width) / CGFloat(photo.height))
@@ -278,6 +282,7 @@ private extension PhotoDetailsView {
                             .fill(Color.black.opacity(0.42))
                     }
                     .glassCapsule(style: .ultraThin, showBorder: true, hasShadow: true)
+                    .environment(\.colorScheme, .dark)
                     .padding(16)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -310,8 +315,7 @@ private extension PhotoDetailsView {
             let imageUrl = photo.urls.raw + "&w=\(Int(containerWidth * 2))&q=85&auto=format"
 
             ZStack(alignment: .bottom) {
-                GlassTheme.canvasBackgroundColor
-                    .ignoresSafeArea()
+                ambientBackdrop(photo: photo)
 
                 ZStack {
                     KFImage(URL(string: imageUrl))
@@ -458,9 +462,34 @@ private extension PhotoDetailsView {
                 .fill(Color.black.opacity(0.42))
         }
         .glassCapsule(style: .ultraThin, showBorder: true, hasShadow: true)
+        .environment(\.colorScheme, .dark)
         .padding(.horizontal, 16)
         .padding(.bottom, 24)
         .transition(.move(edge: .bottom).combined(with: .opacity))
+    }
+
+    @ViewBuilder
+    private func ambientBackdrop(photo: Photo) -> some View {
+        if reduceTransparency {
+            Color.black.ignoresSafeArea()
+        } else {
+            ZStack {
+                Color.black
+                KFImage(URL(string: photo.urls.small))
+                    .placeholder {
+                        Rectangle().fill(Color(hex: photo.color ?? "1E1E24"))
+                    }
+                    .resizable()
+                    .scaledToFill()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .scaleEffect(1.3)
+                    .blur(radius: 60)
+                    .clipped()
+                Color.black.opacity(0.35)
+            }
+            .ignoresSafeArea()
+            .allowsHitTesting(false)
+        }
     }
 }
 
@@ -720,30 +749,168 @@ struct ExifRowView: View {
 
 struct HistoricalStatsChart: View {
     let values: [StatsValue]
+    @State private var selectedIndex: Int?
+
+    private static let isoFormatter: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withFullDate, .withDashSeparatorInDate]
+        return formatter
+    }()
+
+    private var selectedItem: StatsValue? {
+        guard let index = selectedIndex, values.indices.contains(index) else { return nil }
+        return values[index]
+    }
 
     var body: some View {
-        Chart {
-            ForEach(values, id: \.date) { item in
-                LineMark(
-                    x: .value("Date", item.date),
-                    y: .value("Views", item.value))
-                    .foregroundStyle(.white)
-                    .interpolationMethod(.catmullRom)
+        if values.isEmpty {
+            Text("No historical data available")
+                .font(.caption)
+                .glassVibrancy(.secondary)
+                .frame(maxWidth: .infinity, minHeight: 120, alignment: .center)
+        } else {
+            VStack(alignment: .leading, spacing: 8) {
+                // Interactive metric callout banner
+                HStack(alignment: .firstTextBaseline) {
+                    if let selectedItem {
+                        HStack(spacing: 6) {
+                            Text(formatDate(selectedItem.date)).font(.caption.weight(.medium)).glassVibrancy(.secondary)
+                            Text("•").font(.caption2).glassVibrancy(.tertiary)
+                            Text(formatViewsCount(selectedItem.value)).font(.caption.weight(.bold)).glassVibrancy(.primary)
+                        }
+                        .transition(.opacity)
+                    } else {
+                        HStack(spacing: 4) {
+                            Image(systemName: "hand.point.left.and.right").font(.caption2)
+                            Text("Drag curve to inspect daily views").font(.caption2)
+                        }
+                        .glassVibrancy(.secondary)
+                        .transition(.opacity)
+                    }
+                    Spacer()
+                }
+                .frame(height: 20)
 
-                AreaMark(
-                    x: .value("Date", item.date),
-                    y: .value("Views", item.value))
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [.white.opacity(0.2), .clear],
-                            startPoint: .top,
-                            endPoint: .bottom))
-                    .interpolationMethod(.catmullRom)
+                Chart {
+                    ForEach(values, id: \.date) { item in
+                        LineMark(
+                            x: .value("Date", item.date),
+                            y: .value("Views", item.value))
+                            .foregroundStyle(.white)
+                            .interpolationMethod(.catmullRom)
+
+                        AreaMark(
+                            x: .value("Date", item.date),
+                            y: .value("Views", item.value))
+                            .foregroundStyle(
+                                LinearGradient(
+                                    colors: [.white.opacity(0.2), .clear],
+                                    startPoint: .top,
+                                    endPoint: .bottom))
+                            .interpolationMethod(.catmullRom)
+                    }
+
+                    // Single point fallback visibility
+                    if values.count == 1, let singleItem = values.first {
+                        PointMark(
+                            x: .value("Date", singleItem.date),
+                            y: .value("Views", singleItem.value))
+                            .foregroundStyle(.white)
+                            .symbolSize(60)
+                    }
+
+                    // Glowing indicator and inspection rule for scrubbed data point
+                    if let selectedItem {
+                        RuleMark(x: .value("Date", selectedItem.date))
+                            .foregroundStyle(Color.white.opacity(0.35))
+                            .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 4]))
+
+                        PointMark(
+                            x: .value("Date", selectedItem.date),
+                            y: .value("Views", selectedItem.value))
+                            .symbol {
+                                ZStack {
+                                    Circle().fill(Color.white.opacity(0.25)).frame(width: 18, height: 18)
+                                    Circle().fill(Color.white).frame(width: 8, height: 8).shadow(color: .white, radius: 4)
+                                }
+                            }
+                    }
+                }
+                .chartXAxis(.hidden)
+                .chartYAxis(.hidden)
+                .frame(height: 120)
+                .chartOverlay { proxy in
+                    GeometryReader { geometry in
+                        Rectangle()
+                            .fill(Color.clear)
+                            .contentShape(Rectangle())
+                            .gesture(
+                                DragGesture(minimumDistance: 0)
+                                    .onChanged { value in
+                                        updateSelection(at: value.location, proxy: proxy, geometry: geometry)
+                                    }
+                                    .onEnded { _ in
+                                        withAnimation(.easeOut(duration: 0.2)) {
+                                            selectedIndex = nil
+                                        }
+                                    })
+                    }
+                }
+            }
+            .sensoryFeedback(.impact(weight: .light), trigger: selectedIndex)
+        }
+    }
+
+    private func updateSelection(at location: CGPoint, proxy: ChartProxy, geometry: GeometryProxy) {
+        guard !values.isEmpty else {
+            selectedIndex = nil
+            return
+        }
+        guard values.count > 1 else {
+            selectedIndex = 0
+            return
+        }
+
+        let plotArea = proxy.plotFrame.map { geometry[$0] } ?? geometry.frame(in: .local)
+
+        // Attempt exact category coordinate matching via ChartProxy
+        var closestIndex = 0
+        var minDistance = CGFloat.greatestFiniteMagnitude
+        var resolvedFromProxy = false
+
+        for (index, item) in values.enumerated() {
+            if let posX = proxy.position(forX: item.date) {
+                resolvedFromProxy = true
+                let distance = abs(posX - location.x)
+                if distance < minDistance {
+                    minDistance = distance
+                    closestIndex = index
+                }
             }
         }
-        .chartXAxis(.hidden)
-        .chartYAxis(.hidden)
-        .frame(height: 120)
+
+        if resolvedFromProxy {
+            selectedIndex = closestIndex
+            return
+        }
+
+        // Proportional interpolation fallback across plot area width
+        let clampedX = min(max(location.x, plotArea.minX), plotArea.maxX)
+        let fraction = (clampedX - plotArea.minX) / max(plotArea.width, 1.0)
+        let computedIndex = Int(round(fraction * CGFloat(values.count - 1)))
+        selectedIndex = min(max(computedIndex, 0), values.count - 1)
+    }
+
+    private func formatDate(_ dateString: String) -> String {
+        if let date = Self.isoFormatter.date(from: dateString) {
+            return date.formatted(date: .abbreviated, time: .omitted)
+        }
+        return dateString
+    }
+
+    private func formatViewsCount(_ count: Int32) -> String {
+        let formattedNum = Int(count).formatted()
+        return count == 1 ? "\(formattedNum) view" : "\(formattedNum) views"
     }
 }
 

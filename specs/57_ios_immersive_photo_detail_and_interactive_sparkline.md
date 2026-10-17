@@ -1,6 +1,6 @@
 # iOS Immersive Photo Detail Canvas & Interactive Sparkline Spec
 
-**Status:** Proposed
+**Status:** Implemented
 
 ## Overview
 This specification addresses layout voids on the photo preview screen and upgrades static components to interactive tactile experiences:
@@ -45,7 +45,7 @@ In [`GlassTheme.swift`](file:///Users/davidtiagoconceicao/Developer/image-feed-a
 ---
 
 ## Acceptance Criteria
-- [ ] Photo detail screen displays full-bleed ambient blurred backdrop behind the active photo.
-- [ ] Upper empty white void is eliminated on compact layouts.
-- [ ] Historical Views chart supports smooth horizontal drag scrubbing with haptic ticks and glowing indicator point.
-- [ ] Navigation and toolbar buttons render as modern 40x40 tactile glass orbs with hierarchical symbols.
+- [x] Photo detail screen displays full-bleed ambient blurred backdrop behind the active photo.
+- [x] Upper empty white void is eliminated on compact layouts.
+- [x] Historical Views chart supports smooth horizontal drag scrubbing with haptic ticks and glowing indicator point.
+- [x] Navigation and toolbar buttons render as modern 40x40 tactile glass orbs with hierarchical symbols.

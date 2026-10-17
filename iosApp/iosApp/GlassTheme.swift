@@ -12,6 +12,11 @@ public enum GlassTheme {
     public static let specularBorderWidth: CGFloat = 0.5
     public static let fallbackBorderWidth: CGFloat = 1.0
 
+    /// Tactile action orb specular rim border width (0.75pt)
+    public static let tactileOrbBorderWidth: CGFloat = 0.75
+    /// Tactile action orb dimension (40x40pt)
+    public static let tactileOrbSize: CGFloat = 40
+
     /// Subtle ambient drop shadow token
     public static let shadowColor = Color.black.opacity(0.18)
     public static let shadowRadius: CGFloat = 10
@@ -323,6 +328,9 @@ public extension View {
 // MARK: - Glass Toolbar Controls
 
 public struct GlassToolbarButton: View {
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.colorSchemeContrast) private var colorSchemeContrast
+
     public let systemName: String
     public let accessibilityLabel: String?
     public let action: () -> Void
@@ -340,10 +348,26 @@ public struct GlassToolbarButton: View {
     public var body: some View {
         Button(action: action) {
             Image(systemName: systemName)
-                .font(.system(size: 14, weight: .semibold))
+                .font(.system(size: 15, weight: .semibold))
+                .symbolRenderingMode(.hierarchical)
                 .glassVibrancy(.primary)
-                .frame(width: 34, height: 34)
-                .glassBackground(style: .ultraThin, shape: Circle(), showBorder: true, hasShadow: true)
+                .frame(width: GlassTheme.tactileOrbSize, height: GlassTheme.tactileOrbSize)
+                .background {
+                    if reduceTransparency {
+                        Circle().fill(GlassTheme.fallbackBackgroundColor)
+                    } else {
+                        Circle().fill(.thinMaterial)
+                    }
+                }
+                .overlay {
+                    if reduceTransparency || colorSchemeContrast == .increased {
+                        Circle().strokeBorder(GlassTheme.fallbackBorderColor, lineWidth: GlassTheme.fallbackBorderWidth)
+                    } else {
+                        Circle().strokeBorder(GlassTheme.specularBorderGradient, lineWidth: GlassTheme.tactileOrbBorderWidth)
+                    }
+                }
+                .clipShape(Circle())
+                .contentShape(Circle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel(Text(accessibilityLabel ?? systemName))

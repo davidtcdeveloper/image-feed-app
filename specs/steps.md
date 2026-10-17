@@ -851,7 +851,7 @@ These are the spec files that the implementation notes and planning references s
 4.  **Reference Specification:**
     *   Track blueprint in `specs/56_ios_glass_contrast_and_navigation_chrome_fixes.md`.
 
-### Step 57: iOS Immersive Photo Detail Canvas & Interactive Sparkline (Proposed)
+### Step 57: iOS Immersive Photo Detail Canvas & Interactive Sparkline (Completed)
 1.  **Ambient Backdrop Layer:**
     *   Implement full-bleed ambient blurred backdrop using downsampled photo with dark scrim on `PhotoDetailsView.swift`, eliminating top white void and providing contrast for Spec 52's promoted top overlay buttons.
 2.  **Interactive Views Sparkline Scrubbing:**
