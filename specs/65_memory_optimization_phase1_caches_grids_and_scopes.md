@@ -1,6 +1,6 @@
 # Specification 65: Runtime Memory Optimization Phase 1 — Image Caches, Grid Virtualization & ViewModel Scope Leaks
 
-**Status:** Proposed
+**Status:** Approved
 
 ## 1. Overview & Problem Statement
 
@@ -40,6 +40,7 @@ Runtime memory profiling across Shared KMP, Android (`androidApp`), and iOS/macO
        - Otherwise, emit photo items directly into the parent `LazyVerticalStaggeredGridScope` via `itemsIndexed(photos, key = { _, photo -> "${state.activeTab}_${photo.id}" }, contentType = { _, _ -> "photo_card" })`.
      - **`ProfileTab.COLLECTIONS`**: when `collections.isEmpty() && state.isLoadingContent`, emit 3 `CollectionMosaicCardSkeleton()` items (`key = { "col_skeleton_$it" }`); when empty and not loading, emit a `FullLine` empty item; otherwise emit `CollectionRowLayout` items directly in the parent grid (`key = { _, col -> "col_${col.id}" }`, `contentType = { _, _ -> "collection_card" }`).
      - **`ProfileTab.INSIGHTS`**: emit `InsightsTabContent` inside `item(span = StaggeredGridItemSpan.FullLine, key = "insights_content", contentType = "insights")`.
+   - Remove or dismantle the legacy `PortfolioTabContent` and `CollectionsTabContent` composables ([L680-L855](file:///Users/davidtiagoconceicao/Developer/image-feed-app/androidApp/src/main/java/com/example/imagefeed/android/UserProfileScreen.kt#L680-L855)) entirely to eliminate dead code and duplicate nested pagination effects per AGENTS.md Core Invariant 3.
 3. Consolidate pagination prefetching into a single `LaunchedEffect(gridState, state.activeTab)` on the outer `gridState`, gated by `state.activeTab != ProfileTab.INSIGHTS`, `!currentLoading`, and `!currentHasReachedEnd`, accounting for the 2 header items in `totalItemsCount` (`totalItems > 2`).
 
 ### B. Downsampling, Cost-Bounded `NSCache` & Lazy Placeholders in [`KFImage.swift`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/iosApp/iosApp/KFImage.swift)

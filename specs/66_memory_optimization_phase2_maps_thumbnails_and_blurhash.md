@@ -1,6 +1,6 @@
 # Specification 66: Runtime Memory Optimization Phase 2 — Maps, Thumbnail Downsizing & BlurHash Cache Optimization
 
-**Status:** Proposed
+**Status:** Approved
 
 ## 1. Overview & Problem Statement
 
@@ -36,8 +36,9 @@ Following the Phase 1 image cache and grid virtualization fixes ([Spec 65](file:
 
 ### B. Standardized `PhotoUrls.getOptimalUrl` & Elimination of Oversized / Duplicate-Param Requests
 1. **Shared Helper on [`PhotoUrls` (`Photo.kt` L30-L37)](file:///Users/davidtiagoconceicao/Developer/image-feed-app/core/model/src/commonMain/kotlin/com/example/imagefeed/model/Photo.kt#L30-L37)**:
-   - Add `fun getOptimalUrl(targetWidthPx: Int, quality: Int = 80): String` on `PhotoUrls`:
+   - Add `fun getOptimalUrl(targetWidthPx: Int, quality: Int = 80): String` and `fun getOptimalUrl(targetWidthPx: Int): String = getOptimalUrl(targetWidthPx, 80)` on `PhotoUrls`:
      - Clamps `targetWidthPx` to sensible bounds (e.g. `targetWidthPx.coerceIn(64, 2400)`), strips any existing `&w=`, `&q=`, or `&auto=` overrides if accidentally called on a non-raw URL, and appends `"&w=$clampedWidth&q=$quality&auto=format"` onto `raw` (using `?` if `raw` lacks a query string, preserving `ixid` and all existing query parameters on `raw`).
+     - Providing both the 1-parameter and 2-parameter overloads in Kotlin commonMain ensures that Swift/Objective-C callers can invoke `urls.getOptimalUrl(targetWidthPx: itemWidthPx)` idiomatically without being forced to explicitly pass `quality: 80` (as Kotlin default arguments are not exported to Objective-C headers).
 2. **Fix Duplicate `&w=` Appends**:
    - In [`CollectionsFeedScreen.kt` L296-L305, L322, L358, L375, L395, L412](file:///Users/davidtiagoconceicao/Developer/image-feed-app/androidApp/src/main/java/com/example/imagefeed/android/CollectionsFeedScreen.kt#L296-L413) and [`CollectionsFeedView.swift` L167, L190, L198, L213, L221](file:///Users/davidtiagoconceicao/Developer/image-feed-app/iosApp/iosApp/CollectionsFeedView.swift#L167-L221), replace `urls.small + "&w=..."` and manual `urls.raw + "&w=..."` with `urls.getOptimalUrl(targetWidthPx = ...)` (and ensure `CollectionsFeedView.swift` multiplies `width` and `sideWidth` by display scale `UIScreen.main.scale` / `backingScaleFactor` per **Core Invariant 4**).
 3. **Downsize Oversized `urls.regular` Card & Blurred Header Requests**:
@@ -81,7 +82,7 @@ Following the Phase 1 image cache and grid virtualization fixes ([Spec 65](file:
 
 - [ ] `PhotoDetailsScreen.kt` configures `GoogleMap` with `liteMode(true)` and remembers `MapStyleOptions`, `MapProperties`, and `MapUiSettings`.
 - [ ] `MapCardView` in `PhotoDetailsView.swift` replaces live `MapKit.Map` with a cached `MKMapSnapshotter` static image with a pin overlay.
-- [ ] `PhotoUrls.getOptimalUrl(targetWidthPx, quality)` is implemented in `:core:model` and preserves `ixid`.
+- [ ] `PhotoUrls.getOptimalUrl(targetWidthPx, quality)` and single-parameter `getOptimalUrl(targetWidthPx)` overload are implemented in `:core:model` and preserve `ixid`.
 - [ ] Duplicate `&w=` query parameters on `urls.small` in `CollectionsFeedScreen.kt` and `CollectionsFeedView.swift` are eliminated, and oversized `urls.regular` loads in small collection/preview cards across Android and iOS are replaced.
 - [ ] `rememberBlurHashPlaceholder` returns a remembered `BitmapPainter?` directly across all Android call sites; zero inline `BitmapPainter(it.asImageBitmap())` calls remain in screen composables.
 - [ ] `BlurHashDecoder` quantizes placeholder heights to discrete buckets and bounds its `LruCache` by byte size (`sizeOf` using `allocationByteCount` with unit-test-safe fallback).

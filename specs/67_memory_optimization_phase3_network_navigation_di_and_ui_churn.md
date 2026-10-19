@@ -1,6 +1,6 @@
 # Specification 67: Runtime Memory Optimization Phase 3 — Network Buffering, Navigation Hygiene, DI Scoping & UI Frame Churn
 
-**Status:** Proposed
+**Status:** Approved
 
 ## 1. Overview & Problem Statement
 
@@ -50,7 +50,8 @@ Building on Phase 1 ([Spec 65](file:///Users/davidtiagoconceicao/Developer/image
 
 ### C. `@SingleIn(AppScope::class)` on Feature Repositories
 1. Make `AppScope` accessible across `:core:network`, `:feature:*`, and `:shared` without polluting Objective-C headers:
-   - Either use Metro's built-in `dev.zacsweers.metro.AppScope` directly in [`Metro.kt`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/src/commonMain/kotlin/com/example/imagefeed/di/Metro.kt#L31-L58) and all 5 feature modules, **or** move `@Scope annotation class AppScope` (annotated with `@HiddenFromObjC`) from `Metro.kt` into `:core:network` and add `alias(libs.plugins.metro)` to [`core/network/build.gradle.kts`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/core/network/build.gradle.kts#L4-L9) (since `:core:network` is intentionally unexported from Objective-C headers per [Spec 49](file:///Users/davidtiagoconceicao/Developer/image-feed-app/specs/49_modularization_umbrella_and_linking_optimization.md#L28), whereas `:core:model` is exported and must not carry DI annotations).
+   - Define `@Scope @OptIn(kotlin.experimental.ExperimentalObjCRefinement::class) @kotlin.native.HiddenFromObjC annotation class AppScope` in `:core:network` (e.g. `com.example.imagefeed.core.network.di.AppScope`), and add `alias(libs.plugins.metro)` to [`core/network/build.gradle.kts`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/core/network/build.gradle.kts#L4-L9). (Note: Metro does not provide a built-in `AppScope` class).
+   - Because `:core:network` is already a direct dependency of all 5 feature modules and `:shared`, while being intentionally unexported from Objective-C headers in `:shared` framework binaries per [Spec 49](file:///Users/davidtiagoconceicao/Developer/image-feed-app/specs/49_modularization_umbrella_and_linking_optimization.md#L28), `AppScope` is immediately accessible to all Kotlin DI binding containers without leaking into Swift/Objective-C headers.
 2. Annotate all 5 feature repository provider functions with `@SingleIn(AppScope::class)`:
    - [`FeedModule.provideFeedRepository` (`FeedModule.kt` L14-L15)](file:///Users/davidtiagoconceicao/Developer/image-feed-app/feature/feed/src/commonMain/kotlin/com/example/imagefeed/feed/di/FeedModule.kt#L14-L15)
    - [`CollectionsModule.provideCollectionsRepository` (`CollectionsModule.kt` L14-L15)](file:///Users/davidtiagoconceicao/Developer/image-feed-app/feature/collections/src/commonMain/kotlin/com/example/imagefeed/collections/di/CollectionsModule.kt#L14-L15)
@@ -96,5 +97,5 @@ Building on Phase 1 ([Spec 65](file:///Users/davidtiagoconceicao/Developer/image
 - [ ] All 6 Swift `@Observable` ViewModels guard property/array assignments against unchanged values.
 - [ ] `ContentView.handleScroll` guards `activeCapsuleMinimized` mutations and avoids per-frame `Task` allocations.
 - [ ] `AdaptiveLayoutHelper` provides $O(1)$ item indices for masonry columns, removing all `firstIndex(where:)` scans in `CollectionDetailView.swift`, `SearchView.swift`, and `UserProfileView.swift` without breaking `ContentView.swift` or `CollectionsFeedView.swift`.
-- [ ] Shimmer skeletons share a single `InfiniteTransition` and chart list transformations + `Canvas` `Path`/`Brush` allocations are remembered/cached (in alignment with Specs 60 and 63).
+- [ ] Shimmer skeletons share a single `InfiniteTransition` and chart list transformations + `Canvas` `Path`/`Brush` allocations are remembered/cached (verified as fulfilled by [Spec 60](60_android_shimmer_skeleton_rendering_optimization.md) and [Spec 63](63_android_photo_details_and_chart_rendering_optimization.md)).
 - [ ] Zero compiler warnings, zero dead code, and both Android and iOS builds + unit tests pass.

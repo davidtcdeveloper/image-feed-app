@@ -913,27 +913,27 @@ These are the spec files that the implementation notes and planning references s
 ### Step 62: Android Scroll-Driven Chrome & Horizontal Row Hygiene (Planned)
 1.  **Feed Chrome & Rows:**
     *   Remove composition-phase `contentOffset` read for the topic strip background.
-    *   Key the unkeyed Search colour `LazyRow`; document verified rows left unchanged; profile nested-grid profiling note.
+    *   Key the unkeyed Search colour `LazyRow`; document verified rows left unchanged; profile nested-grid virtualization tracked and handled in Step 65.
 2.  **Reference Specification:**
     *   Track blueprint in `specs/62_android_scroll_chrome_and_horizontal_row_hygiene.md`.
 
 ### Step 63: Android Photo Details Layout & Chart Rendering Optimization (Planned)
 1.  **Details & Charts:**
     *   Keep pane-width awareness for `BoxWithConstraints` (window-level `LocalAdaptiveLayoutInfo` is not a safe replacement); remember the details `ImageRequest`.
-    *   Cache chart geometry in draw cache, derive hover index, fix the 300dp hover bug and no-op `animProgress`, cache `CompactDecimalFormat`.
+    *   Cache chart geometry in draw cache, derive hover index, fix the 300dp hover bug, eliminate dead `animProgress` per zero-dead-code policy, cache `CompactDecimalFormat`.
 2.  **Reference Specification:**
     *   Track blueprint in `specs/63_android_photo_details_and_chart_rendering_optimization.md`.
 
 ### Step 64: Android Release Optimization, Baseline Profiles & Macrobenchmark (Planned)
-1.  **Release Build & Profiles:**
-    *   Create missing `proguard-rules.pro`, enable R8 minification and resource shrinking for release.
-    *   Add macrobenchmark module, baseline profile generation, and `androidx.profileinstaller`; record before/after metrics.
+1.  **Release Build & Profiles (Phased):**
+    *   Phase A: Create missing `proguard-rules.pro` with keep rules for serialization DTOs, `NavKey`, Metro graph, and Maps; enable R8 minification and resource shrinking for release; verify release assembly.
+    *   Phase B: Add macrobenchmark module, baseline profile generation on device/emulator, and `androidx.profileinstaller`; record before/after metrics.
 2.  **Reference Specification:**
     *   Track blueprint in `specs/64_android_release_optimization_and_baseline_profiles.md`.
 
 ### Step 65: Runtime Memory Optimization Phase 1 — Image Caches, Grid Virtualization & ViewModel Scope Leaks (Planned)
 1.  **Android Profile Grid Virtualization:**
-    *   Replace nested `LazyVerticalStaggeredGrid` inside `Column(Modifier.verticalScroll)` + `.heightIn(max = 2000.dp)` in `UserProfileScreen.kt` with a single full-screen `LazyVerticalStaggeredGrid` using `StaggeredGridItemSpan.FullLine` header and tab items.
+    *   Replace nested `LazyVerticalStaggeredGrid` inside `Column(Modifier.verticalScroll)` + `.heightIn(max = 2000.dp)` in `UserProfileScreen.kt` with a single full-screen `LazyVerticalStaggeredGrid` using `StaggeredGridItemSpan.FullLine` header and tab items, dismantling legacy nested composables.
 2.  **iOS/macOS `KFImage` Downsampling & Bounded `NSCache`:**
     *   Evaluate `.placeholder` lazily on cache misses, downsample images via `ImageIO` (`CGImageSourceCreateThumbnailAtIndex`), and cache decoded images in a byte-cost-bounded `NSCache` with memory-warning eviction.
 3.  **Android Coil Tuning & Memory Trim Handling:**
@@ -947,7 +947,7 @@ These are the spec files that the implementation notes and planning references s
 1.  **Static Map Previews:**
     *   Enable Google Maps Lite Mode (`liteMode(true)`) and `remember` `MapStyleOptions` in `PhotoDetailsScreen.kt`; replace live `MapKit.Map` in `MapCardView` (`PhotoDetailsView.swift`) with a cached `MKMapSnapshotter` static snapshot.
 2.  **Thumbnail Sizing & Duplicate Query Parameter Fixes:**
-    *   Add `PhotoUrls.getOptimalUrl(targetWidthPx, quality)` in `:core:model`, replace oversized `urls.regular` loads in small collection/preview cards across Android and iOS, and fix duplicate `&w=` query parameters appended onto `urls.small` in `CollectionsFeedScreen.kt` and `CollectionsFeedView.swift`.
+    *   Add `PhotoUrls.getOptimalUrl(targetWidthPx, quality)` and single-parameter `getOptimalUrl(targetWidthPx)` in `:core:model`, replace oversized `urls.regular` loads in small collection/preview cards across Android and iOS, and fix duplicate `&w=` query parameters appended onto `urls.small` in `CollectionsFeedScreen.kt` and `CollectionsFeedView.swift`.
 3.  **BlurHash Painter & Byte-Bounded Cache:**
     *   Return a remembered `BitmapPainter?` from `rememberBlurHashPlaceholder` across all Android call sites, quantize placeholder heights into discrete buckets, and bound `BlurHashDecoder.cache` by byte size (`sizeOf` / `allocationByteCount`).
 4.  **Reference Specification:**
@@ -956,7 +956,7 @@ These are the spec files that the implementation notes and planning references s
 ### Step 67: Runtime Memory Optimization Phase 3 — Network Buffering, Navigation Hygiene, DI Scoping & UI Frame Churn (Planned)
 1.  **Ktor Network & Metro DI Scoping:**
     *   Replace `LogLevel.ALL` and `prettyPrint = true` with `LogLevel.NONE`, `prettyPrint = false`, and a shared `Json` instance in `HttpClientFactory.kt`.
-    *   Annotate all 5 feature repository `@Provides` methods (`FeedModule`, `CollectionsModule`, `SearchModule`, `ProfileModule`, `PhotoDetailsModule`) with `@SingleIn(AppScope::class)`.
+    *   Define `@Scope @HiddenFromObjC annotation class AppScope` in `:core:network` with Metro plugin and annotate all 5 feature repository `@Provides` methods (`FeedModule`, `CollectionsModule`, `SearchModule`, `ProfileModule`, `PhotoDetailsModule`) with `@SingleIn(AppScope::class)`.
 2.  **Navigation Backstack & Inactive Tab State Hygiene:**
     *   Ensure `selectedPhotoForHero = nil` is cleared on all navigation transitions in `ContentView.swift`, bound Android detail backstack depth and `UnifiedSearchViewModel` keys (`NavigationSections.kt`, `Navigator.kt`), and cap inactive tab list retention in `UnifiedSearchState` and `UserProfileState`.
 3.  **UI Frame & Emission Churn Elimination:**

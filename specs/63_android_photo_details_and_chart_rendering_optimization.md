@@ -36,7 +36,7 @@ Real cost is modest (one subcomposition at the root, not per list item). Additio
 2. **Remember request**: `remember(photo.id, imageWidthPx)` for the details `ImageRequest` and URL; preserve `ixid`, `w`, `q=85`, `auto=format`.
 3. **Charts - geometry in draw cache**: use `drawWithCache` (or `Modifier.drawBehind` + remembered objects) so points, paths, brushes, and `PathEffect` are built once per (size, data, colours) and reused; hoist the constant dash `PathEffect` as a top-level val. `remember(data)` for min/max/diff.
 4. **Profile chart interaction**: read `dragX` only in draw for the canvas; for the header, expose a `derivedStateOf` hover index so recomposition happens only when the index changes, not per pixel. Compute index from actual canvas width (measured via `onSizeChanged` into state read lazily, or computed in the pointer handler) to remove the `300.dp` assumption.
-5. **Animation**: either animate from 0 to 1 properly (e.g. `Animatable` driven by `LaunchedEffect(data)`, read in draw) or delete `animProgress` entirely, whichever matches intended design; document the decision. Per zero-dead-code policy, do not leave the no-op.
+5. **Dead animation cleanup**: per Core Invariant 3 (Zero Dead Code Policy) in `AGENTS.md`, remove `animProgress` and its no-op `animateFloatAsState(targetValue = 1f)` entirely from `InteractiveTimelineChart` (along with the `y * animProgress` multiplier in the canvas), eliminating the unused state subscription and recomposition overhead.
 6. **Number format**: cache `CompactDecimalFormat` per locale (`remember(locale)` in composables, or a small locale-keyed holder) keeping API 29 compatibility (ICU, see Spec 59 invariant 4).
 
 ## 3. Verification
@@ -54,7 +54,7 @@ Real cost is modest (one subcomposition at the root, not per list item). Additio
 - [ ] Both charts build geometry/brushes/path effects once per size+data (not per draw or per drag event).
 - [ ] `dragX` not read in composition for the whole chart; header uses a derived index.
 - [ ] Hover index matches the highlighted point at any canvas width (no hard-coded 300dp).
-- [ ] No-op `animProgress` fixed or removed.
+- [ ] No-op `animProgress` eliminated completely per Zero Dead Code Policy.
 - [ ] `formatStatValue` no longer allocates a formatter per call.
 - [ ] Zero compiler warnings, no dead code; Android build passes.
 

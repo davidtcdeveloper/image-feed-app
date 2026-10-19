@@ -16,27 +16,42 @@ Compose performance in release builds depends on R8 and on AOT-compiled Baseline
 
 ## 2. Technical Design
 
-1. **R8 for release**: enable `isMinifyEnabled` and `isShrinkResources` for `release`; create `androidApp/proguard-rules.pro` with only the rules proven necessary (prefer library consumer rules; add app rules for serialized `NavKey`/DTO classes if needed). Verify the release APK runs all flows (Feed, Search, Details with Maps, Profile, Collections, Random photo, shake toast) - serialization and reflection issues appear only at runtime.
-2. **Macrobenchmark + baseline profile module**: add a `:benchmark` (or `:baselineprofile`) Android test module targeting `androidApp`, with a `benchmark` build type derived from release (debug-signed, non-debuggable). Journeys: cold start to Feed, fling the Feed grid, open Details, scroll chart, open Profile, switch tabs. Record Baseline Profile generation and `StartupTimingMetric`/`FrameTimingMetric` benchmarks.
-3. **ProfileInstaller**: add `androidx.profileinstaller` to `androidApp` so profiles apply on non-Play installs and on first launch; commit the generated `baseline-prof.txt` under `androidApp/src/main/` (generated artifact checked in, per Google guidance).
-4. **Version catalog**: add the new artifacts/plugins to `gradle/libs.versions.toml` (no hard-coded versions in module scripts), and document the generation command in the `verification-and-linting` skill by reference (CLI one-liner only; no multi-line snippets).
-5. **Baseline numbers**: capture before/after startup and jank metrics on a physical mid-range device or Gradle Managed Device and record them in this spec (or `specs/researches/`) so Specs 60-63 can reference them.
-6. Out of scope: Play Store upload signing, CI automation (note as follow-up), iOS.
+The implementation is structured into two distinct phases to decouple immediate build-time R8 shrinking from device-dependent baseline profile generation:
+
+### Phase A: R8 Minification, Resource Shrinking & Proguard Keep Rules
+1. **R8 for release**: enable `isMinifyEnabled = true` and `isShrinkResources = true` in `androidApp/build.gradle.kts` `release` build type.
+2. **Create `androidApp/proguard-rules.pro`**: configure necessary keep rules while preferring consumer rules where provided:
+   - **Kotlinx Serialization**: keep `@Serializable` class members and companion serializers (`-keepclassmembers class * { @kotlinx.serialization.Serializable <fields>; }`, `-keepclassmembers class *$Companion { ... }`).
+   - **Navigation 3 `NavKey`**: keep implementations of `androidx.navigation3.runtime.NavKey` and `AppRoute` sealed hierarchy.
+   - **Metro Compile-Time Graphs**: keep Metro dependency graphs and generated provider accessors if stripped by aggressive R8 shrinking.
+   - **Play Services Maps & Ktor/OkHttp**: preserve Maps API models and OkHttp engine reflection points.
+3. **Release Smoke Testing**: verify `./gradlew :androidApp:assembleRelease` builds cleanly with zero R8 warnings requiring ungrounded suppressions, and smoke test all flows (Feed, Search, Details with Maps, Profile, Collections, Random photo, shake toast).
+
+### Phase B: Macrobenchmark & Baseline Profile Infrastructure
+1. **Macrobenchmark + baseline profile module**: add a `:benchmark` (or `:baselineprofile`) Android test module targeting `androidApp`, with a `benchmark` build type derived from release (debug-signed, non-debuggable).
+   - Verify compatibility of `androidx.benchmark:benchmark-macro-junit4` and `androidx.baselineprofile` plugin with AGP 9.4.1 (or use a direct `com.android.test` module configuration if plugin version resolution conflicts with AGP 9.x).
+2. **ProfileInstaller & Profile Generation**: add `androidx.profileinstaller` to `androidApp`; run baseline profile generator on an active connected physical device, emulator, or Gradle Managed Device (GMD) to produce `baseline-prof.txt` under `androidApp/src/main/`.
+3. **Version catalog**: add all benchmark/baseline artifacts to `gradle/libs.versions.toml` (no hard-coded versions).
+4. **Baseline numbers**: capture before/after startup and frame-timing metrics with `CompilationMode.None` vs `Partial` and record in this spec.
 
 ## 3. Verification
 
 - `./gradlew :androidApp:assembleRelease` succeeds with zero R8 warnings requiring suppression; smoke test every screen on the release build.
-- Macrobenchmark runs on a device/GMD and produces startup and frame timing results for `CompilationMode.None` vs `Partial` with the baseline profile.
+- Macrobenchmark runs on a connected device/emulator/GMD and produces startup and frame timing results for `CompilationMode.None` vs `Partial` with the baseline profile.
 - Confirm profile is packaged (`baseline-prof.txt`/`.dm` in the release artifact) and `profileinstaller` initializes.
 - Dual-platform policy: shared code is untouched; still run the Android debug build, and the iOS build if any `shared/` change slips in (`AGENTS.md` invariant 2).
 - Security invariant: no API keys or `local.properties` content committed in generated files.
 
 ## 4. Acceptance Criteria
 
-- [ ] `proguard-rules.pro` exists; release build has R8 minification and resource shrinking enabled.
-- [ ] Release APK smoke-tested on all main flows with no runtime crashes from shrinking.
-- [ ] Macrobenchmark module added with startup and scroll/jank benchmarks; versions managed in the version catalog and verified compatible with AGP 9.x.
-- [ ] Baseline profile generated, committed, and `androidx.profileinstaller` included.
+### Phase A (R8 Minification & Hygiene)
+- [ ] `androidApp/proguard-rules.pro` created with rules for Kotlinx Serialization DTOs, Navigation 3 `NavKey`, Metro graph, and Maps.
+- [ ] `androidApp/build.gradle.kts` release build has `isMinifyEnabled = true` and `isShrinkResources = true`.
+- [ ] Release APK compiles via `./gradlew :androidApp:assembleRelease` and smoke-tested on all main flows with no runtime crashes from shrinking.
+
+### Phase B (Profiles & Benchmarking)
+- [ ] Macrobenchmark module added with startup and scroll/jank benchmarks; versions managed in the version catalog and verified compatible with AGP 9.4.1.
+- [ ] Baseline profile generated on device/emulator, committed under `androidApp/src/main/baseline-prof.txt`, and `androidx.profileinstaller` included.
 - [ ] Before/after startup and frame-timing numbers recorded.
 - [ ] Zero compiler warnings; no secrets committed; Android debug and release builds pass.
 
