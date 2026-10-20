@@ -411,7 +411,7 @@ struct GridPhotosList: View {
                                 let flatIndex = photos.firstIndex(where: { $0.id == photo.id }) ?? 0
                                 let screenWidth = AdaptiveLayoutHelper.getScreenWidth()
                                 let itemWidth = AdaptiveLayoutHelper.calculateItemWidthPx(screenWidth: screenWidth, columnCount: columnCount)
-                                let imageUrl = photo.urls.raw + "&w=\(itemWidth)&q=80&auto=format"
+                                let imageUrl = photo.urls.getOptimalUrl(targetWidthPx: Int32(itemWidth))
                                 Button(action: {
                                     onSelect(photo.id)
                                 }) {
@@ -484,7 +484,13 @@ struct GridCollectionsList: View {
                         }) {
                             ZStack(alignment: .bottomLeading) {
                                 if let coverPhoto = col.coverPhoto {
-                                    KFImage(URL(string: coverPhoto.urls.regular))
+                                    #if os(iOS)
+                                    let scale = UIScreen.main.scale
+                                    #elseif os(macOS)
+                                    let scale = NSScreen.main?.backingScaleFactor ?? 2.0
+                                    #endif
+                                    let itemWidthPx = Int32(AdaptiveLayoutHelper.getScreenWidth() * scale)
+                                    KFImage(URL(string: coverPhoto.urls.getOptimalUrl(targetWidthPx: itemWidthPx)))
                                         .resizable()
                                         .aspectRatio(contentMode: .fill)
                                         .frame(height: 180)

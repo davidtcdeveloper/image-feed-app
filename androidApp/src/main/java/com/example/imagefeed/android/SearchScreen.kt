@@ -80,8 +80,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -800,8 +798,9 @@ fun CollectionRowCard(
     onClick: () -> Unit,
 ) {
     val context = LocalPlatformContext.current
+    val cardWidthPx = calculateCollectionMosaicCardWidthPx()
     val blurHash = collection.coverPhoto?.blurHash
-    val placeholderBitmap = rememberBlurHashPlaceholder(blurHash, BLURHASH_PLACEHOLDER_WIDTH, 18)
+    val placeholderPainter = rememberBlurHashPlaceholder(blurHash, BLURHASH_PLACEHOLDER_WIDTH, 18)
 
     Card(
         shape = MaterialTheme.shapes.extraLarge,
@@ -815,9 +814,13 @@ fun CollectionRowCard(
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             val coverPhoto = collection.coverPhoto
+            val coverUrl =
+                remember(coverPhoto?.id, cardWidthPx) {
+                    coverPhoto?.urls?.getOptimalUrl(cardWidthPx)
+                }
             val coverRequest =
-                remember(context, coverPhoto?.urls?.regular) {
-                    coverPhoto?.urls?.regular?.let {
+                remember(context, coverUrl) {
+                    coverUrl?.let {
                         ImageRequest
                             .Builder(context)
                             .data(it)
@@ -831,7 +834,7 @@ fun CollectionRowCard(
                     painter =
                         rememberAsyncImagePainter(
                             model = coverRequest,
-                            placeholder = placeholderBitmap?.let { BitmapPainter(it.asImageBitmap()) },
+                            placeholder = placeholderPainter,
                         ),
                     contentDescription = collection.title,
                     modifier = Modifier.fillMaxSize(),
@@ -959,10 +962,10 @@ fun UserRowCard(
 ) {
     val context = LocalPlatformContext.current
     val avatarRequest =
-        remember(context, user.profileImage.large) {
+        remember(context, user.profileImage.medium) {
             ImageRequest
                 .Builder(context)
-                .data(user.profileImage.large)
+                .data(user.profileImage.medium)
                 .crossfade(true)
                 .build()
         }

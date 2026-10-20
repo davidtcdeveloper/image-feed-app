@@ -101,7 +101,7 @@ struct CollectionDetailView: View {
                             ZStack(alignment: .bottom) {
                                 // Background cover photo with stretch
                                 if let coverPhoto = viewModel.collection?.coverPhoto {
-                                    KFImage(URL(string: coverPhoto.urls.regular))
+                                    KFImage(URL(string: coverPhoto.urls.small))
                                         .resizable()
                                         .scaledToFill()
                                         .frame(width: geo.size.width, height: stretchedHeight)
@@ -316,7 +316,7 @@ struct CollectionPhotoGridCard: View {
     var body: some View {
         let screenWidth = AdaptiveLayoutHelper.getScreenWidth()
         let itemWidth = AdaptiveLayoutHelper.calculateItemWidthPx(screenWidth: screenWidth, columnCount: columnCount)
-        let imageUrl = photo.urls.raw + "&w=\(itemWidth)&q=80&auto=format"
+        let imageUrl = photo.urls.getOptimalUrl(targetWidthPx: Int32(itemWidth))
         let aspectRatio = photo.height > 0 ? CGFloat(photo.width) / CGFloat(photo.height) : 1.0
 
         ZStack(alignment: .bottomLeading) {

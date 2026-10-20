@@ -157,14 +157,23 @@ struct CollectionMosaicCard: View {
     var columnCount: Int = 1
 
     var body: some View {
-        let width = Int(cardWidth ?? max(200, AdaptiveLayoutHelper.getScreenWidth() - 24))
-        let sideWidth = width / 3
+        #if os(iOS)
+        let scale = UIScreen.main.scale
+        #elseif os(macOS)
+        let scale = NSScreen.main?.backingScaleFactor ?? 2.0
+        #endif
+        let widthPt = cardWidth ?? max(200, AdaptiveLayoutHelper.getScreenWidth() - 24)
+        let widthPx = Int32(widthPt * scale)
+        let sideWidthPx = widthPx / 3
+        let sideWidthPt = widthPt / 3
 
         VStack(alignment: .leading, spacing: 0) {
             // Mosaic previews: Left 2/3 and Right two 1/3s stacked
             HStack(spacing: 4) {
                 // Large Cover Photo (Left)
-                let coverUrl = (collection.coverPhoto?.urls.raw ?? "") + "&w=\(width * 2 / 3)&q=80&auto=format"
+                let coverUrl = collection.coverPhoto?.urls.getOptimalUrl(targetWidthPx: widthPx * 2 / 3)
+                    ?? collection.previewPhotos?.first?.urls.getOptimalUrl(targetWidthPx: widthPx * 2 / 3)
+                    ?? ""
                 KFImage(URL(string: coverUrl))
                     .placeholder {
                         ZStack {
@@ -187,7 +196,7 @@ struct CollectionMosaicCard: View {
                     // Top preview
                     if let previewPhotos = collection.previewPhotos, previewPhotos.count > 1 {
                         let topPreview = previewPhotos[1]
-                        KFImage(URL(string: topPreview.urls.small + "&w=\(sideWidth)&q=80&auto=format"))
+                        KFImage(URL(string: topPreview.urls.getOptimalUrl(targetWidthPx: sideWidthPx)))
                             .fade(duration: 0.25)
                             .resizable()
                             .scaledToFill()
@@ -195,7 +204,7 @@ struct CollectionMosaicCard: View {
                             .clipped()
                     } else if let previewPhotos = collection.previewPhotos, previewPhotos.count > 0 {
                         let topPreview = previewPhotos[0]
-                        KFImage(URL(string: topPreview.urls.small + "&w=\(sideWidth)&q=80&auto=format"))
+                        KFImage(URL(string: topPreview.urls.getOptimalUrl(targetWidthPx: sideWidthPx)))
                             .fade(duration: 0.25)
                             .resizable()
                             .scaledToFill()
@@ -210,7 +219,7 @@ struct CollectionMosaicCard: View {
                     // Bottom preview
                     if let previewPhotos = collection.previewPhotos, previewPhotos.count > 2 {
                         let bottomPreview = previewPhotos[2]
-                        KFImage(URL(string: bottomPreview.urls.small + "&w=\(sideWidth)&q=80&auto=format"))
+                        KFImage(URL(string: bottomPreview.urls.getOptimalUrl(targetWidthPx: sideWidthPx)))
                             .fade(duration: 0.25)
                             .resizable()
                             .scaledToFill()
@@ -218,7 +227,7 @@ struct CollectionMosaicCard: View {
                             .clipped()
                     } else if let previewPhotos = collection.previewPhotos, previewPhotos.count > 1 {
                         let bottomPreview = previewPhotos[1]
-                        KFImage(URL(string: bottomPreview.urls.small + "&w=\(sideWidth)&q=80&auto=format"))
+                        KFImage(URL(string: bottomPreview.urls.getOptimalUrl(targetWidthPx: sideWidthPx)))
                             .fade(duration: 0.25)
                             .resizable()
                             .scaledToFill()
@@ -230,7 +239,7 @@ struct CollectionMosaicCard: View {
                             .frame(height: 88)
                     }
                 }
-                .frame(width: CGFloat(sideWidth))
+                .frame(width: CGFloat(sideWidthPt))
             }
             .frame(height: 180)
             .clipShape(RoundedRectangle(cornerRadius: 12))

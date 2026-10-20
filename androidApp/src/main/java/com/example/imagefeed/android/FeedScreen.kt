@@ -60,8 +60,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
@@ -82,9 +80,8 @@ import coil3.compose.rememberAsyncImagePainter
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.example.imagefeed.android.navigation.AppRoute
-import com.example.imagefeed.android.util.BLURHASH_PLACEHOLDER_MAX_HEIGHT
-import com.example.imagefeed.android.util.BLURHASH_PLACEHOLDER_MIN_HEIGHT
 import com.example.imagefeed.android.util.BLURHASH_PLACEHOLDER_WIDTH
+import com.example.imagefeed.android.util.BlurHashDecoder
 import com.example.imagefeed.android.util.PhotoGridSkeleton
 import com.example.imagefeed.android.util.bounceClick
 import com.example.imagefeed.android.util.localizedMessage
@@ -336,17 +333,10 @@ fun PhotoCard(
 ) {
     val context = LocalPlatformContext.current
     val aspectRatio = photo.width.toFloat() / photo.height.toFloat()
-    val placeholderHeight =
-        (
-            if (aspectRatio > 0f && aspectRatio.isFinite()) {
-                (BLURHASH_PLACEHOLDER_WIDTH / aspectRatio).toInt()
-            } else {
-                BLURHASH_PLACEHOLDER_WIDTH
-            }
-        ).coerceIn(BLURHASH_PLACEHOLDER_MIN_HEIGHT, BLURHASH_PLACEHOLDER_MAX_HEIGHT)
+    val placeholderHeight = BlurHashDecoder.quantizeHeight(BLURHASH_PLACEHOLDER_WIDTH, aspectRatio)
 
     // Decode BlurHash placeholder in background with LRU cache
-    val placeholderBitmap =
+    val placeholderPainter =
         rememberBlurHashPlaceholder(
             blurHash = photo.blurHash,
             width = BLURHASH_PLACEHOLDER_WIDTH,
@@ -355,7 +345,7 @@ fun PhotoCard(
 
     val photoUrl =
         remember(photo.id, photo.urls.raw, itemWidthPx) {
-            photo.urls.raw + "&w=" + itemWidthPx + "&q=80&auto=format"
+            photo.urls.getOptimalUrl(itemWidthPx)
         }
 
     val photoRequest =
@@ -370,7 +360,7 @@ fun PhotoCard(
     val painter =
         rememberAsyncImagePainter(
             model = photoRequest,
-            placeholder = placeholderBitmap?.let { BitmapPainter(it.asImageBitmap()) },
+            placeholder = placeholderPainter,
         )
 
     Card(
@@ -512,7 +502,7 @@ private fun TopicCapsuleCard(
 ) {
     val context = LocalPlatformContext.current
     val blurHash = coverPhoto?.blurHash
-    val placeholderBitmap = rememberBlurHashPlaceholder(blurHash, 16, 12)
+    val placeholderPainter = rememberBlurHashPlaceholder(blurHash, 16, 12)
     val coverUrl = coverPhoto?.urls?.small ?: coverPhoto?.urls?.regular
 
     Card(
@@ -544,7 +534,7 @@ private fun TopicCapsuleCard(
                                     .data(coverUrl)
                                     .crossfade(true)
                                     .build(),
-                            placeholder = placeholderBitmap?.let { BitmapPainter(it.asImageBitmap()) },
+                            placeholder = placeholderPainter,
                         ),
                     contentDescription = title,
                     contentScale = ContentScale.Crop,

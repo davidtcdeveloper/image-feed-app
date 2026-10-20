@@ -54,8 +54,6 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
@@ -283,7 +281,7 @@ fun CollectionMosaicCard(
 
     // Use BlurHash from cover photo as card background placeholder with LRU cache
     val blurHash = collection.coverPhoto?.blurHash
-    val placeholderBitmap = rememberBlurHashPlaceholder(blurHash, BLURHASH_PLACEHOLDER_WIDTH, 18)
+    val placeholderPainter = rememberBlurHashPlaceholder(blurHash, BLURHASH_PLACEHOLDER_WIDTH, 18)
 
     Card(
         shape = MaterialTheme.shapes.extraLarge,
@@ -307,12 +305,11 @@ fun CollectionMosaicCard(
                     remember(collection.id, collection.coverPhoto?.id, collection.coverPhoto?.urls?.raw, cardWidthPx) {
                         collection.coverPhoto
                             ?.urls
-                            ?.raw
-                            ?.let { "$it&w=${cardWidthPx * 2 / 3}&q=80&auto=format" }
+                            ?.getOptimalUrl(cardWidthPx * 2 / 3)
                             ?: collection.previewPhotos
                                 ?.firstOrNull()
                                 ?.urls
-                                ?.small
+                                ?.getOptimalUrl(cardWidthPx * 2 / 3)
                     }
 
                 val coverRequest =
@@ -329,7 +326,7 @@ fun CollectionMosaicCard(
                 val coverPainter =
                     rememberAsyncImagePainter(
                         model = coverRequest,
-                        placeholder = placeholderBitmap?.let { BitmapPainter(it.asImageBitmap()) },
+                        placeholder = placeholderPainter,
                     )
 
                 Box(
@@ -384,10 +381,10 @@ fun CollectionMosaicCard(
                             ?: collection.previewPhotos
                                 ?.getOrNull(0)
                     val topThumbUrl =
-                        remember(topThumbPhoto?.id, topThumbPhoto?.urls?.small, sideWidthPx) {
-                            topThumbPhoto?.urls?.small?.let { "$it&w=$sideWidthPx&q=80&auto=format" }
+                        remember(topThumbPhoto?.id, topThumbPhoto?.urls, sideWidthPx) {
+                            topThumbPhoto?.urls?.getOptimalUrl(sideWidthPx)
                         }
-                    val topPlaceholderBitmap =
+                    val topPlaceholderPainter =
                         rememberBlurHashPlaceholder(topThumbPhoto?.blurHash, BLURHASH_PLACEHOLDER_WIDTH / 2, 12)
 
                     val topThumbRequest =
@@ -404,7 +401,7 @@ fun CollectionMosaicCard(
                     val topThumbPainter =
                         rememberAsyncImagePainter(
                             model = topThumbRequest,
-                            placeholder = topPlaceholderBitmap?.let { BitmapPainter(it.asImageBitmap()) },
+                            placeholder = topPlaceholderPainter,
                         )
 
                     Box(
@@ -433,10 +430,10 @@ fun CollectionMosaicCard(
                             ?: collection.previewPhotos
                                 ?.getOrNull(1)
                     val bottomThumbUrl =
-                        remember(bottomThumbPhoto?.id, bottomThumbPhoto?.urls?.small, sideWidthPx) {
-                            bottomThumbPhoto?.urls?.small?.let { "$it&w=$sideWidthPx&q=80&auto=format" }
+                        remember(bottomThumbPhoto?.id, bottomThumbPhoto?.urls, sideWidthPx) {
+                            bottomThumbPhoto?.urls?.getOptimalUrl(sideWidthPx)
                         }
-                    val bottomPlaceholderBitmap =
+                    val bottomPlaceholderPainter =
                         rememberBlurHashPlaceholder(bottomThumbPhoto?.blurHash, BLURHASH_PLACEHOLDER_WIDTH / 2, 12)
 
                     val bottomThumbRequest =
@@ -453,7 +450,7 @@ fun CollectionMosaicCard(
                     val bottomThumbPainter =
                         rememberAsyncImagePainter(
                             model = bottomThumbRequest,
-                            placeholder = bottomPlaceholderBitmap?.let { BitmapPainter(it.asImageBitmap()) },
+                            placeholder = bottomPlaceholderPainter,
                         )
 
                     Box(

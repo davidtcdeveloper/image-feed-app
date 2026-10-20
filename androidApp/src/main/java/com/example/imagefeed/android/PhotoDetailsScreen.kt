@@ -94,10 +94,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
@@ -121,9 +119,8 @@ import com.example.imagefeed.android.adaptive.LocalAdaptiveLayoutInfo
 import com.example.imagefeed.android.theme.PhotoSwatch
 import com.example.imagefeed.android.theme.deriveTonalSwatches
 import com.example.imagefeed.android.theme.generatePhotoColorScheme
-import com.example.imagefeed.android.util.BLURHASH_PLACEHOLDER_MAX_HEIGHT
-import com.example.imagefeed.android.util.BLURHASH_PLACEHOLDER_MIN_HEIGHT
 import com.example.imagefeed.android.util.BLURHASH_PLACEHOLDER_WIDTH
+import com.example.imagefeed.android.util.BlurHashDecoder
 import com.example.imagefeed.android.util.localizedMessage
 import com.example.imagefeed.android.util.rememberBlurHashPlaceholder
 import com.example.imagefeed.details.model.PhotoStats
@@ -143,6 +140,7 @@ import com.example.imagefeed.presentation.details.PhotoDetailsEffect
 import com.example.imagefeed.presentation.details.PhotoDetailsIntent
 import com.example.imagefeed.presentation.details.PhotoDetailsState
 import com.example.imagefeed.presentation.details.PhotoDetailsViewModel
+import com.google.android.gms.maps.GoogleMapOptions
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MapStyleOptions
@@ -365,26 +363,14 @@ fun PhotoDetailsContent(
         } else {
             1f
         }
-    val placeholderHeight =
-        (
-            if (aspectRatio > 0f && aspectRatio.isFinite()) {
-                (BLURHASH_PLACEHOLDER_WIDTH / aspectRatio).toInt()
-            } else {
-                BLURHASH_PLACEHOLDER_WIDTH
-            }
-        ).coerceIn(BLURHASH_PLACEHOLDER_MIN_HEIGHT, BLURHASH_PLACEHOLDER_MAX_HEIGHT)
+    val placeholderHeight = BlurHashDecoder.quantizeHeight(BLURHASH_PLACEHOLDER_WIDTH, aspectRatio)
 
-    val placeholderBitmap =
+    val placeholderPainter =
         rememberBlurHashPlaceholder(
             blurHash = photo.blurHash,
             width = BLURHASH_PLACEHOLDER_WIDTH,
             height = placeholderHeight,
         )
-
-    val placeholderPainter =
-        remember(placeholderBitmap) {
-            placeholderBitmap?.let { BitmapPainter(it.asImageBitmap()) }
-        }
 
     // BoxWithConstraints is retained at the root of details content to preserve accurate pane-width
     // awareness on tablets, foldables, and adaptive list-detail scenes (where detail pane width < window width).
@@ -404,7 +390,7 @@ fun PhotoDetailsContent(
 
         val imageUrl =
             remember(photo.id, photo.urls.raw, imageWidthPx) {
-                photo.urls.raw + "&w=" + imageWidthPx + "&q=85&auto=format"
+                photo.urls.getOptimalUrl(imageWidthPx, 85)
             }
 
         val imageRequest =
@@ -1200,6 +1186,26 @@ fun PhotoInspectorPane(
                                 rememberCameraPositionState {
                                     position = CameraPosition.fromLatLngZoom(positionLatLng, 12f)
                                 }
+                            val mapStyleOptions =
+                                remember(context) {
+                                    MapStyleOptions.loadRawResourceStyle(
+                                        context,
+                                        R.raw.map_style_dark,
+                                    )
+                                }
+                            val mapProperties = remember(mapStyleOptions) { MapProperties(mapStyleOptions = mapStyleOptions) }
+                            val mapUiSettings =
+                                remember {
+                                    MapUiSettings(
+                                        zoomControlsEnabled = false,
+                                        myLocationButtonEnabled = false,
+                                        mapToolbarEnabled = false,
+                                        scrollGesturesEnabled = false,
+                                        zoomGesturesEnabled = false,
+                                        tiltGesturesEnabled = false,
+                                        rotationGesturesEnabled = false,
+                                    )
+                                }
                             Box(
                                 modifier =
                                     Modifier
@@ -1210,24 +1216,9 @@ fun PhotoInspectorPane(
                                 GoogleMap(
                                     modifier = Modifier.fillMaxSize(),
                                     cameraPositionState = cameraPositionState,
-                                    properties =
-                                        MapProperties(
-                                            mapStyleOptions =
-                                                MapStyleOptions.loadRawResourceStyle(
-                                                    context,
-                                                    R.raw.map_style_dark,
-                                                ),
-                                        ),
-                                    uiSettings =
-                                        MapUiSettings(
-                                            zoomControlsEnabled = false,
-                                            myLocationButtonEnabled = false,
-                                            mapToolbarEnabled = false,
-                                            scrollGesturesEnabled = false,
-                                            zoomGesturesEnabled = false,
-                                            tiltGesturesEnabled = false,
-                                            rotationGesturesEnabled = false,
-                                        ),
+                                    googleMapOptionsFactory = { GoogleMapOptions().liteMode(true) },
+                                    properties = mapProperties,
+                                    uiSettings = mapUiSettings,
                                 ) {
                                     val markerTitle = location.name ?: stringResource(R.string.details_location_captured)
                                     Marker(

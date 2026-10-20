@@ -60,8 +60,6 @@ import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.pluralStringResource
@@ -319,7 +317,7 @@ fun CollectionDetailHeader(
     }
 
     val blurHash = collection.coverPhoto?.blurHash
-    val placeholderBitmap = rememberBlurHashPlaceholder(blurHash, 16, 12)
+    val placeholderPainter = rememberBlurHashPlaceholder(blurHash, 16, 12)
 
     Box(
         modifier =
@@ -328,7 +326,7 @@ fun CollectionDetailHeader(
                 .height(320.dp),
     ) {
         // Blurred Background Cover Photo to act as beautiful backdrop
-        collection.coverPhoto?.urls?.regular?.let { coverUrl ->
+        collection.coverPhoto?.urls?.small?.let { coverUrl ->
             with(sharedTransitionScope) {
                 Image(
                     painter =
@@ -339,7 +337,7 @@ fun CollectionDetailHeader(
                                     .data(coverUrl)
                                     .crossfade(true)
                                     .build(),
-                            placeholder = placeholderBitmap?.let { BitmapPainter(it.asImageBitmap()) },
+                            placeholder = placeholderPainter,
                         ),
                     contentDescription = null,
                     modifier =
@@ -507,6 +505,7 @@ fun RelatedCollectionCard(
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             val coverUrl = collection.coverPhoto?.urls?.small
+            val placeholderPainter = rememberBlurHashPlaceholder(collection.coverPhoto?.blurHash, 16, 12)
             val coverRequest =
                 remember(context, coverUrl) {
                     coverUrl?.let {
@@ -523,6 +522,7 @@ fun RelatedCollectionCard(
                     painter =
                         rememberAsyncImagePainter(
                             model = coverRequest,
+                            placeholder = placeholderPainter,
                         ),
                     contentDescription = collection.title,
                     modifier = Modifier.fillMaxSize(),

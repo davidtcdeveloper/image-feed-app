@@ -635,7 +635,7 @@ struct PhotoCard: View {
         let itemWidth = AdaptiveLayoutHelper.calculateItemWidthPx(screenWidth: screenWidth, columnCount: columnCount)
 
         // Dynamically resize image requesting only the resolution required by container
-        let imageUrl = photo.urls.raw + "&w=\(itemWidth)&q=80&auto=format"
+        let imageUrl = photo.urls.getOptimalUrl(targetWidthPx: Int32(itemWidth))
         let aspectRatio = CGFloat(photo.width) / CGFloat(photo.height)
 
         ZStack(alignment: .bottomLeading) {

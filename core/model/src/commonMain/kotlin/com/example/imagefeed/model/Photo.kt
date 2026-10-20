@@ -34,7 +34,33 @@ data class PhotoUrls(
     val regular: String,
     val small: String,
     val thumb: String,
-)
+) {
+    fun getOptimalUrl(targetWidthPx: Int, quality: Int = 80): String {
+        val clampedWidth = targetWidthPx.coerceIn(64, 2400)
+        val clampedQuality = quality.coerceIn(10, 100)
+
+        val baseUrl =
+            if (raw.contains("?")) {
+                val parts = raw.split("?", limit = 2)
+                val base = parts[0]
+                val query = parts[1]
+                val filteredQuery =
+                    query
+                        .split("&")
+                        .filterNot { param ->
+                            param.startsWith("w=") || param.startsWith("q=") || param.startsWith("auto=")
+                        }.joinToString("&")
+                if (filteredQuery.isEmpty()) base else "$base?$filteredQuery"
+            } else {
+                raw
+            }
+
+        val separator = if (baseUrl.contains("?")) "&" else "?"
+        return "$baseUrl${separator}w=$clampedWidth&q=$clampedQuality&auto=format"
+    }
+
+    fun getOptimalUrl(targetWidthPx: Int): String = getOptimalUrl(targetWidthPx, 80)
+}
 
 @Serializable
 data class User(

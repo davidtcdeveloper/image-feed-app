@@ -8,6 +8,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.painter.BitmapPainter
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
@@ -22,10 +24,23 @@ const val BLURHASH_PLACEHOLDER_MIN_HEIGHT = 1
 const val BLURHASH_PLACEHOLDER_MAX_HEIGHT = 128
 
 object BlurHashDecoder {
-    private const val DEFAULT_CACHE_SIZE = 256
+    const val DEFAULT_CACHE_MAX_BYTES = 1024 * 1024 // 1 MB
     internal const val MAX_DIMENSION = 512
 
-    private val cache = LruCache<String, Bitmap>(DEFAULT_CACHE_SIZE)
+    private val cache =
+        object : LruCache<String, Bitmap>(DEFAULT_CACHE_MAX_BYTES) {
+            override fun sizeOf(
+                key: String,
+                value: Bitmap,
+            ): Int {
+                val bytes = runCatching { value.allocationByteCount }.getOrNull() ?: 0
+                if (bytes > 0) return bytes
+                val width = runCatching { value.width }.getOrDefault(0)
+                val height = runCatching { value.height }.getOrDefault(0)
+                val computed = width * height * 4
+                return if (computed > 0) computed else 1
+            }
+        }
     private val inFlight = ConcurrentHashMap<String, CompletableDeferred<Bitmap?>>()
 
     internal var bitmapCreator: (pixels: IntArray, width: Int, height: Int) -> Bitmap = { pixels, width, height ->
@@ -47,6 +62,15 @@ object BlurHashDecoder {
 
     fun resizeCache(maxSize: Int) {
         cache.resize(maxSize)
+    }
+
+    fun quantizeHeight(
+        width: Int,
+        aspectRatio: Float,
+    ): Int {
+        if (aspectRatio <= 0f || !aspectRatio.isFinite()) return width
+        val rawHeight = (width / aspectRatio).toInt()
+        return ((rawHeight + 2) / 4 * 4).coerceIn(BLURHASH_PLACEHOLDER_MIN_HEIGHT, BLURHASH_PLACEHOLDER_MAX_HEIGHT)
     }
 
     fun cacheKey(
@@ -265,7 +289,7 @@ fun rememberBlurHashPlaceholder(
     width: Int,
     height: Int,
     punch: Float = 1.0f,
-): Bitmap? {
+): BitmapPainter? {
     var placeholderBitmap by remember(blurHash, width, height, punch) {
         mutableStateOf(BlurHashDecoder.getCached(blurHash, width, height, punch))
     }
@@ -281,5 +305,7 @@ fun rememberBlurHashPlaceholder(
         }
     }
 
-    return placeholderBitmap
+    return remember(placeholderBitmap) {
+        placeholderBitmap?.let { BitmapPainter(it.asImageBitmap()) }
+    }
 }

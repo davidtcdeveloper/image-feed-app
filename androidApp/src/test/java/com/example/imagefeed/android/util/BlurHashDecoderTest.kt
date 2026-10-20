@@ -39,7 +39,7 @@ class BlurHashDecoderTest {
     @AfterTest
     fun tearDown() {
         BlurHashDecoder.clearCache()
-        BlurHashDecoder.resizeCache(256)
+        BlurHashDecoder.resizeCache(BlurHashDecoder.DEFAULT_CACHE_MAX_BYTES)
         BlurHashDecoder.resetBitmapCreator()
     }
 
@@ -199,4 +199,18 @@ class BlurHashDecoderTest {
             val first = results.first()
             results.forEach { assertSame(first, it) }
         }
+
+    @Test
+    fun quantizeHeightRoundsToMultipleOfFourAndEnforcesBounds() {
+        assertEquals(20, BlurHashDecoder.quantizeHeight(32, 1.6f))
+        assertEquals(32, BlurHashDecoder.quantizeHeight(32, 1.0f))
+        assertEquals(48, BlurHashDecoder.quantizeHeight(32, 0.67f))
+        // Boundary enforcement
+        assertEquals(128, BlurHashDecoder.quantizeHeight(32, 0.01f))
+        assertEquals(1, BlurHashDecoder.quantizeHeight(32, 1000f))
+        // Non-finite or negative aspect ratios return width
+        assertEquals(32, BlurHashDecoder.quantizeHeight(32, 0.0f))
+        assertEquals(32, BlurHashDecoder.quantizeHeight(32, -1.5f))
+        assertEquals(32, BlurHashDecoder.quantizeHeight(32, Float.NaN))
+    }
 }

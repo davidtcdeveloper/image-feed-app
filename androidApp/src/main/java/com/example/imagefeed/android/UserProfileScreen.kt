@@ -101,11 +101,15 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.LocalPlatformContext
 import coil3.compose.rememberAsyncImagePainter
+import coil3.request.ImageRequest
+import coil3.request.crossfade
+import com.example.imagefeed.android.util.BLURHASH_PLACEHOLDER_WIDTH
 import com.example.imagefeed.android.util.CollectionMosaicCardSkeleton
 import com.example.imagefeed.android.util.PhotoCardSkeleton
 import com.example.imagefeed.android.util.UserProfileHeaderSkeleton
 import com.example.imagefeed.android.util.bounceClick
 import com.example.imagefeed.android.util.localizedMessage
+import com.example.imagefeed.android.util.rememberBlurHashPlaceholder
 import com.example.imagefeed.android.util.staggeredEntrance
 import com.example.imagefeed.di.MetroHelper
 import com.example.imagefeed.model.Photo
@@ -774,6 +778,25 @@ fun CollectionRowLayout(
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
+    val context = LocalPlatformContext.current
+    val cardWidthPx = calculateCollectionMosaicCardWidthPx()
+    val coverPhoto = collection.coverPhoto
+    val placeholderPainter = rememberBlurHashPlaceholder(coverPhoto?.blurHash, BLURHASH_PLACEHOLDER_WIDTH, 18)
+    val coverUrl =
+        remember(coverPhoto?.id, cardWidthPx) {
+            coverPhoto?.urls?.getOptimalUrl(cardWidthPx)
+        }
+    val coverRequest =
+        remember(context, coverUrl) {
+            coverUrl?.let {
+                ImageRequest
+                    .Builder(context)
+                    .data(it)
+                    .crossfade(true)
+                    .build()
+            }
+        }
+
     Card(
         shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
@@ -784,10 +807,13 @@ fun CollectionRowLayout(
                 .bounceClick(onClick = onClick),
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
-            val coverPhoto = collection.coverPhoto
-            if (coverPhoto != null) {
+            if (coverUrl != null) {
                 Image(
-                    painter = rememberAsyncImagePainter(model = coverPhoto.urls.regular),
+                    painter =
+                        rememberAsyncImagePainter(
+                            model = coverRequest,
+                            placeholder = placeholderPainter,
+                        ),
                     contentDescription = collection.title,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop,

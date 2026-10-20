@@ -1,6 +1,6 @@
 # Specification 66: Runtime Memory Optimization Phase 2 — Maps, Thumbnail Downsizing & BlurHash Cache Optimization
 
-**Status:** Approved
+**Status:** Implemented
 
 ## 1. Overview & Problem Statement
 
@@ -80,10 +80,10 @@ Following the Phase 1 image cache and grid virtualization fixes ([Spec 65](file:
 
 ## 4. Acceptance Criteria
 
-- [ ] `PhotoDetailsScreen.kt` configures `GoogleMap` with `liteMode(true)` and remembers `MapStyleOptions`, `MapProperties`, and `MapUiSettings`.
-- [ ] `MapCardView` in `PhotoDetailsView.swift` replaces live `MapKit.Map` with a cached `MKMapSnapshotter` static image with a pin overlay.
-- [ ] `PhotoUrls.getOptimalUrl(targetWidthPx, quality)` and single-parameter `getOptimalUrl(targetWidthPx)` overload are implemented in `:core:model` and preserve `ixid`.
-- [ ] Duplicate `&w=` query parameters on `urls.small` in `CollectionsFeedScreen.kt` and `CollectionsFeedView.swift` are eliminated, and oversized `urls.regular` loads in small collection/preview cards across Android and iOS are replaced.
-- [ ] `rememberBlurHashPlaceholder` returns a remembered `BitmapPainter?` directly across all Android call sites; zero inline `BitmapPainter(it.asImageBitmap())` calls remain in screen composables.
-- [ ] `BlurHashDecoder` quantizes placeholder heights to discrete buckets and bounds its `LruCache` by byte size (`sizeOf` using `allocationByteCount` with unit-test-safe fallback).
-- [ ] Zero compiler warnings, zero dead code, and all Android, iOS, and KMP unit tests pass.
+- [x] `PhotoDetailsScreen.kt` configures `GoogleMap` with `liteMode(true)` and remembers `MapStyleOptions`, `MapProperties`, and `MapUiSettings`.
+- [x] `MapCardView` in `PhotoDetailsView.swift` replaces live `MapKit.Map` with a cached `MKMapSnapshotter` static image with a pin overlay.
+- [x] `PhotoUrls.getOptimalUrl(targetWidthPx, quality)` and single-parameter `getOptimalUrl(targetWidthPx)` overload are implemented in `:core:model` and preserve `ixid`.
+- [x] Duplicate `&w=` query parameters on `urls.small` in `CollectionsFeedScreen.kt` and `CollectionsFeedView.swift` are eliminated, and oversized `urls.regular` loads in small collection/preview cards across Android and iOS are replaced.
+- [x] `rememberBlurHashPlaceholder` returns a remembered `BitmapPainter?` directly across all Android call sites; zero inline `BitmapPainter(it.asImageBitmap())` calls remain in screen composables.
+- [x] `BlurHashDecoder` quantizes placeholder heights to discrete buckets and bounds its `LruCache` by byte size (`sizeOf` using `allocationByteCount` with unit-test-safe fallback).
+- [x] Zero compiler warnings, zero dead code, and all Android, iOS, and KMP unit tests pass.

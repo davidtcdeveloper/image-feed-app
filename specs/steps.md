@@ -955,7 +955,7 @@ These are the spec files that the implementation notes and planning references s
 5.  **Reference Specification:**
     *   Track blueprint in `specs/65_memory_optimization_phase1_caches_grids_and_scopes.md`.
 
-### Step 66: Runtime Memory Optimization Phase 2 — Maps, Thumbnail Downsizing & BlurHash Cache Optimization (Planned)
+### Step 66: Runtime Memory Optimization Phase 2 — Maps, Thumbnail Downsizing & BlurHash Cache Optimization (Completed)
 1.  **Static Map Previews:**
     *   Enable Google Maps Lite Mode (`liteMode(true)`) and `remember` `MapStyleOptions` in `PhotoDetailsScreen.kt`; replace live `MapKit.Map` in `MapCardView` (`PhotoDetailsView.swift`) with a cached `MKMapSnapshotter` static snapshot.
 2.  **Thumbnail Sizing & Duplicate Query Parameter Fixes:**

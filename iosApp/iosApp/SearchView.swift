@@ -272,7 +272,7 @@ struct SearchPhotoGridCard: View {
     var body: some View {
         let screenWidth = AdaptiveLayoutHelper.getScreenWidth()
         let itemWidth = AdaptiveLayoutHelper.calculateItemWidthPx(screenWidth: screenWidth, columnCount: columnCount)
-        let imageUrl = photo.urls.raw + "&w=\(itemWidth)&q=80&auto=format"
+        let imageUrl = photo.urls.getOptimalUrl(targetWidthPx: Int32(itemWidth))
         let aspectRatio = photo.height > 0 ? CGFloat(photo.width) / CGFloat(photo.height) : 1.0
 
         ZStack(alignment: .bottomLeading) {
@@ -406,9 +406,17 @@ struct CollectionCardView: View {
     let collection: CollectionSummary
 
     var body: some View {
+        #if os(iOS)
+        let scale = UIScreen.main.scale
+        #elseif os(macOS)
+        let scale = NSScreen.main?.backingScaleFactor ?? 2.0
+        #endif
+        let itemWidthPx = Int32(AdaptiveLayoutHelper.getScreenWidth() * scale)
+        let coverUrl = collection.coverPhoto?.urls.getOptimalUrl(targetWidthPx: itemWidthPx)
+
         ZStack(alignment: .bottomLeading) {
-            if let cover = collection.coverPhoto {
-                KFImage(URL(string: cover.urls.regular))
+            if let coverUrl {
+                KFImage(URL(string: coverUrl))
                     .resizable()
                     .aspectRatio(contentMode: .fill)
                     .frame(height: 180)

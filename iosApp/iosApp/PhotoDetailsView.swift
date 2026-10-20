@@ -235,7 +235,12 @@ private extension PhotoDetailsView {
 
                     GeometryReader { geo in
                         let aspectRatio = max(0.1, CGFloat(photo.width) / CGFloat(photo.height))
-                        let imageUrl = photo.urls.raw + "&w=\(Int(geo.size.width * 2))&q=85&auto=format"
+                        #if os(iOS)
+                        let displayScale = UIScreen.main.scale
+                        #elseif os(macOS)
+                        let displayScale = NSScreen.main?.backingScaleFactor ?? 2.0
+                        #endif
+                        let imageUrl = photo.urls.getOptimalUrl(targetWidthPx: Int32(geo.size.width * displayScale), quality: 85)
 
                         KFImage(URL(string: imageUrl))
                             .placeholder {
@@ -313,7 +318,12 @@ private extension PhotoDetailsView {
             let containerWidth = geo.size.width
             let aspectRatio = max(0.1, CGFloat(photo.width) / CGFloat(photo.height))
             let calculatedHeight = containerWidth / aspectRatio
-            let imageUrl = photo.urls.raw + "&w=\(Int(containerWidth * 2))&q=85&auto=format"
+            #if os(iOS)
+            let displayScale = UIScreen.main.scale
+            #elseif os(macOS)
+            let displayScale = NSScreen.main?.backingScaleFactor ?? 2.0
+            #endif
+            let imageUrl = photo.urls.getOptimalUrl(targetWidthPx: Int32(containerWidth * displayScale), quality: 85)
 
             ZStack(alignment: .bottom) {
                 ambientBackdrop(photo: photo)
@@ -912,26 +922,121 @@ struct MapCardView: View {
     let longitude: Double
     let name: String?
 
-    @State private var position: MapCameraPosition
+    @State private var snapshotImage: PlatformImage?
+    @Environment(\.colorScheme) private var colorScheme
 
     init(latitude: Double, longitude: Double, name: String?) {
         self.latitude = latitude
         self.longitude = longitude
         self.name = name
-        let coordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
-        let region = MKCoordinateRegion(
-            center: coordinate,
-            span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05))
-        self._position = State(initialValue: .region(region))
     }
 
     var body: some View {
-        Map(position: $position) {
-            Marker(name ?? String(localized: "Photo Location"), coordinate: CLLocationCoordinate2D(latitude: latitude, longitude: longitude))
-                .tint(.white)
+        GeometryReader { geo in
+            ZStack {
+                if let snapshotImage {
+                    #if os(iOS)
+                    Image(uiImage: snapshotImage)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                    #elseif os(macOS)
+                    Image(nsImage: snapshotImage)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                    #endif
+                } else {
+                    Rectangle()
+                        .fill(Color(white: 0.15))
+                        .overlay {
+                            ProgressView()
+                                .tint(.white.opacity(0.6))
+                        }
+                }
+            }
+            .frame(width: geo.size.width, height: 150)
+            .clipped()
+            .task(id: "\(latitude)_\(longitude)_\(geo.size.width)_\(colorScheme)") {
+                await loadSnapshot(width: geo.size.width)
+            }
         }
         .frame(height: 150)
         .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+
+    private func loadSnapshot(width: CGFloat) async {
+        guard width > 0 else { return }
+        let roundedLat = (latitude * 1000).rounded() / 1000
+        let roundedLon = (longitude * 1000).rounded() / 1000
+        let cacheKeyString = "map_snapshot_\(roundedLat)_\(roundedLon)_\(Int(width))x150_\(colorScheme == .dark ? "dark" : "light")"
+        guard let cacheUrl = URL(string: "https://map.local/\(cacheKeyString)") else { return }
+
+        if let cached = ImageMemoryCache.shared.image(for: cacheUrl) {
+            self.snapshotImage = cached
+            return
+        }
+
+        let coordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+        let region = MKCoordinateRegion(
+            center: coordinate,
+            span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
+        )
+
+        let options = MKMapSnapshotter.Options()
+        options.region = region
+        options.size = CGSize(width: width, height: 150)
+        #if os(iOS)
+        options.scale = UIScreen.main.scale
+        options.traitCollection = UITraitCollection(userInterfaceStyle: colorScheme == .dark ? .dark : .light)
+        #elseif os(macOS)
+        options.scale = NSScreen.main?.backingScaleFactor ?? 2.0
+        options.appearance = NSAppearance(named: colorScheme == .dark ? .darkAqua : .aqua)
+        #endif
+
+        let snapshotter = MKMapSnapshotter(options: options)
+
+        do {
+            let snapshot = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<MKMapSnapshotter.Snapshot, Error>) in
+                snapshotter.start { snapshot, error in
+                    if let error {
+                        continuation.resume(throwing: error)
+                    } else if let snapshot {
+                        continuation.resume(returning: snapshot)
+                    } else {
+                        continuation.resume(throwing: URLError(.badServerResponse))
+                    }
+                }
+            }
+            try Task.checkCancellation()
+
+            #if os(iOS)
+            let image = UIGraphicsImageRenderer(size: options.size).image { _ in
+                snapshot.image.draw(at: .zero)
+                let point = snapshot.point(for: coordinate)
+                let pinImage = UIImage(systemName: "mappin.circle.fill")?
+                    .withTintColor(.white, renderingMode: .alwaysOriginal)
+                if let pinImage {
+                    let pinRect = CGRect(x: point.x - 12, y: point.y - 24, width: 24, height: 24)
+                    pinImage.draw(in: pinRect)
+                }
+            }
+            ImageMemoryCache.shared.insert(image, for: cacheUrl)
+            self.snapshotImage = image
+            #elseif os(macOS)
+            let image = NSImage(size: options.size)
+            image.lockFocus()
+            snapshot.image.draw(at: .zero, from: .zero, operation: .copy, fraction: 1.0)
+            if let pinImage = NSImage(systemSymbolName: "mappin.circle.fill", accessibilityDescription: nil) {
+                let point = snapshot.point(for: coordinate)
+                let pinRect = NSRect(x: point.x - 12, y: point.y - 24, width: 24, height: 24)
+                pinImage.draw(in: pinRect)
+            }
+            image.unlockFocus()
+            ImageMemoryCache.shared.insert(image, for: cacheUrl)
+            self.snapshotImage = image
+            #endif
+        } catch {
+            // Snapshot failed or cancelled
+        }
     }
 }
 
