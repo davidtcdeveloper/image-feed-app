@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.baselineprofile)
 }
 
 // Read Google Maps API Key from local.properties
@@ -28,7 +29,18 @@ configure<com.android.build.api.dsl.ApplicationExtension> {
     }
     buildTypes {
         getByName("release") {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
+        }
+        create("benchmark") {
+            initWith(getByName("release"))
+            matchingFallbacks += listOf("release")
+            isDebuggable = false
+            signingConfig = signingConfigs.getByName("debug")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
@@ -80,6 +92,10 @@ dependencies {
     // Google Maps Integration
     implementation(libs.play.services.maps)
     implementation(libs.maps.compose)
+
+    // Baseline Profile & Performance Tooling
+    implementation(libs.androidx.profileinstaller)
+    baselineProfile(project(":benchmark"))
 
     // Tooling/Test
     debugImplementation(libs.androidx.compose.ui.tooling)

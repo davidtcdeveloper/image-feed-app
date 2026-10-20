@@ -924,10 +924,10 @@ These are the spec files that the implementation notes and planning references s
 2.  **Reference Specification:**
     *   Track blueprint in `specs/63_android_photo_details_and_chart_rendering_optimization.md`.
 
-### Step 64: Android Release Optimization, Baseline Profiles & Macrobenchmark (Planned)
+### Step 64: Android Release Optimization, Baseline Profiles & Macrobenchmark (Completed)
 1.  **Release Build & Profiles (Phased):**
-    *   Phase A: Create missing `proguard-rules.pro` with keep rules for serialization DTOs, `NavKey`, Metro graph, and Maps; enable R8 minification and resource shrinking for release; verify release assembly.
-    *   Phase B: Add macrobenchmark module, baseline profile generation on device/emulator, and `androidx.profileinstaller`; record before/after metrics.
+    *   Phase A: Created `proguard-rules.pro` with keep rules for serialization DTOs, `NavKey`, Metro graph, Maps, Ktor, OkHttp, and Coil; enabled R8 minification (`isMinifyEnabled = true`) and resource shrinking (`isShrinkResources = true`) for release; verified release assembly.
+    *   Phase B: Added `:benchmark` macrobenchmark module using AGP 9.4.1 + `androidx.baselineprofile` 1.5.0; generated baseline profiles on Android emulator; committed `androidApp/src/main/baseline-prof.txt`; integrated `androidx.profileinstaller`; recorded startup and frame timing benchmark metrics.
 2.  **Reference Specification:**
     *   Track blueprint in `specs/64_android_release_optimization_and_baseline_profiles.md`.
 

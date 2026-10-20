@@ -25,4 +25,5 @@ include(":feature:collections")
 include(":feature:profile")
 include(":shared")
 include(":androidApp")
+include(":benchmark")
 
