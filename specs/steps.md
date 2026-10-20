@@ -917,7 +917,7 @@ These are the spec files that the implementation notes and planning references s
 2.  **Reference Specification:**
     *   Track blueprint in `specs/62_android_scroll_chrome_and_horizontal_row_hygiene.md`.
 
-### Step 63: Android Photo Details Layout & Chart Rendering Optimization (Planned)
+### Step 63: Android Photo Details Layout & Chart Rendering Optimization (Completed)
 1.  **Details & Charts:**
     *   Keep pane-width awareness for `BoxWithConstraints` (window-level `LocalAdaptiveLayoutInfo` is not a safe replacement); remember the details `ImageRequest`.
     *   Cache chart geometry in draw cache, derive hover index, fix the 300dp hover bug, eliminate dead `animProgress` per zero-dead-code policy, cache `CompactDecimalFormat`.

@@ -4,6 +4,7 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.icu.text.CompactDecimalFormat
 import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
@@ -11,7 +12,6 @@ import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -87,6 +87,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -153,6 +154,7 @@ import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
 import kotlinx.coroutines.launch
 import java.util.*
+import java.util.concurrent.ConcurrentHashMap
 
 private const val DUAL_PANE_CANVAS_WEIGHT = 0.58f
 private const val DUAL_PANE_INSPECTOR_WEIGHT = 0.42f
@@ -357,6 +359,38 @@ fun PhotoDetailsContent(
     val adaptiveLayoutInfo = LocalAdaptiveLayoutInfo.current
     val posture = adaptiveLayoutInfo.posture
 
+    val aspectRatio =
+        if (photo.height > 0) {
+            photo.width.toFloat() / photo.height.toFloat()
+        } else {
+            1f
+        }
+    val placeholderHeight =
+        (
+            if (aspectRatio > 0f && aspectRatio.isFinite()) {
+                (BLURHASH_PLACEHOLDER_WIDTH / aspectRatio).toInt()
+            } else {
+                BLURHASH_PLACEHOLDER_WIDTH
+            }
+        ).coerceIn(BLURHASH_PLACEHOLDER_MIN_HEIGHT, BLURHASH_PLACEHOLDER_MAX_HEIGHT)
+
+    val placeholderBitmap =
+        rememberBlurHashPlaceholder(
+            blurHash = photo.blurHash,
+            width = BLURHASH_PLACEHOLDER_WIDTH,
+            height = placeholderHeight,
+        )
+
+    val placeholderPainter =
+        remember(placeholderBitmap) {
+            placeholderBitmap?.let { BitmapPainter(it.asImageBitmap()) }
+        }
+
+    // BoxWithConstraints is retained at the root of details content to preserve accurate pane-width
+    // awareness on tablets, foldables, and adaptive list-detail scenes (where detail pane width < window width).
+    // LocalAdaptiveLayoutInfo.screenWidthDp cannot substitute it because it reflects the full activity window.
+    // Hoisting invariant calculations (aspectRatio, BlurHash placeholder) and caching the ImageRequest eliminates
+    // recomposition allocation churn.
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
         val availableWidthDp = maxWidth
         val isDualPane = adaptiveLayoutInfo.useDualPaneDetails && availableWidthDp >= 600.dp
@@ -367,32 +401,25 @@ fun PhotoDetailsContent(
                 availableWidthDp
             }
         val imageWidthPx = with(density) { canvasWidthDp.roundToPx() }
-        val aspectRatio = photo.width.toFloat() / photo.height.toFloat()
-        val placeholderHeight =
-            (
-                if (aspectRatio > 0f && aspectRatio.isFinite()) {
-                    (BLURHASH_PLACEHOLDER_WIDTH / aspectRatio).toInt()
-                } else {
-                    BLURHASH_PLACEHOLDER_WIDTH
-                }
-            ).coerceIn(BLURHASH_PLACEHOLDER_MIN_HEIGHT, BLURHASH_PLACEHOLDER_MAX_HEIGHT)
 
-        val placeholderBitmap =
-            rememberBlurHashPlaceholder(
-                blurHash = photo.blurHash,
-                width = BLURHASH_PLACEHOLDER_WIDTH,
-                height = placeholderHeight,
-            )
+        val imageUrl =
+            remember(photo.id, photo.urls.raw, imageWidthPx) {
+                photo.urls.raw + "&w=" + imageWidthPx + "&q=85&auto=format"
+            }
+
+        val imageRequest =
+            remember(context, imageUrl) {
+                ImageRequest
+                    .Builder(context)
+                    .data(imageUrl)
+                    .crossfade(true)
+                    .build()
+            }
 
         val painter =
             rememberAsyncImagePainter(
-                model =
-                    ImageRequest
-                        .Builder(context)
-                        .data(photo.urls.raw + "&w=" + imageWidthPx + "&q=85&auto=format")
-                        .crossfade(true)
-                        .build(),
-                placeholder = placeholderBitmap?.let { BitmapPainter(it.asImageBitmap()) },
+                model = imageRequest,
+                placeholder = placeholderPainter,
             )
 
         if (posture is DevicePosture.TableTop) {
@@ -1555,6 +1582,8 @@ fun FloatingActionToolbar(
     }
 }
 
+private val ChartDashPathEffect = PathEffect.dashPathEffect(floatArrayOf(8f, 8f), 0f)
+
 @Composable
 fun StatisticsLineChart(
     data: List<Float>,
@@ -1568,8 +1597,8 @@ fun StatisticsLineChart(
     val outlineVariant = MaterialTheme.colorScheme.outlineVariant
     val onSurfaceVariant = MaterialTheme.colorScheme.onSurfaceVariant
 
-    val maxVal = data.maxOrNull() ?: 1f
-    val minVal = data.minOrNull() ?: 0f
+    val maxVal = remember(data) { data.maxOrNull() ?: 1f }
+    val minVal = remember(data) { data.minOrNull() ?: 0f }
 
     Column(modifier = modifier) {
         // Upper reference bound: Max value
@@ -1592,135 +1621,157 @@ fun StatisticsLineChart(
         }
         Spacer(modifier = Modifier.height(4.dp))
 
-        Box(
+        Spacer(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .weight(1f),
-        ) {
-            Canvas(modifier = Modifier.fillMaxSize().clipToBounds()) {
-                val diff = if (maxVal == minVal) 1f else maxVal - minVal
-                val width = size.width
-                val height = size.height
+                    .weight(1f)
+                    .clipToBounds()
+                    .drawWithCache {
+                        val diff = if (maxVal == minVal) 1f else maxVal - minVal
+                        val width = size.width
+                        val height = size.height
 
-                val topY = height * 0.08f
-                val bottomY = height * 0.92f
+                        val topY = height * 0.08f
+                        val bottomY = height * 0.92f
+                        val guidelineColor = outlineVariant.copy(alpha = 0.25f)
+                        val guidelineStrokeWidth = 1.dp.toPx()
 
-                // Reference bounds dashed guidelines
-                drawLine(
-                    color = outlineVariant.copy(alpha = 0.25f),
-                    start = Offset(0f, topY),
-                    end = Offset(width, topY),
-                    strokeWidth = 1.dp.toPx(),
-                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(8f, 8f), 0f),
-                )
-                drawLine(
-                    color = outlineVariant.copy(alpha = 0.25f),
-                    start = Offset(0f, bottomY),
-                    end = Offset(width, bottomY),
-                    strokeWidth = 1.dp.toPx(),
-                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(8f, 8f), 0f),
-                )
+                        if (data.size == 1) {
+                            val circleRadius = 4.dp.toPx()
+                            val centerOffset = Offset(width / 2f, height / 2f)
+                            onDrawBehind {
+                                drawLine(
+                                    color = guidelineColor,
+                                    start = Offset(0f, topY),
+                                    end = Offset(width, topY),
+                                    strokeWidth = guidelineStrokeWidth,
+                                    pathEffect = ChartDashPathEffect,
+                                )
+                                drawLine(
+                                    color = guidelineColor,
+                                    start = Offset(0f, bottomY),
+                                    end = Offset(width, bottomY),
+                                    strokeWidth = guidelineStrokeWidth,
+                                    pathEffect = ChartDashPathEffect,
+                                )
+                                drawCircle(color = primaryColor, radius = circleRadius, center = centerOffset)
+                            }
+                        } else {
+                            val stepX = width / (data.size - 1).coerceAtLeast(1)
+                            val points = ArrayList<Offset>(data.size)
+                            for (idx in data.indices) {
+                                val value = data[idx]
+                                val x = idx * stepX
+                                val normalized = if (maxVal == minVal) 0.5f else (value - minVal) / diff
+                                val y = topY + (1f - normalized) * (bottomY - topY)
+                                points.add(Offset(x, y))
+                            }
 
-                if (data.size == 1) {
-                    val y = height / 2f
-                    drawCircle(color = primaryColor, radius = 4.dp.toPx(), center = Offset(width / 2f, y))
-                    return@Canvas
-                }
+                            // 1. Draw smooth gradient filling area under cubic Bezier curve
+                            val fillPath =
+                                Path().apply {
+                                    moveTo(points[0].x, height)
+                                    lineTo(points[0].x, points[0].y)
+                                    for (i in 1 until points.size) {
+                                        val prev = points[i - 1]
+                                        val curr = points[i]
+                                        val midX = (prev.x + curr.x) / 2f
+                                        cubicTo(
+                                            x1 = midX,
+                                            y1 = prev.y,
+                                            x2 = midX,
+                                            y2 = curr.y,
+                                            x3 = curr.x,
+                                            y3 = curr.y,
+                                        )
+                                    }
+                                    lineTo(points.last().x, height)
+                                    close()
+                                }
 
-                val stepX = width / (data.size - 1).coerceAtLeast(1)
-                val points =
-                    data.mapIndexed { idx, value ->
-                        val x = idx * stepX
-                        val normalized = if (maxVal == minVal) 0.5f else (value - minVal) / diff
-                        val y = topY + (1f - normalized) * (bottomY - topY)
-                        Offset(x, y)
-                    }
+                            val fillBrush =
+                                Brush.verticalGradient(
+                                    colors =
+                                        listOf(
+                                            primaryColor.copy(alpha = 0.35f),
+                                            tertiaryColor.copy(alpha = 0.05f),
+                                            Color.Transparent,
+                                        ),
+                                    startY = 0f,
+                                    endY = height,
+                                )
 
-                // 1. Draw smooth gradient filling area under cubic Bezier curve
-                val fillPath =
-                    Path().apply {
-                        moveTo(points[0].x, height)
-                        lineTo(points[0].x, points[0].y)
-                        for (i in 1 until points.size) {
-                            val prev = points[i - 1]
-                            val curr = points[i]
-                            val midX = (prev.x + curr.x) / 2f
-                            cubicTo(
-                                x1 = midX,
-                                y1 = prev.y,
-                                x2 = midX,
-                                y2 = curr.y,
-                                x3 = curr.x,
-                                y3 = curr.y,
-                            )
+                            // 2. Draw cubic Bezier curve with horizontal gradient stroke
+                            val strokePath =
+                                Path().apply {
+                                    moveTo(points[0].x, points[0].y)
+                                    for (i in 1 until points.size) {
+                                        val prev = points[i - 1]
+                                        val curr = points[i]
+                                        val midX = (prev.x + curr.x) / 2f
+                                        cubicTo(
+                                            x1 = midX,
+                                            y1 = prev.y,
+                                            x2 = midX,
+                                            y2 = curr.y,
+                                            x3 = curr.x,
+                                            y3 = curr.y,
+                                        )
+                                    }
+                                }
+
+                            val strokeBrush =
+                                Brush.horizontalGradient(
+                                    colors = listOf(primaryColor, tertiaryColor),
+                                    startX = 0f,
+                                    endX = width,
+                                )
+
+                            val strokeStyle = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round)
+                            val markerOuterRadius = 4.dp.toPx()
+                            val markerInnerRadius = 2.dp.toPx()
+                            val markerStep = (data.size / 4).coerceAtLeast(1)
+
+                            onDrawBehind {
+                                // Reference bounds dashed guidelines
+                                drawLine(
+                                    color = guidelineColor,
+                                    start = Offset(0f, topY),
+                                    end = Offset(width, topY),
+                                    strokeWidth = guidelineStrokeWidth,
+                                    pathEffect = ChartDashPathEffect,
+                                )
+                                drawLine(
+                                    color = guidelineColor,
+                                    start = Offset(0f, bottomY),
+                                    end = Offset(width, bottomY),
+                                    strokeWidth = guidelineStrokeWidth,
+                                    pathEffect = ChartDashPathEffect,
+                                )
+
+                                drawPath(path = fillPath, brush = fillBrush)
+                                drawPath(path = strokePath, brush = strokeBrush, style = strokeStyle)
+
+                                for (idx in points.indices) {
+                                    if (idx == 0 || idx == points.size - 1 || idx % markerStep == 0) {
+                                        val point = points[idx]
+                                        drawCircle(
+                                            color = primaryColor,
+                                            radius = markerOuterRadius,
+                                            center = point,
+                                        )
+                                        drawCircle(
+                                            color = surfaceColor,
+                                            radius = markerInnerRadius,
+                                            center = point,
+                                        )
+                                    }
+                                }
+                            }
                         }
-                        lineTo(points.last().x, height)
-                        close()
-                    }
-
-                drawPath(
-                    path = fillPath,
-                    brush =
-                        Brush.verticalGradient(
-                            colors =
-                                listOf(
-                                    primaryColor.copy(alpha = 0.35f),
-                                    tertiaryColor.copy(alpha = 0.05f),
-                                    Color.Transparent,
-                                ),
-                            startY = 0f,
-                            endY = height,
-                        ),
-                )
-
-                // 2. Draw cubic Bezier curve with horizontal gradient stroke
-                val strokePath =
-                    Path().apply {
-                        moveTo(points[0].x, points[0].y)
-                        for (i in 1 until points.size) {
-                            val prev = points[i - 1]
-                            val curr = points[i]
-                            val midX = (prev.x + curr.x) / 2f
-                            cubicTo(
-                                x1 = midX,
-                                y1 = prev.y,
-                                x2 = midX,
-                                y2 = curr.y,
-                                x3 = curr.x,
-                                y3 = curr.y,
-                            )
-                        }
-                    }
-
-                drawPath(
-                    path = strokePath,
-                    brush =
-                        Brush.horizontalGradient(
-                            colors = listOf(primaryColor, tertiaryColor),
-                            startX = 0f,
-                            endX = width,
-                        ),
-                    style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round),
-                )
-
-                // 3. Draw key dot markers
-                points.forEachIndexed { idx, point ->
-                    if (idx == 0 || idx == points.size - 1 || idx % (data.size / 4).coerceAtLeast(1) == 0) {
-                        drawCircle(
-                            color = primaryColor,
-                            radius = 4.dp.toPx(),
-                            center = point,
-                        )
-                        drawCircle(
-                            color = surfaceColor,
-                            radius = 2.dp.toPx(),
-                            center = point,
-                        )
-                    }
-                }
-            }
-        }
+                    },
+        )
 
         Spacer(modifier = Modifier.height(4.dp))
         // Lower reference bound: Min value and latest reading
@@ -1747,13 +1798,23 @@ fun StatisticsLineChart(
     }
 }
 
-fun formatStatValue(value: Int): String {
-    val formatter =
-        android.icu.text.CompactDecimalFormat.getInstance(
-            Locale.getDefault(),
-            android.icu.text.CompactDecimalFormat.CompactStyle.SHORT,
-        )
-    return formatter.format(value.toLong())
+private val compactDecimalFormatCache =
+    ConcurrentHashMap<Locale, ThreadLocal<CompactDecimalFormat>>()
+
+fun formatStatValue(
+    value: Int,
+    locale: Locale = Locale.getDefault(),
+): String {
+    val threadLocalFormatter =
+        compactDecimalFormatCache.computeIfAbsent(locale) { loc ->
+            ThreadLocal.withInitial {
+                CompactDecimalFormat.getInstance(
+                    loc,
+                    CompactDecimalFormat.CompactStyle.SHORT,
+                )
+            }
+        }
+    return threadLocalFormatter.get()?.format(value.toLong()) ?: value.toString()
 }
 
 @Preview(showBackground = true, name = "Photo Details - Compact")

@@ -1,6 +1,6 @@
 # Specification 63: Android Photo Details Layout & Chart Rendering Optimization
 
-**Status:** Approved
+**Status:** Implemented
 
 ## 1. Overview & Problem Statement
 
@@ -49,14 +49,14 @@ Real cost is modest (one subcomposition at the root, not per list item). Additio
 
 ## 4. Acceptance Criteria
 
-- [ ] Documented decision on `BoxWithConstraints` (kept/narrowed/replaced) with measurement; `LocalAdaptiveLayoutInfo` not used as a pane-width substitute.
-- [ ] Details `ImageRequest`/URL remembered; `ixid` preserved.
-- [ ] Both charts build geometry/brushes/path effects once per size+data (not per draw or per drag event).
-- [ ] `dragX` not read in composition for the whole chart; header uses a derived index.
-- [ ] Hover index matches the highlighted point at any canvas width (no hard-coded 300dp).
-- [ ] No-op `animProgress` eliminated completely per Zero Dead Code Policy.
-- [ ] `formatStatValue` no longer allocates a formatter per call.
-- [ ] Zero compiler warnings, no dead code; Android build passes.
+- [x] Documented decision on `BoxWithConstraints` (kept/narrowed/replaced) with measurement; `LocalAdaptiveLayoutInfo` not used as a pane-width substitute.
+- [x] Details `ImageRequest`/URL remembered; `ixid` preserved.
+- [x] Both charts build geometry/brushes/path effects once per size+data (not per draw or per drag event).
+- [x] `dragX` not read in composition for the whole chart; header uses a derived index.
+- [x] Hover index matches the highlighted point at any canvas width (no hard-coded 300dp).
+- [x] No-op `animProgress` eliminated completely per Zero Dead Code Policy.
+- [x] `formatStatValue` no longer allocates a formatter per call.
+- [x] Zero compiler warnings, no dead code; Android build passes.
 
 > [!NOTE]
 > Line numbers in this spec are approximate (working tree had uncommitted edits at authoring time); locate code by symbol name.

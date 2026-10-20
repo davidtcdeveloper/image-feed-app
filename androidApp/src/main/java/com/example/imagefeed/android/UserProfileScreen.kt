@@ -1,21 +1,13 @@
 package com.example.imagefeed.android
 
-import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
-import android.os.VibrationEffect
-import android.os.Vibrator
-import android.os.VibratorManager
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -73,7 +65,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -84,16 +78,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -1063,6 +1059,10 @@ fun InsightsTabContent(
     }
 }
 
+private val ChartDateFormatter: java.time.format.DateTimeFormatter =
+    java.time.format.DateTimeFormatter
+        .ofLocalizedDate(java.time.format.FormatStyle.MEDIUM)
+
 @Composable
 fun InteractiveTimelineChart(
     data: List<Float>,
@@ -1070,40 +1070,43 @@ fun InteractiveTimelineChart(
     modifier: Modifier = Modifier,
 ) {
     var dragX by remember { mutableStateOf<Float?>(null) }
-    val context = LocalContext.current
+    var canvasWidth by remember { mutableFloatStateOf(0f) }
+    val haptic = LocalHapticFeedback.current
     val chartColor = MaterialTheme.colorScheme.primary
     val surfaceColor = MaterialTheme.colorScheme.surfaceContainer
     val onSurfaceColor = MaterialTheme.colorScheme.onSurface
     val onSurfaceVariantColor = MaterialTheme.colorScheme.onSurfaceVariant
 
-    val maxVal = data.maxOrNull() ?: 1f
-    val minVal = data.minOrNull() ?: 0f
-    val diff = if (maxVal == minVal) 1f else maxVal - minVal
+    val maxVal = remember(data) { data.maxOrNull() ?: 1f }
+    val minVal = remember(data) { data.minOrNull() ?: 0f }
+    val diff = remember(maxVal, minVal) { if (maxVal == minVal) 1f else maxVal - minVal }
 
-    val animProgress by animateFloatAsState(
-        targetValue = 1f,
-        animationSpec = tween(durationMillis = 800),
-        label = "drawChart",
-    )
+    val hoveredIndex by remember(data.size) {
+        derivedStateOf {
+            val currentDragX = dragX
+            if (currentDragX != null && data.isNotEmpty() && canvasWidth > 0f) {
+                val stepX = canvasWidth / (data.size - 1).coerceAtLeast(1)
+                (currentDragX / stepX).roundToInt().coerceIn(0, data.size - 1)
+            } else {
+                null
+            }
+        }
+    }
 
     Column(modifier = modifier) {
         // Overlay displaying hovered detail
-        if (dragX != null && data.isNotEmpty()) {
-            val density = LocalDensity.current
-            val stepX = with(density) { (300.dp / (data.size - 1).coerceAtLeast(1)).toPx() }
-            val index = (dragX!! / stepX).roundToInt().coerceIn(0, data.size - 1)
-
+        val currentHoverIndex = hoveredIndex
+        if (currentHoverIndex != null && data.isNotEmpty()) {
+            val index = currentHoverIndex
             val formattedDate =
                 remember(dates, index) {
+                    val dateStr = dates.getOrNull(index) ?: ""
                     try {
                         java.time.LocalDate
-                            .parse(dates[index])
-                            .format(
-                                java.time.format.DateTimeFormatter
-                                    .ofLocalizedDate(java.time.format.FormatStyle.MEDIUM),
-                            )
+                            .parse(dateStr)
+                            .format(ChartDateFormatter)
                     } catch (_: Exception) {
-                        dates[index]
+                        dateStr
                     }
                 }
 
@@ -1147,27 +1150,19 @@ fun InteractiveTimelineChart(
             }
         }
 
-        Canvas(
+        Spacer(
             modifier =
                 Modifier
                     .weight(1f)
                     .fillMaxWidth()
                     .clipToBounds()
-                    .pointerInput(Unit) {
+                    .onSizeChanged { size ->
+                        canvasWidth = size.width.toFloat()
+                    }.pointerInput(Unit) {
                         detectDragGestures(
                             onDragStart = { offset ->
                                 dragX = offset.x
-                                // Vibrate gracefully using system haptics
-                                val vibrator =
-                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                                        val vibratorManager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager
-                                        vibratorManager?.defaultVibrator
-                                    } else {
-                                        @Suppress("DEPRECATION")
-                                        context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
-                                    }
-
-                                vibrator?.vibrate(VibrationEffect.createOneShot(20, VibrationEffect.DEFAULT_AMPLITUDE))
+                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                             },
                             onDrag = { change, _ ->
                                 change.consume()
@@ -1180,84 +1175,102 @@ fun InteractiveTimelineChart(
                                 dragX = null
                             },
                         )
-                    },
-        ) {
-            if (data.isEmpty()) return@Canvas
+                    }.drawWithCache {
+                        val width = size.width
+                        val height = size.height
 
-            val width = size.width
-            val height = size.height
-
-            val stepX = width / (data.size - 1).coerceAtLeast(1)
-
-            val points =
-                data.mapIndexed { idx, value ->
-                    val x = idx * stepX
-                    val y = height - ((value - minVal) / diff) * height * 0.85f - (height * 0.05f)
-                    Offset(x, y * animProgress)
-                }
-
-            // Fill gradient
-            val fillPath =
-                Path().apply {
-                    moveTo(0f, height)
-                    points.forEach { point ->
-                        lineTo(point.x, point.y)
-                    }
-                    lineTo(width, height)
-                    close()
-                }
-            drawPath(
-                path = fillPath,
-                brush =
-                    Brush.verticalGradient(
-                        colors = listOf(chartColor.copy(alpha = 0.22f), Color.Transparent),
-                        startY = 0f,
-                        endY = height,
-                    ),
-            )
-
-            // Main stroke
-            val strokePath =
-                Path().apply {
-                    points.forEachIndexed { idx, point ->
-                        if (idx == 0) {
-                            moveTo(point.x, point.y)
+                        if (data.isEmpty()) {
+                            onDrawBehind { }
                         } else {
-                            lineTo(point.x, point.y)
+                            val stepX = width / (data.size - 1).coerceAtLeast(1)
+                            val points = ArrayList<Offset>(data.size)
+                            for (idx in data.indices) {
+                                val value = data[idx]
+                                val x = idx * stepX
+                                val y = height - ((value - minVal) / diff) * height * 0.85f - (height * 0.05f)
+                                points.add(Offset(x, y))
+                            }
+
+                            // Fill gradient
+                            val fillPath =
+                                Path().apply {
+                                    moveTo(0f, height)
+                                    for (i in points.indices) {
+                                        lineTo(points[i].x, points[i].y)
+                                    }
+                                    lineTo(width, height)
+                                    close()
+                                }
+
+                            val fillBrush =
+                                Brush.verticalGradient(
+                                    colors = listOf(chartColor.copy(alpha = 0.22f), Color.Transparent),
+                                    startY = 0f,
+                                    endY = height,
+                                )
+
+                            // Main stroke
+                            val strokePath =
+                                Path().apply {
+                                    for (idx in points.indices) {
+                                        val point = points[idx]
+                                        if (idx == 0) {
+                                            moveTo(point.x, point.y)
+                                        } else {
+                                            lineTo(point.x, point.y)
+                                        }
+                                    }
+                                }
+
+                            val strokeWidth = 3.dp.toPx()
+                            val indicatorLineWidth = 1.dp.toPx()
+                            val outerRadius = 7.dp.toPx()
+                            val innerRadius = 3.dp.toPx()
+                            val indicatorColor = chartColor.copy(alpha = 0.4f)
+
+                            onDrawBehind {
+                                // Draw fill gradient
+                                drawPath(
+                                    path = fillPath,
+                                    brush = fillBrush,
+                                )
+
+                                // Draw stroke path
+                                drawPath(
+                                    path = strokePath,
+                                    color = chartColor,
+                                    style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
+                                )
+
+                                // Draw interaction slider line if dragging
+                                val currentDragX = dragX
+                                if (currentDragX != null) {
+                                    val index = (currentDragX / stepX).roundToInt().coerceIn(0, data.size - 1)
+                                    val hoverPoint = points[index]
+
+                                    // Draw vertical indicator line
+                                    drawLine(
+                                        color = indicatorColor,
+                                        start = Offset(hoverPoint.x, 0f),
+                                        end = Offset(hoverPoint.x, height),
+                                        strokeWidth = indicatorLineWidth,
+                                    )
+
+                                    // Highlighted interaction dot
+                                    drawCircle(
+                                        color = chartColor,
+                                        radius = outerRadius,
+                                        center = hoverPoint,
+                                    )
+                                    drawCircle(
+                                        color = surfaceColor,
+                                        radius = innerRadius,
+                                        center = hoverPoint,
+                                    )
+                                }
+                            }
                         }
-                    }
-                }
-            drawPath(
-                path = strokePath,
-                color = chartColor,
-                style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round),
-            )
-
-            // Draw interaction slider line if dragging
-            dragX?.let { xOffset ->
-                val index = (xOffset / stepX).roundToInt().coerceIn(0, data.size - 1)
-                val hoverPoint = points[index]
-
-                // Draw vertical indicator line
-                drawLine(
-                    color = chartColor.copy(alpha = 0.4f),
-                    start = Offset(hoverPoint.x, 0f),
-                    end = Offset(hoverPoint.x, height),
-                    strokeWidth = 1.dp.toPx(),
-                )
-
-                // Highlighted interaction dot
-                drawCircle(
-                    color = chartColor,
-                    radius = 7.dp.toPx(),
-                    center = hoverPoint,
-                )
-                drawCircle(
-                    color = surfaceColor,
-                    radius = 3.dp.toPx(),
-                    center = hoverPoint,
-                )
-            }
-        }
+                    },
+        )
     }
 }
