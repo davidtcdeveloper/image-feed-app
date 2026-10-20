@@ -1,6 +1,6 @@
 # Specification 65: Runtime Memory Optimization Phase 1 — Image Caches, Grid Virtualization & ViewModel Scope Leaks
 
-**Status:** Approved
+**Status:** Implemented
 
 ## 1. Overview & Problem Statement
 
@@ -101,10 +101,10 @@ Runtime memory profiling across Shared KMP, Android (`androidApp`), and iOS/macO
 
 ## 4. Acceptance Criteria
 
-- [ ] `UserProfileScreen.kt` uses a single full-screen `LazyVerticalStaggeredGrid` with `StaggeredGridItemSpan.FullLine` header and tab selector items; nested `.verticalScroll` and `.heightIn(max = 2000.dp)` are completely removed.
-- [ ] Opening `UserProfileScreen` loads only page 1 initially and recycles off-screen photo/collection cards normally.
-- [ ] `KFImage.swift` evaluates placeholder views lazily only on cache misses, downsamples images off the main thread via `CGImageSourceCreateThumbnailAtIndex`, caches decoded images in a byte-cost-bounded `NSCache`, and evicts on `UIApplication.didReceiveMemoryWarningNotification`.
-- [ ] `ImageFeedApplication.kt` sets Coil `MemoryCache` `maxSizePercent` to `0.15`, enables `allowRgb565(true)`, removes the 100 MB local `DiskCache`, and implements `onTrimMemory` / `onLowMemory` to trim/clear Coil's memory cache and `BlurHashDecoder.clearCache()`.
-- [ ] `MviViewModel.iosState` and `MviViewModel.iosEffects` are initialized `by lazy`.
-- [ ] `FeedViewModel.swift` stores and deterministically cleans up `randomPhotoCloseable` and `randomPhotoViewModel` on completion, error, re-invocation, and `deinit`.
-- [ ] Zero compiler warnings, zero dead code, and both Android and iOS builds + unit tests pass.
+- [x] `UserProfileScreen.kt` uses a single full-screen `LazyVerticalStaggeredGrid` with `StaggeredGridItemSpan.FullLine` header and tab selector items; nested `.verticalScroll` and `.heightIn(max = 2000.dp)` are completely removed.
+- [x] Opening `UserProfileScreen` loads only page 1 initially and recycles off-screen photo/collection cards normally.
+- [x] `KFImage.swift` evaluates placeholder views lazily only on cache misses, downsamples images off the main thread via `CGImageSourceCreateThumbnailAtIndex`, caches decoded images in a byte-cost-bounded `NSCache`, and evicts on `UIApplication.didReceiveMemoryWarningNotification`.
+- [x] `ImageFeedApplication.kt` sets Coil `MemoryCache` `maxSizePercent` to `0.15`, enables `allowRgb565(true)`, removes the 100 MB local `DiskCache`, and implements `onTrimMemory` / `onLowMemory` to trim/clear Coil's memory cache and `BlurHashDecoder.clearCache()`.
+- [x] `MviViewModel.iosState` and `MviViewModel.iosEffects` are initialized `by lazy`.
+- [x] `FeedViewModel.swift` stores and deterministically cleans up `randomPhotoCloseable` and `randomPhotoViewModel` on completion, error, re-invocation, and `deinit`.
+- [x] Zero compiler warnings, zero dead code, and both Android and iOS builds + unit tests pass.

@@ -15,6 +15,8 @@ class FeedViewModel {
     private let viewModel: shared.FeedViewModel
     private var stateCloseable: Closeable?
     private var effectsCloseable: Closeable?
+    private var randomPhotoCloseable: Closeable?
+    private var randomPhotoViewModel: shared.RandomPhotoViewModel?
 
     init() {
         let viewModel = MetroHelper.shared.getFeedViewModel()
@@ -63,18 +65,30 @@ class FeedViewModel {
         viewModel.dispatch(intent: FeedIntentTrackDownload(photo: photo))
     }
 
-    func fetchRandomPhotoId(completion: @escaping (String) -> Void) {
+    func fetchRandomPhotoId(completion: @escaping (String?) -> Void) {
+        randomPhotoCloseable?.close()
+        randomPhotoCloseable = nil
+        randomPhotoViewModel?.clear()
+        randomPhotoViewModel = nil
+
         let randomVm = MetroHelper.shared.getRandomPhotoViewModel()
-        var closeable: Closeable?
-        closeable = randomVm.iosState.watch { state in
+        self.randomPhotoViewModel = randomVm
+
+        randomPhotoCloseable = randomVm.iosState.watch { [weak self] state in
+            guard let self = self else { return }
             if let photo = state?.photo {
                 completion(photo.id)
-                closeable?.close()
-                randomVm.clear()
+                self.randomPhotoCloseable?.close()
+                self.randomPhotoCloseable = nil
+                self.randomPhotoViewModel?.clear()
+                self.randomPhotoViewModel = nil
             } else if let error = state?.error {
                 print("Failed to load random photo on shake: \(error)")
-                closeable?.close()
-                randomVm.clear()
+                completion(nil)
+                self.randomPhotoCloseable?.close()
+                self.randomPhotoCloseable = nil
+                self.randomPhotoViewModel?.clear()
+                self.randomPhotoViewModel = nil
             }
         }
     }
@@ -83,5 +97,7 @@ class FeedViewModel {
         stateCloseable?.close()
         effectsCloseable?.close()
         viewModel.clear()
+        randomPhotoCloseable?.close()
+        randomPhotoViewModel?.clear()
     }
 }

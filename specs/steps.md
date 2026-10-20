@@ -943,7 +943,7 @@ These are the spec files that the implementation notes and planning references s
 2.  **Reference Specification:**
     *   Track blueprint in `specs/64_android_release_optimization_and_baseline_profiles.md`.
 
-### Step 65: Runtime Memory Optimization Phase 1 — Image Caches, Grid Virtualization & ViewModel Scope Leaks (Planned)
+### Step 65: Runtime Memory Optimization Phase 1 — Image Caches, Grid Virtualization & ViewModel Scope Leaks (Completed)
 1.  **Android Profile Grid Virtualization:**
     *   Replace nested `LazyVerticalStaggeredGrid` inside `Column(Modifier.verticalScroll)` + `.heightIn(max = 2000.dp)` in `UserProfileScreen.kt` with a single full-screen `LazyVerticalStaggeredGrid` using `StaggeredGridItemSpan.FullLine` header and tab items, dismantling legacy nested composables.
 2.  **iOS/macOS `KFImage` Downsampling & Bounded `NSCache`:**

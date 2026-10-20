@@ -25,11 +25,11 @@ abstract class MviViewModel<S : UiState, I : UiIntent, E : UiEffect>(
 ) : ViewModel() {
     private val _state = MutableStateFlow(initialState)
     val state: StateFlow<S> = _state.asStateFlow()
-    val iosState: CommonFlow<S> = CommonFlow(state)
+    val iosState: CommonFlow<S> by lazy(LazyThreadSafetyMode.PUBLICATION) { CommonFlow(state) }
 
     private val _effects = Channel<E>(Channel.BUFFERED)
     val effects: Flow<E> = _effects.receiveAsFlow()
-    val iosEffects: CommonFlow<E> = CommonFlow(effects)
+    val iosEffects: CommonFlow<E> by lazy(LazyThreadSafetyMode.PUBLICATION) { CommonFlow(effects) }
 
     /**
      * Dispatches a user intent to be processed by the ViewModel.

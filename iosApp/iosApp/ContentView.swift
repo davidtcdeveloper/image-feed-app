@@ -517,7 +517,9 @@ struct PhotosFeedTabView: View {
         isShaking = true
         viewModel.fetchRandomPhotoId { photoId in
             isShaking = false
-            activePath.wrappedValue.append(FeedPathItem(id: photoId, type: .photo))
+            if let photoId {
+                activePath.wrappedValue.append(FeedPathItem(id: photoId, type: .photo))
+            }
         }
     }
 }

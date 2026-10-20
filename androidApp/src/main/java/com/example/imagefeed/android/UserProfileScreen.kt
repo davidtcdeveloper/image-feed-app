@@ -22,7 +22,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -34,10 +33,8 @@ import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.foundation.lazy.staggeredgrid.itemsIndexed
 import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AlternateEmail
@@ -105,7 +102,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.LocalPlatformContext
 import coil3.compose.rememberAsyncImagePainter
 import com.example.imagefeed.android.util.CollectionMosaicCardSkeleton
-import com.example.imagefeed.android.util.PhotoGridSkeleton
+import com.example.imagefeed.android.util.PhotoCardSkeleton
 import com.example.imagefeed.android.util.UserProfileHeaderSkeleton
 import com.example.imagefeed.android.util.bounceClick
 import com.example.imagefeed.android.util.localizedMessage
@@ -270,72 +267,181 @@ fun UserProfileContent(
     onCollectionClick: (PhotoCollection) -> Unit,
     onUserClick: (User) -> Unit = {},
 ) {
-    val scrollState = rememberScrollState()
+    val gridState = rememberLazyStaggeredGridState()
+    val currentLoading by rememberUpdatedState(state.isLoadingContent)
+    val currentHasReachedEnd by rememberUpdatedState(
+        when (state.activeTab) {
+            ProfileTab.PORTFOLIO -> state.portfolioReachedEnd
+            ProfileTab.LIKES -> state.likesReachedEnd
+            ProfileTab.COLLECTIONS -> state.collectionsReachedEnd
+            ProfileTab.INSIGHTS -> true
+        },
+    )
 
-    Column(
-        modifier =
-            Modifier
-                .fillMaxSize()
-                .verticalScroll(scrollState),
+    LaunchedEffect(gridState, state.activeTab) {
+        snapshotFlow {
+            val layoutInfo = gridState.layoutInfo
+            val totalItems = layoutInfo.totalItemsCount
+            val lastVisible = layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
+            totalItems > 2 && lastVisible >= totalItems - 6
+        }.distinctUntilChanged()
+            .filter { shouldLoad -> shouldLoad && !currentLoading && !currentHasReachedEnd && state.activeTab != ProfileTab.INSIGHTS }
+            .collect {
+                onLoadMore()
+            }
+    }
+
+    var selectedPhotoId by rememberSaveable { mutableStateOf<String?>(null) }
+    val itemWidthPx = calculatePhotoItemWidthPx()
+    val skeletonAspectRatios = remember { listOf(0.7f, 1.2f, 1.5f, 0.8f, 1.0f, 1.3f) }
+
+    LazyVerticalStaggeredGrid(
+        columns = if (state.activeTab == ProfileTab.COLLECTIONS) calculateCollectionGridColumns() else calculateGridColumns(),
+        state = gridState,
+        modifier = Modifier.fillMaxSize(),
+        contentPadding =
+            PaddingValues(
+                start = 8.dp,
+                top = 8.dp,
+                end = 8.dp,
+                bottom = calculateBottomContentPadding(8.dp),
+            ),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalItemSpacing = 8.dp,
     ) {
         // Sticky Profile Info Card
-        ProfileHeaderSection(user = user)
-
-        Spacer(modifier = Modifier.height(8.dp))
+        item(span = StaggeredGridItemSpan.FullLine, key = "profile_header", contentType = "header") {
+            ProfileHeaderSection(user = user)
+        }
 
         // Custom Navigation Tab Row
-        ProfileTabSelector(
-            activeTab = state.activeTab,
-            user = user,
-            onTabSelect = onTabSelect,
-        )
+        item(span = StaggeredGridItemSpan.FullLine, key = "profile_tabs", contentType = "tabs") {
+            Column {
+                Spacer(modifier = Modifier.height(8.dp))
+                ProfileTabSelector(
+                    activeTab = state.activeTab,
+                    user = user,
+                    onTabSelect = onTabSelect,
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+        }
 
-        Spacer(modifier = Modifier.height(8.dp))
+        when (state.activeTab) {
+            ProfileTab.PORTFOLIO, ProfileTab.LIKES -> {
+                val photos = if (state.activeTab == ProfileTab.PORTFOLIO) state.portfolioPhotos else state.likedPhotos
+                val showAttribution = state.activeTab == ProfileTab.LIKES
 
-        // Multi-Tab Content Area
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 400.dp, max = 2000.dp),
-        ) {
-            when (state.activeTab) {
-                ProfileTab.PORTFOLIO -> {
-                    PortfolioTabContent(
-                        sharedTransitionScope = sharedTransitionScope,
-                        animatedVisibilityScope = animatedVisibilityScope,
-                        photos = state.portfolioPhotos,
-                        isLoading = state.isLoadingContent,
-                        hasReachedEnd = state.portfolioReachedEnd,
-                        onLoadMore = onLoadMore,
-                        onPhotoClick = onPhotoClick,
-                        onUserClick = onUserClick,
-                        showAttribution = false,
-                    )
+                if (photos.isEmpty() && state.isLoadingContent) {
+                    items(12, key = { "photo_skeleton_$it" }, contentType = { "photo_skeleton" }) { index ->
+                        PhotoCardSkeleton(aspectRatio = skeletonAspectRatios[index % skeletonAspectRatios.size])
+                    }
+                } else if (photos.isEmpty()) {
+                    item(span = StaggeredGridItemSpan.FullLine, key = "empty_${state.activeTab}", contentType = "empty") {
+                        Box(
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(48.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                text = stringResource(R.string.profile_empty_photos),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
+                        }
+                    }
+                } else {
+                    itemsIndexed(
+                        photos,
+                        key = { _, photo -> "${state.activeTab}_${photo.id}" },
+                        contentType = { _, _ -> "photo_card" },
+                    ) { index, photo ->
+                        PhotoCard(
+                            sharedTransitionScope = sharedTransitionScope,
+                            animatedVisibilityScope = animatedVisibilityScope,
+                            index = index,
+                            photo = photo,
+                            itemWidthPx = itemWidthPx,
+                            isTransitionSource = photo.id == selectedPhotoId,
+                            onClick = {
+                                selectedPhotoId = photo.id
+                                onPhotoClick(photo)
+                            },
+                            onUserClick = { onUserClick(photo.user) },
+                            showAttribution = showAttribution,
+                        )
+                    }
+
+                    if (state.isLoadingContent) {
+                        item(span = StaggeredGridItemSpan.FullLine, contentType = "loading_indicator") {
+                            Box(
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                CircularProgressIndicator()
+                            }
+                        }
+                    }
                 }
-                ProfileTab.LIKES -> {
-                    PortfolioTabContent(
-                        sharedTransitionScope = sharedTransitionScope,
-                        animatedVisibilityScope = animatedVisibilityScope,
-                        photos = state.likedPhotos,
-                        isLoading = state.isLoadingContent,
-                        hasReachedEnd = state.likesReachedEnd,
-                        onLoadMore = onLoadMore,
-                        onPhotoClick = onPhotoClick,
-                        onUserClick = onUserClick,
-                        showAttribution = true,
-                    )
+            }
+            ProfileTab.COLLECTIONS -> {
+                val collections = state.collections
+
+                if (collections.isEmpty() && state.isLoadingContent) {
+                    items(3, key = { "col_skeleton_$it" }, contentType = { "col_skeleton" }) {
+                        CollectionMosaicCardSkeleton()
+                    }
+                } else if (collections.isEmpty()) {
+                    item(span = StaggeredGridItemSpan.FullLine, key = "empty_collections", contentType = "empty") {
+                        Box(
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(48.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                text = stringResource(R.string.profile_empty_collections),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
+                        }
+                    }
+                } else {
+                    itemsIndexed(
+                        collections,
+                        key = { _, col -> "col_${col.id}" },
+                        contentType = { _, _ -> "collection_card" },
+                    ) { index, col ->
+                        CollectionRowLayout(
+                            collection = col,
+                            modifier = Modifier.staggeredEntrance(index),
+                            onClick = { onCollectionClick(col) },
+                        )
+                    }
+
+                    if (state.isLoadingContent) {
+                        item(span = StaggeredGridItemSpan.FullLine, contentType = "loading_indicator") {
+                            Box(
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                CircularProgressIndicator()
+                            }
+                        }
+                    }
                 }
-                ProfileTab.COLLECTIONS -> {
-                    CollectionsTabContent(
-                        collections = state.collections,
-                        isLoading = state.isLoadingContent,
-                        hasReachedEnd = state.collectionsReachedEnd,
-                        onLoadMore = onLoadMore,
-                        onCollectionClick = onCollectionClick,
-                    )
-                }
-                ProfileTab.INSIGHTS -> {
+            }
+            ProfileTab.INSIGHTS -> {
+                item(span = StaggeredGridItemSpan.FullLine, key = "insights_content", contentType = "insights") {
                     InsightsTabContent(
                         stats = state.stats,
                         isLoading = state.isLoadingStats,
@@ -654,205 +760,6 @@ fun ProfileTabSelector(
                                 style = MaterialTheme.typography.labelSmall,
                                 maxLines = 1,
                             )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalSharedTransitionApi::class)
-@Composable
-fun PortfolioTabContent(
-    sharedTransitionScope: SharedTransitionScope,
-    animatedVisibilityScope: AnimatedVisibilityScope,
-    photos: List<Photo>,
-    isLoading: Boolean,
-    hasReachedEnd: Boolean = false,
-    onLoadMore: () -> Unit,
-    onPhotoClick: (Photo) -> Unit,
-    onUserClick: (User) -> Unit = {},
-    showAttribution: Boolean = true,
-) {
-    val listState = rememberLazyStaggeredGridState()
-    val currentLoading by rememberUpdatedState(isLoading)
-    val currentHasReachedEnd by rememberUpdatedState(hasReachedEnd)
-
-    LaunchedEffect(listState) {
-        snapshotFlow {
-            val layoutInfo = listState.layoutInfo
-            val totalItems = layoutInfo.totalItemsCount
-            val lastVisible = layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
-            totalItems > 0 && lastVisible >= totalItems - 6
-        }.distinctUntilChanged()
-            .filter { shouldLoad -> shouldLoad && !currentLoading && !currentHasReachedEnd }
-            .collect {
-                onLoadMore()
-            }
-    }
-
-    Box(modifier = Modifier.fillMaxSize()) {
-        if (photos.isEmpty() && isLoading) {
-            PhotoGridSkeleton()
-        } else if (photos.isEmpty()) {
-            Box(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(48.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = stringResource(R.string.profile_empty_photos),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-            }
-        } else {
-            val itemWidthPx = calculatePhotoItemWidthPx()
-            // UI-element transition state: gates Modifier.sharedElement so idle lazy items avoid tracking overhead during flings.
-            // Does not represent business selection; ViewModel remains the SSOT for profile data.
-            var selectedPhotoId by rememberSaveable { mutableStateOf<String?>(null) }
-
-            LazyVerticalStaggeredGrid(
-                columns = calculateGridColumns(),
-                state = listState,
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .heightIn(max = 2000.dp),
-                contentPadding = PaddingValues(8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalItemSpacing = 8.dp,
-                userScrollEnabled = false, // Scroll is controlled by parent vertical scroll
-            ) {
-                itemsIndexed(
-                    photos,
-                    key = { _, photo -> photo.id },
-                    contentType = { _, _ -> "photo_card" },
-                ) { index, photo ->
-                    PhotoCard(
-                        sharedTransitionScope = sharedTransitionScope,
-                        animatedVisibilityScope = animatedVisibilityScope,
-                        index = index,
-                        photo = photo,
-                        itemWidthPx = itemWidthPx,
-                        isTransitionSource = photo.id == selectedPhotoId,
-                        onClick = {
-                            selectedPhotoId = photo.id
-                            onPhotoClick(photo)
-                        },
-                        onUserClick = { onUserClick(photo.user) },
-                        showAttribution = showAttribution,
-                    )
-                }
-
-                if (isLoading) {
-                    item(span = StaggeredGridItemSpan.FullLine, contentType = "loading_indicator") {
-                        Box(
-                            modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            CircularProgressIndicator()
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun CollectionsTabContent(
-    collections: List<PhotoCollection>,
-    isLoading: Boolean,
-    hasReachedEnd: Boolean = false,
-    onLoadMore: () -> Unit,
-    onCollectionClick: (PhotoCollection) -> Unit,
-) {
-    val listState = rememberLazyStaggeredGridState()
-    val currentLoading by rememberUpdatedState(isLoading)
-    val currentHasReachedEnd by rememberUpdatedState(hasReachedEnd)
-
-    LaunchedEffect(listState) {
-        snapshotFlow {
-            val layoutInfo = listState.layoutInfo
-            val totalItems = layoutInfo.totalItemsCount
-            val lastVisible = layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
-            totalItems > 0 && lastVisible >= totalItems - 4
-        }.distinctUntilChanged()
-            .filter { shouldLoad -> shouldLoad && !currentLoading && !currentHasReachedEnd }
-            .collect {
-                onLoadMore()
-            }
-    }
-
-    Box(modifier = Modifier.fillMaxSize()) {
-        if (collections.isEmpty() && isLoading) {
-            Column(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(12.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
-                repeat(3) {
-                    CollectionMosaicCardSkeleton()
-                }
-            }
-        } else if (collections.isEmpty()) {
-            Box(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(48.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = stringResource(R.string.profile_empty_collections),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-            }
-        } else {
-            LazyVerticalStaggeredGrid(
-                columns = calculateCollectionGridColumns(),
-                state = listState,
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .heightIn(max = 2000.dp),
-                contentPadding = PaddingValues(12.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalItemSpacing = 16.dp,
-                userScrollEnabled = false,
-            ) {
-                itemsIndexed(
-                    collections,
-                    key = { _, col -> col.id },
-                    contentType = { _, _ -> "collection_card" },
-                ) { index, col ->
-                    CollectionRowLayout(
-                        collection = col,
-                        modifier = Modifier.staggeredEntrance(index),
-                        onClick = { onCollectionClick(col) },
-                    )
-                }
-
-                if (isLoading) {
-                    item(span = StaggeredGridItemSpan.FullLine, contentType = "loading_indicator") {
-                        Box(
-                            modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            CircularProgressIndicator()
                         }
                     }
                 }

@@ -1,13 +1,14 @@
 package com.example.imagefeed.android
 
 import android.app.Application
+import android.content.ComponentCallbacks2
 import coil3.ImageLoader
 import coil3.PlatformContext
 import coil3.SingletonImageLoader
-import coil3.disk.DiskCache
 import coil3.memory.MemoryCache
+import coil3.request.allowRgb565
 import coil3.request.crossfade
-import okio.Path.Companion.toPath
+import com.example.imagefeed.android.util.BlurHashDecoder
 
 /**
  * Application entry point for the Android client.
@@ -26,19 +27,35 @@ class ImageFeedApplication :
             .memoryCache {
                 MemoryCache
                     .Builder()
-                    .maxSizePercent(context, 0.25)
+                    .maxSizePercent(context, 0.15)
                     .strongReferencesEnabled(true)
                     .build()
-            }.diskCache {
-                DiskCache
-                    .Builder()
-                    .directory(
-                        context.cacheDir
-                            .resolve("image_cache")
-                            .absolutePath
-                            .toPath(),
-                    ).maxSizeBytes(100L * 1024 * 1024)
-                    .build()
-            }.crossfade(200)
+            }.allowRgb565(true)
+            .crossfade(200)
             .build()
+
+    @Suppress("DEPRECATION")
+    override fun onTrimMemory(level: Int) {
+        super.onTrimMemory(level)
+        val imageLoader = SingletonImageLoader.get(this)
+        val memoryCache = imageLoader.memoryCache
+        if (level >= ComponentCallbacks2.TRIM_MEMORY_BACKGROUND ||
+            level == ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL ||
+            level == ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW
+        ) {
+            memoryCache?.clear()
+            BlurHashDecoder.clearCache()
+        } else if (level == ComponentCallbacks2.TRIM_MEMORY_UI_HIDDEN ||
+            level == ComponentCallbacks2.TRIM_MEMORY_RUNNING_MODERATE
+        ) {
+            memoryCache?.let { it.trimToSize(it.size / 2) }
+            BlurHashDecoder.clearCache()
+        }
+    }
+
+    override fun onLowMemory() {
+        super.onLowMemory()
+        SingletonImageLoader.get(this).memoryCache?.clear()
+        BlurHashDecoder.clearCache()
+    }
 }
