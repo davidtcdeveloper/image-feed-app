@@ -92,7 +92,19 @@ The `specs/` folder currently contains the following implementation and design d
 *   `specs/57_ios_immersive_photo_detail_and_interactive_sparkline.md`
 *   `specs/58_ios_floating_glass_capsule_and_profile_refinements.md`
 *   `specs/59_cross_platform_localization_architecture.md`
+*   `specs/60_android_shimmer_skeleton_rendering_optimization.md`
+*   `specs/61_android_media_card_hot_path_optimization.md`
+*   `specs/62_android_scroll_chrome_and_horizontal_row_hygiene.md`
+*   `specs/63_android_photo_details_and_chart_rendering_optimization.md`
+*   `specs/64_android_release_optimization_and_baseline_profiles.md`
+*   `specs/65_memory_optimization_phase1_caches_grids_and_scopes.md`
+*   `specs/66_memory_optimization_phase2_maps_thumbnails_and_blurhash.md`
+*   `specs/67_memory_optimization_phase3_network_navigation_di_and_ui_churn.md`
+*   `specs/68_ios_swiftui_performance_phase1_algorithmic_and_layout_architecture.md`
+*   `specs/69_ios_swiftui_performance_phase2_scroll_dynamics_and_state_isolation.md`
+*   `specs/70_ios_swiftui_performance_phase3_gpu_rendering_and_image_pipeline.md`
 *   `specs/researches/modularization_evaluation.md`
+*   `specs/researches/swiftui_performance_optimization_plan.md`
 *   `specs/implementation_plan.md`
 *   `specs/steps.md`
 
@@ -963,4 +975,39 @@ These are the spec files that the implementation notes and planning references s
     *   Guard Swift `@Observable` property/array reassignments, throttle `activeCapsuleMinimized` and `scrollResetTask` in `ContentView.swift`, replace $O(N^2)$ `firstIndex(where:)` masonry lookups with $O(1)$ indexed column items in `AdaptiveLayoutHelper.swift`, share a single `InfiniteTransition` across shimmer skeletons (`AnimationUtils.kt`), and `remember`/cache chart data and `Canvas` objects (`PhotoDetailsScreen.kt`, `UserProfileScreen.kt`).
 4.  **Reference Specification:**
     *   Track blueprint in `specs/67_memory_optimization_phase3_network_navigation_di_and_ui_churn.md`.
+
+### Step 68: SwiftUI Performance Phase 1 — Algorithmic & Layout Architecture (Planned)
+1.  **$O(1)$ Masonry Indexing & Column Bucket Memoization:**
+    *   Introduce `IndexedItem<T>` and single-pass `partitionIntoColumns` in `AdaptiveLayoutHelper.swift`.
+    *   Memoize column buckets inside `@Observable` ViewModels (`FeedViewModel`, `CollectionsFeedViewModel`, `SearchViewModel`, `CollectionDetailViewModel`, `UserProfileViewModel`) and invalidate only on backing array mutation.
+    *   Eliminate $O(N^2)$ `firstIndex(where:)` calls in `SearchView.swift`, `UserProfileView.swift`, and `CollectionDetailView.swift`, and replace `lastIndex(where:)` in `CollectionsFeedView.swift` with an $O(1)$ index threshold check.
+2.  **Root `GeometryReader` Removal & Lazy ViewModel Lifecycle:**
+    *   Remove the root `GeometryReader` wrapping `CollectionsFeedView.swift`.
+    *   Defer KMP ViewModel instantiation out of `View.init` across `PhotoDetailsView.swift`, `SearchView.swift`, `UserProfileView.swift`, and `CollectionDetailView.swift` using lazy `@State` initialization.
+3.  **Reference Specification:**
+    *   Track blueprint in `specs/68_ios_swiftui_performance_phase1_algorithmic_and_layout_architecture.md`.
+
+### Step 69: SwiftUI Performance Phase 2 — Scroll Dynamics, Native Geometry Tracking & State Isolation (Planned)
+1.  **Isolated Scroll Capsule Coordinator & Transition Guards:**
+    *   Extract `CapsuleScrollCoordinator` (`@Observable`) so scroll-driven minimization only invalidates `FloatingTabCapsule` without re-evaluating `ContentView.body` or `PhotosFeedTabView.body`.
+    *   Guard `withAnimation` state flips and only schedule `scrollResetTask` when `isMinimized == true`.
+    *   Use native `.onScrollGeometryChange` on `#available(iOS 18.0, macOS 15.0, *)` with bucket quantization and a quantized iOS 17 `PreferenceKey` fallback.
+2.  **Search Input Deduplication & Pagination Motion Cleanup:**
+    *   Eliminate duplicate `updateQuery` dispatches in `SearchView.swift` while preserving KMP `UnifiedSearchViewModel`'s 300ms coroutine debounce (avoiding a 600ms double-debounce).
+    *   Remove whole-grid `.animation(.spring(), value: viewModel.photos)` from `SearchView.swift` L164.
+3.  **Reference Specification:**
+    *   Track blueprint in `specs/69_ios_swiftui_performance_phase2_scroll_dynamics_and_state_isolation.md`.
+
+### Step 70: SwiftUI Performance Phase 3 — GPU Compositor, Single-Pass Shimmer & Image Pipeline (Planned)
+1.  **Generic `KFImage<Placeholder: View>` & Cross-Platform `ImageMemoryCache`:**
+    *   Replace `AnyView` placeholder type erasure with generic `KFImage<Placeholder: View>` evaluated lazily only on cache misses.
+    *   Implement byte-cost-bounded `ImageMemoryCache` (`NSCache<NSURL, PlatformImage>` supporting `UIImage` on iOS and `NSImage` on macOS) with off-main-thread `ImageIO` thumbnail downsampling (`CGImageSourceCreateThumbnailAtIndex` + `kCGImageSourceShouldCacheImmediately`) and iOS memory-warning eviction.
+2.  **GPU Material & Offscreen Pass Optimization:**
+    *   Introduce `GlassStyle.lightweight` (single-pass translucent dark scrim + specular border, `hasShadow: false`) in `GlassTheme.swift` for recurring masonry attribution and photo-count capsules (`PhotoCard`, `SearchPhotoGridCard`, `CollectionPhotoGridCard`, `CollectionMosaicCard`), and remove redundant `.ultraThinMaterial` overlays stacked over solid hex color image placeholders.
+    *   Refactor `ShimmerModifier` in `AnimationPrimitives.swift` from double-pass `.mask(content)` to single-pass `.blendMode(.sourceAtop)` with `.compositingGroup()` and `accessibilityReduceMotion` support.
+    *   Optimize `ambientBackdrop` in `PhotoDetailsView.swift` with `maxPixelSize: 160`, `.blur(radius: 28)`, and `.drawingGroup()`.
+    *   Update `.agents/skills/ios-glass-design/SKILL.md` to codify the tiered `GlassStyle.lightweight` policy upon implementation.
+3.  **Reference Specification:**
+    *   Track blueprint in `specs/70_ios_swiftui_performance_phase3_gpu_rendering_and_image_pipeline.md`.
+
 
