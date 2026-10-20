@@ -903,7 +903,7 @@ These are the spec files that the implementation notes and planning references s
 2.  **Reference Specification:**
     *   Track blueprint in `specs/60_android_shimmer_skeleton_rendering_optimization.md`.
 
-### Step 61: Android Media Card Hot-Path Optimization (Planned)
+### Step 61: Android Media Card Hot-Path Optimization (Completed)
 1.  **PhotoCard & CollectionMosaicCard:**
     *   Hoist grid-invariant item width, remember `ImageRequest`/URL and scrim brush, gate `sharedElement`/`sharedBounds` per item.
     *   Memoize `calculate*GridColumns` helpers; decide on `staggeredEntrance` as `Modifier.Node` (low priority).

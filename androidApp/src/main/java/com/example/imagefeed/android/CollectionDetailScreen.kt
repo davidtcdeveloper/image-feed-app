@@ -48,8 +48,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -206,6 +209,11 @@ fun CollectionDetailScreen(
                     CircularProgressIndicator()
                 }
             } else {
+                val itemWidthPx = calculatePhotoItemWidthPx()
+                // UI-element transition state: gates Modifier.sharedElement so idle lazy items avoid tracking overhead during flings.
+                // Does not represent business selection; ViewModel remains the SSOT for collection detail data.
+                var selectedPhotoId by rememberSaveable { mutableStateOf<String?>(null) }
+
                 LazyVerticalStaggeredGrid(
                     columns = calculateGridColumns(),
                     state = gridState,
@@ -257,7 +265,12 @@ fun CollectionDetailScreen(
                                 animatedVisibilityScope = animatedVisibilityScope,
                                 index = index,
                                 photo = photo,
-                                onClick = { onPhotoClick(photo) },
+                                itemWidthPx = itemWidthPx,
+                                isTransitionSource = photo.id == selectedPhotoId,
+                                onClick = {
+                                    selectedPhotoId = photo.id
+                                    onPhotoClick(photo)
+                                },
                                 onUserClick = {
                                     val userProfileUrl = "${photo.user.links.html}?utm_source=ImageFeedApp&utm_medium=referral"
                                     val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(userProfileUrl))
@@ -472,6 +485,11 @@ fun RelatedCollectionsCarousel(
     }
 }
 
+private val RelatedCollectionScrimBrush =
+    Brush.verticalGradient(
+        colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.8f)),
+    )
+
 @Composable
 fun RelatedCollectionCard(
     collection: PhotoCollection,
@@ -489,16 +507,22 @@ fun RelatedCollectionCard(
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             val coverUrl = collection.coverPhoto?.urls?.small
+            val coverRequest =
+                remember(context, coverUrl) {
+                    coverUrl?.let {
+                        ImageRequest
+                            .Builder(context)
+                            .data(it)
+                            .crossfade(true)
+                            .build()
+                    }
+                }
+
             if (coverUrl != null) {
                 Image(
                     painter =
                         rememberAsyncImagePainter(
-                            model =
-                                ImageRequest
-                                    .Builder(context)
-                                    .data(coverUrl)
-                                    .crossfade(true)
-                                    .build(),
+                            model = coverRequest,
                         ),
                     contentDescription = collection.title,
                     modifier = Modifier.fillMaxSize(),
@@ -511,11 +535,7 @@ fun RelatedCollectionCard(
                 modifier =
                     Modifier
                         .fillMaxSize()
-                        .background(
-                            Brush.verticalGradient(
-                                colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.8f)),
-                            ),
-                        ),
+                        .background(RelatedCollectionScrimBrush),
             )
 
             // Collection text details

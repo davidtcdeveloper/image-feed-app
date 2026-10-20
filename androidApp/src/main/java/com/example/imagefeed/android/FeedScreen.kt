@@ -46,7 +46,11 @@ import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -241,6 +245,11 @@ fun FeedScreen(
                 })
             } else {
                 // Main content: Photo Feed
+                val itemWidthPx = calculatePhotoItemWidthPx()
+                // UI-element transition state: gates Modifier.sharedElement so idle lazy items avoid tracking overhead during flings.
+                // Does not represent business selection; ViewModel remains the SSOT for feed data.
+                var selectedPhotoId by rememberSaveable { mutableStateOf<String?>(null) }
+
                 LazyVerticalStaggeredGrid(
                     columns = calculateGridColumns(),
                     state = listState,
@@ -265,7 +274,10 @@ fun FeedScreen(
                             animatedVisibilityScope = animatedVisibilityScope,
                             index = index,
                             photo = photo,
+                            itemWidthPx = itemWidthPx,
+                            isTransitionSource = photo.id == selectedPhotoId,
                             onClick = {
+                                selectedPhotoId = photo.id
                                 onPhotoClick(photo)
                             },
                             onUserClick = {
@@ -293,6 +305,11 @@ fun FeedScreen(
     }
 }
 
+private val PhotoAttributionScrimBrush =
+    Brush.verticalGradient(
+        colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.75f)),
+    )
+
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun PhotoCard(
@@ -302,10 +319,11 @@ fun PhotoCard(
     photo: Photo,
     onClick: () -> Unit,
     onUserClick: () -> Unit,
+    itemWidthPx: Int = calculatePhotoItemWidthPx(),
     showAttribution: Boolean = true,
+    isTransitionSource: Boolean = false,
 ) {
     val context = LocalPlatformContext.current
-    val itemWidthPx = calculatePhotoItemWidthPx()
     val aspectRatio = photo.width.toFloat() / photo.height.toFloat()
     val placeholderHeight =
         (
@@ -324,14 +342,23 @@ fun PhotoCard(
             height = placeholderHeight,
         )
 
+    val photoUrl =
+        remember(photo.id, photo.urls.raw, itemWidthPx) {
+            photo.urls.raw + "&w=" + itemWidthPx + "&q=80&auto=format"
+        }
+
+    val photoRequest =
+        remember(context, photoUrl) {
+            ImageRequest
+                .Builder(context)
+                .data(photoUrl)
+                .crossfade(true)
+                .build()
+        }
+
     val painter =
         rememberAsyncImagePainter(
-            model =
-                ImageRequest
-                    .Builder(context)
-                    .data(photo.urls.raw + "&w=" + itemWidthPx + "&q=80&auto=format")
-                    .crossfade(true)
-                    .build(),
+            model = photoRequest,
             placeholder = placeholderBitmap?.let { BitmapPainter(it.asImageBitmap()) },
         )
 
@@ -348,17 +375,25 @@ fun PhotoCard(
             modifier = Modifier.fillMaxWidth(),
         ) {
             with(sharedTransitionScope) {
+                val imageModifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(aspectRatio)
+                        .let { mod ->
+                            if (isTransitionSource) {
+                                mod.sharedElement(
+                                    sharedContentState = rememberSharedContentState(key = "photo_img_${photo.id}"),
+                                    animatedVisibilityScope = animatedVisibilityScope,
+                                )
+                            } else {
+                                mod
+                            }
+                        }
+
                 Image(
                     painter = painter,
                     contentDescription = photo.altDescription ?: photo.description,
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .aspectRatio(aspectRatio)
-                            .sharedElement(
-                                sharedContentState = rememberSharedContentState(key = "photo_img_${photo.id}"),
-                                animatedVisibilityScope = animatedVisibilityScope,
-                            ),
+                    modifier = imageModifier,
                     contentScale = ContentScale.Crop,
                 )
             }
@@ -370,11 +405,8 @@ fun PhotoCard(
                         Modifier
                             .fillMaxWidth()
                             .align(Alignment.BottomCenter)
-                            .background(
-                                Brush.verticalGradient(
-                                    colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.75f)),
-                                ),
-                            ).padding(8.dp),
+                            .background(PhotoAttributionScrimBrush)
+                            .padding(8.dp),
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -383,14 +415,18 @@ fun PhotoCard(
                                 .fillMaxWidth()
                                 .clickable { onUserClick() },
                     ) {
+                        val avatarRequest =
+                            remember(context, photo.user.profileImage.small) {
+                                ImageRequest
+                                    .Builder(context)
+                                    .data(photo.user.profileImage.small)
+                                    .crossfade(true)
+                                    .build()
+                            }
+
                         val userProfileImagePainter =
                             rememberAsyncImagePainter(
-                                model =
-                                    ImageRequest
-                                        .Builder(context)
-                                        .data(photo.user.profileImage.small)
-                                        .crossfade(true)
-                                        .build(),
+                                model = avatarRequest,
                             )
 
                         Image(

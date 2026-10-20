@@ -71,6 +71,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -100,7 +101,10 @@ import androidx.navigation3.runtime.NavKey
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
+import coil3.compose.LocalPlatformContext
 import coil3.compose.rememberAsyncImagePainter
+import coil3.request.ImageRequest
+import coil3.request.crossfade
 import com.example.imagefeed.android.adaptive.LocalAdaptiveLayoutInfo
 import com.example.imagefeed.android.navigation.AppRoute
 import com.example.imagefeed.android.util.BLURHASH_PLACEHOLDER_WIDTH
@@ -647,6 +651,11 @@ fun PhotosResultGrid(
             }
     }
 
+    val itemWidthPx = calculatePhotoItemWidthPx()
+    // UI-element transition state: gates Modifier.sharedElement so idle lazy items avoid tracking overhead during flings.
+    // Does not represent business selection; ViewModel remains the SSOT for search data.
+    var selectedPhotoId by rememberSaveable { mutableStateOf<String?>(null) }
+
     LazyVerticalStaggeredGrid(
         columns = calculateGridColumns(),
         state = listState,
@@ -671,7 +680,12 @@ fun PhotosResultGrid(
                 animatedVisibilityScope = animatedVisibilityScope,
                 index = index,
                 photo = photo,
-                onClick = { onPhotoClick(photo) },
+                itemWidthPx = itemWidthPx,
+                isTransitionSource = photo.id == selectedPhotoId,
+                onClick = {
+                    selectedPhotoId = photo.id
+                    onPhotoClick(photo)
+                },
                 onUserClick = {
                     // Handled inside PhotoCard or default link click
                 },
@@ -771,12 +785,21 @@ fun CollectionsResultList(
     }
 }
 
+private val CollectionRowScrimBrush =
+    Brush.verticalGradient(
+        listOf(
+            Color.Transparent,
+            Color.Black.copy(alpha = 0.65f),
+        ),
+    )
+
 @Composable
 fun CollectionRowCard(
     collection: CollectionSummary,
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
+    val context = LocalPlatformContext.current
     val blurHash = collection.coverPhoto?.blurHash
     val placeholderBitmap = rememberBlurHashPlaceholder(blurHash, BLURHASH_PLACEHOLDER_WIDTH, 18)
 
@@ -792,11 +815,22 @@ fun CollectionRowCard(
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             val coverPhoto = collection.coverPhoto
+            val coverRequest =
+                remember(context, coverPhoto?.urls?.regular) {
+                    coverPhoto?.urls?.regular?.let {
+                        ImageRequest
+                            .Builder(context)
+                            .data(it)
+                            .crossfade(true)
+                            .build()
+                    }
+                }
+
             if (coverPhoto != null) {
                 Image(
                     painter =
                         rememberAsyncImagePainter(
-                            model = coverPhoto.urls.regular,
+                            model = coverRequest,
                             placeholder = placeholderBitmap?.let { BitmapPainter(it.asImageBitmap()) },
                         ),
                     contentDescription = collection.title,
@@ -811,14 +845,8 @@ fun CollectionRowCard(
                 modifier =
                     Modifier
                         .fillMaxSize()
-                        .background(
-                            Brush.verticalGradient(
-                                listOf(
-                                    Color.Transparent,
-                                    Color.Black.copy(alpha = 0.65f),
-                                ),
-                            ),
-                        ).padding(16.dp),
+                        .background(CollectionRowScrimBrush)
+                        .padding(16.dp),
                 contentAlignment = Alignment.BottomStart,
             ) {
                 Column {
@@ -929,6 +957,16 @@ fun UserRowCard(
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
+    val context = LocalPlatformContext.current
+    val avatarRequest =
+        remember(context, user.profileImage.large) {
+            ImageRequest
+                .Builder(context)
+                .data(user.profileImage.large)
+                .crossfade(true)
+                .build()
+        }
+
     Card(
         shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
@@ -945,7 +983,7 @@ fun UserRowCard(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Image(
-                painter = rememberAsyncImagePainter(model = user.profileImage.large),
+                painter = rememberAsyncImagePainter(model = avatarRequest),
                 contentDescription = user.name,
                 modifier =
                     Modifier

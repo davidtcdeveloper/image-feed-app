@@ -1,6 +1,6 @@
 # Specification 61: Android Media Card Hot-Path Optimization (PhotoCard, CollectionMosaicCard, Grid Helpers)
 
-**Status:** Approved
+**Status:** Implemented
 
 ## 1. Overview & Problem Statement
 
@@ -27,7 +27,7 @@ Same patterns elsewhere (verified, beyond the original audit):
 3. **Scrim**: replace per-recomposition `Brush.verticalGradient` with a remembered/top-level brush (colours are constants) or `drawWithCache`/`drawBehind`; avoid `listOf` allocation per frame.
 4. **Gate shared elements**: apply `sharedElement`/`sharedBounds` only when the item can participate in a transition (e.g. gated by hoisted selected-id state or running transition state). Must keep back-navigation return transition working seamlessly when the source item has been scrolled off-screen or recycled. Implementer must validate on device and preserve Feed -> Details -> Back, Search -> Details, Profile -> Details, Collections -> Detail transitions.
 5. **Grid helpers**: derive column logic from `LocalAdaptiveLayoutInfo.screenWidthDp` and wrap results in `remember(screenWidth)` (or make them pure functions of an `Int`, keeping `@Composable` wrappers thin). Keep `computeBottomContentPadding` pattern (pure function + thin composable) as the model.
-6. **`staggeredEntrance` -> `Modifier.Node`**: optional; only if profiling shows its composition-phase state is measurable after items 1-4. Otherwise record as won't-do.
+6. **`staggeredEntrance` -> `Modifier.Node`**: **Explicitly deferred / Won't-do**. `staggeredEntrance` already gates execution by early-returning `this` for `index >= 6` and after first entry via `rememberSaveable { mutableStateOf(false) }`. Steady-state scrolling and recycling past index 5 introduce zero animations, coroutines, or allocations; composition-phase overhead is negligible after items 1–5.
 
 ## 3. Verification
 
@@ -39,14 +39,14 @@ Same patterns elsewhere (verified, beyond the original audit):
 
 ## 4. Acceptance Criteria
 
-- [ ] `calculatePhotoItemWidthPx` (or replacement) is evaluated once per grid, not per item; no `LocalConfiguration`/`LocalDensity` reads inside item composables.
-- [ ] `ImageRequest` and URL strings in `PhotoCard` (main + avatar) and `CollectionMosaicCard` (3 requests) are remembered with correct keys; `ixid` and URL params unchanged.
-- [ ] Attribution scrim brush not allocated per recomposition.
-- [ ] Shared element / bounds modifiers gated; all four forward/back transitions verified manually.
-- [ ] Grid column helpers memoized or pure; behaviour on phone/tablet/foldable widths unchanged.
-- [ ] Decision on `staggeredEntrance` as `Modifier.Node` recorded (implemented or explicitly deferred) in this spec.
-- [ ] Zero compiler warnings, no dead code (unused imports/params removed).
-- [ ] Android build passes; iOS build verified if `shared/` touched (not expected).
+- [x] `calculatePhotoItemWidthPx` (or replacement) is evaluated once per grid, not per item; no `LocalConfiguration`/`LocalDensity` reads inside item composables.
+- [x] `ImageRequest` and URL strings in `PhotoCard` (main + avatar) and `CollectionMosaicCard` (3 requests) are remembered with correct keys; `ixid` and URL params unchanged.
+- [x] Attribution scrim brush not allocated per recomposition.
+- [x] Shared element / bounds modifiers gated; all four forward/back transitions verified manually.
+- [x] Grid column helpers memoized or pure; behaviour on phone/tablet/foldable widths unchanged.
+- [x] Decision on `staggeredEntrance` as `Modifier.Node` recorded (implemented or explicitly deferred) in this spec.
+- [x] Zero compiler warnings, no dead code (unused imports/params removed).
+- [x] Android build passes; iOS build verified if `shared/` touched (not expected).
 
 > [!NOTE]
 > Line numbers in this spec are approximate (working tree had uncommitted edits at authoring time); locate code by symbol name.

@@ -45,7 +45,11 @@ import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -55,8 +59,6 @@ import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -206,6 +208,12 @@ fun CollectionsFeedScreen(
             } else if (state.collections.isEmpty() && state.error != null) {
                 ErrorView(error = state.error!!.localizedMessage(), onRetry = { viewModel.dispatch(CollectionsFeedIntent.Refresh) })
             } else {
+                val cardWidthPx = calculateCollectionMosaicCardWidthPx()
+                val sideWidthPx = remember(cardWidthPx) { cardWidthPx / 3 }
+                // UI-element transition state: gates Modifier.sharedBounds so idle lazy items avoid tracking overhead during flings.
+                // Does not represent business selection; ViewModel remains the SSOT for collections data.
+                var selectedCollectionId by rememberSaveable { mutableStateOf<String?>(null) }
+
                 LazyVerticalStaggeredGrid(
                     columns = calculateCollectionGridColumns(),
                     state = listState,
@@ -230,7 +238,13 @@ fun CollectionsFeedScreen(
                             animatedVisibilityScope = animatedVisibilityScope,
                             index = index,
                             collection = collection,
-                            onClick = { onCollectionClick(collection) },
+                            cardWidthPx = cardWidthPx,
+                            sideWidthPx = sideWidthPx,
+                            isTransitionSource = collection.id == selectedCollectionId,
+                            onClick = {
+                                selectedCollectionId = collection.id
+                                onCollectionClick(collection)
+                            },
                         )
                     }
 
@@ -261,15 +275,11 @@ fun CollectionMosaicCard(
     index: Int,
     collection: PhotoCollection,
     onClick: () -> Unit,
+    cardWidthPx: Int = calculateCollectionMosaicCardWidthPx(),
+    sideWidthPx: Int = cardWidthPx / 3,
+    isTransitionSource: Boolean = false,
 ) {
     val context = LocalPlatformContext.current
-    val density = LocalDensity.current
-    val configuration = LocalConfiguration.current
-
-    // Calculate dimensions for preview hotlinking compliance
-    val screenWidthDp = configuration.screenWidthDp
-    val cardWidthPx = with(density) { (screenWidthDp - 24).dp.roundToPx() }
-    val sideWidthPx = cardWidthPx / 3
 
     // Use BlurHash from cover photo as card background placeholder with LRU cache
     val blurHash = collection.coverPhoto?.blurHash
@@ -294,14 +304,33 @@ fun CollectionMosaicCard(
             ) {
                 // Left Image: Cover Photo (weight 0.62f)
                 val coverUrl =
-                    collection.coverPhoto
-                        ?.urls
-                        ?.raw
-                        ?.let { "$it&w=${cardWidthPx * 2 / 3}&q=80&auto=format" }
-                        ?: collection.previewPhotos
-                            ?.firstOrNull()
+                    remember(collection.id, collection.coverPhoto?.id, collection.coverPhoto?.urls?.raw, cardWidthPx) {
+                        collection.coverPhoto
                             ?.urls
-                            ?.small
+                            ?.raw
+                            ?.let { "$it&w=${cardWidthPx * 2 / 3}&q=80&auto=format" }
+                            ?: collection.previewPhotos
+                                ?.firstOrNull()
+                                ?.urls
+                                ?.small
+                    }
+
+                val coverRequest =
+                    remember(context, coverUrl) {
+                        coverUrl?.let {
+                            ImageRequest
+                                .Builder(context)
+                                .data(it)
+                                .crossfade(true)
+                                .build()
+                        }
+                    }
+
+                val coverPainter =
+                    rememberAsyncImagePainter(
+                        model = coverRequest,
+                        placeholder = placeholderBitmap?.let { BitmapPainter(it.asImageBitmap()) },
+                    )
 
                 Box(
                     modifier =
@@ -312,28 +341,27 @@ fun CollectionMosaicCard(
                 ) {
                     if (coverUrl != null) {
                         with(sharedTransitionScope) {
+                            val coverModifier =
+                                Modifier
+                                    .fillMaxSize()
+                                    .let { mod ->
+                                        if (isTransitionSource) {
+                                            mod.sharedBounds(
+                                                sharedContentState =
+                                                    rememberSharedContentState(
+                                                        key = "col_cover_${collection.id}",
+                                                    ),
+                                                animatedVisibilityScope = animatedVisibilityScope,
+                                            )
+                                        } else {
+                                            mod
+                                        }
+                                    }
+
                             Image(
-                                painter =
-                                    rememberAsyncImagePainter(
-                                        model =
-                                            ImageRequest
-                                                .Builder(context)
-                                                .data(coverUrl)
-                                                .crossfade(true)
-                                                .build(),
-                                        placeholder = placeholderBitmap?.let { BitmapPainter(it.asImageBitmap()) },
-                                    ),
+                                painter = coverPainter,
                                 contentDescription = collection.title,
-                                modifier =
-                                    Modifier
-                                        .fillMaxSize()
-                                        .sharedBounds(
-                                            sharedContentState =
-                                                rememberSharedContentState(
-                                                    key = "col_cover_${collection.id}",
-                                                ),
-                                            animatedVisibilityScope = animatedVisibilityScope,
-                                        ),
+                                modifier = coverModifier,
                                 contentScale = ContentScale.Crop,
                             )
                         }
@@ -355,9 +383,30 @@ fun CollectionMosaicCard(
                             ?.getOrNull(1)
                             ?: collection.previewPhotos
                                 ?.getOrNull(0)
-                    val topThumbUrl = topThumbPhoto?.urls?.small
+                    val topThumbUrl =
+                        remember(topThumbPhoto?.id, topThumbPhoto?.urls?.small, sideWidthPx) {
+                            topThumbPhoto?.urls?.small?.let { "$it&w=$sideWidthPx&q=80&auto=format" }
+                        }
                     val topPlaceholderBitmap =
                         rememberBlurHashPlaceholder(topThumbPhoto?.blurHash, BLURHASH_PLACEHOLDER_WIDTH / 2, 12)
+
+                    val topThumbRequest =
+                        remember(context, topThumbUrl) {
+                            topThumbUrl?.let {
+                                ImageRequest
+                                    .Builder(context)
+                                    .data(it)
+                                    .crossfade(true)
+                                    .build()
+                            }
+                        }
+
+                    val topThumbPainter =
+                        rememberAsyncImagePainter(
+                            model = topThumbRequest,
+                            placeholder = topPlaceholderBitmap?.let { BitmapPainter(it.asImageBitmap()) },
+                        )
+
                     Box(
                         modifier =
                             Modifier
@@ -367,16 +416,7 @@ fun CollectionMosaicCard(
                     ) {
                         if (topThumbUrl != null) {
                             Image(
-                                painter =
-                                    rememberAsyncImagePainter(
-                                        model =
-                                            ImageRequest
-                                                .Builder(context)
-                                                .data("$topThumbUrl&w=$sideWidthPx&q=80&auto=format")
-                                                .crossfade(true)
-                                                .build(),
-                                        placeholder = topPlaceholderBitmap?.let { BitmapPainter(it.asImageBitmap()) },
-                                    ),
+                                painter = topThumbPainter,
                                 contentDescription = stringResource(R.string.collections_preview_1_accessibility),
                                 modifier = Modifier.fillMaxSize(),
                                 contentScale = ContentScale.Crop,
@@ -392,9 +432,30 @@ fun CollectionMosaicCard(
                             ?.getOrNull(2)
                             ?: collection.previewPhotos
                                 ?.getOrNull(1)
-                    val bottomThumbUrl = bottomThumbPhoto?.urls?.small
+                    val bottomThumbUrl =
+                        remember(bottomThumbPhoto?.id, bottomThumbPhoto?.urls?.small, sideWidthPx) {
+                            bottomThumbPhoto?.urls?.small?.let { "$it&w=$sideWidthPx&q=80&auto=format" }
+                        }
                     val bottomPlaceholderBitmap =
                         rememberBlurHashPlaceholder(bottomThumbPhoto?.blurHash, BLURHASH_PLACEHOLDER_WIDTH / 2, 12)
+
+                    val bottomThumbRequest =
+                        remember(context, bottomThumbUrl) {
+                            bottomThumbUrl?.let {
+                                ImageRequest
+                                    .Builder(context)
+                                    .data(it)
+                                    .crossfade(true)
+                                    .build()
+                            }
+                        }
+
+                    val bottomThumbPainter =
+                        rememberAsyncImagePainter(
+                            model = bottomThumbRequest,
+                            placeholder = bottomPlaceholderBitmap?.let { BitmapPainter(it.asImageBitmap()) },
+                        )
+
                     Box(
                         modifier =
                             Modifier
@@ -404,16 +465,7 @@ fun CollectionMosaicCard(
                     ) {
                         if (bottomThumbUrl != null) {
                             Image(
-                                painter =
-                                    rememberAsyncImagePainter(
-                                        model =
-                                            ImageRequest
-                                                .Builder(context)
-                                                .data("$bottomThumbUrl&w=$sideWidthPx&q=80&auto=format")
-                                                .crossfade(true)
-                                                .build(),
-                                        placeholder = bottomPlaceholderBitmap?.let { BitmapPainter(it.asImageBitmap()) },
-                                    ),
+                                painter = bottomThumbPainter,
                                 contentDescription = stringResource(R.string.collections_preview_2_accessibility),
                                 modifier = Modifier.fillMaxSize(),
                                 contentScale = ContentScale.Crop,
@@ -469,14 +521,18 @@ fun CollectionMosaicCard(
                                     context.startActivity(browserIntent)
                                 },
                     ) {
+                        val curatorAvatarRequest =
+                            remember(context, collection.user.profileImage.small) {
+                                ImageRequest
+                                    .Builder(context)
+                                    .data(collection.user.profileImage.small)
+                                    .crossfade(true)
+                                    .build()
+                            }
+
                         val avatarPainter =
                             rememberAsyncImagePainter(
-                                model =
-                                    ImageRequest
-                                        .Builder(context)
-                                        .data(collection.user.profileImage.small)
-                                        .crossfade(true)
-                                        .build(),
+                                model = curatorAvatarRequest,
                             )
 
                         Image(
