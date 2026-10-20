@@ -910,7 +910,7 @@ These are the spec files that the implementation notes and planning references s
 2.  **Reference Specification:**
     *   Track blueprint in `specs/61_android_media_card_hot_path_optimization.md`.
 
-### Step 62: Android Scroll-Driven Chrome & Horizontal Row Hygiene (Planned)
+### Step 62: Android Scroll-Driven Chrome & Horizontal Row Hygiene (Completed)
 1.  **Feed Chrome & Rows:**
     *   Remove composition-phase `contentOffset` read for the topic strip background.
     *   Key the unkeyed Search colour `LazyRow`; document verified rows left unchanged; profile nested-grid virtualization tracked and handled in Step 65.

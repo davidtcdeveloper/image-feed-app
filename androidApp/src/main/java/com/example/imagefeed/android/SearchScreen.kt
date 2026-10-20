@@ -1046,36 +1046,66 @@ fun SearchFiltersSheet(
     var selectedColor by remember { mutableStateOf(filters.color) }
     val haptic = LocalHapticFeedback.current
 
+    val anyLabel = stringResource(R.string.search_filter_color_any)
+    val bwLabel = stringResource(R.string.search_filter_color_bw)
+    val blackLabel = stringResource(R.string.search_filter_color_black)
+    val whiteLabel = stringResource(R.string.search_filter_color_white)
+    val yellowLabel = stringResource(R.string.search_filter_color_yellow)
+    val orangeLabel = stringResource(R.string.search_filter_color_orange)
+    val redLabel = stringResource(R.string.search_filter_color_red)
+    val purpleLabel = stringResource(R.string.search_filter_color_purple)
+    val magentaLabel = stringResource(R.string.search_filter_color_magenta)
+    val greenLabel = stringResource(R.string.search_filter_color_green)
+    val tealLabel = stringResource(R.string.search_filter_color_teal)
+    val blueLabel = stringResource(R.string.search_filter_color_blue)
+
     val colors =
-        listOf(
-            Pair(stringResource(R.string.search_filter_color_any), null),
-            Pair(stringResource(R.string.search_filter_color_bw), "black_and_white"),
-            Pair(stringResource(R.string.search_filter_color_black), "black"),
-            Pair(stringResource(R.string.search_filter_color_white), "white"),
-            Pair(stringResource(R.string.search_filter_color_yellow), "yellow"),
-            Pair(stringResource(R.string.search_filter_color_orange), "orange"),
-            Pair(stringResource(R.string.search_filter_color_red), "red"),
-            Pair(stringResource(R.string.search_filter_color_purple), "purple"),
-            Pair(stringResource(R.string.search_filter_color_magenta), "magenta"),
-            Pair(stringResource(R.string.search_filter_color_green), "green"),
-            Pair(stringResource(R.string.search_filter_color_teal), "teal"),
-            Pair(stringResource(R.string.search_filter_color_blue), "blue"),
-        )
+        remember(
+            anyLabel,
+            bwLabel,
+            blackLabel,
+            whiteLabel,
+            yellowLabel,
+            orangeLabel,
+            redLabel,
+            purpleLabel,
+            magentaLabel,
+            greenLabel,
+            tealLabel,
+            blueLabel,
+        ) {
+            listOf(
+                Pair(anyLabel, null),
+                Pair(bwLabel, "black_and_white"),
+                Pair(blackLabel, "black"),
+                Pair(whiteLabel, "white"),
+                Pair(yellowLabel, "yellow"),
+                Pair(orangeLabel, "orange"),
+                Pair(redLabel, "red"),
+                Pair(purpleLabel, "purple"),
+                Pair(magentaLabel, "magenta"),
+                Pair(greenLabel, "green"),
+                Pair(tealLabel, "teal"),
+                Pair(blueLabel, "blue"),
+            )
+        }
 
     val colorHexes =
-        mapOf(
-            "black_and_white" to Color.Gray,
-            "black" to Color.Black,
-            "white" to Color.White,
-            "yellow" to Color(0xFFFFEB3B),
-            "orange" to Color(0xFFFF9800),
-            "red" to Color(0xFFF44336),
-            "purple" to Color(0xFF9C27B0),
-            "magenta" to Color(0xFFE91E63),
-            "green" to Color(0xFF4CAF50),
-            "teal" to Color(0xFF009688),
-            "blue" to Color(0xFF2196F3),
-        )
+        remember {
+            mapOf(
+                "black_and_white" to Color.Gray,
+                "black" to Color.Black,
+                "white" to Color.White,
+                "yellow" to Color(0xFFFFEB3B),
+                "orange" to Color(0xFFFF9800),
+                "red" to Color(0xFFF44336),
+                "purple" to Color(0xFF9C27B0),
+                "magenta" to Color(0xFFE91E63),
+                "green" to Color(0xFF4CAF50),
+                "teal" to Color(0xFF009688),
+                "blue" to Color(0xFF2196F3),
+            )
+        }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -1200,11 +1230,16 @@ fun SearchFiltersSheet(
                 letterSpacing = 1.sp,
             )
             Spacer(modifier = Modifier.height(8.dp))
+            // Retained LazyRow over Row+horizontalScroll to maintain nested scroll
+            // gesture dispatch with ModalBottomSheet drag handling.
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                items(colors) { pair ->
+                items(
+                    items = colors,
+                    key = { it.second ?: "any" },
+                ) { pair ->
                     val name = pair.first
                     val value = pair.second
 

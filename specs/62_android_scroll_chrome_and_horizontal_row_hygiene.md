@@ -1,6 +1,6 @@
 # Specification 62: Android Scroll-Driven Chrome & Horizontal Row Hygiene
 
-**Status:** Approved
+**Status:** Implemented
 
 ## 1. Overview & Problem Statement
 
@@ -35,12 +35,12 @@ Two small, independent hygiene issues around scrolling chrome and horizontal lis
 
 ## 4. Acceptance Criteria
 
-- [ ] No `scrollBehavior.state.contentOffset` read in composition in `FeedScreen.kt`.
-- [ ] Topic strip colour transitions consistently with the top app bar.
-- [ ] Search `LazyRow` at L1165 keyed (or replaced by a `Row`), source list remembered.
-- [ ] Spec records that other LazyRows were verified already keyed and intentionally left unchanged.
-- [ ] Profile nested-grid virtualization verified as tracked and handled by Spec 65.
-- [ ] Zero compiler warnings, no dead code; Android build passes.
+- [x] No `scrollBehavior.state.contentOffset` read in composition in `FeedScreen.kt`.
+- [x] Topic strip colour transitions consistently with the top app bar.
+- [x] Search `LazyRow` at L1165 keyed (or replaced by a `Row`), source list remembered.
+- [x] Spec records that other LazyRows were verified already keyed and intentionally left unchanged.
+- [x] Profile nested-grid virtualization verified as tracked and handled by Spec 65.
+- [x] Zero compiler warnings, no dead code; Android build passes.
 
 > [!NOTE]
 > Line numbers in this spec are approximate (working tree had uncommitted edits at authoring time); locate code by symbol name.

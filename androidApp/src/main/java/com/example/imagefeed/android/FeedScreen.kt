@@ -3,6 +3,7 @@ package com.example.imagefeed.android
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -45,6 +46,7 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -55,6 +57,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
@@ -111,6 +114,18 @@ fun FeedScreen(
     val state by viewModel.state.collectAsStateWithLifecycle(initialValue = FeedState())
     val listState = rememberLazyStaggeredGridState()
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
+    val isScrolled by remember(scrollBehavior) {
+        derivedStateOf { scrollBehavior.state.contentOffset < 0f }
+    }
+    val topicStripBackgroundColor by animateColorAsState(
+        targetValue =
+            if (isScrolled) {
+                MaterialTheme.colorScheme.surfaceContainer
+            } else {
+                MaterialTheme.colorScheme.surface
+            },
+        label = "TopicStripBackgroundColor",
+    )
     val pullToRefreshState = rememberPullToRefreshState()
     val haptic = LocalHapticFeedback.current
 
@@ -188,13 +203,9 @@ fun FeedScreen(
                     modifier =
                         Modifier
                             .fillMaxWidth()
-                            .background(
-                                if (scrollBehavior.state.contentOffset < 0f) {
-                                    MaterialTheme.colorScheme.surfaceContainer
-                                } else {
-                                    MaterialTheme.colorScheme.surface
-                                },
-                            ).padding(vertical = 8.dp),
+                            .drawBehind {
+                                drawRect(topicStripBackgroundColor)
+                            }.padding(vertical = 8.dp),
                 ) {
                     LazyRow(
                         modifier = Modifier.fillMaxWidth(),
