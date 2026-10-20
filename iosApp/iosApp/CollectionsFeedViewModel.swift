@@ -19,11 +19,12 @@ class CollectionsFeedViewModel {
 
         self.stateCloseable = viewModel.iosState.watch { [weak self] state in
             guard let self, let state else { return }
-            self.collections = state.collections
-            self.isLoading = state.isLoading
-            self.isRefreshing = state.isRefreshing
-            self.error = state.error?.localizedMessage
-            self.hasReachedEnd = state.hasReachedEnd
+            if self.collections != state.collections { self.collections = state.collections }
+            if self.isLoading != state.isLoading { self.isLoading = state.isLoading }
+            if self.isRefreshing != state.isRefreshing { self.isRefreshing = state.isRefreshing }
+            let errorMessage = state.error?.localizedMessage
+            if self.error != errorMessage { self.error = errorMessage }
+            if self.hasReachedEnd != state.hasReachedEnd { self.hasReachedEnd = state.hasReachedEnd }
         }
 
         self.effectsCloseable = viewModel.iosEffects.watch { [weak self] effect in

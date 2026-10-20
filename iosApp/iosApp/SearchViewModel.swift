@@ -31,19 +31,20 @@ class SearchViewModel {
 
         self.stateCloseable = viewModel.iosState.watch { [weak self] state in
             guard let self, let state else { return }
-            self.query = state.query
-            self.isSearchActive = state.isSearchActive
-            self.isRefreshing = state.isRefreshing
-            self.activeTab = state.activeTab
-            self.filters = state.filters
-            self.photos = state.photos
-            self.collections = state.collections
-            self.users = state.users
-            self.isLoading = state.isLoading
-            self.isLoadingMore = state.isLoadingMore
-            self.error = state.error?.localizedMessage
-            self.searchHistory = state.searchHistory
-            self.hasReachedEnd = state.hasReachedEnd
+            if self.query != state.query { self.query = state.query }
+            if self.isSearchActive != state.isSearchActive { self.isSearchActive = state.isSearchActive }
+            if self.isRefreshing != state.isRefreshing { self.isRefreshing = state.isRefreshing }
+            if self.activeTab != state.activeTab { self.activeTab = state.activeTab }
+            if self.filters != state.filters { self.filters = state.filters }
+            if self.photos != state.photos { self.photos = state.photos }
+            if self.collections != state.collections { self.collections = state.collections }
+            if self.users != state.users { self.users = state.users }
+            if self.isLoading != state.isLoading { self.isLoading = state.isLoading }
+            if self.isLoadingMore != state.isLoadingMore { self.isLoadingMore = state.isLoadingMore }
+            let errorMessage = state.error?.localizedMessage
+            if self.error != errorMessage { self.error = errorMessage }
+            if self.searchHistory != state.searchHistory { self.searchHistory = state.searchHistory }
+            if self.hasReachedEnd != state.hasReachedEnd { self.hasReachedEnd = state.hasReachedEnd }
         }
 
         self.effectsCloseable = viewModel.iosEffects.watch { [weak self] effect in

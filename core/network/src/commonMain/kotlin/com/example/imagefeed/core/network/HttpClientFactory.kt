@@ -17,21 +17,22 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
+internal val unsplashJson =
+    Json {
+        ignoreUnknownKeys = true
+        prettyPrint = false
+        isLenient = true
+    }
+
 // Factory to create HttpClient configured for Unsplash API
 fun createUnsplashHttpClient(): HttpClient =
     HttpClient {
         install(ContentNegotiation) {
-            json(
-                Json {
-                    ignoreUnknownKeys = true
-                    prettyPrint = true
-                    isLenient = true
-                },
-            )
+            json(unsplashJson)
         }
         install(Logging) {
             logger = Logger.SIMPLE
-            level = LogLevel.ALL
+            level = LogLevel.NONE
         }
         HttpResponseValidator {
             validateResponse { response ->
@@ -41,7 +42,7 @@ fun createUnsplashHttpClient(): HttpClient =
                     // Try to parse the error message if it's JSON error format
                     val errorMessage =
                         try {
-                            val element = Json.parseToJsonElement(errorText)
+                            val element = unsplashJson.parseToJsonElement(errorText)
                             val errors = element.jsonObject["errors"]?.jsonArray
                             errors?.map { it.jsonPrimitive.content }?.joinToString(", ")
                                 ?: errorText

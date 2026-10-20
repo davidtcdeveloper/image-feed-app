@@ -50,6 +50,12 @@ enum AdaptiveLayoutHelper {
         return Int(widthPt * scale)
     }
 
+    struct IndexedItem<T>: Identifiable {
+        let index: Int
+        let element: T
+        let id: String
+    }
+
     static func itemsForColumn<T>(index: Int, totalColumns: Int, from items: [T]) -> [T] {
         guard totalColumns > 0 else { return [] }
         return items.enumerated()
@@ -59,6 +65,13 @@ enum AdaptiveLayoutHelper {
 
     static func photosForColumn(index: Int, totalColumns: Int, from photos: [Photo]) -> [Photo] {
         itemsForColumn(index: index, totalColumns: totalColumns, from: photos)
+    }
+
+    static func indexedPhotosForColumn(index: Int, totalColumns: Int, from photos: [Photo]) -> [IndexedItem<Photo>] {
+        guard totalColumns > 0 else { return [] }
+        return photos.enumerated()
+            .filter { $0.offset % totalColumns == index }
+            .map { IndexedItem(index: $0.offset, element: $0.element, id: $0.element.id) }
     }
 }
 

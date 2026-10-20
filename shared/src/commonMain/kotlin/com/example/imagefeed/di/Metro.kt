@@ -20,16 +20,13 @@ import com.example.imagefeed.profile.data.ProfileRepository
 import com.example.imagefeed.profile.di.ProfileModule
 import com.example.imagefeed.search.data.SearchRepository
 import com.example.imagefeed.search.di.SearchModule
+import com.example.imagefeed.core.network.di.AppScope
 import dev.zacsweers.metro.BindingContainer
 import dev.zacsweers.metro.DependencyGraph
 import dev.zacsweers.metro.Provides
-import dev.zacsweers.metro.Scope
 import dev.zacsweers.metro.SingleIn
 import dev.zacsweers.metro.createGraph
 import io.ktor.client.HttpClient
-
-@Scope
-internal annotation class AppScope
 
 @OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
 @kotlin.native.HiddenFromObjC

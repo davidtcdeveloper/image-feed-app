@@ -19,10 +19,11 @@ class PhotoDetailsViewModel {
 
         self.stateCloseable = viewModel.iosState.watch { [weak self] state in
             guard let self, let state else { return }
-            self.photo = state.photo
-            self.stats = state.stats
-            self.isLoading = state.isLoading
-            self.error = state.error?.localizedMessage
+            if self.photo != state.photo { self.photo = state.photo }
+            if self.stats != state.stats { self.stats = state.stats }
+            if self.isLoading != state.isLoading { self.isLoading = state.isLoading }
+            let errorMessage = state.error?.localizedMessage
+            if self.error != errorMessage { self.error = errorMessage }
         }
 
         self.effectsCloseable = viewModel.iosEffects.watch { [weak self] effect in

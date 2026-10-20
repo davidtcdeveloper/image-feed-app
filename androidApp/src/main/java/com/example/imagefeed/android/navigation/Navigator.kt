@@ -7,6 +7,10 @@ import kotlinx.coroutines.flow.asSharedFlow
 class Navigator(
     val state: NavigationState,
 ) {
+    companion object {
+        const val MAX_BACKSTACK_DEPTH = 8
+    }
+
     private val _reselectEvents = MutableSharedFlow<NavKey>(extraBufferCapacity = 1)
     val reselectEvents = _reselectEvents.asSharedFlow()
 
@@ -16,16 +20,33 @@ class Navigator(
             // Switch to top level route
             state.topLevelRoute = matchingTopLevel
             if (route is AppRoute.Search && route.query.isNotEmpty()) {
-                if (state.backStacks[matchingTopLevel]?.lastOrNull() != route) {
-                    state.backStacks[matchingTopLevel]?.add(route)
+                val currentStack = state.backStacks[matchingTopLevel]
+                if (currentStack != null && currentStack.lastOrNull() != route) {
+                    val existingIndex = currentStack.indexOf(route)
+                    if (existingIndex > 0) {
+                        currentStack.removeAt(existingIndex)
+                    }
+                    currentStack.add(route)
+                    trimStackDepth(currentStack)
                 }
             }
         } else {
             // Push sub-route onto current top-level back stack
             val currentStack = state.backStacks[state.topLevelRoute]
-            if (currentStack?.lastOrNull() != route) {
-                currentStack?.add(route)
+            if (currentStack != null && currentStack.lastOrNull() != route) {
+                val existingIndex = currentStack.indexOf(route)
+                if (existingIndex > 0) {
+                    currentStack.removeAt(existingIndex)
+                }
+                currentStack.add(route)
+                trimStackDepth(currentStack)
             }
+        }
+    }
+
+    private fun trimStackDepth(stack: MutableList<NavKey>) {
+        while (stack.size > MAX_BACKSTACK_DEPTH && stack.size > 1) {
+            stack.removeAt(1)
         }
     }
 

@@ -131,7 +131,7 @@ fun EntryProviderScope<NavKey>.searchSection(
             animatedVisibilityScope = LocalNavAnimatedContentScope.current,
             initialQuery = key.query,
             viewModel =
-                viewModel(key = "search_${key.query}") {
+                viewModel(key = if (key.query.isEmpty()) "search_root" else "search_tag_${key.query}") {
                     MetroHelper.getUnifiedSearchViewModel()
                 },
             reselectEvents = navigator.reselectEvents,

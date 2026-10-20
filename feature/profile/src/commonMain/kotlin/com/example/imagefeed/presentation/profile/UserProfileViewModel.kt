@@ -74,26 +74,63 @@ class UserProfileViewModel(
         val current = state.value
         if (current.activeTab == tab) return
 
-        updateState { it.copy(activeTab = tab, error = null) }
+        updateState { state ->
+            val trimmedPortfolio =
+                if (state.activeTab == ProfileTab.PORTFOLIO && state.portfolioPhotos.size > 20) {
+                    state.portfolioPhotos.take(20)
+                } else {
+                    state.portfolioPhotos
+                }
+            val trimmedLikes =
+                if (state.activeTab == ProfileTab.LIKES && state.likedPhotos.size > 20) {
+                    state.likedPhotos.take(20)
+                } else {
+                    state.likedPhotos
+                }
+            val trimmedCollections =
+                if (state.activeTab == ProfileTab.COLLECTIONS && state.collections.size > 20) {
+                    state.collections.take(20)
+                } else {
+                    state.collections
+                }
+            val portfolioPage =
+                if (state.activeTab == ProfileTab.PORTFOLIO && state.portfolioPhotos.size > 20) 1 else state.portfolioPage
+            val likesPage =
+                if (state.activeTab == ProfileTab.LIKES && state.likedPhotos.size > 20) 1 else state.likesPage
+            val collectionsPage =
+                if (state.activeTab == ProfileTab.COLLECTIONS && state.collections.size > 20) 1 else state.collectionsPage
 
+            state.copy(
+                activeTab = tab,
+                portfolioPhotos = trimmedPortfolio,
+                likedPhotos = trimmedLikes,
+                collections = trimmedCollections,
+                portfolioPage = portfolioPage,
+                likesPage = likesPage,
+                collectionsPage = collectionsPage,
+                error = null,
+            )
+        }
+
+        val updated = state.value
         when (tab) {
             ProfileTab.PORTFOLIO -> {
-                if (current.portfolioPhotos.isEmpty() && !current.portfolioReachedEnd) {
+                if (updated.portfolioPhotos.isEmpty() && !updated.portfolioReachedEnd) {
                     loadNextPhotosPage()
                 }
             }
             ProfileTab.LIKES -> {
-                if (current.likedPhotos.isEmpty() && !current.likesReachedEnd) {
+                if (updated.likedPhotos.isEmpty() && !updated.likesReachedEnd) {
                     loadNextLikesPage()
                 }
             }
             ProfileTab.COLLECTIONS -> {
-                if (current.collections.isEmpty() && !current.collectionsReachedEnd) {
+                if (updated.collections.isEmpty() && !updated.collectionsReachedEnd) {
                     loadNextCollectionsPage()
                 }
             }
             ProfileTab.INSIGHTS -> {
-                if (current.stats == null) {
+                if (updated.stats == null) {
                     loadStats()
                 }
             }

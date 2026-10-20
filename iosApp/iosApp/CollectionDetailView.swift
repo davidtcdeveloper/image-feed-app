@@ -208,10 +208,10 @@ struct CollectionDetailView: View {
                                     ForEach(0..<columnCount, id: \.self) { colIndex in
                                         LazyVStack(spacing: 8) {
                                             ForEach(
-                                                AdaptiveLayoutHelper.photosForColumn(index: colIndex, totalColumns: columnCount, from: viewModel.photos),
-                                                id: \.id)
-                                            { photo in
-                                                let flatIndex = viewModel.photos.firstIndex(where: { $0.id == photo.id }) ?? 0
+                                                AdaptiveLayoutHelper.indexedPhotosForColumn(index: colIndex, totalColumns: columnCount, from: viewModel.photos)
+                                            ) { indexed in
+                                                let photo = indexed.element
+                                                let flatIndex = indexed.index
                                                 CollectionPhotoGridCard(
                                                     photo: photo,
                                                     viewModel: viewModel,

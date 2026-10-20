@@ -3,8 +3,10 @@ package com.example.imagefeed.collections.di
 import com.example.imagefeed.collections.data.CollectionsApiClient
 import com.example.imagefeed.collections.data.CollectionsRepository
 import com.example.imagefeed.collections.data.CollectionsRepositoryImpl
+import com.example.imagefeed.core.network.di.AppScope
 import dev.zacsweers.metro.BindingContainer
 import dev.zacsweers.metro.Provides
+import dev.zacsweers.metro.SingleIn
 import io.ktor.client.HttpClient
 
 @OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
@@ -12,5 +14,6 @@ import io.ktor.client.HttpClient
 @BindingContainer
 object CollectionsModule {
     @Provides
+    @SingleIn(AppScope::class)
     fun provideCollectionsRepository(client: HttpClient): CollectionsRepository = CollectionsRepositoryImpl(CollectionsApiClient(client))
 }

@@ -94,7 +94,44 @@ class UnifiedSearchViewModel(
 
     private fun setTab(tab: SearchTab) {
         if (state.value.activeTab == tab) return
-        updateState { it.copy(activeTab = tab, error = null, hasReachedEnd = false) }
+        updateState { current ->
+            val trimmedPhotos =
+                if (current.activeTab == SearchTab.PHOTOS && current.photos.size > 20) {
+                    current.photos.take(20)
+                } else {
+                    current.photos
+                }
+            val trimmedCollections =
+                if (current.activeTab == SearchTab.COLLECTIONS && current.collections.size > 20) {
+                    current.collections.take(20)
+                } else {
+                    current.collections
+                }
+            val trimmedUsers =
+                if (current.activeTab == SearchTab.USERS && current.users.size > 20) {
+                    current.users.take(20)
+                } else {
+                    current.users
+                }
+            val photoPage =
+                if (current.activeTab == SearchTab.PHOTOS && current.photos.size > 20) 1 else current.photoPage
+            val collectionPage =
+                if (current.activeTab == SearchTab.COLLECTIONS && current.collections.size > 20) 1 else current.collectionPage
+            val userPage =
+                if (current.activeTab == SearchTab.USERS && current.users.size > 20) 1 else current.userPage
+
+            current.copy(
+                activeTab = tab,
+                photos = trimmedPhotos,
+                collections = trimmedCollections,
+                users = trimmedUsers,
+                photoPage = photoPage,
+                collectionPage = collectionPage,
+                userPage = userPage,
+                error = null,
+                hasReachedEnd = false,
+            )
+        }
 
         val query = state.value.query
         if (query.isNotBlank()) {

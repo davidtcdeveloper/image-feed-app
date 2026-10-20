@@ -373,6 +373,9 @@ struct PhotosFeedTabView: View {
                 #if os(iOS)
                 ToolbarItem(placement: .navigationBarLeading) {
                     GlassToolbarButton(systemName: "magnifyingglass", accessibilityLabel: "Search") {
+                        withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
+                            selectedPhotoForHero = nil
+                        }
                         activePath.wrappedValue.append(FeedPathItem(id: "", type: .search))
                     }
                     .keyboardShortcut("f", modifiers: .command)
@@ -386,6 +389,9 @@ struct PhotosFeedTabView: View {
                 #else
                 ToolbarItem(placement: .navigation) {
                     GlassToolbarButton(systemName: "magnifyingglass", accessibilityLabel: "Search") {
+                        withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
+                            selectedPhotoForHero = nil
+                        }
                         activePath.wrappedValue.append(FeedPathItem(id: "", type: .search))
                     }
                     .keyboardShortcut("f", modifiers: .command)
@@ -402,6 +408,13 @@ struct PhotosFeedTabView: View {
             .sensoryFeedback(.impact(weight: .medium), trigger: shakeFeedbackTrigger)
             .onChange(of: selectedPhotoForHero) { _, newValue in
                 activeDetailPresented.wrappedValue = (newValue != nil)
+            }
+            .onChange(of: activePath.wrappedValue.count) { _, count in
+                if count > 0 && selectedPhotoForHero != nil {
+                    withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
+                        selectedPhotoForHero = nil
+                    }
+                }
             }
             .navigationDestination(for: FeedPathItem.self) { item in
                 Group {
@@ -469,31 +482,44 @@ struct PhotosFeedTabView: View {
     #if os(iOS)
     private func handleScroll(offset: CGFloat) {
         let delta = offset - lastScrollOffset
+        if abs(delta) < 2.0 && offset < -20 {
+            return
+        }
         lastScrollOffset = offset
 
+        let targetMinimized: Bool
         if offset >= -20 {
-            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                activeCapsuleMinimized.wrappedValue = false
-            }
+            targetMinimized = false
         } else if delta < -15 {
-            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                activeCapsuleMinimized.wrappedValue = true
-            }
+            targetMinimized = true
         } else if delta > 15 {
+            targetMinimized = false
+        } else {
+            targetMinimized = activeCapsuleMinimized.wrappedValue
+        }
+
+        if activeCapsuleMinimized.wrappedValue != targetMinimized {
             withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                activeCapsuleMinimized.wrappedValue = false
+                activeCapsuleMinimized.wrappedValue = targetMinimized
             }
         }
 
-        scrollResetTask?.cancel()
-        scrollResetTask = Task {
-            try? await Task.sleep(nanoseconds: 1200000000)
-            guard !Task.isCancelled else { return }
-            await MainActor.run {
-                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                    activeCapsuleMinimized.wrappedValue = false
+        if activeCapsuleMinimized.wrappedValue {
+            scrollResetTask?.cancel()
+            scrollResetTask = Task {
+                try? await Task.sleep(nanoseconds: 1200000000)
+                guard !Task.isCancelled else { return }
+                await MainActor.run {
+                    if activeCapsuleMinimized.wrappedValue {
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                            activeCapsuleMinimized.wrappedValue = false
+                        }
+                    }
                 }
             }
+        } else if scrollResetTask != nil {
+            scrollResetTask?.cancel()
+            scrollResetTask = nil
         }
     }
     #endif
@@ -515,6 +541,9 @@ struct PhotosFeedTabView: View {
         guard !isShaking else { return }
         shakeFeedbackTrigger += 1
         isShaking = true
+        withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
+            selectedPhotoForHero = nil
+        }
         viewModel.fetchRandomPhotoId { photoId in
             isShaking = false
             if let photoId {

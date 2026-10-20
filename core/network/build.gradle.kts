@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.android.kotlin.multiplatform.library)
     alias(libs.plugins.buildkonfig)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.metro)
 }
 
 val localProperties = Properties()
@@ -57,4 +58,9 @@ buildkonfig {
     defaultConfigs {
         buildConfigField(Type.STRING, "UNSPLASH_API_KEY", unsplashApiKey)
     }
+}
+
+metro {
+    enabled = true
+    debug = false
 }

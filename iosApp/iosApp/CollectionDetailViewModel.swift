@@ -21,13 +21,14 @@ class CollectionDetailViewModel {
 
         self.stateCloseable = viewModel.iosState.watch { [weak self] state in
             guard let self, let state else { return }
-            self.collection = state.collection
-            self.photos = state.photos
-            self.related = state.related
-            self.isLoadingPhotos = state.isLoadingPhotos
-            self.isHeaderLoading = state.isHeaderLoading
-            self.error = state.error?.localizedMessage
-            self.hasReachedEnd = state.hasReachedEnd
+            if self.collection != state.collection { self.collection = state.collection }
+            if self.photos != state.photos { self.photos = state.photos }
+            if self.related != state.related { self.related = state.related }
+            if self.isLoadingPhotos != state.isLoadingPhotos { self.isLoadingPhotos = state.isLoadingPhotos }
+            if self.isHeaderLoading != state.isHeaderLoading { self.isHeaderLoading = state.isHeaderLoading }
+            let errorMessage = state.error?.localizedMessage
+            if self.error != errorMessage { self.error = errorMessage }
+            if self.hasReachedEnd != state.hasReachedEnd { self.hasReachedEnd = state.hasReachedEnd }
         }
 
         self.effectsCloseable = viewModel.iosEffects.watch { [weak self] effect in

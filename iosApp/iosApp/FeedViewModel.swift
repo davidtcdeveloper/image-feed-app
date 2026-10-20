@@ -24,14 +24,15 @@ class FeedViewModel {
 
         self.stateCloseable = viewModel.iosState.watch { [weak self] state in
             guard let self, let state else { return }
-            self.photos = state.photos
-            self.topics = state.topics
-            self.selectedTopicSlug = state.selectedTopicSlug
-            self.isLoading = state.isLoading
-            self.isLoadingTopics = state.isLoadingTopics
-            self.isRefreshing = state.isRefreshing
-            self.error = state.error?.localizedMessage
-            self.hasReachedEnd = state.hasReachedEnd
+            if self.photos != state.photos { self.photos = state.photos }
+            if self.topics != state.topics { self.topics = state.topics }
+            if self.selectedTopicSlug != state.selectedTopicSlug { self.selectedTopicSlug = state.selectedTopicSlug }
+            if self.isLoading != state.isLoading { self.isLoading = state.isLoading }
+            if self.isLoadingTopics != state.isLoadingTopics { self.isLoadingTopics = state.isLoadingTopics }
+            if self.isRefreshing != state.isRefreshing { self.isRefreshing = state.isRefreshing }
+            let errorMessage = state.error?.localizedMessage
+            if self.error != errorMessage { self.error = errorMessage }
+            if self.hasReachedEnd != state.hasReachedEnd { self.hasReachedEnd = state.hasReachedEnd }
         }
 
         self.effectsCloseable = viewModel.iosEffects.watch { [weak self] effect in

@@ -1,6 +1,6 @@
 # Specification 67: Runtime Memory Optimization Phase 3 — Network Buffering, Navigation Hygiene, DI Scoping & UI Frame Churn
 
-**Status:** Approved
+**Status:** Implemented
 
 ## 1. Overview & Problem Statement
 
@@ -90,12 +90,12 @@ Building on Phase 1 ([Spec 65](file:///Users/davidtiagoconceicao/Developer/image
 
 ## 4. Acceptance Criteria
 
-- [ ] `HttpClientFactory.kt` uses `LogLevel.NONE` (or headers-only in debug), sets `prettyPrint = false`, and reuses a single `Json` instance in `ContentNegotiation` and `HttpResponseValidator`.
-- [ ] `ContentView.swift` clears `selectedPhotoForHero = nil` across all navigation paths (`onUserSelect`, `onTagSelect`, `handleShake`, and any `activePath` push).
-- [ ] Android `Navigator` / `NavigationSections` prevents unbounded detail backstack growth and avoids leaking distinct `UnifiedSearchViewModel` instances per query; inactive tab lists in `UnifiedSearchState` and `UserProfileState` are bounded on tab switch.
-- [ ] All 5 feature repository `@Provides` functions (`FeedModule`, `CollectionsModule`, `SearchModule`, `ProfileModule`, `PhotoDetailsModule`) are annotated with `@SingleIn(AppScope::class)` without leaking DI annotations into Objective-C headers.
-- [ ] All 6 Swift `@Observable` ViewModels guard property/array assignments against unchanged values.
-- [ ] `ContentView.handleScroll` guards `activeCapsuleMinimized` mutations and avoids per-frame `Task` allocations.
-- [ ] `AdaptiveLayoutHelper` provides $O(1)$ item indices for masonry columns, removing all `firstIndex(where:)` scans in `CollectionDetailView.swift`, `SearchView.swift`, and `UserProfileView.swift` without breaking `ContentView.swift` or `CollectionsFeedView.swift`.
-- [ ] Shimmer skeletons share a single `InfiniteTransition` and chart list transformations + `Canvas` `Path`/`Brush` allocations are remembered/cached (verified as fulfilled by [Spec 60](60_android_shimmer_skeleton_rendering_optimization.md) and [Spec 63](63_android_photo_details_and_chart_rendering_optimization.md)).
-- [ ] Zero compiler warnings, zero dead code, and both Android and iOS builds + unit tests pass.
+- [x] `HttpClientFactory.kt` uses `LogLevel.NONE` (or headers-only in debug), sets `prettyPrint = false`, and reuses a single `Json` instance in `ContentNegotiation` and `HttpResponseValidator`.
+- [x] `ContentView.swift` clears `selectedPhotoForHero = nil` across all navigation paths (`onUserSelect`, `onTagSelect`, `handleShake`, and any `activePath` push).
+- [x] Android `Navigator` / `NavigationSections` prevents unbounded detail backstack growth and avoids leaking distinct `UnifiedSearchViewModel` instances per query; inactive tab lists in `UnifiedSearchState` and `UserProfileState` are bounded on tab switch.
+- [x] All 5 feature repository `@Provides` functions (`FeedModule`, `CollectionsModule`, `SearchModule`, `ProfileModule`, `PhotoDetailsModule`) are annotated with `@SingleIn(AppScope::class)` without leaking DI annotations into Objective-C headers.
+- [x] All 6 Swift `@Observable` ViewModels guard property/array assignments against unchanged values.
+- [x] `ContentView.handleScroll` guards `activeCapsuleMinimized` mutations and avoids per-frame `Task` allocations.
+- [x] `AdaptiveLayoutHelper` provides $O(1)$ item indices for masonry columns, removing all `firstIndex(where:)` scans in `CollectionDetailView.swift`, `SearchView.swift`, and `UserProfileView.swift` without breaking `ContentView.swift` or `CollectionsFeedView.swift`.
+- [x] Shimmer skeletons share a single `InfiniteTransition` and chart list transformations + `Canvas` `Path`/`Brush` allocations are remembered/cached (verified as fulfilled by [Spec 60](60_android_shimmer_skeleton_rendering_optimization.md) and [Spec 63](63_android_photo_details_and_chart_rendering_optimization.md)).
+- [x] Zero compiler warnings, zero dead code, and both Android and iOS builds + unit tests pass.

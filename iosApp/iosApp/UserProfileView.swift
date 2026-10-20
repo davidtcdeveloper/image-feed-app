@@ -407,8 +407,9 @@ struct GridPhotosList: View {
                 HStack(alignment: .top, spacing: 8) {
                     ForEach(0..<columnCount, id: \.self) { colIndex in
                         LazyVStack(spacing: 8) {
-                            ForEach(AdaptiveLayoutHelper.photosForColumn(index: colIndex, totalColumns: columnCount, from: photos), id: \.id) { photo in
-                                let flatIndex = photos.firstIndex(where: { $0.id == photo.id }) ?? 0
+                            ForEach(AdaptiveLayoutHelper.indexedPhotosForColumn(index: colIndex, totalColumns: columnCount, from: photos)) { indexed in
+                                let photo = indexed.element
+                                let flatIndex = indexed.index
                                 let screenWidth = AdaptiveLayoutHelper.getScreenWidth()
                                 let itemWidth = AdaptiveLayoutHelper.calculateItemWidthPx(screenWidth: screenWidth, columnCount: columnCount)
                                 let imageUrl = photo.urls.getOptimalUrl(targetWidthPx: Int32(itemWidth))

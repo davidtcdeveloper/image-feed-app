@@ -965,7 +965,7 @@ These are the spec files that the implementation notes and planning references s
 4.  **Reference Specification:**
     *   Track blueprint in `specs/66_memory_optimization_phase2_maps_thumbnails_and_blurhash.md`.
 
-### Step 67: Runtime Memory Optimization Phase 3 — Network Buffering, Navigation Hygiene, DI Scoping & UI Frame Churn (Planned)
+### Step 67: Runtime Memory Optimization Phase 3 — Network Buffering, Navigation Hygiene, DI Scoping & UI Frame Churn (Completed)
 1.  **Ktor Network & Metro DI Scoping:**
     *   Replace `LogLevel.ALL` and `prettyPrint = true` with `LogLevel.NONE`, `prettyPrint = false`, and a shared `Json` instance in `HttpClientFactory.kt`.
     *   Define `@Scope @HiddenFromObjC annotation class AppScope` in `:core:network` with Metro plugin and annotate all 5 feature repository `@Provides` methods (`FeedModule`, `CollectionsModule`, `SearchModule`, `ProfileModule`, `PhotoDetailsModule`) with `@SingleIn(AppScope::class)`.
