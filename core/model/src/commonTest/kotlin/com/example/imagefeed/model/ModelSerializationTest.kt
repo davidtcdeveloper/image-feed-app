@@ -185,13 +185,14 @@ class ModelSerializationTest {
 
     @Test
     fun photoUrlsGetOptimalUrlAppendsWidthAndQuality() {
-        val urls = PhotoUrls(
-            raw = "https://images.unsplash.com/photo-123",
-            full = "https://example.com/full.jpg",
-            regular = "https://example.com/regular.jpg",
-            small = "https://example.com/small.jpg",
-            thumb = "https://example.com/thumb.jpg",
-        )
+        val urls =
+            PhotoUrls(
+                raw = "https://images.unsplash.com/photo-123",
+                full = "https://example.com/full.jpg",
+                regular = "https://example.com/regular.jpg",
+                small = "https://example.com/small.jpg",
+                thumb = "https://example.com/thumb.jpg",
+            )
         val optimal = urls.getOptimalUrl(400, 75)
         assertEquals("https://images.unsplash.com/photo-123?w=400&q=75&auto=format", optimal)
         assertEquals("https://images.unsplash.com/photo-123?w=400&q=80&auto=format", urls.getOptimalUrl(400))
@@ -199,26 +200,28 @@ class ModelSerializationTest {
 
     @Test
     fun photoUrlsGetOptimalUrlPreservesIxidAndStripsExistingDimensions() {
-        val urls = PhotoUrls(
-            raw = "https://images.unsplash.com/photo-123?ixid=M3wxMjA3fDB8MHxwaG90by1wYWdl&w=1080&q=80&auto=format",
-            full = "https://example.com/full.jpg",
-            regular = "https://example.com/regular.jpg",
-            small = "https://example.com/small.jpg",
-            thumb = "https://example.com/thumb.jpg",
-        )
+        val urls =
+            PhotoUrls(
+                raw = "https://images.unsplash.com/photo-123?ixid=M3wxMjA3fDB8MHxwaG90by1wYWdl&w=1080&q=80&auto=format",
+                full = "https://example.com/full.jpg",
+                regular = "https://example.com/regular.jpg",
+                small = "https://example.com/small.jpg",
+                thumb = "https://example.com/thumb.jpg",
+            )
         val optimal = urls.getOptimalUrl(600, 85)
         assertEquals("https://images.unsplash.com/photo-123?ixid=M3wxMjA3fDB8MHxwaG90by1wYWdl&w=600&q=85&auto=format", optimal)
     }
 
     @Test
     fun photoUrlsGetOptimalUrlClampsWidthAndQuality() {
-        val urls = PhotoUrls(
-            raw = "https://images.unsplash.com/photo-123",
-            full = "https://example.com/full.jpg",
-            regular = "https://example.com/regular.jpg",
-            small = "https://example.com/small.jpg",
-            thumb = "https://example.com/thumb.jpg",
-        )
+        val urls =
+            PhotoUrls(
+                raw = "https://images.unsplash.com/photo-123",
+                full = "https://example.com/full.jpg",
+                regular = "https://example.com/regular.jpg",
+                small = "https://example.com/small.jpg",
+                thumb = "https://example.com/thumb.jpg",
+            )
         assertEquals("https://images.unsplash.com/photo-123?w=64&q=10&auto=format", urls.getOptimalUrl(10, 5))
         assertEquals("https://images.unsplash.com/photo-123?w=2400&q=100&auto=format", urls.getOptimalUrl(5000, 150))
     }

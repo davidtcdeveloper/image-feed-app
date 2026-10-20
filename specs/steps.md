@@ -987,7 +987,7 @@ These are the spec files that the implementation notes and planning references s
 3.  **Reference Specification:**
     *   Track blueprint in `specs/68_ios_swiftui_performance_phase1_algorithmic_and_layout_architecture.md`.
 
-### Step 69: SwiftUI Performance Phase 2 — Scroll Dynamics, Native Geometry Tracking & State Isolation (Planned)
+### Step 69: SwiftUI Performance Phase 2 — Scroll Dynamics, Native Geometry Tracking & State Isolation (Completed)
 1.  **Isolated Scroll Capsule Coordinator & Transition Guards:**
     *   Extract `CapsuleScrollCoordinator` (`@Observable`) so scroll-driven minimization only invalidates `FloatingTabCapsule` without re-evaluating `ContentView.body` or `PhotosFeedTabView.body`.
     *   Guard `withAnimation` state flips and only schedule `scrollResetTask` when `isMinimized == true`.

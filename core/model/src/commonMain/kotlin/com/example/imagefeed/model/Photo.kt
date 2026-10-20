@@ -35,7 +35,10 @@ data class PhotoUrls(
     val small: String,
     val thumb: String,
 ) {
-    fun getOptimalUrl(targetWidthPx: Int, quality: Int = 80): String {
+    fun getOptimalUrl(
+        targetWidthPx: Int,
+        quality: Int = 80,
+    ): String {
         val clampedWidth = targetWidthPx.coerceIn(64, 2400)
         val clampedQuality = quality.coerceIn(10, 100)
 

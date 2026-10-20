@@ -1,12 +1,83 @@
 import shared
 import SwiftUI
 
+@MainActor
+@Observable
+final class CapsuleScrollCoordinator {
+    var isMinimized: Bool = false
+    private var lastScrollOffset: CGFloat = 0
+    private var scrollResetTask: Task<Void, Never>?
+
+    func handleScroll(offset: CGFloat) {
+        let delta = offset - lastScrollOffset
+        guard abs(delta) >= 2 || offset >= -20 else { return }
+        lastScrollOffset = offset
+
+        let targetMinimized: Bool = if offset >= -20 {
+            false
+        } else if delta < -15 {
+            true
+        } else if delta > 15 {
+            false
+        } else {
+            isMinimized
+        }
+
+        if isMinimized != targetMinimized {
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
+                isMinimized = targetMinimized
+            }
+        }
+
+        if isMinimized {
+            scheduleResetTaskIfNeeded()
+        } else if scrollResetTask != nil {
+            scrollResetTask?.cancel()
+            scrollResetTask = nil
+        }
+    }
+
+    private func scheduleResetTaskIfNeeded() {
+        scrollResetTask?.cancel()
+        scrollResetTask = Task {
+            try? await Task.sleep(nanoseconds: 1200000000)
+            guard !Task.isCancelled else { return }
+            if isMinimized {
+                withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
+                    isMinimized = false
+                }
+            }
+        }
+    }
+
+    func expand() {
+        scrollResetTask?.cancel()
+        scrollResetTask = nil
+        if isMinimized {
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
+                isMinimized = false
+            }
+        }
+    }
+}
+
+private struct FloatingCapsuleHost: View {
+    let coordinator: CapsuleScrollCoordinator
+    @Binding var selectedTab: Int
+
+    var body: some View {
+        FloatingTabCapsule(
+            selectedTab: $selectedTab,
+            isMinimized: coordinator.isMinimized)
+    }
+}
+
 struct ContentView: View {
     @State private var selectedTab = 0
     @State private var photosPath = NavigationPath()
     @State private var collectionsPath = NavigationPath()
     @State private var isPhotosDetailPresented = false
-    @State private var isCapsuleMinimized = false
+    @State private var capsuleCoordinator = CapsuleScrollCoordinator()
 
     init() {
         #if os(iOS)
@@ -33,7 +104,7 @@ struct ContentView: View {
                 PhotosFeedTabView(
                     path: $photosPath,
                     isDetailPresented: $isPhotosDetailPresented,
-                    isCapsuleMinimized: $isCapsuleMinimized)
+                    coordinator: capsuleCoordinator)
                     .tabItem {
                         Label("Photos", systemImage: "photo.stack")
                     }
@@ -52,9 +123,9 @@ struct ContentView: View {
 
             #if os(iOS)
             if isCapsuleVisible {
-                FloatingTabCapsule(
-                    selectedTab: $selectedTab,
-                    isMinimized: isCapsuleMinimized)
+                FloatingCapsuleHost(
+                    coordinator: capsuleCoordinator,
+                    selectedTab: $selectedTab)
                     .padding(.bottom, 16)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                     .zIndex(10)
@@ -62,15 +133,11 @@ struct ContentView: View {
             #endif
         }
         .onChange(of: selectedTab) { _, _ in
-            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                isCapsuleMinimized = false
-            }
+            capsuleCoordinator.expand()
         }
         .onChange(of: isPhotosDetailPresented) { _, isPresented in
             if !isPresented {
-                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                    isCapsuleMinimized = false
-                }
+                capsuleCoordinator.expand()
             }
         }
         .animation(.spring(response: 0.35, dampingFraction: 0.8), value: isCapsuleVisible)
@@ -186,6 +253,30 @@ private struct FeedScrollOffsetKey: PreferenceKey {
     }
 }
 
+#if os(iOS)
+private struct FeedScrollTrackingModifier: ViewModifier {
+    let onOffsetChange: (CGFloat) -> Void
+
+    func body(content: Content) -> some View {
+        if #available(iOS 18.0, macOS 15.0, *) {
+            content
+                .onScrollGeometryChange(for: Int.self) { geo in
+                    let offset = -(geo.contentOffset.y + geo.contentInsets.top)
+                    return Int(offset / 8)
+                } action: { _, newBucket in
+                    onOffsetChange(CGFloat(newBucket * 8))
+                }
+        } else {
+            content
+                .coordinateSpace(name: "photoFeedScroll")
+                .onPreferenceChange(FeedScrollOffsetKey.self) { offset in
+                    onOffsetChange(offset)
+                }
+        }
+    }
+}
+#endif
+
 struct PhotosFeedTabView: View {
     #if os(iOS)
     @Environment(\.horizontalSizeClass) var sizeClass
@@ -204,28 +295,22 @@ struct PhotosFeedTabView: View {
         externalDetailPresented ?? $internalDetailPresented
     }
 
-    private var externalCapsuleMinimized: Binding<Bool>?
-    @State private var internalCapsuleMinimized = false
-    private var activeCapsuleMinimized: Binding<Bool> {
-        externalCapsuleMinimized ?? $internalCapsuleMinimized
-    }
+    private var coordinator: CapsuleScrollCoordinator?
 
     @State private var isShaking = false
     @State private var shakeFeedbackTrigger = 0
     @Namespace private var categoryNamespace
     @Namespace private var heroNamespace
     @State private var selectedPhotoForHero: Photo?
-    @State private var lastScrollOffset: CGFloat = 0
-    @State private var scrollResetTask: Task<Void, Never>?
 
     init(
         path: Binding<NavigationPath>? = nil,
         isDetailPresented: Binding<Bool>? = nil,
-        isCapsuleMinimized: Binding<Bool>? = nil)
+        coordinator: CapsuleScrollCoordinator? = nil)
     {
         self.externalPath = path
         self.externalDetailPresented = isDetailPresented
-        self.externalCapsuleMinimized = isCapsuleMinimized
+        self.coordinator = coordinator
     }
 
     private var columnCount: Int {
@@ -263,12 +348,16 @@ struct PhotosFeedTabView: View {
                     ScrollView {
                         LazyVStack(spacing: 8) {
                             #if os(iOS)
-                            GeometryReader { proxy in
-                                Color.clear.preference(
-                                    key: FeedScrollOffsetKey.self,
-                                    value: proxy.frame(in: .named("photoFeedScroll")).minY)
+                            if #unavailable(iOS 18.0) {
+                                GeometryReader { proxy in
+                                    let rawY = proxy.frame(in: .named("photoFeedScroll")).minY
+                                    let quantizedY = CGFloat(Int(rawY / 8) * 8)
+                                    Color.clear.preference(
+                                        key: FeedScrollOffsetKey.self,
+                                        value: quantizedY)
+                                }
+                                .frame(height: 0)
                             }
-                            .frame(height: 0)
                             #endif
 
                             HStack(alignment: .top, spacing: 8) {
@@ -306,10 +395,9 @@ struct PhotosFeedTabView: View {
                         .padding(.bottom, 80)
                     }
                     #if os(iOS)
-                    .coordinateSpace(name: "photoFeedScroll")
-                    .onPreferenceChange(FeedScrollOffsetKey.self) { offset in
-                        handleScroll(offset: offset)
-                    }
+                    .modifier(FeedScrollTrackingModifier { offset in
+                        coordinator?.handleScroll(offset: offset)
+                    })
                     #endif
                     .refreshable {
                         viewModel.refresh()
@@ -471,55 +559,11 @@ struct PhotosFeedTabView: View {
             }
             .onDisappear {
                 #if os(iOS)
-                scrollResetTask?.cancel()
+                coordinator?.expand()
                 #endif
             }
         }
     }
-
-    #if os(iOS)
-    private func handleScroll(offset: CGFloat) {
-        let delta = offset - lastScrollOffset
-        if abs(delta) < 2.0, offset < -20 {
-            return
-        }
-        lastScrollOffset = offset
-
-        let targetMinimized: Bool = if offset >= -20 {
-            false
-        } else if delta < -15 {
-            true
-        } else if delta > 15 {
-            false
-        } else {
-            activeCapsuleMinimized.wrappedValue
-        }
-
-        if activeCapsuleMinimized.wrappedValue != targetMinimized {
-            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                activeCapsuleMinimized.wrappedValue = targetMinimized
-            }
-        }
-
-        if activeCapsuleMinimized.wrappedValue {
-            scrollResetTask?.cancel()
-            scrollResetTask = Task {
-                try? await Task.sleep(nanoseconds: 1200000000)
-                guard !Task.isCancelled else { return }
-                await MainActor.run {
-                    if activeCapsuleMinimized.wrappedValue {
-                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                            activeCapsuleMinimized.wrappedValue = false
-                        }
-                    }
-                }
-            }
-        } else if scrollResetTask != nil {
-            scrollResetTask?.cancel()
-            scrollResetTask = nil
-        }
-    }
-    #endif
 
     private var categoryBar: some View {
         FeedCategoryBar(

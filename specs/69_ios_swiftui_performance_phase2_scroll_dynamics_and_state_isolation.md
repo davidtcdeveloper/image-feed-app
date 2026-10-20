@@ -1,6 +1,6 @@
 # Specification 69: SwiftUI Performance Phase 2 — Scroll Dynamics, Native Geometry Tracking & State Isolation
 
-**Status:** Approved
+**Status:** Implemented
 
 ## 1. Overview & Problem Statement
 
@@ -120,9 +120,9 @@ sequenceDiagram
 
 ## 5. Acceptance Criteria
 
-- [ ] `CapsuleScrollCoordinator` isolates `isMinimized` state from `ContentView.body` and `PhotosFeedTabView.body`, guarding `withAnimation` so it only fires when `isMinimized` actually changes value.
-- [ ] `scrollResetTask` is only scheduled when `isMinimized == true` and throttled against 120Hz per-pixel recreation.
-- [ ] Scroll tracking uses native `.onScrollGeometryChange` on iOS 18+ / macOS 15+ (with 8pt bucket quantization) and a quantized iOS 17 fallback.
-- [ ] `SearchView` eliminates duplicate `updateQuery` dispatches on suggestion selection and avoids double-debouncing against KMP `UnifiedSearchViewModel`'s built-in 300ms coroutine debounce.
-- [ ] `.animation(.spring(), value: viewModel.photos)` is removed from `SearchView.swift` L164, eliminating full-grid spring thrashing during pagination.
-- [ ] Zero compiler warnings, zero dead code, and clean builds + lint checks across Android, iOS, and macOS.
+- [x] `CapsuleScrollCoordinator` isolates `isMinimized` state from `ContentView.body` and `PhotosFeedTabView.body`, guarding `withAnimation` so it only fires when `isMinimized` actually changes value.
+- [x] `scrollResetTask` is only scheduled when `isMinimized == true` and throttled against 120Hz per-pixel recreation.
+- [x] Scroll tracking uses native `.onScrollGeometryChange` on iOS 18+ / macOS 15+ (with 8pt bucket quantization) and a quantized iOS 17 fallback.
+- [x] `SearchView` eliminates duplicate `updateQuery` dispatches on suggestion selection and avoids double-debouncing against KMP `UnifiedSearchViewModel`'s built-in 300ms coroutine debounce.
+- [x] `.animation(.spring(), value: viewModel.photos)` is removed from `SearchView.swift` L164, eliminating full-grid spring thrashing during pagination.
+- [x] Zero compiler warnings, zero dead code, and clean builds + lint checks across Android, iOS, and macOS.

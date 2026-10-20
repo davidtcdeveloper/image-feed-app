@@ -5,6 +5,7 @@ import com.example.imagefeed.collections.di.CollectionsModule
 import com.example.imagefeed.core.network.KtorPhotoDownloadTracker
 import com.example.imagefeed.core.network.PhotoDownloadTracker
 import com.example.imagefeed.core.network.createUnsplashHttpClient
+import com.example.imagefeed.core.network.di.AppScope
 import com.example.imagefeed.details.data.PhotoDetailsRepository
 import com.example.imagefeed.details.di.PhotoDetailsModule
 import com.example.imagefeed.feed.data.FeedRepository
@@ -20,7 +21,6 @@ import com.example.imagefeed.profile.data.ProfileRepository
 import com.example.imagefeed.profile.di.ProfileModule
 import com.example.imagefeed.search.data.SearchRepository
 import com.example.imagefeed.search.di.SearchModule
-import com.example.imagefeed.core.network.di.AppScope
 import dev.zacsweers.metro.BindingContainer
 import dev.zacsweers.metro.DependencyGraph
 import dev.zacsweers.metro.Provides

@@ -64,7 +64,6 @@ struct SearchView: View {
                             history: viewModel.searchHistory,
                             onSelect: { text in
                                 searchText = text
-                                viewModel.updateQuery(newQuery: text)
                             },
                             onDelete: { text in
                                 viewModel.removeHistoryEntry(entry: text)
@@ -162,7 +161,6 @@ struct SearchView: View {
                                             }
                                         }
                                         .padding(.horizontal, 8)
-                                        .animation(.spring(), value: viewModel.photos)
                                     }
 
                                 case .collections:
@@ -258,6 +256,7 @@ struct SearchView: View {
             viewModel?.submitSearch(query: searchText)
         }
         .onChange(of: searchText) { _, newValue in
+            guard newValue != viewModel?.query else { return }
             viewModel?.updateQuery(newQuery: newValue)
         }
         .sheet(isPresented: $showFilters) {

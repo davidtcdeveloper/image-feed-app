@@ -23,6 +23,7 @@ class SearchViewModel {
     @ObservationIgnored private var cachedBuckets: [Int: [[AdaptiveLayoutHelper.IndexedItem<Photo>]]] = [:]
 
     init(initialQuery: String = "") {
+        self.query = initialQuery
         let viewModel = MetroHelper.shared.getUnifiedSearchViewModel()
         self.viewModel = viewModel
 
