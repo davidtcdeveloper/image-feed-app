@@ -1,6 +1,6 @@
 # Specification 68: SwiftUI Performance Phase 1 — Algorithmic & Layout Architecture (Masonry Indexing, Column Memoization & Lazy ViewModel Lifecycle)
 
-**Status:** Approved
+**Status:** Implemented
 
 ## 1. Overview & Problem Statement
 
@@ -135,9 +135,9 @@ flowchart TD
 
 ## 5. Acceptance Criteria
 
-- [ ] `AdaptiveLayoutHelper` defines `IndexedItem<T>` and single-pass `partitionIntoColumns`, eliminating all $O(N^2)$ `firstIndex(where:)` linear scans in `SearchView.swift`, `UserProfileView.swift`, and `CollectionDetailView.swift`.
-- [ ] `CollectionMosaicCard` in `CollectionsFeedView.swift` uses an $O(1)$ index threshold check in `.onAppear` instead of `lastIndex(where:)`.
-- [ ] Column buckets are memoized in `@Observable` ViewModels (`FeedViewModel`, `CollectionsFeedViewModel`, `SearchViewModel`, `CollectionDetailViewModel`, `UserProfileViewModel`) and invalidated only when the backing list changes, eliminating per-body array allocations.
-- [ ] Root `GeometryReader` in `CollectionsFeedView.swift` is removed, and collection cards size cleanly across iOS, iPadOS, and macOS.
-- [ ] `PhotoDetailsView`, `SearchView`, `UserProfileView`, and `CollectionDetailView` defer ViewModel creation out of `View.init`, preventing throwaway KMP ViewModel instantiations on parent re-renders.
-- [ ] Zero compiler warnings, zero dead code, and clean builds + lint checks across Android, iOS, and macOS.
+- [x] `AdaptiveLayoutHelper` defines `IndexedItem<T>` and single-pass `partitionIntoColumns`, eliminating all $O(N^2)$ `firstIndex(where:)` linear scans in `SearchView.swift`, `UserProfileView.swift`, and `CollectionDetailView.swift`.
+- [x] `CollectionMosaicCard` in `CollectionsFeedView.swift` uses an $O(1)$ index threshold check in `.onAppear` instead of `lastIndex(where:)`.
+- [x] Column buckets are memoized in `@Observable` ViewModels (`FeedViewModel`, `CollectionsFeedViewModel`, `SearchViewModel`, `CollectionDetailViewModel`, `UserProfileViewModel`) and invalidated only when the backing list changes, eliminating per-body array allocations.
+- [x] Root `GeometryReader` in `CollectionsFeedView.swift` is removed, and collection cards size cleanly across iOS, iPadOS, and macOS.
+- [x] `PhotoDetailsView`, `SearchView`, `UserProfileView`, and `CollectionDetailView` defer ViewModel creation out of `View.init`, preventing throwaway KMP ViewModel instantiations on parent re-renders.
+- [x] Zero compiler warnings, zero dead code, and clean builds + lint checks across Android, iOS, and macOS.

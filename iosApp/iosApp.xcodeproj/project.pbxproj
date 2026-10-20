@@ -47,7 +47,9 @@
 		D3C505798F194088FEA62D69 /* GlassTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 881A8EF7998B7CE0AC9F96B6 /* GlassTheme.swift */; };
 		D6144E75806493D442FB3F80 /* MacOSContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD16CAACFB678079A24E49D4 /* MacOSContentView.swift */; };
 		DE245D9F88A15119AC57206F /* MacOSContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD16CAACFB678079A24E49D4 /* MacOSContentView.swift */; };
+		E4B3B46351FE706B48A95B0C /* PhotoInspectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 975F199E6542C0F8DCD0A6DC /* PhotoInspectorView.swift */; };
 		E73E1BB01DC9A07D73B5EE81 /* CollectionDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 500FCC73158DBC28123C57D0 /* CollectionDetailView.swift */; };
+		E8C440FEBD8E451DC9A36F89 /* PhotoInspectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 975F199E6542C0F8DCD0A6DC /* PhotoInspectorView.swift */; };
 		ECAF30CCE7441589DD2986F7 /* KFImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = A52E766EFBC2CFA8C9E3063F /* KFImage.swift */; };
 		EE2E6F06824C1F3FBF2D40B9 /* KFImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = A52E766EFBC2CFA8C9E3063F /* KFImage.swift */; };
 		F1784764E2B66FFB8487C8C6 /* AnimationPrimitives.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D64FD58F855E3EB9CE9011 /* AnimationPrimitives.swift */; };
@@ -71,6 +73,7 @@
 		881A8EF7998B7CE0AC9F96B6 /* GlassTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassTheme.swift; sourceTree = "<group>"; };
 		8C936ADD93402EB34AACD70F /* PhotoDetailsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoDetailsViewModel.swift; sourceTree = "<group>"; };
 		8E1949CA4CC0721B37ED3C17 /* SearchViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchViewModel.swift; sourceTree = "<group>"; };
+		975F199E6542C0F8DCD0A6DC /* PhotoInspectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoInspectorView.swift; sourceTree = "<group>"; };
 		A52E766EFBC2CFA8C9E3063F /* KFImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KFImage.swift; sourceTree = "<group>"; };
 		BBBF03DE24E6E4B163090C57 /* FeedViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedViewModel.swift; sourceTree = "<group>"; };
 		CE8509E5A49E4A5CAAEB3ADB /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -105,6 +108,7 @@
 				FD16CAACFB678079A24E49D4 /* MacOSContentView.swift */,
 				FBF5C6096F912EC4B7851517 /* PhotoDetailsView.swift */,
 				8C936ADD93402EB34AACD70F /* PhotoDetailsViewModel.swift */,
+				975F199E6542C0F8DCD0A6DC /* PhotoInspectorView.swift */,
 				66E77BBA98D836B90ED7BBBD /* SearchTopicCard.swift */,
 				E7BE4AACAB34743ADF91B179 /* SearchView.swift */,
 				8E1949CA4CC0721B37ED3C17 /* SearchViewModel.swift */,
@@ -289,6 +293,7 @@
 				D6144E75806493D442FB3F80 /* MacOSContentView.swift in Sources */,
 				83B0F700070C5C256B69CA4D /* PhotoDetailsView.swift in Sources */,
 				3F35CDE47A27BAE616C98E9B /* PhotoDetailsViewModel.swift in Sources */,
+				E4B3B46351FE706B48A95B0C /* PhotoInspectorView.swift in Sources */,
 				77DD7523FD750E3FBF2AA564 /* SearchTopicCard.swift in Sources */,
 				182025D08B87193AC4AFA3C3 /* SearchView.swift in Sources */,
 				598B065C17D40292754A667C /* SearchViewModel.swift in Sources */,
@@ -317,6 +322,7 @@
 				DE245D9F88A15119AC57206F /* MacOSContentView.swift in Sources */,
 				B34E2807677D3669B3707E6C /* PhotoDetailsView.swift in Sources */,
 				104E088C972964D876F30E3C /* PhotoDetailsViewModel.swift in Sources */,
+				E8C440FEBD8E451DC9A36F89 /* PhotoInspectorView.swift in Sources */,
 				0A93E562CB65A8E6F8D217CB /* SearchTopicCard.swift in Sources */,
 				7CD188AD408A9B7B628A9229 /* SearchView.swift in Sources */,
 				4AEE59556DA6EADB1DFB3A94 /* SearchViewModel.swift in Sources */,

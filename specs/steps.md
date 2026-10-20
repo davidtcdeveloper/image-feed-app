@@ -976,7 +976,7 @@ These are the spec files that the implementation notes and planning references s
 4.  **Reference Specification:**
     *   Track blueprint in `specs/67_memory_optimization_phase3_network_navigation_di_and_ui_churn.md`.
 
-### Step 68: SwiftUI Performance Phase 1 — Algorithmic & Layout Architecture (Planned)
+### Step 68: SwiftUI Performance Phase 1 — Algorithmic & Layout Architecture (Completed)
 1.  **$O(1)$ Masonry Indexing & Column Bucket Memoization:**
     *   Introduce `IndexedItem<T>` and single-pass `partitionIntoColumns` in `AdaptiveLayoutHelper.swift`.
     *   Memoize column buckets inside `@Observable` ViewModels (`FeedViewModel`, `CollectionsFeedViewModel`, `SearchViewModel`, `CollectionDetailViewModel`, `UserProfileViewModel`) and invalidate only on backing array mutation.

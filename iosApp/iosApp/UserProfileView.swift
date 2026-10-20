@@ -4,7 +4,7 @@ import SwiftUI
 
 struct UserProfileView: View {
     let username: String
-    @State private var viewModel: UserProfileViewModel
+    @State private var viewModel: UserProfileViewModel?
     @Environment(\.dismiss) private var dismiss
 
     let onPhotoSelect: (String) -> Void
@@ -14,7 +14,7 @@ struct UserProfileView: View {
         self.username = username
         self.onPhotoSelect = onPhotoSelect
         self.onCollectionSelect = onCollectionSelect
-        self._viewModel = State(initialValue: UserProfileViewModel(username: username))
+        self._viewModel = State(initialValue: nil)
     }
 
     var body: some View {
@@ -22,78 +22,90 @@ struct UserProfileView: View {
             GlassTheme.canvasBackgroundColor
                 .ignoresSafeArea()
 
-            if viewModel.isHeaderLoading, viewModel.user == nil {
-                UserProfileHeaderSkeleton()
-                    .padding(.top, 40)
-            } else if let error = viewModel.error, viewModel.user == nil {
-                VStack(spacing: 16) {
-                    Text("Failed to load profile")
-                        .font(.headline)
-                        .glassVibrancy(.primary)
-                    Text(error)
-                        .font(.subheadline)
-                        .glassVibrancy(.secondary)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 24)
-                    Button(action: { viewModel.refresh() }) {
-                        Text("Retry")
-                            .font(.subheadline.weight(.semibold))
-                            .glassVibrancy(.primary)
-                            .padding(.horizontal, 24)
-                            .padding(.vertical, 10)
-                            .glassBackground(style: .thin, shape: Capsule(), showBorder: true)
-                    }
-                }
-            } else if let user = viewModel.user {
-                ScrollView {
+            if let viewModel {
+                if viewModel.isHeaderLoading, viewModel.user == nil {
+                    UserProfileHeaderSkeleton()
+                        .padding(.top, 40)
+                } else if let error = viewModel.error, viewModel.user == nil {
                     VStack(spacing: 16) {
-                        // 1. Photographer Profile Info Header
-                        ProfileHeaderView(user: user)
-
-                        // 2. Multi-Tab Segment Bar
-                        ProfileTabPicker(activeTab: viewModel.activeTab, user: user) { selectedTab in
-                            viewModel.selectTab(tab: selectedTab)
+                        Text("Failed to load profile")
+                            .font(.headline)
+                            .glassVibrancy(.primary)
+                        Text(error)
+                            .font(.subheadline)
+                            .glassVibrancy(.secondary)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 24)
+                        Button(action: { viewModel.refresh() }) {
+                            Text("Retry")
+                                .font(.subheadline.weight(.semibold))
+                                .glassVibrancy(.primary)
+                                .padding(.horizontal, 24)
+                                .padding(.vertical, 10)
+                                .glassBackground(style: .thin, shape: Capsule(), showBorder: true)
                         }
+                    }
+                } else if let user = viewModel.user {
+                    ScrollView {
+                        VStack(spacing: 16) {
+                            // 1. Photographer Profile Info Header
+                            ProfileHeaderView(user: user)
 
-                        // 3. Tab Specific Content View
-                        VStack {
-                            switch viewModel.activeTab {
-                            case .portfolio:
-                                GridPhotosList(
-                                    photos: viewModel.portfolioPhotos,
-                                    isLoading: viewModel.isLoadingContent,
-                                    onLoadMore: { viewModel.loadNextPage() },
-                                    onSelect: onPhotoSelect)
-                            case .likes:
-                                GridPhotosList(
-                                    photos: viewModel.likedPhotos,
-                                    isLoading: viewModel.isLoadingContent,
-                                    onLoadMore: { viewModel.loadNextPage() },
-                                    onSelect: onPhotoSelect)
-                            case .collections:
-                                GridCollectionsList(
-                                    collections: viewModel.collections,
-                                    isLoading: viewModel.isLoadingContent,
-                                    onLoadMore: { viewModel.loadNextPage() },
-                                    onSelect: onCollectionSelect)
-                            case .insights:
-                                InsightsView(
-                                    stats: viewModel.stats,
-                                    isLoading: viewModel.isLoadingStats,
-                                    error: viewModel.error)
-                            default:
-                                EmptyView()
+                            // 2. Multi-Tab Segment Bar
+                            ProfileTabPicker(activeTab: viewModel.activeTab, user: user) { selectedTab in
+                                viewModel.selectTab(tab: selectedTab)
+                            }
+
+                            // 3. Tab Specific Content View
+                            VStack {
+                                switch viewModel.activeTab {
+                                case .portfolio:
+                                    GridPhotosList(
+                                        photos: viewModel.portfolioPhotos,
+                                        columnItems: { col, total in viewModel.portfolioColumnItems(for: col, totalColumns: total) },
+                                        isLoading: viewModel.isLoadingContent,
+                                        onLoadMore: { viewModel.loadNextPage() },
+                                        onSelect: onPhotoSelect)
+                                case .likes:
+                                    GridPhotosList(
+                                        photos: viewModel.likedPhotos,
+                                        columnItems: { col, total in viewModel.likedColumnItems(for: col, totalColumns: total) },
+                                        isLoading: viewModel.isLoadingContent,
+                                        onLoadMore: { viewModel.loadNextPage() },
+                                        onSelect: onPhotoSelect)
+                                case .collections:
+                                    GridCollectionsList(
+                                        collections: viewModel.collections,
+                                        isLoading: viewModel.isLoadingContent,
+                                        onLoadMore: { viewModel.loadNextPage() },
+                                        onSelect: onCollectionSelect)
+                                case .insights:
+                                    InsightsView(
+                                        stats: viewModel.stats,
+                                        isLoading: viewModel.isLoadingStats,
+                                        error: viewModel.error)
+                                default:
+                                    EmptyView()
+                                }
                             }
                         }
+                        .padding(.bottom, 32)
                     }
-                    .padding(.bottom, 32)
+                    .refreshable {
+                        viewModel.refresh()
+                    }
                 }
-                .refreshable {
-                    viewModel.refresh()
-                }
+            } else {
+                UserProfileHeaderSkeleton()
+                    .padding(.top, 40)
             }
         }
-        .navigationTitle(viewModel.user?.name ?? String(localized: "Profile"))
+        .task(id: username) {
+            if viewModel == nil {
+                viewModel = UserProfileViewModel(username: username)
+            }
+        }
+        .navigationTitle(viewModel?.user?.name ?? String(localized: "Profile"))
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
@@ -115,7 +127,7 @@ struct UserProfileView: View {
             }
             #endif
 
-            if let user = viewModel.user {
+            if let user = viewModel?.user {
                 #if os(iOS)
                 ToolbarItem(placement: .navigationBarTrailing) {
                     GlassToolbarButton(systemName: "safari", accessibilityLabel: "Open Profile in Browser") {
@@ -372,6 +384,7 @@ struct GridPhotosList: View {
     @Environment(\.horizontalSizeClass) var sizeClass
     #endif
     let photos: [Photo]
+    var columnItems: ((Int, Int) -> [AdaptiveLayoutHelper.IndexedItem<Photo>])?
     let isLoading: Bool
     let onLoadMore: () -> Void
     let onSelect: (String) -> Void
@@ -407,8 +420,10 @@ struct GridPhotosList: View {
                 HStack(alignment: .top, spacing: 8) {
                     ForEach(0..<columnCount, id: \.self) { colIndex in
                         LazyVStack(spacing: 8) {
-                            ForEach(AdaptiveLayoutHelper.indexedPhotosForColumn(index: colIndex, totalColumns: columnCount, from: photos)) { indexed in
-                                let photo = indexed.element
+                            let items = columnItems?(colIndex, columnCount)
+                                ?? AdaptiveLayoutHelper.indexedPhotosForColumn(index: colIndex, totalColumns: columnCount, from: photos)
+                            ForEach(items) { indexed in
+                                let photo = indexed.item
                                 let flatIndex = indexed.index
                                 let screenWidth = AdaptiveLayoutHelper.getScreenWidth()
                                 let itemWidth = AdaptiveLayoutHelper.calculateItemWidthPx(screenWidth: screenWidth, columnCount: columnCount)

@@ -17,6 +17,7 @@ class FeedViewModel {
     private var effectsCloseable: Closeable?
     private var randomPhotoCloseable: Closeable?
     private var randomPhotoViewModel: shared.RandomPhotoViewModel?
+    @ObservationIgnored private var cachedBuckets: [Int: [[AdaptiveLayoutHelper.IndexedItem<Photo>]]] = [:]
 
     init() {
         let viewModel = MetroHelper.shared.getFeedViewModel()
@@ -24,15 +25,32 @@ class FeedViewModel {
 
         self.stateCloseable = viewModel.iosState.watch { [weak self] state in
             guard let self, let state else { return }
-            if self.photos != state.photos { self.photos = state.photos }
-            if self.topics != state.topics { self.topics = state.topics }
-            if self.selectedTopicSlug != state.selectedTopicSlug { self.selectedTopicSlug = state.selectedTopicSlug }
-            if self.isLoading != state.isLoading { self.isLoading = state.isLoading }
-            if self.isLoadingTopics != state.isLoadingTopics { self.isLoadingTopics = state.isLoadingTopics }
-            if self.isRefreshing != state.isRefreshing { self.isRefreshing = state.isRefreshing }
+            if photos != state.photos {
+                self.photos = state.photos
+                cachedBuckets.removeAll()
+            }
+            if topics != state.topics {
+                self.topics = state.topics
+            }
+            if selectedTopicSlug != state.selectedTopicSlug {
+                self.selectedTopicSlug = state.selectedTopicSlug
+            }
+            if isLoading != state.isLoading {
+                self.isLoading = state.isLoading
+            }
+            if isLoadingTopics != state.isLoadingTopics {
+                self.isLoadingTopics = state.isLoadingTopics
+            }
+            if isRefreshing != state.isRefreshing {
+                self.isRefreshing = state.isRefreshing
+            }
             let errorMessage = state.error?.localizedMessage
-            if self.error != errorMessage { self.error = errorMessage }
-            if self.hasReachedEnd != state.hasReachedEnd { self.hasReachedEnd = state.hasReachedEnd }
+            if error != errorMessage {
+                self.error = errorMessage
+            }
+            if hasReachedEnd != state.hasReachedEnd {
+                self.hasReachedEnd = state.hasReachedEnd
+            }
         }
 
         self.effectsCloseable = viewModel.iosEffects.watch { [weak self] effect in
@@ -73,25 +91,35 @@ class FeedViewModel {
         randomPhotoViewModel = nil
 
         let randomVm = MetroHelper.shared.getRandomPhotoViewModel()
-        self.randomPhotoViewModel = randomVm
+        randomPhotoViewModel = randomVm
 
         randomPhotoCloseable = randomVm.iosState.watch { [weak self] state in
-            guard let self = self else { return }
+            guard let self else { return }
             if let photo = state?.photo {
                 completion(photo.id)
-                self.randomPhotoCloseable?.close()
-                self.randomPhotoCloseable = nil
-                self.randomPhotoViewModel?.clear()
-                self.randomPhotoViewModel = nil
+                randomPhotoCloseable?.close()
+                randomPhotoCloseable = nil
+                randomPhotoViewModel?.clear()
+                randomPhotoViewModel = nil
             } else if let error = state?.error {
                 print("Failed to load random photo on shake: \(error)")
                 completion(nil)
-                self.randomPhotoCloseable?.close()
-                self.randomPhotoCloseable = nil
-                self.randomPhotoViewModel?.clear()
-                self.randomPhotoViewModel = nil
+                randomPhotoCloseable?.close()
+                randomPhotoCloseable = nil
+                randomPhotoViewModel?.clear()
+                randomPhotoViewModel = nil
             }
         }
+    }
+
+    func columnItems(for columnIndex: Int, totalColumns: Int) -> [AdaptiveLayoutHelper.IndexedItem<Photo>] {
+        guard totalColumns > 0 else { return [] }
+        if let buckets = cachedBuckets[totalColumns], columnIndex < buckets.count {
+            return buckets[columnIndex]
+        }
+        let buckets = AdaptiveLayoutHelper.partitionPhotosIntoColumns(from: photos, totalColumns: totalColumns)
+        cachedBuckets[totalColumns] = buckets
+        return columnIndex < buckets.count ? buckets[columnIndex] : []
     }
 
     deinit {

@@ -52,26 +52,36 @@ enum AdaptiveLayoutHelper {
 
     struct IndexedItem<T>: Identifiable {
         let index: Int
-        let element: T
+        let item: T
         let id: String
+
+        var element: T {
+            item
+        }
     }
 
-    static func itemsForColumn<T>(index: Int, totalColumns: Int, from items: [T]) -> [T] {
+    static func partitionIntoColumns<T>(from items: [T], totalColumns: Int, idOf: (T) -> String) -> [[IndexedItem<T>]] {
         guard totalColumns > 0 else { return [] }
-        return items.enumerated()
-            .filter { $0.offset % totalColumns == index }
-            .map(\.element)
+        var buckets = Array(repeating: [IndexedItem<T>](), count: totalColumns)
+        for (offset, element) in items.enumerated() {
+            buckets[offset % totalColumns].append(IndexedItem(index: offset, item: element, id: idOf(element)))
+        }
+        return buckets
     }
 
-    static func photosForColumn(index: Int, totalColumns: Int, from photos: [Photo]) -> [Photo] {
-        itemsForColumn(index: index, totalColumns: totalColumns, from: photos)
+    static func partitionPhotosIntoColumns(from photos: [Photo], totalColumns: Int) -> [[IndexedItem<Photo>]] {
+        partitionIntoColumns(from: photos, totalColumns: totalColumns, idOf: \.id)
+    }
+
+    static func partitionCollectionsIntoColumns(from collections: [PhotoCollection], totalColumns: Int) -> [[IndexedItem<PhotoCollection>]] {
+        partitionIntoColumns(from: collections, totalColumns: totalColumns, idOf: \.id)
     }
 
     static func indexedPhotosForColumn(index: Int, totalColumns: Int, from photos: [Photo]) -> [IndexedItem<Photo>] {
-        guard totalColumns > 0 else { return [] }
+        guard totalColumns > 0, index < totalColumns else { return [] }
         return photos.enumerated()
             .filter { $0.offset % totalColumns == index }
-            .map { IndexedItem(index: $0.offset, element: $0.element, id: $0.element.id) }
+            .map { IndexedItem(index: $0.offset, item: $0.element, id: $0.element.id) }
     }
 }
 

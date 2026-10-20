@@ -14,6 +14,7 @@ class CollectionDetailViewModel {
     private let viewModel: shared.CollectionDetailViewModel
     private var stateCloseable: Closeable?
     private var effectsCloseable: Closeable?
+    @ObservationIgnored private var cachedBuckets: [Int: [[AdaptiveLayoutHelper.IndexedItem<Photo>]]] = [:]
 
     init(collectionId: String) {
         let viewModel = MetroHelper.shared.getCollectionDetailViewModel(collectionId: collectionId)
@@ -21,14 +22,29 @@ class CollectionDetailViewModel {
 
         self.stateCloseable = viewModel.iosState.watch { [weak self] state in
             guard let self, let state else { return }
-            if self.collection != state.collection { self.collection = state.collection }
-            if self.photos != state.photos { self.photos = state.photos }
-            if self.related != state.related { self.related = state.related }
-            if self.isLoadingPhotos != state.isLoadingPhotos { self.isLoadingPhotos = state.isLoadingPhotos }
-            if self.isHeaderLoading != state.isHeaderLoading { self.isHeaderLoading = state.isHeaderLoading }
+            if collection != state.collection {
+                self.collection = state.collection
+            }
+            if photos != state.photos {
+                self.photos = state.photos
+                cachedBuckets.removeAll()
+            }
+            if related != state.related {
+                self.related = state.related
+            }
+            if isLoadingPhotos != state.isLoadingPhotos {
+                self.isLoadingPhotos = state.isLoadingPhotos
+            }
+            if isHeaderLoading != state.isHeaderLoading {
+                self.isHeaderLoading = state.isHeaderLoading
+            }
             let errorMessage = state.error?.localizedMessage
-            if self.error != errorMessage { self.error = errorMessage }
-            if self.hasReachedEnd != state.hasReachedEnd { self.hasReachedEnd = state.hasReachedEnd }
+            if error != errorMessage {
+                self.error = errorMessage
+            }
+            if hasReachedEnd != state.hasReachedEnd {
+                self.hasReachedEnd = state.hasReachedEnd
+            }
         }
 
         self.effectsCloseable = viewModel.iosEffects.watch { [weak self] effect in
@@ -56,6 +72,16 @@ class CollectionDetailViewModel {
 
     func trackDownload(photo: Photo) {
         viewModel.dispatch(intent: CollectionDetailIntentTrackDownload(photo: photo))
+    }
+
+    func columnItems(for columnIndex: Int, totalColumns: Int) -> [AdaptiveLayoutHelper.IndexedItem<Photo>] {
+        guard totalColumns > 0 else { return [] }
+        if let buckets = cachedBuckets[totalColumns], columnIndex < buckets.count {
+            return buckets[columnIndex]
+        }
+        let buckets = AdaptiveLayoutHelper.partitionPhotosIntoColumns(from: photos, totalColumns: totalColumns)
+        cachedBuckets[totalColumns] = buckets
+        return columnIndex < buckets.count ? buckets[columnIndex] : []
     }
 
     deinit {

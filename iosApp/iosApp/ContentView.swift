@@ -274,10 +274,8 @@ struct PhotosFeedTabView: View {
                             HStack(alignment: .top, spacing: 8) {
                                 ForEach(0..<columnCount, id: \.self) { colIndex in
                                     LazyVStack(spacing: 8) {
-                                        ForEach(
-                                            AdaptiveLayoutHelper.photosForColumn(index: colIndex, totalColumns: columnCount, from: viewModel.photos),
-                                            id: \.id)
-                                        { photo in
+                                        ForEach(viewModel.columnItems(for: colIndex, totalColumns: columnCount)) { indexed in
+                                            let photo = indexed.item
                                             PhotoCard(
                                                 photo: photo,
                                                 viewModel: viewModel,
@@ -410,7 +408,7 @@ struct PhotosFeedTabView: View {
                 activeDetailPresented.wrappedValue = (newValue != nil)
             }
             .onChange(of: activePath.wrappedValue.count) { _, count in
-                if count > 0 && selectedPhotoForHero != nil {
+                if count > 0, selectedPhotoForHero != nil {
                     withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
                         selectedPhotoForHero = nil
                     }
@@ -482,20 +480,19 @@ struct PhotosFeedTabView: View {
     #if os(iOS)
     private func handleScroll(offset: CGFloat) {
         let delta = offset - lastScrollOffset
-        if abs(delta) < 2.0 && offset < -20 {
+        if abs(delta) < 2.0, offset < -20 {
             return
         }
         lastScrollOffset = offset
 
-        let targetMinimized: Bool
-        if offset >= -20 {
-            targetMinimized = false
+        let targetMinimized: Bool = if offset >= -20 {
+            false
         } else if delta < -15 {
-            targetMinimized = true
+            true
         } else if delta > 15 {
-            targetMinimized = false
+            false
         } else {
-            targetMinimized = activeCapsuleMinimized.wrappedValue
+            activeCapsuleMinimized.wrappedValue
         }
 
         if activeCapsuleMinimized.wrappedValue != targetMinimized {

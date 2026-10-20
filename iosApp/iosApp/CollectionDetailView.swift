@@ -3,7 +3,7 @@ import SwiftUI
 
 struct CollectionDetailView: View {
     let collectionId: String
-    @State private var viewModel: CollectionDetailViewModel
+    @State private var viewModel: CollectionDetailViewModel?
     @Environment(\.dismiss) private var dismiss
     #if os(iOS)
     @Environment(\.horizontalSizeClass) var sizeClass
@@ -20,7 +20,7 @@ struct CollectionDetailView: View {
         onUserSelect: @escaping (String) -> Void)
     {
         self.collectionId = collectionId
-        self._viewModel = State(initialValue: CollectionDetailViewModel(collectionId: collectionId))
+        self._viewModel = State(initialValue: nil)
         self.onPhotoSelect = onPhotoSelect
         self.onCollectionSelect = onCollectionSelect
         self.onUserSelect = onUserSelect
@@ -39,57 +39,7 @@ struct CollectionDetailView: View {
             GlassTheme.canvasBackgroundColor
                 .ignoresSafeArea()
 
-            if viewModel.photos.isEmpty, viewModel.isLoadingPhotos, viewModel.isHeaderLoading {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 16) {
-                        // Header skeleton
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(Color.white.opacity(0.06))
-                            .frame(height: 300)
-                            .shimmer()
-
-                        // Related collections label skeleton
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(Color.white.opacity(0.06))
-                            .frame(width: 150, height: 20)
-                            .padding(.horizontal, 16)
-                            .shimmer()
-
-                        // Related collections placeholder
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 12) {
-                                ForEach(0..<3, id: \.self) { _ in
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .fill(Color.white.opacity(0.06))
-                                        .frame(width: 160, height: 110)
-                                        .shimmer()
-                                }
-                            }
-                            .padding(.horizontal, 16)
-                        }
-
-                        // Grid photos label skeleton
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(Color.white.opacity(0.06))
-                            .frame(width: 100, height: 20)
-                            .padding(.horizontal, 16)
-                            .shimmer()
-
-                        // Grid photos placeholder
-                        HStack(alignment: .top, spacing: 8) {
-                            ForEach(0..<columnCount, id: \.self) { _ in
-                                VStack(spacing: 8) {
-                                    ForEach(0..<3, id: \.self) { index in
-                                        PhotoCardSkeleton(height: index % 2 == 0 ? 180 : 240)
-                                    }
-                                }
-                            }
-                        }
-                        .padding(.horizontal, 8)
-                    }
-                }
-                .ignoresSafeArea(edges: .top)
-            } else {
+            if let viewModel, viewModel.collection != nil {
                 ScrollView {
                     VStack(spacing: 0) {
                         // Parallax Scaling Header
@@ -207,10 +157,8 @@ struct CollectionDetailView: View {
                                 HStack(alignment: .top, spacing: 8) {
                                     ForEach(0..<columnCount, id: \.self) { colIndex in
                                         LazyVStack(spacing: 8) {
-                                            ForEach(
-                                                AdaptiveLayoutHelper.indexedPhotosForColumn(index: colIndex, totalColumns: columnCount, from: viewModel.photos)
-                                            ) { indexed in
-                                                let photo = indexed.element
+                                            ForEach(viewModel.columnItems(for: colIndex, totalColumns: columnCount)) { indexed in
+                                                let photo = indexed.item
                                                 let flatIndex = indexed.index
                                                 CollectionPhotoGridCard(
                                                     photo: photo,
@@ -236,9 +184,16 @@ struct CollectionDetailView: View {
                     }
                 }
                 .ignoresSafeArea(edges: .top)
+            } else {
+                skeletonView
             }
         }
-        .navigationTitle(viewModel.collection?.title ?? String(localized: "Collection"))
+        .task(id: collectionId) {
+            if viewModel == nil {
+                viewModel = CollectionDetailViewModel(collectionId: collectionId)
+            }
+        }
+        .navigationTitle(viewModel?.collection?.title ?? String(localized: "Collection"))
         .navigationBarBackButtonHidden(true)
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
@@ -261,6 +216,58 @@ struct CollectionDetailView: View {
             }
             #endif
         }
+    }
+
+    private var skeletonView: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                // Header skeleton
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color.white.opacity(0.06))
+                    .frame(height: 300)
+                    .shimmer()
+
+                // Related collections label skeleton
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(Color.white.opacity(0.06))
+                    .frame(width: 150, height: 20)
+                    .padding(.horizontal, 16)
+                    .shimmer()
+
+                // Related collections placeholder
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 12) {
+                        ForEach(0..<3, id: \.self) { _ in
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color.white.opacity(0.06))
+                                .frame(width: 160, height: 110)
+                                .shimmer()
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                }
+
+                // Grid photos label skeleton
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(Color.white.opacity(0.06))
+                    .frame(width: 100, height: 20)
+                    .padding(.horizontal, 16)
+                    .shimmer()
+
+                // Grid photos placeholder
+                HStack(alignment: .top, spacing: 8) {
+                    ForEach(0..<columnCount, id: \.self) { _ in
+                        VStack(spacing: 8) {
+                            ForEach(0..<3, id: \.self) { index in
+                                PhotoCardSkeleton(height: index % 2 == 0 ? 180 : 240)
+                            }
+                        }
+                    }
+                }
+                .padding(.horizontal, 8)
+            }
+        }
+        .ignoresSafeArea(edges: .top)
     }
 }
 

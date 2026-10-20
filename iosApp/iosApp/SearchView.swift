@@ -5,7 +5,8 @@ struct SearchView: View {
     #if os(iOS)
     @Environment(\.horizontalSizeClass) var sizeClass
     #endif
-    @State private var viewModel: SearchViewModel
+    let initialQuery: String
+    @State private var viewModel: SearchViewModel?
     @State private var showFilters = false
     @State private var searchText: String
     @FocusState private var isSearchFocused: Bool
@@ -20,11 +21,12 @@ struct SearchView: View {
         onUserSelect: @escaping (String) -> Void,
         onCollectionSelect: @escaping (String) -> Void)
     {
+        self.initialQuery = initialQuery
         self.onPhotoSelect = onPhotoSelect
         self.onUserSelect = onUserSelect
         self.onCollectionSelect = onCollectionSelect
         self._searchText = State(initialValue: initialQuery)
-        self._viewModel = State(initialValue: SearchViewModel(initialQuery: initialQuery))
+        self._viewModel = State(initialValue: nil)
     }
 
     private var columnCount: Int {
@@ -40,185 +42,193 @@ struct SearchView: View {
             GlassTheme.canvasBackgroundColor
                 .ignoresSafeArea()
 
-            VStack(spacing: 0) {
-                // Search Tab Picker
-                Picker("Tab", selection: Binding(
-                    get: { viewModel.activeTab },
-                    set: { viewModel.setTab(tab: $0) }))
-                {
-                    Text("Photos").tag(SearchTab.photos)
-                    Text("Collections").tag(SearchTab.collections)
-                    Text("Users").tag(SearchTab.users)
-                }
-                .pickerStyle(.segmented)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-                .background(.ultraThinMaterial)
+            if let viewModel {
+                VStack(spacing: 0) {
+                    // Search Tab Picker
+                    Picker("Tab", selection: Binding(
+                        get: { viewModel.activeTab },
+                        set: { viewModel.setTab(tab: $0) }))
+                    {
+                        Text("Photos").tag(SearchTab.photos)
+                        Text("Collections").tag(SearchTab.collections)
+                        Text("Users").tag(SearchTab.users)
+                    }
+                    .pickerStyle(.segmented)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background(.ultraThinMaterial)
 
-                if searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    // Suggestions & History View
-                    SearchSuggestionsView(
-                        history: viewModel.searchHistory,
-                        onSelect: { text in
-                            searchText = text
-                            viewModel.updateQuery(newQuery: text)
-                        },
-                        onDelete: { text in
-                            viewModel.removeHistoryEntry(entry: text)
-                        },
-                        onClearAll: {
-                            viewModel.clearHistory()
-                        })
-                } else if viewModel.isLoading {
-                    ScrollView {
-                        VStack(spacing: 16) {
-                            switch viewModel.activeTab {
-                            case .photos:
-                                HStack(alignment: .top, spacing: 8) {
-                                    ForEach(0..<columnCount, id: \.self) { _ in
-                                        VStack(spacing: 8) {
-                                            ForEach(0..<3, id: \.self) { index in
-                                                PhotoCardSkeleton(height: index % 2 == 0 ? 180 : 240)
-                                            }
-                                        }
-                                    }
-                                }
-                                .padding(.horizontal, 8)
-                            case .collections:
-                                VStack(spacing: 16) {
-                                    ForEach(0..<3, id: \.self) { _ in
-                                        CollectionMosaicCardSkeleton()
-                                    }
-                                }
-                                .padding(.horizontal, 16)
-                            case .users:
-                                VStack(spacing: 12) {
-                                    ForEach(0..<4, id: \.self) { _ in
-                                        HStack(spacing: 16) {
-                                            Circle()
-                                                .fill(Color.white.opacity(0.06))
-                                                .frame(width: 50, height: 50)
-                                            VStack(alignment: .leading, spacing: 4) {
-                                                RoundedRectangle(cornerRadius: 4)
-                                                    .fill(Color.white.opacity(0.06))
-                                                    .frame(width: 120, height: 14)
-                                                RoundedRectangle(cornerRadius: 4)
-                                                    .fill(Color.white.opacity(0.06))
-                                                    .frame(width: 80, height: 10)
-                                            }
-                                            Spacer()
-                                        }
-                                        .padding(12)
-                                        .background(GlassTheme.surfaceBackgroundColor)
-                                        .cornerRadius(12)
-                                        .shimmer()
-                                    }
-                                }
-                                .padding(.horizontal, 16)
-                            default:
-                                EmptyView()
-                            }
-                        }
-                        .padding(.top, 10)
-                    }
-                } else if let error = viewModel.error {
-                    Spacer()
-                    VStack(spacing: 8) {
-                        Text("Search Failed")
-                            .font(.headline)
-                            .glassVibrancy(.primary)
-                        Text(error)
-                            .font(.subheadline)
-                            .glassVibrancy(.secondary)
-                    }
-                    Spacer()
-                } else {
-                    // Search Results depending on Active Tab
-                    ScrollView {
-                        LazyVStack(spacing: 12) {
-                            switch viewModel.activeTab {
-                            case .photos:
-                                if viewModel.photos.isEmpty {
-                                    NoSearchResultsView()
-                                } else {
+                    if searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        // Suggestions & History View
+                        SearchSuggestionsView(
+                            history: viewModel.searchHistory,
+                            onSelect: { text in
+                                searchText = text
+                                viewModel.updateQuery(newQuery: text)
+                            },
+                            onDelete: { text in
+                                viewModel.removeHistoryEntry(entry: text)
+                            },
+                            onClearAll: {
+                                viewModel.clearHistory()
+                            })
+                    } else if viewModel.isLoading {
+                        ScrollView {
+                            VStack(spacing: 16) {
+                                switch viewModel.activeTab {
+                                case .photos:
                                     HStack(alignment: .top, spacing: 8) {
-                                        ForEach(0..<columnCount, id: \.self) { colIndex in
-                                            LazyVStack(spacing: 8) {
-                                                ForEach(
-                                                    AdaptiveLayoutHelper.indexedPhotosForColumn(index: colIndex, totalColumns: columnCount, from: viewModel.photos)
-                                                ) { indexed in
-                                                    let photo = indexed.element
-                                                    let flatIndex = indexed.index
-                                                    SearchPhotoGridCard(
-                                                        photo: photo,
-                                                        columnCount: columnCount,
-                                                        onPhotoSelect: { onPhotoSelect(photo.id) },
-                                                        onUserSelect: onUserSelect)
-                                                        .staggeredReveal(index: flatIndex)
-                                                        .feedScrollTransition()
+                                        ForEach(0..<columnCount, id: \.self) { _ in
+                                            VStack(spacing: 8) {
+                                                ForEach(0..<3, id: \.self) { index in
+                                                    PhotoCardSkeleton(height: index % 2 == 0 ? 180 : 240)
                                                 }
                                             }
                                         }
                                     }
                                     .padding(.horizontal, 8)
-                                    .animation(.spring(), value: viewModel.photos)
-                                }
-
-                            case .collections:
-                                if viewModel.collections.isEmpty {
-                                    NoSearchResultsView()
-                                } else {
-                                    ForEach(Array(viewModel.collections.enumerated()), id: \.element.id) { index, collection in
-                                        Button(action: {
-                                            onCollectionSelect(collection.id)
-                                        }) {
-                                            CollectionCardView(collection: collection)
-                                                .staggeredReveal(index: index)
-                                                .feedScrollTransition()
+                                case .collections:
+                                    VStack(spacing: 16) {
+                                        ForEach(0..<3, id: \.self) { _ in
+                                            CollectionMosaicCardSkeleton()
                                         }
-                                        .buttonStyle(SpringCardButtonStyle())
                                     }
                                     .padding(.horizontal, 16)
-                                }
-
-                            case .users:
-                                if viewModel.users.isEmpty {
-                                    NoSearchResultsView()
-                                } else {
-                                    ForEach(Array(viewModel.users.enumerated()), id: \.element.id) { index, user in
-                                        Button(action: {
-                                            onUserSelect(user.username)
-                                        }) {
-                                            UserCardView(user: user)
-                                                .staggeredReveal(index: index)
-                                                .feedScrollTransition()
+                                case .users:
+                                    VStack(spacing: 12) {
+                                        ForEach(0..<4, id: \.self) { _ in
+                                            HStack(spacing: 16) {
+                                                Circle()
+                                                    .fill(Color.white.opacity(0.06))
+                                                    .frame(width: 50, height: 50)
+                                                VStack(alignment: .leading, spacing: 4) {
+                                                    RoundedRectangle(cornerRadius: 4)
+                                                        .fill(Color.white.opacity(0.06))
+                                                        .frame(width: 120, height: 14)
+                                                    RoundedRectangle(cornerRadius: 4)
+                                                        .fill(Color.white.opacity(0.06))
+                                                        .frame(width: 80, height: 10)
+                                                }
+                                                Spacer()
+                                            }
+                                            .padding(12)
+                                            .background(GlassTheme.surfaceBackgroundColor)
+                                            .cornerRadius(12)
+                                            .shimmer()
                                         }
-                                        .buttonStyle(SpringCardButtonStyle())
                                     }
                                     .padding(.horizontal, 16)
+                                default:
+                                    EmptyView()
                                 }
-
-                            default:
-                                EmptyView()
                             }
-
-                            if viewModel.isLoadingMore {
-                                ProgressView()
-                                    .tint(.white)
-                                    .padding(.vertical, 16)
-                            } else if !viewModel.hasReachedEnd, !searchText.isEmpty {
-                                Color.clear
-                                    .frame(height: 1)
-                                    .onAppear {
-                                        viewModel.loadNextPage()
+                            .padding(.top, 10)
+                        }
+                    } else if let error = viewModel.error {
+                        Spacer()
+                        VStack(spacing: 8) {
+                            Text("Search Failed")
+                                .font(.headline)
+                                .glassVibrancy(.primary)
+                            Text(error)
+                                .font(.subheadline)
+                                .glassVibrancy(.secondary)
+                        }
+                        Spacer()
+                    } else {
+                        // Search Results depending on Active Tab
+                        ScrollView {
+                            LazyVStack(spacing: 12) {
+                                switch viewModel.activeTab {
+                                case .photos:
+                                    if viewModel.photos.isEmpty {
+                                        NoSearchResultsView()
+                                    } else {
+                                        HStack(alignment: .top, spacing: 8) {
+                                            ForEach(0..<columnCount, id: \.self) { colIndex in
+                                                LazyVStack(spacing: 8) {
+                                                    ForEach(viewModel.columnItems(for: colIndex, totalColumns: columnCount)) { indexed in
+                                                        let photo = indexed.item
+                                                        let flatIndex = indexed.index
+                                                        SearchPhotoGridCard(
+                                                            photo: photo,
+                                                            columnCount: columnCount,
+                                                            onPhotoSelect: { onPhotoSelect(photo.id) },
+                                                            onUserSelect: onUserSelect)
+                                                            .staggeredReveal(index: flatIndex)
+                                                            .feedScrollTransition()
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        .padding(.horizontal, 8)
+                                        .animation(.spring(), value: viewModel.photos)
                                     }
+
+                                case .collections:
+                                    if viewModel.collections.isEmpty {
+                                        NoSearchResultsView()
+                                    } else {
+                                        ForEach(Array(viewModel.collections.enumerated()), id: \.element.id) { index, collection in
+                                            Button(action: {
+                                                onCollectionSelect(collection.id)
+                                            }) {
+                                                CollectionCardView(collection: collection)
+                                                    .staggeredReveal(index: index)
+                                                    .feedScrollTransition()
+                                            }
+                                            .buttonStyle(SpringCardButtonStyle())
+                                        }
+                                        .padding(.horizontal, 16)
+                                    }
+
+                                case .users:
+                                    if viewModel.users.isEmpty {
+                                        NoSearchResultsView()
+                                    } else {
+                                        ForEach(Array(viewModel.users.enumerated()), id: \.element.id) { index, user in
+                                            Button(action: {
+                                                onUserSelect(user.username)
+                                            }) {
+                                                UserCardView(user: user)
+                                                    .staggeredReveal(index: index)
+                                                    .feedScrollTransition()
+                                            }
+                                            .buttonStyle(SpringCardButtonStyle())
+                                        }
+                                        .padding(.horizontal, 16)
+                                    }
+
+                                default:
+                                    EmptyView()
+                                }
+
+                                if viewModel.isLoadingMore {
+                                    ProgressView()
+                                        .tint(.white)
+                                        .padding(.vertical, 16)
+                                } else if !viewModel.hasReachedEnd, !searchText.isEmpty {
+                                    Color.clear
+                                        .frame(height: 1)
+                                        .onAppear {
+                                            viewModel.loadNextPage()
+                                        }
+                                }
                             }
                         }
-                    }
-                    .refreshable {
-                        viewModel.refresh()
+                        .refreshable {
+                            viewModel.refresh()
+                        }
                     }
                 }
+            } else {
+                ProgressView()
+                    .tint(.white)
+            }
+        }
+        .task(id: initialQuery) {
+            if viewModel == nil {
+                viewModel = SearchViewModel(initialQuery: initialQuery)
             }
         }
         .navigationTitle("SEARCH")
@@ -245,20 +255,22 @@ struct SearchView: View {
         }
         .searchable(text: $searchText, prompt: Text("Search Photos, Collections, Users…"))
         .onSubmit(of: .search) {
-            viewModel.submitSearch(query: searchText)
+            viewModel?.submitSearch(query: searchText)
         }
         .onChange(of: searchText) { _, newValue in
-            viewModel.updateQuery(newQuery: newValue)
+            viewModel?.updateQuery(newQuery: newValue)
         }
         .sheet(isPresented: $showFilters) {
-            SearchFiltersSheetView(filters: viewModel.filters) { newFilters in
-                viewModel.applyFilters(
-                    orderBy: newFilters.orderBy,
-                    color: newFilters.color,
-                    orientation: newFilters.orientation)
+            if let viewModel {
+                SearchFiltersSheetView(filters: viewModel.filters) { newFilters in
+                    viewModel.applyFilters(
+                        orderBy: newFilters.orderBy,
+                        color: newFilters.color,
+                        orientation: newFilters.orientation)
+                }
+                .presentationDetents([.medium])
+                .presentationDragIndicator(.visible)
             }
-            .presentationDetents([.medium])
-            .presentationDragIndicator(.visible)
         }
     }
 }
