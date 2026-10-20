@@ -1,6 +1,6 @@
 # Specification 60: Android Shimmer & Skeleton Rendering Optimization
 
-**Status:** Approved
+**Status:** Implemented
 
 ## 1. Overview & Problem Statement
 
@@ -31,13 +31,13 @@ Performance audit of `androidApp` (Jetpack Compose performance skill: `animation
 
 ## 4. Acceptance Criteria
 
-- [ ] `shimmerEffect` no longer reads animation state in composition and allocates no `Brush`/`List` per frame.
-- [ ] Only one infinite transition is active per visible skeleton screen.
-- [ ] No nested shimmering containers (parent static, leaves animated).
-- [ ] Sweep is density-independent and visually coherent across all placeholders.
-- [ ] All existing skeleton composables render equivalently; call sites unchanged.
-- [ ] Zero new compiler warnings; zero dead code (old transition code removed).
-- [ ] Android debug build and lint pass.
+- [x] `shimmerEffect` no longer reads animation state in composition and allocates no `Brush`/`List` per frame.
+- [x] Only one infinite transition is active per visible skeleton screen.
+- [x] No nested shimmering containers (parent static, leaves animated).
+- [x] Sweep is density-independent and visually coherent across all placeholders.
+- [x] All existing skeleton composables render equivalently; call sites unchanged.
+- [x] Zero new compiler warnings; zero dead code (old transition code removed).
+- [x] Android debug build and lint pass.
 
 > [!NOTE]
 > Line numbers in this spec are approximate (working tree had uncommitted edits at authoring time); locate code by symbol name.

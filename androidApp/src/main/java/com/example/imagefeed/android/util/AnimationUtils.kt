@@ -1,5 +1,9 @@
 package com.example.imagefeed.android.util
 
+import android.graphics.LinearGradient
+import android.graphics.Matrix
+import android.graphics.Shader
+import android.provider.Settings
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -35,7 +39,9 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -44,9 +50,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.dp
 import com.example.imagefeed.android.calculateBottomContentPadding
 import kotlinx.coroutines.coroutineScope
@@ -134,184 +144,147 @@ fun Modifier.bounceClick(
         )
 }
 
+val LocalShimmerProgress = compositionLocalOf<(() -> Float)?> { null }
+
+@Composable
+fun ProvideShimmerAnimation(content: @Composable () -> Unit) {
+    if (LocalShimmerProgress.current != null) {
+        content()
+        return
+    }
+
+    val context = LocalContext.current
+    val isReducedMotion =
+        remember(context) {
+            try {
+                Settings.Global.getFloat(
+                    context.contentResolver,
+                    Settings.Global.ANIMATOR_DURATION_SCALE,
+                    1f,
+                ) == 0f
+            } catch (_: Exception) {
+                false
+            }
+        }
+
+    if (isReducedMotion) {
+        val staticProgress: () -> Float = { 0f }
+        CompositionLocalProvider(LocalShimmerProgress provides staticProgress, content = content)
+    } else {
+        val transition = rememberInfiniteTransition(label = "shimmerRoot")
+        val progress =
+            transition.animateFloat(
+                initialValue = 0f,
+                targetValue = 1f,
+                animationSpec =
+                    infiniteRepeatable(
+                        animation = tween(durationMillis = 1300, easing = LinearEasing),
+                        repeatMode = RepeatMode.Restart,
+                    ),
+                label = "shimmerProgress",
+            )
+        val progressLambda: () -> Float = { progress.value }
+        CompositionLocalProvider(LocalShimmerProgress provides progressLambda, content = content)
+    }
+}
+
 @Composable
 fun Modifier.shimmerEffect(): Modifier {
-    val transition = rememberInfiniteTransition(label = "shimmer")
-    val translateAnim by transition.animateFloat(
-        initialValue = -1000f,
-        targetValue = 1000f,
-        animationSpec =
-            infiniteRepeatable(
-                animation = tween(durationMillis = 1300, easing = LinearEasing),
-                repeatMode = RepeatMode.Restart,
-            ),
-        label = "shimmerTranslate",
-    )
+    val progressProvider =
+        LocalShimmerProgress.current ?: run {
+            val transition = rememberInfiniteTransition(label = "shimmerFallback")
+            val progress =
+                transition.animateFloat(
+                    initialValue = 0f,
+                    targetValue = 1f,
+                    animationSpec =
+                        infiniteRepeatable(
+                            animation = tween(durationMillis = 1300, easing = LinearEasing),
+                            repeatMode = RepeatMode.Restart,
+                        ),
+                    label = "shimmerProgressFallback",
+                )
+            remember { { progress.value } }
+        }
 
+    val density = LocalDensity.current
+    val windowInfo = LocalWindowInfo.current
     val baseColor = MaterialTheme.colorScheme.surfaceContainerLow
     val highlightColor = MaterialTheme.colorScheme.surfaceContainerHigh
-    val shimmerColors =
-        listOf(
-            baseColor,
-            highlightColor,
-            baseColor,
-        )
 
-    val brush =
-        Brush.linearGradient(
-            colors = shimmerColors,
-            start = Offset(x = translateAnim, y = 0f),
-            end = Offset(x = translateAnim + 400f, y = 400f),
-        )
+    val windowWidthPx =
+        remember(windowInfo.containerSize.width) {
+            windowInfo.containerSize.width
+                .toFloat()
+                .coerceAtLeast(1080f)
+        }
+    val bandWidthPx =
+        remember(density) {
+            with(density) { 320.dp.toPx() }
+        }
+    val sweepDistance = windowWidthPx + bandWidthPx * 2
 
-    return this.background(brush)
+    return this.drawWithCache {
+        val shaderMatrix = Matrix()
+        val baseArgb = baseColor.toArgb()
+        val highlightArgb = highlightColor.toArgb()
+        val shader =
+            LinearGradient(
+                0f,
+                0f,
+                bandWidthPx,
+                bandWidthPx,
+                intArrayOf(baseArgb, highlightArgb, baseArgb),
+                floatArrayOf(0f, 0.5f, 1f),
+                Shader.TileMode.CLAMP,
+            )
+        val shaderBrush = ShaderBrush(shader)
+
+        onDrawBehind {
+            val progress = progressProvider()
+            val xOffset = -bandWidthPx + (sweepDistance * progress)
+            shaderMatrix.setTranslate(xOffset, 0f)
+            shader.setLocalMatrix(shaderMatrix)
+            drawRect(brush = shaderBrush)
+        }
+    }
 }
 
 @Composable
 fun PhotoCardSkeleton(aspectRatio: Float) {
-    Column(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .clip(MaterialTheme.shapes.medium)
-                .shimmerEffect()
-                .padding(12.dp),
-    ) {
-        Box(
+    ProvideShimmerAnimation {
+        Column(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .aspectRatio(aspectRatio)
-                    .clip(MaterialTheme.shapes.small)
-                    .shimmerEffect(),
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
+                    .clip(MaterialTheme.shapes.medium)
+                    .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                    .padding(12.dp),
         ) {
             Box(
                 modifier =
                     Modifier
-                        .size(24.dp)
-                        .clip(CircleShape)
+                        .fillMaxWidth()
+                        .aspectRatio(aspectRatio)
+                        .clip(MaterialTheme.shapes.small)
                         .shimmerEffect(),
             )
-            Spacer(modifier = Modifier.width(8.dp))
-            Box(
-                modifier =
-                    Modifier
-                        .width(80.dp)
-                        .height(12.dp)
-                        .clip(MaterialTheme.shapes.extraSmall)
-                        .shimmerEffect(),
-            )
-        }
-    }
-}
-
-@Composable
-fun PhotoGridSkeleton() {
-    LazyVerticalStaggeredGrid(
-        columns = StaggeredGridCells.Adaptive(160.dp),
-        modifier = Modifier.fillMaxSize(),
-        contentPadding =
-            PaddingValues(
-                start = 8.dp,
-                top = 8.dp,
-                end = 8.dp,
-                bottom = calculateBottomContentPadding(8.dp),
-            ),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalItemSpacing = 8.dp,
-    ) {
-        val aspectRatios = listOf(0.7f, 1.2f, 1.5f, 0.8f, 1.0f, 1.3f)
-        items(12) { index ->
-            PhotoCardSkeleton(aspectRatio = aspectRatios[index % aspectRatios.size])
-        }
-    }
-}
-
-@Composable
-fun CollectionMosaicCardSkeleton() {
-    Card(
-        shape = MaterialTheme.shapes.extraLarge,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .clip(MaterialTheme.shapes.extraLarge),
-    ) {
-        Column(modifier = Modifier.fillMaxWidth()) {
+            Spacer(modifier = Modifier.height(8.dp))
             Row(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(1.4f),
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                val smallShape = MaterialTheme.shapes.small
-                Box(
-                    modifier =
-                        Modifier
-                            .weight(0.62f)
-                            .fillMaxSize()
-                            .clip(smallShape.copy(topEnd = CornerSize(0.dp), bottomEnd = CornerSize(0.dp)))
-                            .shimmerEffect(),
-                )
-                Column(
-                    modifier =
-                        Modifier
-                            .weight(0.38f)
-                            .fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    Box(
-                        modifier =
-                            Modifier
-                                .weight(1f)
-                                .fillMaxWidth()
-                                .clip(
-                                    smallShape.copy(
-                                        topStart = CornerSize(0.dp),
-                                        bottomStart = CornerSize(0.dp),
-                                        bottomEnd = CornerSize(0.dp),
-                                    ),
-                                ).shimmerEffect(),
-                    )
-                    Box(
-                        modifier =
-                            Modifier
-                                .weight(1f)
-                                .fillMaxWidth()
-                                .clip(
-                                    smallShape.copy(
-                                        topStart = CornerSize(0.dp),
-                                        bottomStart = CornerSize(0.dp),
-                                        topEnd = CornerSize(0.dp),
-                                    ),
-                                ).shimmerEffect(),
-                    )
-                }
-            }
-            Column(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Box(
                     modifier =
                         Modifier
-                            .width(180.dp)
-                            .height(16.dp)
-                            .clip(MaterialTheme.shapes.extraSmall)
+                            .size(24.dp)
+                            .clip(CircleShape)
                             .shimmerEffect(),
                 )
-                Spacer(modifier = Modifier.height(6.dp))
+                Spacer(modifier = Modifier.width(8.dp))
                 Box(
                     modifier =
                         Modifier
-                            .width(240.dp)
+                            .width(80.dp)
                             .height(12.dp)
                             .clip(MaterialTheme.shapes.extraSmall)
                             .shimmerEffect(),
@@ -322,47 +295,165 @@ fun CollectionMosaicCardSkeleton() {
 }
 
 @Composable
+fun PhotoGridSkeleton() {
+    ProvideShimmerAnimation {
+        LazyVerticalStaggeredGrid(
+            columns = StaggeredGridCells.Adaptive(160.dp),
+            modifier = Modifier.fillMaxSize(),
+            contentPadding =
+                PaddingValues(
+                    start = 8.dp,
+                    top = 8.dp,
+                    end = 8.dp,
+                    bottom = calculateBottomContentPadding(8.dp),
+                ),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalItemSpacing = 8.dp,
+        ) {
+            val aspectRatios = listOf(0.7f, 1.2f, 1.5f, 0.8f, 1.0f, 1.3f)
+            items(12) { index ->
+                PhotoCardSkeleton(aspectRatio = aspectRatios[index % aspectRatios.size])
+            }
+        }
+    }
+}
+
+@Composable
+fun CollectionMosaicCardSkeleton() {
+    ProvideShimmerAnimation {
+        Card(
+            shape = MaterialTheme.shapes.extraLarge,
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .clip(MaterialTheme.shapes.extraLarge),
+        ) {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Row(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .aspectRatio(1.4f),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    val smallShape = MaterialTheme.shapes.small
+                    Box(
+                        modifier =
+                            Modifier
+                                .weight(0.62f)
+                                .fillMaxSize()
+                                .clip(smallShape.copy(topEnd = CornerSize(0.dp), bottomEnd = CornerSize(0.dp)))
+                                .shimmerEffect(),
+                    )
+                    Column(
+                        modifier =
+                            Modifier
+                                .weight(0.38f)
+                                .fillMaxSize(),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        Box(
+                            modifier =
+                                Modifier
+                                    .weight(1f)
+                                    .fillMaxWidth()
+                                    .clip(
+                                        smallShape.copy(
+                                            topStart = CornerSize(0.dp),
+                                            bottomStart = CornerSize(0.dp),
+                                            bottomEnd = CornerSize(0.dp),
+                                        ),
+                                    ).shimmerEffect(),
+                        )
+                        Box(
+                            modifier =
+                                Modifier
+                                    .weight(1f)
+                                    .fillMaxWidth()
+                                    .clip(
+                                        smallShape.copy(
+                                            topStart = CornerSize(0.dp),
+                                            bottomStart = CornerSize(0.dp),
+                                            topEnd = CornerSize(0.dp),
+                                        ),
+                                    ).shimmerEffect(),
+                        )
+                    }
+                }
+                Column(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(12.dp),
+                ) {
+                    Box(
+                        modifier =
+                            Modifier
+                                .width(180.dp)
+                                .height(16.dp)
+                                .clip(MaterialTheme.shapes.extraSmall)
+                                .shimmerEffect(),
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Box(
+                        modifier =
+                            Modifier
+                                .width(240.dp)
+                                .height(12.dp)
+                                .clip(MaterialTheme.shapes.extraSmall)
+                                .shimmerEffect(),
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
 fun UserProfileHeaderSkeleton() {
-    Column(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Box(
+    ProvideShimmerAnimation {
+        Column(
             modifier =
                 Modifier
-                    .size(88.dp)
-                    .clip(CircleShape)
-                    .shimmerEffect(),
-        )
-        Spacer(modifier = Modifier.height(12.dp))
-        Box(
-            modifier =
-                Modifier
-                    .width(140.dp)
-                    .height(18.dp)
-                    .clip(MaterialTheme.shapes.extraSmall)
-                    .shimmerEffect(),
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Box(
-            modifier =
-                Modifier
-                    .width(90.dp)
-                    .height(12.dp)
-                    .clip(MaterialTheme.shapes.extraSmall)
-                    .shimmerEffect(),
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Box(
-            modifier =
-                Modifier
-                    .width(240.dp)
-                    .height(12.dp)
-                    .clip(MaterialTheme.shapes.extraSmall)
-                    .shimmerEffect(),
-        )
+                    .fillMaxWidth()
+                    .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Box(
+                modifier =
+                    Modifier
+                        .size(88.dp)
+                        .clip(CircleShape)
+                        .shimmerEffect(),
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            Box(
+                modifier =
+                    Modifier
+                        .width(140.dp)
+                        .height(18.dp)
+                        .clip(MaterialTheme.shapes.extraSmall)
+                        .shimmerEffect(),
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Box(
+                modifier =
+                    Modifier
+                        .width(90.dp)
+                        .height(12.dp)
+                        .clip(MaterialTheme.shapes.extraSmall)
+                        .shimmerEffect(),
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Box(
+                modifier =
+                    Modifier
+                        .width(240.dp)
+                        .height(12.dp)
+                        .clip(MaterialTheme.shapes.extraSmall)
+                        .shimmerEffect(),
+            )
+        }
     }
 }

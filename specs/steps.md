@@ -908,7 +908,7 @@ These are the spec files that the implementation notes and planning references s
 5.  **Reference Specification:**
     *   Track blueprint in `specs/59_cross_platform_localization_architecture.md`.
 
-### Step 60: Android Shimmer & Skeleton Rendering Optimization (Planned)
+### Step 60: Android Shimmer & Skeleton Rendering Optimization (Completed)
 1.  **Draw-Phase Shimmer:**
     *   Replace per-element composition-phase `shimmerEffect` with a draw-phase modifier driven by one shared infinite transition per skeleton screen.
     *   Remove nested shimmering containers and make the sweep density-independent.
