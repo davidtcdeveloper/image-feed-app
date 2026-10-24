@@ -1032,3 +1032,10 @@ These are the spec files that the implementation notes and planning references s
 
 
 
+### Step 73: macOS Agent Verification Instructions & Build Hygiene (Completed)
+1.  **Conditional macOS Verification Policy:**
+    *   Update `AGENTS.md`, the verification-and-linting, ios-glass-design, and kmp-testing skills, and `README.md` to require the `macosApp` build for Apple-specific changes (`iosApp/**`, Apple Kotlin source sets, Kotlin/Native framework config), document the shared `iosApp/iosApp` source layout, and add a macOS compile-safety checklist.
+2.  **Build Hygiene:**
+    *   Set `basedOnDependencyAnalysis: false` on the Kotlin pre-build script phases in `iosApp/project.yml` to clear the build warning, delete the stale untracked `macosApp/` directory, and remove its obsolete `.gitignore` entry.
+3.  **Reference Specification:**
+    *   Track blueprint in `specs/73_macos_agent_verification_instructions.md`.

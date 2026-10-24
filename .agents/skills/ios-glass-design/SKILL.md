@@ -119,6 +119,14 @@ Use SwiftUI declarative `.sensoryFeedback` instead of imperative feedback genera
 - When `horizontalSizeClass == .regular` (or running on macOS), display photo canvas and inspector side-by-side instead of using a bottom sheet.
 - Wrap iOS-specific sheet modifiers and size class queries in `#if os(iOS)` / `#if os(macOS)` compiler guards.
 
+### macOS Compile-Safety Checklist
+`iosApp/iosApp` sources are shared with the `macosApp` target. Guard these iOS-only APIs with `#if os(iOS)` (providing an AppKit/SwiftUI alternative under `#if os(macOS)` when behavior is needed):
+- UIKit types: `UIScreen`, `UIImage`, `UIApplication`, `UIImpactFeedbackGenerator`.
+- Sheet and navigation modifiers: `presentationDetents`, `presentationBackgroundInteraction`, `navigationBarTitleDisplayMode`, `.topBarLeading` / `.topBarTrailing` toolbar placements.
+- Text and chrome modifiers: `textInputAutocapitalization`, `statusBarHidden`.
+- Size-class queries that assume touch layouts.
+- Living reference for guarded platform branching: [`AdaptiveLayoutHelper.swift`](../../../iosApp/iosApp/AdaptiveLayoutHelper.swift).
+
 ---
 
 ## 7. MVI ViewModel Lifecycle in Swift

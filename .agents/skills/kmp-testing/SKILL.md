@@ -29,6 +29,7 @@ Use this skill when:
 ### Platform Boundary & Test Targets
 - The platform UI modules (`androidApp`, `iosApp`, `macosApp`) are thin declarative shells (Compose and SwiftUI) without dedicated unit test targets in `project.yml` or Gradle.
 - The shared test suite in `shared/src/commonTest` (`./gradlew :shared:allTests`) serves as the primary automated regression gate for business logic, pagination, filtering, and state management.
+- `:shared:allTests` includes `macosArm64Test`; run `./gradlew :shared:macosArm64Test` alone for a fast host-native Kotlin/Native check.
 
 ---
 

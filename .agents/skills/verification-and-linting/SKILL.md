@@ -2,7 +2,7 @@
 name: verification-and-linting
 description: >-
   Run verification commands, compile checks, static analysis, and code formatters
-  across Kotlin (shared/androidApp) and Swift (iosApp/macosApp). Use when diagnosing
+  across Kotlin (shared/androidApp) and Swift (iosApp and the macOS target). Use when diagnosing
   build errors, verifying changes, checking warnings, or formatting code prior to commit.
 ---
 
@@ -54,10 +54,21 @@ Verify Kotlin/Native compilation for Apple Silicon iOS Simulator:
 ./gradlew :shared:compileKotlinIosSimulatorArm64
 ```
 
+Verify Kotlin/Native compilation for Apple Silicon macOS:
+```bash
+./gradlew :shared:compileKotlinMacosArm64
+```
+
 ### D. iOS Simulator Application Build
 Always regenerate the Xcode project from XcodeGen specifications before running xcodebuild:
 ```bash
 xcodegen generate --spec iosApp/project.yml && xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp -destination 'generic/platform=iOS Simulator' build CODE_SIGNING_ALLOWED=NO
+```
+
+### E. macOS Application Build
+The `macosApp` scheme compiles the same `iosApp/iosApp` sources as iOS. Build it separately from iOS:
+```bash
+xcodegen generate --spec iosApp/project.yml && xcodebuild -project iosApp/iosApp.xcodeproj -scheme macosApp -destination 'platform=macOS,arch=arm64' build CODE_SIGNING_ALLOWED=NO
 ```
 
 ---
@@ -76,7 +87,7 @@ Run the project linters and formatters to maintain a zero-violation baseline. Ne
   ./gradlew ktlintCheck detekt
   ```
 
-### B. Swift (iosApp & macosApp)
+### B. Swift (shared `iosApp/iosApp` sources for iOS and macOS)
 - **Auto-format Swift code:**
   ```bash
   swiftformat .
@@ -94,18 +105,25 @@ Run the project linters and formatters to maintain a zero-violation baseline. Ne
 
 ## 4. Verification Policies & Hygiene Rules
 
-### Dual-Platform Build Policy
+### Platform Build Policy
 Whenever changes affect `shared/` or `iosApp/`, verify **BOTH** the Android build (`:androidApp:assembleDebug`) and the iOS build via `xcodebuild` (iOS Simulator). Never assume a shared change works in Swift simply because the Kotlin compiler passed.
 
+**Apple-specific changes** must additionally pass the macOS build (§2E). These are changes to:
+- `iosApp/**` (Swift sources, `Localizable.xcstrings`, asset catalogs, `project.yml`, `project.pbxproj`);
+- Kotlin Apple source sets (`appleMain`, `iosMain`, `macosMain`) in any module;
+- Kotlin/Native target or framework configuration (`macosArm64()`, `binaries.framework`, `export(...)`) in Gradle scripts.
+
+Changes confined to `commonMain` need only the Android and iOS builds.
+
 ### Zero Compiler Warning Policy
-Actively monitor and resolve compiler warnings. After every significant change, execute the relevant compiler verification commands (`./gradlew :shared:compileKotlinIosSimulatorArm64`, `./gradlew :androidApp:compileDebugKotlin`, or `xcodebuild`). Fix all deprecations and warnings immediately to keep the build log clean.
+Actively monitor and resolve compiler warnings. After every significant change, execute the relevant compiler verification commands (`./gradlew :shared:compileKotlinIosSimulatorArm64`, `./gradlew :shared:compileKotlinMacosArm64`, `./gradlew :androidApp:compileDebugKotlin`, or `xcodebuild` for `iosApp` / `macosApp`). Fix all deprecations and warnings immediately to keep the build log clean.
 
 ### Zero Dead Code Policy
 Do not introduce speculative, unused helper properties, functions, or parameters. When replacing a parameter, service, or pattern during refactoring, eliminate the obsolete code, variables, and imports across all call sites in the same change set.
 
 ### Pre-Commit Review & QA Checklist
 Before staging and committing changes:
-1. **Dual Build Verification**: Run `./gradlew :androidApp:assembleDebug` and `xcodegen generate --spec iosApp/project.yml && xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp -destination 'generic/platform=iOS Simulator' build CODE_SIGNING_ALLOWED=NO` with zero compiler warnings.
+1. **Build Verification**: Run the Android (§2B) and iOS (§2D) builds with zero compiler warnings, plus the macOS build (§2E) for Apple-specific changes.
 2. **Static Analysis & Linters**: Execute `./gradlew ktlintCheck detekt` and `swiftformat --lint .` / `swiftlint lint iosApp/iosApp`.
 3. **Spec Checklist**: Confirm all acceptance criteria checkboxes in the active `specs/<id>.md` are completed (`- [x]`).
 4. **Artifact Cleanup**: Remove all temporary review reports, logs, and teammate scratch directories from `.agents/`.
@@ -119,9 +137,9 @@ Before removing or refactoring any declaration in `shared/commonMain`, search bo
 
 ### Apple Tooling & XcodeGen Synchronization
 When modifying Apple project settings, target sources, or dependencies:
-1. Update `iosApp/project.yml`.
+1. Update `iosApp/project.yml`, which defines both the `iosApp` and `macosApp` targets (apply script or settings changes to both).
 2. Maintain synchronization between `iosApp/project.yml` and `iosApp/iosApp.xcodeproj/project.pbxproj` (especially pre-build script overrides like `OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED`).
-3. Always run `xcodegen generate --spec iosApp/project.yml` prior to invoking `xcodebuild` or Xcode MCP tools (`BuildProject`, `RunProject`, `RunAllTests`).
+3. Always run `xcodegen generate --spec iosApp/project.yml` prior to invoking `xcodebuild` or Xcode MCP tools (`BuildProject`, `RunProject`, `RunAllTests`). For macOS verification via Xcode MCP, call `XcodeSwitchScheme` to `macosApp` and build again.
 
 ### Dependency & Version Catalog Rules
 - Prefer `gradle/libs.versions.toml` for all dependency declarations; avoid ad-hoc versions in module build scripts.

@@ -28,6 +28,7 @@ targets:
     preBuildScripts:
       - name: Compile Kotlin Shared Framework
         alwaysRun: true
+        basedOnDependencyAnalysis: false
         script: |
           if [ "YES" = "$OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED" ]; then
             echo "Skipping Gradle build task invocation due to OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED environment variable set to \"YES\""
@@ -79,6 +80,7 @@ targets:
     preBuildScripts:
       - name: Compile Kotlin Shared Framework
         alwaysRun: true
+        basedOnDependencyAnalysis: false
         script: |
           if [ "YES" = "$OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED" ]; then
             echo "Skipping Gradle build task invocation due to OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED environment variable set to \"YES\""

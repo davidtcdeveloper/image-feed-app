@@ -1,6 +1,6 @@
 # Specification 73: macOS Agent Verification Instructions & Build Hygiene
 
-**Status:** Proposed
+**Status:** Implemented
 
 ## 1. Overview & Problem Statement
 
@@ -82,14 +82,14 @@ Verified facts (October 2026):
 
 ## 5. Acceptance Criteria
 
-- [ ] `AGENTS.md` documents the conditional macOS build requirement, the shared `iosApp/iosApp` source layout, and the macOS display-scale API, and stays under 75 lines.
-- [ ] Verification skill contains the macOS Kotlin compile and `xcodebuild -scheme macosApp` commands, Apple-specific trigger list, updated checklist, and Xcode MCP scheme guidance.
-- [ ] ios-glass-design skill contains the macOS Compile-Safety Checklist without verbatim code blocks.
-- [ ] kmp-testing skill mentions `:shared:macosArm64Test`.
-- [ ] README Engineering Policies no longer excludes macOS from verification.
-- [ ] `iosApp/project.yml` script phases set `basedOnDependencyAnalysis: false`; `project.pbxproj` regenerated and in sync.
-- [ ] `macosApp/` directory deleted; stale `.gitignore` entry removed; no new ignore entry added.
-- [ ] `./gradlew :androidApp:assembleDebug` succeeds.
-- [ ] iOS `xcodebuild` (scheme `iosApp`) succeeds with zero warnings.
-- [ ] macOS `xcodebuild` (scheme `macosApp`) succeeds with zero warnings.
-- [ ] `specs/steps.md` Step 73 marked `(Completed)` and this spec set to `**Status:** Implemented`.
+- [x] `AGENTS.md` documents the conditional macOS build requirement, the shared `iosApp/iosApp` source layout, and the macOS display-scale API, and stays under 75 lines.
+- [x] Verification skill contains the macOS Kotlin compile and `xcodebuild -scheme macosApp` commands, Apple-specific trigger list, updated checklist, and Xcode MCP scheme guidance.
+- [x] ios-glass-design skill contains the macOS Compile-Safety Checklist without verbatim code blocks.
+- [x] kmp-testing skill mentions `:shared:macosArm64Test`.
+- [x] README Engineering Policies no longer excludes macOS from verification.
+- [x] `iosApp/project.yml` script phases set `basedOnDependencyAnalysis: false`; `project.pbxproj` regenerated and in sync.
+- [x] `macosApp/` directory deleted; stale `.gitignore` entry removed; no new ignore entry added.
+- [x] `./gradlew :androidApp:assembleDebug` succeeds.
+- [x] iOS `xcodebuild` (scheme `iosApp`) succeeds with zero warnings.
+- [x] macOS `xcodebuild` (scheme `macosApp`) succeeds with zero warnings.
+- [x] `specs/steps.md` Step 73 marked `(Completed)` and this spec set to `**Status:** Implemented`.

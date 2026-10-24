@@ -25,13 +25,14 @@ These non-negotiable boundaries and policies must be observed on every change:
 1. **KMP Architecture Boundaries & Shared MVI / UDF**:
    * All business logic, models, networking, and presentation state reside in shared Kotlin code.
    * **Modularization Migration Phase**: In transition from `:shared` monolith to vertical feature ownership (`:feature:*` owning repositories and API clients) with foundational core modules (`:core:*`), `:shared` as umbrella framework, and Metro DI aggregator (see [evaluation](specs/researches/modularization_evaluation.md) and Specs [46](specs/46_modularization_foundation_core_extraction.md)–[49](specs/49_modularization_umbrella_and_linking_optimization.md)).
-   * Platform modules (`androidApp`, `iosApp`, `macosApp`) remain thin, declarative view shells (Compose / SwiftUI).
+   * Platform modules (`androidApp`, `iosApp`, `macosApp`) remain thin, declarative view shells (Compose / SwiftUI). `macosApp` is a target in `iosApp/project.yml` that compiles the same `iosApp/iosApp` sources, so every Swift edit also builds for macOS.
    * Dependency injection is handled at compile time using **Metro** (`dev.zacsweers.metro`). Do not use Koin or dynamic DI.
    * **Presentation Architecture**: Presentation logic is standardized on **Shared MVI / Unidirectional Data Flow (UDF)** built on [`MviViewModel`](shared/src/commonMain/kotlin/com/example/imagefeed/presentation/mvi/MviViewModel.kt), [`UiState`](shared/src/commonMain/kotlin/com/example/imagefeed/presentation/mvi/UiState.kt), [`UiIntent`](shared/src/commonMain/kotlin/com/example/imagefeed/presentation/mvi/UiIntent.kt), and [`UiEffect`](shared/src/commonMain/kotlin/com/example/imagefeed/presentation/mvi/UiEffect.kt).
    * **Lifecycle & Teardown**: ViewModels manage coroutines within `viewModelScope`. On Android, ViewModels are scoped via standard Compose `viewModel { ... }`. On iOS/macOS, Swift `@Observable` wrappers invoke `viewModel.clear()` upon `deinit`.
 
-2. **Dual-Platform Build Policy**:
-   * Whenever changes affect `shared/` or platform logic, verify **BOTH** Android (`./gradlew :androidApp:assembleDebug`) and iOS (`xcodegen generate --spec iosApp/project.yml && xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp -destination 'generic/platform=iOS Simulator' build CODE_SIGNING_ALLOWED=NO`).
+2. **Platform Build Policy**:
+   * Whenever changes affect `shared/` or platform logic, verify **BOTH** Android and iOS; commands live in the verification skill.
+   * Apple-specific changes (`iosApp/**`, Apple Kotlin source sets, Kotlin/Native framework config) must **also** build the `macosApp` scheme.
    * Never assume shared changes work in Swift just because Kotlin compiles.
 
 3. **Quality & Hygiene Standards**:
@@ -47,7 +48,7 @@ These non-negotiable boundaries and policies must be observed on every change:
    * Hotlink exact Unsplash photo URLs; never cache image files locally or on third-party servers.
    * Preserve the `ixid` parameter on all photo requests.
    * Prominently display photographer attribution on all cards/screens and trigger download tracking on save.
-   * Multiply layout points by display scale (`UIScreen.main.scale`) for CDN image requests to ensure sharp Retina rendering.
+   * Multiply layout points by display scale (`UIScreen.main.scale` on iOS, `NSScreen.backingScaleFactor` on macOS) for CDN image requests to ensure sharp Retina rendering.
 
 5. **Platform Localization & Typed Errors**:
    * Zero hardcoded UI strings; externalize to Android XML and Apple String Catalogs.
