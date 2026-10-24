@@ -10,6 +10,7 @@ struct SearchView: View {
     @State private var showFilters = false
     @State private var searchText: String
     @FocusState private var isSearchFocused: Bool
+    @Namespace private var searchTabNamespace
 
     let onPhotoSelect: (String) -> Void
     let onUserSelect: (String) -> Void
@@ -43,21 +44,7 @@ struct SearchView: View {
                 .ignoresSafeArea()
 
             if let viewModel {
-                VStack(spacing: 0) {
-                    // Search Tab Picker
-                    Picker("Tab", selection: Binding(
-                        get: { viewModel.activeTab },
-                        set: { viewModel.setTab(tab: $0) }))
-                    {
-                        Text("Photos").tag(SearchTab.photos)
-                        Text("Collections").tag(SearchTab.collections)
-                        Text("Users").tag(SearchTab.users)
-                    }
-                    .pickerStyle(.segmented)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
-                    .background(.ultraThinMaterial)
-
+                Group {
                     if searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                         // Suggestions & History View
                         SearchSuggestionsView(
@@ -71,6 +58,9 @@ struct SearchView: View {
                             onClearAll: {
                                 viewModel.clearHistory()
                             })
+                            .safeAreaInset(edge: .top, spacing: 0) {
+                                searchTabBar(viewModel: viewModel)
+                            }
                     } else if viewModel.isLoading {
                         ScrollView {
                             VStack(spacing: 16) {
@@ -123,17 +113,23 @@ struct SearchView: View {
                             }
                             .padding(.top, 10)
                         }
-                    } else if let error = viewModel.error {
-                        Spacer()
-                        VStack(spacing: 8) {
-                            Text("Search Failed")
-                                .font(.headline)
-                                .glassVibrancy(.primary)
-                            Text(error)
-                                .font(.subheadline)
-                                .glassVibrancy(.secondary)
+                        .safeAreaInset(edge: .top, spacing: 0) {
+                            searchTabBar(viewModel: viewModel)
                         }
-                        Spacer()
+                    } else if let error = viewModel.error {
+                        VStack(spacing: 0) {
+                            searchTabBar(viewModel: viewModel)
+                            Spacer()
+                            VStack(spacing: 8) {
+                                Text("Search Failed")
+                                    .font(.headline)
+                                    .glassVibrancy(.primary)
+                                Text(error)
+                                    .font(.subheadline)
+                                    .glassVibrancy(.secondary)
+                            }
+                            Spacer()
+                        }
                     } else {
                         // Search Results depending on Active Tab
                         ScrollView {
@@ -161,6 +157,7 @@ struct SearchView: View {
                                             }
                                         }
                                         .padding(.horizontal, 8)
+                                        .padding(.top, 4)
                                     }
 
                                 case .collections:
@@ -178,6 +175,7 @@ struct SearchView: View {
                                             .buttonStyle(SpringCardButtonStyle())
                                         }
                                         .padding(.horizontal, 16)
+                                        .padding(.top, 4)
                                     }
 
                                 case .users:
@@ -195,6 +193,7 @@ struct SearchView: View {
                                             .buttonStyle(SpringCardButtonStyle())
                                         }
                                         .padding(.horizontal, 16)
+                                        .padding(.top, 4)
                                     }
 
                                 default:
@@ -213,12 +212,17 @@ struct SearchView: View {
                                         }
                                 }
                             }
+                            .padding(.bottom, 32)
                         }
                         .refreshable {
                             viewModel.refresh()
                         }
+                        .safeAreaInset(edge: .top, spacing: 0) {
+                            searchTabBar(viewModel: viewModel)
+                        }
                     }
                 }
+                .sensoryFeedback(.selection, trigger: viewModel.activeTab)
             } else {
                 ProgressView()
                     .tint(.white)
@@ -271,6 +275,54 @@ struct SearchView: View {
                 .presentationDragIndicator(.visible)
             }
         }
+    }
+
+    private func searchTabBar(viewModel: SearchViewModel) -> some View {
+        SearchTabBar(
+            activeTab: viewModel.activeTab,
+            namespace: searchTabNamespace,
+            onSelect: { selectedTab in
+                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                    viewModel.setTab(tab: selectedTab)
+                }
+            })
+    }
+}
+
+struct SearchTabBar: View {
+    let activeTab: SearchTab
+    let namespace: Namespace.ID
+    let onSelect: (SearchTab) -> Void
+
+    private let tabs: [(tab: SearchTab, title: String)] = [
+        (.photos, "Photos"),
+        (.collections, "Collections"),
+        (.users, "Users"),
+    ]
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(tabs, id: \.tab) { item in
+                    CategoryTabButton(
+                        title: item.title,
+                        isSelected: activeTab == item.tab,
+                        namespace: namespace,
+                        action: {
+                            onSelect(item.tab)
+                        })
+                        .id(item.tab)
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 5)
+            .macOSHorizontalScroll()
+        }
+        .frame(height: 44)
+        .glassBackground(style: .ultraThin, shape: Capsule(), showBorder: true, hasShadow: true)
+        .padding(.horizontal, 12)
+        .padding(.top, 4)
+        .padding(.bottom, 6)
     }
 }
 

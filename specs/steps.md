@@ -104,6 +104,9 @@ The `specs/` folder currently contains the following implementation and design d
 *   `specs/69_ios_swiftui_performance_phase2_scroll_dynamics_and_state_isolation.md`
 *   `specs/70_ios_swiftui_performance_phase3_gpu_rendering_and_image_pipeline.md`
 *   `specs/71_macos_horizontal_category_scroll_fix.md`
+*   `specs/72_ios_photo_details_image_and_footer_positioning_fix.md`
+*   `specs/73_macos_agent_verification_instructions.md`
+*   `specs/74_macos_search_tab_bar_visual_consistency.md`
 *   `specs/researches/modularization_evaluation.md`
 *   `specs/researches/swiftui_performance_optimization_plan.md`
 *   `specs/implementation_plan.md`
@@ -1039,3 +1042,12 @@ These are the spec files that the implementation notes and planning references s
     *   Set `basedOnDependencyAnalysis: false` on the Kotlin pre-build script phases in `iosApp/project.yml` to clear the build warning, delete the stale untracked `macosApp/` directory, and remove its obsolete `.gitignore` entry.
 3.  **Reference Specification:**
     *   Track blueprint in `specs/73_macos_agent_verification_instructions.md`.
+
+### Step 74: Search Tab Bar Glass Capsule Redesign & Visual Parity (Completed)
+1.  **Replace Segmented `Picker` with `SearchTabBar` (`SearchView.swift`):**
+    *   Remove `Picker("Tab", ...)` with `.pickerStyle(.segmented)` and `.background(.ultraThinMaterial)` in `SearchView.swift`.
+    *   Introduce `SearchTabBar` reusing `CategoryTabButton` (`ContentView.swift`) inside a `44pt`-high floating `Capsule` with `.glassBackground(style: .ultraThin, shape: Capsule(), showBorder: true, hasShadow: true)` and `matchedGeometryEffect` selection animation.
+2.  **Full-Bleed Top `.safeAreaInset` & Sensory Feedback:**
+    *   Mount `SearchTabBar` via `.safeAreaInset(edge: .top, spacing: 0)` so search suggestions, skeletons, and results scroll smoothly beneath the floating glass capsule bar, and add `.sensoryFeedback(.selection, trigger: viewModel.activeTab)`.
+3.  **Reference Specification:**
+    *   Track blueprint in `specs/74_macos_search_tab_bar_visual_consistency.md`.

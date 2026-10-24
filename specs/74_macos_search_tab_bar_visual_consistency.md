@@ -1,6 +1,6 @@
 # Specification 74: Search Tab Bar Glass Capsule Redesign & Visual Parity
 
-**Status:** Draft
+**Status:** Implemented
 
 ## 1. Overview & Problem Statement
 
@@ -92,9 +92,9 @@ In [`SearchView.swift`](file:///Users/davidtiagoconceicao/Developer/image-feed-a
 
 ## 6. Acceptance Criteria
 
-- [ ] `SearchView` replaces the segmented `Picker("Tab", ...)` with a floating glass capsule tab bar (`SearchTabBar`) visually matching `FeedCategoryBar` on the Home screen.
-- [ ] The literal `"Tab"` label and system-blue segmented control border on macOS are eliminated.
-- [ ] `Photos`, `Collections`, and `Users` tabs in `SearchView` use `CategoryTabButton` styling (`.system(size: 13, weight: .semibold)`, white active capsule with black text and `matchedGeometryEffect`, translucent `white.opacity(0.08)` inactive capsules with secondary text).
-- [ ] `SearchTabBar` uses `.glassBackground(style: .ultraThin, shape: Capsule(), showBorder: true, hasShadow: true)` with `height: 44` and horizontal/vertical padding matching `FeedCategoryBar`, and integrates with scroll content via `.safeAreaInset(edge: .top, spacing: 0)`.
-- [ ] Switching search tabs animates smoothly with `.spring(response: 0.35, dampingFraction: 0.8)` and triggers `.sensoryFeedback(.selection, trigger:)`.
-- [ ] Both `macosApp` and `iosApp` build with zero compiler warnings, and `swiftformat` / `swiftlint` pass with zero violations.
+- [x] `SearchView` replaces the segmented `Picker("Tab", ...)` with a floating glass capsule tab bar (`SearchTabBar`) visually matching `FeedCategoryBar` on the Home screen.
+- [x] The literal `"Tab"` label and system-blue segmented control border on macOS are eliminated.
+- [x] `Photos`, `Collections`, and `Users` tabs in `SearchView` use `CategoryTabButton` styling (`.system(size: 13, weight: .semibold)`, white active capsule with black text and `matchedGeometryEffect`, translucent `white.opacity(0.08)` inactive capsules with secondary text).
+- [x] `SearchTabBar` uses `.glassBackground(style: .ultraThin, shape: Capsule(), showBorder: true, hasShadow: true)` with `height: 44` and horizontal/vertical padding matching `FeedCategoryBar`, and integrates with scroll content via `.safeAreaInset(edge: .top, spacing: 0)`.
+- [x] Switching search tabs animates smoothly with `.spring(response: 0.35, dampingFraction: 0.8)` and triggers `.sensoryFeedback(.selection, trigger:)`.
+- [x] Both `macosApp` and `iosApp` build with zero compiler warnings, and `swiftformat` / `swiftlint` pass with zero violations.
