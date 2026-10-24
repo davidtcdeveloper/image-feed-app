@@ -1,6 +1,6 @@
 [versions]
 # Kotlin & Plugins
-kotlin = "2.4.20"
+kotlin = "2.4.21"
 agp = "9.4.1"          # Android Gradle Plugin
 buildkonfig = "0.23.0"
 ktlint = "14.2.0"
@@ -8,7 +8,7 @@ detekt = "1.23.8"
 
 # Core KMP Libraries
 coroutines = "1.11.0"
-serialization = "1.11.0"
+serialization = "1.12.0"
 metro = "1.4.5"
 
 # Networking & Logging (Ktor)
@@ -19,11 +19,11 @@ androidx-activity = "1.13.0"
 androidx-lifecycle = "2.11.0"
 androidx-navigation3 = "1.2.0"
 androidx-lifecycle-navigation3 = "2.11.0"
-androidx-navigationevent = "1.1.2"
+androidx-navigationevent = "1.2.0"
 androidx-compose-bom = "2026.09.00"
 coil = "3.6.3"
-play-services-maps = "20.0.0"
-maps-compose = "9.0.0"
+play-services-maps = "20.1.0"
+maps-compose = "9.0.1"
 androidx-window = "1.5.1"
 androidx-material3-adaptive = "1.3.0"
 androidx-profileinstaller = "1.4.1"
