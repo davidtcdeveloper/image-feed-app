@@ -286,61 +286,70 @@ struct ProfileTabPicker: View {
     @Environment(\.colorSchemeContrast) private var colorSchemeContrast
 
     var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                ForEach([ProfileTab.portfolio, ProfileTab.likes, ProfileTab.collections, ProfileTab.insights], id: \.self) { tab in
-                    let isSelected = activeTab == tab
-                    Button(action: {
-                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                            onSelect(tab)
-                        }
-                    }) {
-                        HStack(spacing: 6) {
-                            Text(tabTitle(for: tab))
-                                .font(.caption.weight(isSelected ? .bold : .medium))
-                                .glassVibrancy(isSelected ? .primary : .secondary)
-
-                            if let count = tabCount(for: tab) {
-                                Text("\(count)")
-                                    .font(.caption2.weight(.bold))
-                                    .padding(.horizontal, 6)
-                                    .padding(.vertical, 2)
-                                    .background(
-                                        Capsule()
-                                            .fill(isSelected ? Color.white.opacity(0.20) : Color.white.opacity(0.08)))
+        ScrollViewReader { proxy in
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach([ProfileTab.portfolio, ProfileTab.likes, ProfileTab.collections, ProfileTab.insights], id: \.self) { tab in
+                        let isSelected = activeTab == tab
+                        Button {
+                            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                                onSelect(tab)
+                            }
+                        } label: {
+                            HStack(spacing: 6) {
+                                Text(tabTitle(for: tab))
+                                    .font(.caption.weight(isSelected ? .bold : .medium))
                                     .glassVibrancy(isSelected ? .primary : .secondary)
+
+                                if let count = tabCount(for: tab) {
+                                    Text("\(count)")
+                                        .font(.caption2.weight(.bold))
+                                        .padding(.horizontal, 6)
+                                        .padding(.vertical, 2)
+                                        .background(
+                                            Capsule()
+                                                .fill(isSelected ? Color.white.opacity(0.20) : Color.white.opacity(0.08)))
+                                        .glassVibrancy(isSelected ? .primary : .secondary)
+                                }
                             }
-                        }
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 8)
-                        .background {
-                            if isSelected {
-                                Capsule()
-                                    .fill(Color.white.opacity(0.14))
-                                    .overlay {
-                                        if reduceTransparency || colorSchemeContrast == .increased {
-                                            Capsule()
-                                                .strokeBorder(GlassTheme.fallbackBorderColor, lineWidth: GlassTheme.fallbackBorderWidth)
-                                        } else {
-                                            Capsule()
-                                                .strokeBorder(GlassTheme.specularBorderGradient, lineWidth: GlassTheme.specularBorderWidth)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 8)
+                            .background {
+                                if isSelected {
+                                    Capsule()
+                                        .fill(Color.white.opacity(0.14))
+                                        .overlay {
+                                            if reduceTransparency || colorSchemeContrast == .increased {
+                                                Capsule()
+                                                    .strokeBorder(GlassTheme.fallbackBorderColor, lineWidth: GlassTheme.fallbackBorderWidth)
+                                            } else {
+                                                Capsule()
+                                                    .strokeBorder(GlassTheme.specularBorderGradient, lineWidth: GlassTheme.specularBorderWidth)
+                                            }
                                         }
-                                    }
-                                    .matchedGeometryEffect(id: "ActiveProfileTab", in: tabIndicatorNamespace)
-                            } else {
-                                Capsule()
-                                    .fill(Color.white.opacity(0.04))
+                                        .matchedGeometryEffect(id: "ActiveProfileTab", in: tabIndicatorNamespace)
+                                } else {
+                                    Capsule()
+                                        .fill(Color.white.opacity(0.04))
+                                }
                             }
                         }
+                        .buttonStyle(.plain)
+                        .id(tab)
+                        .accessibilityElement(children: .combine)
+                        .accessibilityLabel(tabAccessibilityLabel(for: tab))
+                        .accessibilityAddTraits(isSelected ? [.isSelected, .isButton] : .isButton)
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityElement(children: .combine)
-                    .accessibilityLabel(tabAccessibilityLabel(for: tab))
-                    .accessibilityAddTraits(isSelected ? [.isSelected, .isButton] : .isButton)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .macOSHorizontalScroll()
+            }
+            .onChange(of: activeTab) { _, newTab in
+                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                    proxy.scrollTo(newTab, anchor: .center)
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
         }
         .glassBackground(material: .ultraThinMaterial, shape: Rectangle(), showBorder: false)
     }

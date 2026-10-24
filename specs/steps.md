@@ -1011,7 +1011,7 @@ These are the spec files that the implementation notes and planning references s
 3.  **Reference Specification:**
     *   Track blueprint in `specs/70_ios_swiftui_performance_phase3_gpu_rendering_and_image_pipeline.md`.
 
-### Step 71: macOS Horizontal Category Tab Scrolling & Desktop Navigation Fix
+### Step 71: macOS Horizontal Category Tab Scrolling & Desktop Navigation Fix (Completed)
 1.  **`HStack` + `ScrollViewReader` Auto-Centering:**
     *   Replace `LazyHStack` with an eager `HStack` wrapped in `ScrollViewReader` in `FeedCategoryBar` (`ContentView.swift`), assign stable `.id` tags (`"editorial"` and `topic.slug`), and auto-scroll selected categories into the center of the viewport.
 2.  **macOS Scroll-Wheel Translation & Chevron Step Controls:**

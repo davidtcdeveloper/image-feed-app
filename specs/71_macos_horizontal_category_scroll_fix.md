@@ -1,6 +1,6 @@
 # macOS Horizontal Category Tab Scrolling & Desktop Navigation Spec
 
-**Status:** Approved
+**Status:** Implemented
 
 ## Overview
 
@@ -93,9 +93,9 @@ On macOS, the top topic/category bar rendered at the top of [`PhotosFeedTabView`
 
 ## Acceptance Criteria
 
-- [ ] `FeedCategoryBar` uses an eager `HStack` wrapped in `ScrollViewReader` with stable item IDs (`"editorial"` and `topic.slug`) and smoothly scrolls the selected category into view on selection.
-- [ ] On macOS, hovering over `FeedCategoryBar` (or `ProfileTabPicker`) and scrolling with a standard vertical mouse scroll wheel translates vertical wheel deltas into horizontal scrolling of the tab bar without scrolling the underlying vertical photo grid.
-- [ ] On macOS, native two-finger horizontal trackpad swipes scroll `FeedCategoryBar` smoothly across the full width of loaded topics.
-- [ ] On macOS, leading and trailing chevron buttons (`chevron.backward` / `chevron.forward`) allow mouse users to scroll through categories with a single click, using `GlassTheme` vibrancy and localized accessibility labels.
-- [ ] iOS category bar appearance, touch scrolling, and `matchedGeometryEffect` selection capsule animation remain intact with zero regressions.
-- [ ] Both `iosApp` and `macosApp` targets compile cleanly with zero warnings, and `swiftformat --lint .` / `swiftlint` pass with zero violations.
+- [x] `FeedCategoryBar` uses an eager `HStack` wrapped in `ScrollViewReader` with stable item IDs (`"editorial"` and `topic.slug`) and smoothly scrolls the selected category into view on selection.
+- [x] On macOS, hovering over `FeedCategoryBar` (or `ProfileTabPicker`) and scrolling with a standard vertical mouse scroll wheel translates vertical wheel deltas into horizontal scrolling of the tab bar without scrolling the underlying vertical photo grid.
+- [x] On macOS, native two-finger horizontal trackpad swipes scroll `FeedCategoryBar` smoothly across the full width of loaded topics.
+- [x] On macOS, leading and trailing chevron buttons (`chevron.backward` / `chevron.forward`) allow mouse users to scroll through categories with a single click, using `GlassTheme` vibrancy and localized accessibility labels.
+- [x] iOS category bar appearance, touch scrolling, and `matchedGeometryEffect` selection capsule animation remain intact with zero regressions.
+- [x] Both `iosApp` and `macosApp` targets compile cleanly with zero warnings, and `swiftformat --lint .` / `swiftlint` pass with zero violations.

@@ -571,7 +571,8 @@ struct PhotosFeedTabView: View {
             topics: viewModel.topics,
             selectedTopicSlug: viewModel.selectedTopicSlug,
             isLoadingTopics: viewModel.isLoadingTopics,
-            namespace: categoryNamespace)
+            namespace: categoryNamespace,
+            isScrollEnabled: selectedPhotoForHero == nil && !isShaking)
         { slug in
             withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                 viewModel.selectTopic(slug: slug)
@@ -600,58 +601,139 @@ struct FeedCategoryBar: View {
     let selectedTopicSlug: String
     let isLoadingTopics: Bool
     let namespace: Namespace.ID
+    var isScrollEnabled: Bool = true
     let onSelect: (String) -> Void
 
-    var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            LazyHStack(spacing: 8) {
-                CategoryTabButton(
-                    title: "Editorial",
-                    isSelected: selectedTopicSlug == "editorial",
-                    namespace: namespace)
-                {
-                    onSelect("editorial")
-                }
+    @State private var scrollCoordinator = MacOSHorizontalScrollCoordinator()
 
-                if topics.isEmpty, isLoadingTopics {
-                    ForEach(0..<6, id: \.self) { _ in
-                        Capsule()
-                            .fill(Color.white.opacity(0.08))
-                            .frame(width: 80, height: 32)
-                            .opacity(0.5)
+    private var orderedSlugs: [String] {
+        ["editorial"] + topics.map(\.slug)
+    }
+
+    var body: some View {
+        ScrollViewReader { proxy in
+            HStack(spacing: 0) {
+                #if os(macOS)
+                if !topics.isEmpty {
+                    categoryStepButton(systemName: "chevron.backward", accessibilityLabel: "Previous categories") {
+                        stepCategory(by: -3, proxy: proxy)
                     }
-                } else {
-                    ForEach(topics, id: \.slug) { topic in
-                        CategoryTabButton(
-                            title: topic.title,
-                            isSelected: selectedTopicSlug == topic.slug,
-                            namespace: namespace)
-                        {
-                            onSelect(topic.slug)
+                    .padding(.leading, 8)
+                }
+                #endif
+
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        CategoryTabButton(title: "Editorial", isSelected: selectedTopicSlug == "editorial", namespace: namespace) {
+                            onSelect("editorial")
+                        }
+                        .id("editorial")
+
+                        if topics.isEmpty, isLoadingTopics {
+                            ForEach(0..<6, id: \.self) { _ in
+                                Capsule()
+                                    .fill(Color.white.opacity(0.08))
+                                    .frame(width: 80, height: 32)
+                                    .opacity(0.5)
+                            }
+                        } else {
+                            ForEach(topics, id: \.slug) { topic in
+                                CategoryTabButton(title: topic.title, isSelected: selectedTopicSlug == topic.slug, namespace: namespace) {
+                                    onSelect(topic.slug)
+                                }
+                                .id(topic.slug)
+                            }
                         }
                     }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 5)
+                    .macOSHorizontalScroll(isEnabled: isScrollEnabled, coordinator: scrollCoordinator)
+                }
+                .mask {
+                    LinearGradient(
+                        stops: [
+                            .init(color: .clear, location: 0),
+                            .init(color: .black, location: 0.04),
+                            .init(color: .black, location: 0.96),
+                            .init(color: .clear, location: 1.0),
+                        ],
+                        startPoint: .leading,
+                        endPoint: .trailing)
+                }
+
+                #if os(macOS)
+                if !topics.isEmpty {
+                    categoryStepButton(systemName: "chevron.forward", accessibilityLabel: "Next categories") {
+                        stepCategory(by: 3, proxy: proxy)
+                    }
+                    .padding(.trailing, 8)
+                }
+                #endif
+            }
+            .frame(height: 44)
+            .glassBackground(style: .ultraThin, shape: Capsule(), showBorder: true, hasShadow: true)
+            .padding(.horizontal, 12)
+            .padding(.top, 4)
+            .padding(.bottom, 6)
+            .onChange(of: selectedTopicSlug) { _, newSlug in
+                let slugs = orderedSlugs
+                let maxIndex = max(0, slugs.count - 1)
+                if let idx = slugs.firstIndex(of: newSlug) {
+                    scrollCoordinator.stepIndex = idx
+                    scrollCoordinator.scrollFraction = maxIndex > 0 ? CGFloat(idx) / CGFloat(maxIndex) : 0
+                }
+                let anchor: UnitPoint = if newSlug == "editorial" {
+                    .leading
+                } else if newSlug == slugs.last {
+                    .trailing
+                } else {
+                    .center
+                }
+                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                    proxy.scrollTo(newSlug, anchor: anchor)
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 5)
         }
-        .frame(height: 44)
-        .mask {
-            LinearGradient(
-                stops: [
-                    .init(color: .clear, location: 0),
-                    .init(color: .black, location: 0.04),
-                    .init(color: .black, location: 0.96),
-                    .init(color: .clear, location: 1.0),
-                ],
-                startPoint: .leading,
-                endPoint: .trailing)
-        }
-        .glassBackground(style: .ultraThin, shape: Capsule(), showBorder: true, hasShadow: true)
-        .padding(.horizontal, 12)
-        .padding(.top, 4)
-        .padding(.bottom, 6)
     }
+
+    #if os(macOS)
+    private func categoryStepButton(systemName: String, accessibilityLabel: LocalizedStringKey, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: systemName)
+                .font(.system(size: 12, weight: .bold))
+                .glassVibrancy(.secondary)
+                .frame(width: 28, height: 28)
+                .background(Circle().fill(Color.primary.opacity(0.08)))
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text(accessibilityLabel))
+    }
+
+    private func stepCategory(by delta: Int, proxy: ScrollViewProxy) {
+        let slugs = orderedSlugs
+        let maxIndex = max(0, slugs.count - 1)
+        guard maxIndex > 0 else { return }
+
+        let currentIndex = scrollCoordinator.stepIndex
+            ?? Int(round(scrollCoordinator.currentFraction() * CGFloat(maxIndex)))
+        let targetIndex = min(max(0, currentIndex + delta), maxIndex)
+        scrollCoordinator.stepIndex = targetIndex
+        scrollCoordinator.scrollFraction = CGFloat(targetIndex) / CGFloat(maxIndex)
+
+        let targetSlug = slugs[targetIndex]
+        let anchor: UnitPoint = if targetIndex == 0 {
+            .leading
+        } else if targetIndex == maxIndex {
+            .trailing
+        } else {
+            .center
+        }
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+            proxy.scrollTo(targetSlug, anchor: anchor)
+        }
+    }
+    #endif
 }
 
 struct CategoryTabButton: View {

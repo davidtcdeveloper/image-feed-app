@@ -1520,6 +1520,17 @@
         }
       }
     },
+    "Next categories" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next categories"
+          }
+        }
+      }
+    },
     "No photos found." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1703,6 +1714,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Preview photo 2"
+          }
+        }
+      }
+    },
+    "Previous categories" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Previous categories"
           }
         }
       }
