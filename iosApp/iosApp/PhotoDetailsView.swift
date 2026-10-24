@@ -496,7 +496,7 @@ private extension PhotoDetailsView {
         } else {
             ZStack {
                 Color.black
-                KFImage(URL(string: photo.urls.small))
+                KFImage(URL(string: photo.urls.small), targetWidthPx: 160)
                     .placeholder {
                         Rectangle().fill(Color(hex: photo.color ?? "1E1E24"))
                     }
@@ -504,10 +504,11 @@ private extension PhotoDetailsView {
                     .scaledToFill()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .scaleEffect(1.3)
-                    .blur(radius: 60)
+                    .blur(radius: 28)
                     .clipped()
-                Color.black.opacity(0.35)
+                Color.black.opacity(0.42)
             }
+            .drawingGroup()
             .ignoresSafeArea()
             .allowsHitTesting(false)
         }

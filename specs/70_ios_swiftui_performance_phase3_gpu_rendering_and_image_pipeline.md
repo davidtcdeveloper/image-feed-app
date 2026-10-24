@@ -1,6 +1,6 @@
 # Specification 70: SwiftUI Performance Phase 3 — GPU Compositor, Single-Pass Shimmer & Image Pipeline
 
-**Status:** Approved
+**Status:** Implemented
 
 ## 1. Overview & Problem Statement
 
@@ -141,10 +141,10 @@ flowchart LR
 
 ## 5. Acceptance Criteria
 
-- [ ] `KFImage.swift` is generic over `<Placeholder: View>` (zero `AnyView` type erasure), evaluates placeholders lazily only on cache misses, downsamples images off the main thread via `ImageIO` (`CGImageSourceCreateThumbnailAtIndex` with `kCGImageSourceShouldCacheImmediately`), and caches decoded `PlatformImage`s (`UIImage`/`NSImage`) in a byte-cost-bounded `NSCache` with iOS memory-warning eviction.
-- [ ] Cache hits in `KFImage` render synchronously on the first frame without flashing loading spinners or re-decoding bitmaps when scrolling back through `LazyVStack`.
-- [ ] `GlassTheme.swift` defines `GlassStyle.lightweight` (single-pass translucent dark scrim + specular border, `hasShadow: false`), applied to recurring masonry card attribution and photo-count capsules (`PhotoCard`, `SearchPhotoGridCard`, `CollectionPhotoGridCard`, `CollectionMosaicCard`), and redundant `.ultraThinMaterial` layers over opaque hex placeholders are removed.
-- [ ] `ShimmerModifier` in `AnimationPrimitives.swift` uses single-pass `.blendMode(.sourceAtop)` with `.compositingGroup()` instead of double-pass `.mask(content)` and respects `accessibilityReduceMotion`.
-- [ ] `ambientBackdrop` in `PhotoDetailsView.swift` uses a downsampled thumbnail (`maxPixelSize: 160`), reduced blur radius (`28`), and `.drawingGroup()` offscreen caching.
-- [ ] `.agents/skills/ios-glass-design/SKILL.md` is updated alongside the implementation to codify the tiered material selection (`GlassStyle.lightweight` for high-frequency grid cells vs. `Material` for low-cardinality chrome/sheets) and shadow scoping rules.
-- [ ] Zero compiler warnings, zero dead code, and clean builds + lint checks across Android, iOS, and macOS.
+- [x] `KFImage.swift` is generic over `<Placeholder: View>` (zero `AnyView` type erasure), evaluates placeholders lazily only on cache misses, downsamples images off the main thread via `ImageIO` (`CGImageSourceCreateThumbnailAtIndex` with `kCGImageSourceShouldCacheImmediately`), and caches decoded `PlatformImage`s (`UIImage`/`NSImage`) in a byte-cost-bounded `NSCache` with iOS memory-warning eviction.
+- [x] Cache hits in `KFImage` render synchronously on the first frame without flashing loading spinners or re-decoding bitmaps when scrolling back through `LazyVStack`.
+- [x] `GlassTheme.swift` defines `GlassStyle.lightweight` (single-pass translucent dark scrim + specular border, `hasShadow: false`), applied to recurring masonry card attribution and photo-count capsules (`PhotoCard`, `SearchPhotoGridCard`, `CollectionPhotoGridCard`, `CollectionMosaicCard`), and redundant `.ultraThinMaterial` layers over opaque hex placeholders are removed.
+- [x] `ShimmerModifier` in `AnimationPrimitives.swift` uses single-pass `.blendMode(.sourceAtop)` with `.compositingGroup()` instead of double-pass `.mask(content)` and respects `accessibilityReduceMotion`.
+- [x] `ambientBackdrop` in `PhotoDetailsView.swift` uses a downsampled thumbnail (`maxPixelSize: 160`), reduced blur radius (`28`), and `.drawingGroup()` offscreen caching.
+- [x] `.agents/skills/ios-glass-design/SKILL.md` is updated alongside the implementation to codify the tiered material selection (`GlassStyle.lightweight` for high-frequency grid cells vs. `Material` for low-cardinality chrome/sheets) and shadow scoping rules.
+- [x] Zero compiler warnings, zero dead code, and clean builds + lint checks across Android, iOS, and macOS.

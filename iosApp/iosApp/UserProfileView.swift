@@ -436,8 +436,6 @@ struct GridPhotosList: View {
                                             ZStack {
                                                 RoundedRectangle(cornerRadius: 12)
                                                     .fill(Color(hex: photo.color ?? "1E1E24"))
-                                                RoundedRectangle(cornerRadius: 12)
-                                                    .fill(.ultraThinMaterial)
                                                 ProgressView()
                                                     .tint(.primary.opacity(0.6))
                                             }

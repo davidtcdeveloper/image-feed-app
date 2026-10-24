@@ -178,8 +178,6 @@ struct CollectionMosaicCard: View {
                         ZStack {
                             RoundedRectangle(cornerRadius: 0)
                                 .fill(Color(hex: collection.coverPhoto?.color ?? "1E1E24"))
-                            Rectangle()
-                                .fill(.ultraThinMaterial)
                             ProgressView()
                                 .tint(.primary.opacity(0.6))
                         }
@@ -211,7 +209,7 @@ struct CollectionMosaicCard: View {
                             .clipped()
                     } else {
                         Rectangle()
-                            .fill(.ultraThinMaterial)
+                            .fill(GlassTheme.surfaceBackgroundColor)
                             .frame(height: 88)
                     }
 
@@ -234,7 +232,7 @@ struct CollectionMosaicCard: View {
                             .clipped()
                     } else {
                         Rectangle()
-                            .fill(.ultraThinMaterial)
+                            .fill(GlassTheme.surfaceBackgroundColor)
                             .frame(height: 88)
                     }
                 }
@@ -291,7 +289,7 @@ struct CollectionMosaicCard: View {
                         .glassVibrancy(.primary)
                         .padding(.horizontal, 10)
                         .padding(.vertical, 4)
-                        .glassCapsule(style: .ultraThin)
+                        .glassCapsule(style: .lightweight, showBorder: true, hasShadow: false)
                 }
                 .padding(.top, 6)
             }

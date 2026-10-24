@@ -711,12 +711,10 @@ struct PhotoCard: View {
         ZStack(alignment: .bottomLeading) {
             KFImage(URL(string: imageUrl))
                 .placeholder {
-                    // Display source-provided average hex color with frosted glass depth
+                    // Display source-provided average hex color
                     ZStack {
                         RoundedRectangle(cornerRadius: 12)
                             .fill(Color(hex: photo.color ?? "1E1E24"))
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(.ultraThinMaterial)
                         ProgressView()
                             .tint(.primary.opacity(0.6))
                     }
@@ -751,11 +749,7 @@ struct PhotoCard: View {
                 }
                 .padding(.horizontal, 8)
                 .padding(.vertical, 5)
-                .background {
-                    Capsule()
-                        .fill(Color.black.opacity(0.35))
-                }
-                .glassCapsule(style: .ultraThin, showBorder: true, hasShadow: true)
+                .glassCapsule(style: .lightweight, showBorder: true, hasShadow: false)
                 .environment(\.colorScheme, .dark)
             }
             .buttonStyle(.plain)

@@ -74,11 +74,11 @@ public enum GlassTheme {
 // MARK: - GlassStyle Presets
 
 public enum GlassStyle {
-    case ultraThin, thin, regular, thick, ultraThick
+    case ultraThin, thin, regular, thick, ultraThick, lightweight
 
     public var material: Material {
         switch self {
-        case .ultraThin: .ultraThinMaterial
+        case .ultraThin, .lightweight: .ultraThinMaterial
         case .thin: .thinMaterial
         case .regular: .regularMaterial
         case .thick: .thickMaterial
@@ -94,6 +94,7 @@ public struct GlassBackgroundModifier<S: InsettableShape>: ViewModifier {
     @Environment(\.colorSchemeContrast) private var colorSchemeContrast
 
     public let material: Material
+    public let style: GlassStyle?
     public let shape: S
     public let showBorder: Bool
     public let hasShadow: Bool
@@ -105,6 +106,7 @@ public struct GlassBackgroundModifier<S: InsettableShape>: ViewModifier {
         hasShadow: Bool = false)
     {
         self.material = material
+        self.style = nil
         self.shape = shape
         self.showBorder = showBorder
         self.hasShadow = hasShadow
@@ -116,7 +118,11 @@ public struct GlassBackgroundModifier<S: InsettableShape>: ViewModifier {
         showBorder: Bool = true,
         hasShadow: Bool = false)
     {
-        self.init(material: style.material, shape: shape, showBorder: showBorder, hasShadow: hasShadow)
+        self.material = style.material
+        self.style = style
+        self.shape = shape
+        self.showBorder = showBorder
+        self.hasShadow = (style == .lightweight) ? false : hasShadow
     }
 
     public func body(content: Content) -> some View {
@@ -139,12 +145,14 @@ public struct GlassBackgroundModifier<S: InsettableShape>: ViewModifier {
         let base = Group {
             if reduceTransparency {
                 shape.fill(GlassTheme.fallbackBackgroundColor)
+            } else if style == .lightweight {
+                shape.fill(GlassTheme.highContrastScrimColor.opacity(0.62))
             } else {
                 shape.fill(material)
             }
         }
 
-        if hasShadow {
+        if hasShadow, style != .lightweight {
             base.shadow(
                 color: GlassTheme.shadowColor,
                 radius: GlassTheme.shadowRadius,
@@ -170,6 +178,7 @@ public struct GlassBackgroundModifier<S: InsettableShape>: ViewModifier {
 public struct GlassContainer<Content: View, S: InsettableShape>: View {
     private let shape: S
     private let material: Material
+    private let style: GlassStyle?
     private let showBorder: Bool
     private let hasShadow: Bool
     private let content: Content
@@ -183,6 +192,7 @@ public struct GlassContainer<Content: View, S: InsettableShape>: View {
     {
         self.shape = shape
         self.material = material
+        self.style = nil
         self.showBorder = showBorder
         self.hasShadow = hasShadow
         self.content = content()
@@ -195,16 +205,30 @@ public struct GlassContainer<Content: View, S: InsettableShape>: View {
         hasShadow: Bool = false,
         @ViewBuilder content: () -> Content)
     {
-        self.init(shape: shape, material: style.material, showBorder: showBorder, hasShadow: hasShadow, content: content)
+        self.shape = shape
+        self.material = style.material
+        self.style = style
+        self.showBorder = showBorder
+        self.hasShadow = (style == .lightweight) ? false : hasShadow
+        self.content = content()
     }
 
     public var body: some View {
-        content.modifier(
-            GlassBackgroundModifier(
-                material: material,
-                shape: shape,
-                showBorder: showBorder,
-                hasShadow: hasShadow))
+        if let style {
+            content.modifier(
+                GlassBackgroundModifier(
+                    style: style,
+                    shape: shape,
+                    showBorder: showBorder,
+                    hasShadow: hasShadow))
+        } else {
+            content.modifier(
+                GlassBackgroundModifier(
+                    material: material,
+                    shape: shape,
+                    showBorder: showBorder,
+                    hasShadow: hasShadow))
+        }
     }
 }
 
@@ -233,7 +257,7 @@ public extension GlassContainer where S == RoundedRectangle {
     {
         self.init(
             shape: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous),
-            material: style.material,
+            style: style,
             showBorder: showBorder,
             hasShadow: hasShadow,
             content: content)
@@ -260,7 +284,7 @@ public extension View {
         showBorder: Bool = true,
         hasShadow: Bool = false) -> some View
     {
-        glassBackground(material: style.material, shape: shape, showBorder: showBorder, hasShadow: hasShadow)
+        modifier(GlassBackgroundModifier(style: style, shape: shape, showBorder: showBorder, hasShadow: hasShadow))
     }
 
     /// Convenience modifier for floating glass capsules (attribution pills, category badges).
@@ -278,7 +302,7 @@ public extension View {
         showBorder: Bool = true,
         hasShadow: Bool = false) -> some View
     {
-        glassCapsule(material: style.material, showBorder: showBorder, hasShadow: hasShadow)
+        glassBackground(style: style, shape: Capsule(), showBorder: showBorder, hasShadow: hasShadow)
     }
 
     /// Convenience modifier for rounded glass cards (info decks, sheets, modal panels).
@@ -302,7 +326,11 @@ public extension View {
         showBorder: Bool = true,
         hasShadow: Bool = true) -> some View
     {
-        glassCard(cornerRadius: cornerRadius, material: style.material, showBorder: showBorder, hasShadow: hasShadow)
+        glassBackground(
+            style: style,
+            shape: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous),
+            showBorder: showBorder,
+            hasShadow: hasShadow)
     }
 }
 

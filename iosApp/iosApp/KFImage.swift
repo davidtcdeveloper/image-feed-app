@@ -4,9 +4,11 @@ import SwiftUI
 
 #if os(iOS)
 import UIKit
+
 public typealias PlatformImage = UIImage
 #elseif os(macOS)
 import AppKit
+
 public typealias PlatformImage = NSImage
 #endif
 
@@ -23,8 +25,8 @@ public final class ImageMemoryCache: @unchecked Sendable {
         NotificationCenter.default.addObserver(
             forName: UIApplication.didReceiveMemoryWarningNotification,
             object: nil,
-            queue: nil
-        ) { [weak self] _ in
+            queue: nil)
+        { [weak self] _ in
             self?.removeAll()
         }
         #endif
@@ -58,57 +60,79 @@ public final class ImageMemoryCache: @unchecked Sendable {
     }
 }
 
-public struct KFImage: View {
+public struct KFImage<Placeholder: View>: View {
     private let url: URL?
     private let targetWidthPx: Int?
-    private var placeholderBuilder: (() -> AnyView)?
+    private var placeholderBuilder: (() -> Placeholder)?
     private var fadeDuration: Double = 0.25
     private var isResizable = false
 
+    @State private var loadedUrl: URL?
     @State private var loadedImage: PlatformImage?
-    @State private var hasFailed = false
+    @State private var failedUrl: URL?
 
-    public init(_ url: URL?, targetWidthPx: Int? = nil) {
+    public init(_ url: URL?, targetWidthPx: Int? = nil) where Placeholder == EmptyView {
         self.url = url
         self.targetWidthPx = targetWidthPx
+        self.placeholderBuilder = nil
+    }
+
+    private init(
+        url: URL?,
+        targetWidthPx: Int?,
+        placeholderBuilder: (() -> Placeholder)?,
+        fadeDuration: Double,
+        isResizable: Bool)
+    {
+        self.url = url
+        self.targetWidthPx = targetWidthPx
+        self.placeholderBuilder = placeholderBuilder
+        self.fadeDuration = fadeDuration
+        self.isResizable = isResizable
     }
 
     /// Custom placeholder builder (lazy closure, only evaluated on cache miss or failure)
-    public func placeholder(@ViewBuilder _ content: @escaping () -> some View) -> KFImage {
-        var copy = self
-        copy.placeholderBuilder = { AnyView(content()) }
-        return copy
+    public func placeholder<P: View>(@ViewBuilder _ content: @escaping () -> P) -> KFImage<P> {
+        KFImage<P>(
+            url: url,
+            targetWidthPx: targetWidthPx,
+            placeholderBuilder: content,
+            fadeDuration: fadeDuration,
+            isResizable: isResizable)
     }
 
     /// Custom fade modifier
-    public func fade(duration: Double) -> KFImage {
+    public func fade(duration: Double) -> KFImage<Placeholder> {
         var copy = self
         copy.fadeDuration = duration
         return copy
     }
 
     /// Custom resizable modifier
-    public func resizable() -> KFImage {
+    public func resizable() -> KFImage<Placeholder> {
         var copy = self
         copy.isResizable = true
         return copy
     }
 
     private var currentImage: PlatformImage? {
-        if let loadedImage {
+        guard let url else { return nil }
+        if let loadedImage, loadedUrl == url {
             return loadedImage
         }
-        if let url {
-            return ImageMemoryCache.shared.image(for: url)
-        }
-        return nil
+        return ImageMemoryCache.shared.image(for: url)
+    }
+
+    private var isFailed: Bool {
+        guard let url else { return true }
+        return failedUrl == url
     }
 
     public var body: some View {
         Group {
             if let image = currentImage {
                 renderImage(image)
-            } else if hasFailed || url == nil {
+            } else if isFailed || url == nil {
                 if let placeholderBuilder {
                     placeholderBuilder()
                 } else {
@@ -145,16 +169,20 @@ public struct KFImage: View {
 
     private func loadImage() async {
         guard let url else {
-            hasFailed = true
+            failedUrl = nil
+            loadedImage = nil
+            loadedUrl = nil
             return
         }
 
         if let cached = ImageMemoryCache.shared.image(for: url) {
-            self.loadedImage = cached
+            loadedUrl = url
+            loadedImage = cached
+            failedUrl = nil
             return
         }
 
-        hasFailed = false
+        failedUrl = nil
 
         do {
             let (data, _) = try await URLSession.shared.data(from: url)
@@ -162,7 +190,7 @@ public struct KFImage: View {
 
             let maxPixelSize = inferMaxPixelSize(from: url, explicit: targetWidthPx)
             let decoded = await Task.detached(priority: .userInitiated) {
-                KFImage.downsample(data: data, maxPixelSize: maxPixelSize)
+                Self.downsample(data: data, maxPixelSize: maxPixelSize)
             }.value
 
             try Task.checkCancellation()
@@ -171,17 +199,19 @@ public struct KFImage: View {
                 ImageMemoryCache.shared.insert(decoded, for: url)
                 if fadeDuration > 0 {
                     withAnimation(.easeOut(duration: fadeDuration)) {
-                        self.loadedImage = decoded
+                        loadedUrl = url
+                        loadedImage = decoded
                     }
                 } else {
-                    self.loadedImage = decoded
+                    loadedUrl = url
+                    loadedImage = decoded
                 }
             } else {
-                self.hasFailed = true
+                failedUrl = url
             }
         } catch {
             if !Task.isCancelled {
-                self.hasFailed = true
+                failedUrl = url
             }
         }
     }
@@ -195,7 +225,8 @@ public struct KFImage: View {
            let wItem = components.queryItems?.first(where: { $0.name == "w" }),
            let wVal = wItem.value,
            let wInt = Int(wVal),
-           wInt > 0 {
+           wInt > 0
+        {
             return wInt
         }
         return 1080
@@ -209,7 +240,8 @@ public struct KFImage: View {
             kCGImageSourceThumbnailMaxPixelSize: maxPixelSize
         ]
         guard let source = CGImageSourceCreateWithData(data as CFData, nil),
-              let cgImage = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else {
+              let cgImage = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary)
+        else {
             return nil
         }
         #if os(iOS)

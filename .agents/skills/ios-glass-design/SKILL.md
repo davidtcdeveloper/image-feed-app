@@ -23,11 +23,13 @@ Use this skill when:
 
 All Apple UI components MUST adhere to native Human Interface Guidelines (HIG) and the project's `GlassTheme` system.
 
-### A. Semantic Materials over Solid Fills
+### A. Tiered Material Selection Policy
 - **Prohibited**: Hardcoded opaque dark backgrounds for bars, cards, or floating controls (e.g., solid `#0F0F11` or `#1E1E24`).
 - **Prohibited**: Obscuring photos with heavy, opaque linear gradients (e.g. `LinearGradient(colors: [.clear, .black.opacity(0.85)])`).
-- **Mandatory**: Use native Apple semantic `Material` backgrounds:
-  - `.ultraThinMaterial`: Inset floating attribution capsules, active chips, floating toolbars, and inspection sheets over image content.
+- **Prohibited**: Stacking `.ultraThinMaterial` over opaque / solid-color image placeholders (redundant blur passes).
+- **Mandatory**: Use tiered materials based on rendering frequency:
+  - `GlassStyle.lightweight`: High-frequency 120Hz masonry grid cells, attribution pills, and count badges where real-time backdrop blur degrades compositor throughput.
+  - `.ultraThinMaterial`: Persistent floating toolbars, active chips, and inspection sheets over image content.
   - `.thinMaterial`: Floating category filter bars, secondary inspection cards.
   - `.regularMaterial`: Modal navigation bars, dialog containers, and context menus.
   - `.thickMaterial` / `.ultraThickMaterial`: Base chrome backgrounds where high contrast is required.

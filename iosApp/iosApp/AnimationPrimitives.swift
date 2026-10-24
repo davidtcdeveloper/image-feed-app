@@ -44,33 +44,40 @@ extension View {
 
 // MARK: - ShimmerModifier
 
-/// A custom `ViewModifier` that overlays an infinite animating linear gradient across views using masks.
+/// A custom `ViewModifier` that overlays an infinite animating linear gradient across views using single-pass sourceAtop blending.
 struct ShimmerModifier: ViewModifier {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var phase: CGFloat = -1.0
     let duration: Double = 1.4
 
     func body(content: Content) -> some View {
-        content
-            .overlay(
-                GeometryReader { geo in
-                    LinearGradient(
-                        stops: [
-                            .init(color: .clear, location: 0.3),
-                            .init(color: .white.opacity(0.12), location: 0.5),
-                            .init(color: .clear, location: 0.7),
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing)
-                        .rotationEffect(.degrees(20))
-                        .offset(x: phase * geo.size.width * 1.5)
-                        .frame(width: geo.size.width, height: geo.size.height)
+        if reduceMotion {
+            content
+        } else {
+            content
+                .overlay(
+                    GeometryReader { geo in
+                        LinearGradient(
+                            stops: [
+                                .init(color: .clear, location: 0.3),
+                                .init(color: .white.opacity(0.12), location: 0.5),
+                                .init(color: .clear, location: 0.7),
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing)
+                            .rotationEffect(.degrees(20))
+                            .offset(x: phase * geo.size.width * 1.5)
+                            .frame(width: geo.size.width, height: geo.size.height)
+                    }
+                    .blendMode(.sourceAtop)
+                    .clipped())
+                .compositingGroup()
+                .onAppear {
+                    withAnimation(.linear(duration: duration).repeatForever(autoreverses: false)) {
+                        phase = 1.0
+                    }
                 }
-                .mask(content))
-            .onAppear {
-                withAnimation(.linear(duration: duration).repeatForever(autoreverses: false)) {
-                    phase = 1.0
-                }
-            }
+        }
     }
 }
 

@@ -103,6 +103,7 @@ The `specs/` folder currently contains the following implementation and design d
 *   `specs/68_ios_swiftui_performance_phase1_algorithmic_and_layout_architecture.md`
 *   `specs/69_ios_swiftui_performance_phase2_scroll_dynamics_and_state_isolation.md`
 *   `specs/70_ios_swiftui_performance_phase3_gpu_rendering_and_image_pipeline.md`
+*   `specs/71_macos_horizontal_category_scroll_fix.md`
 *   `specs/researches/modularization_evaluation.md`
 *   `specs/researches/swiftui_performance_optimization_plan.md`
 *   `specs/implementation_plan.md`
@@ -998,7 +999,7 @@ These are the spec files that the implementation notes and planning references s
 3.  **Reference Specification:**
     *   Track blueprint in `specs/69_ios_swiftui_performance_phase2_scroll_dynamics_and_state_isolation.md`.
 
-### Step 70: SwiftUI Performance Phase 3 — GPU Compositor, Single-Pass Shimmer & Image Pipeline (Planned)
+### Step 70: SwiftUI Performance Phase 3 — GPU Compositor, Single-Pass Shimmer & Image Pipeline (Completed)
 1.  **Generic `KFImage<Placeholder: View>` & Cross-Platform `ImageMemoryCache`:**
     *   Replace `AnyView` placeholder type erasure with generic `KFImage<Placeholder: View>` evaluated lazily only on cache misses.
     *   Implement byte-cost-bounded `ImageMemoryCache` (`NSCache<NSURL, PlatformImage>` supporting `UIImage` on iOS and `NSImage` on macOS) with off-main-thread `ImageIO` thumbnail downsampling (`CGImageSourceCreateThumbnailAtIndex` + `kCGImageSourceShouldCacheImmediately`) and iOS memory-warning eviction.
@@ -1009,5 +1010,25 @@ These are the spec files that the implementation notes and planning references s
     *   Update `.agents/skills/ios-glass-design/SKILL.md` to codify the tiered `GlassStyle.lightweight` policy upon implementation.
 3.  **Reference Specification:**
     *   Track blueprint in `specs/70_ios_swiftui_performance_phase3_gpu_rendering_and_image_pipeline.md`.
+
+### Step 71: macOS Horizontal Category Tab Scrolling & Desktop Navigation Fix
+1.  **`HStack` + `ScrollViewReader` Auto-Centering:**
+    *   Replace `LazyHStack` with an eager `HStack` wrapped in `ScrollViewReader` in `FeedCategoryBar` (`ContentView.swift`), assign stable `.id` tags (`"editorial"` and `topic.slug`), and auto-scroll selected categories into the center of the viewport.
+2.  **macOS Scroll-Wheel Translation & Chevron Step Controls:**
+    *   Translate vertical mouse-wheel deltas (`scrollingDeltaY`) into horizontal scrolling when hovering over `FeedCategoryBar` and `ProfileTabPicker` on `#if os(macOS)` without leaking scroll events to the parent vertical feed.
+    *   Add RTL-safe leading/trailing chevron buttons (`chevron.backward` / `chevron.forward`) on `#if os(macOS)` with localized accessibility labels in `Localizable.xcstrings`.
+3.  **Reference Specification:**
+    *   Track blueprint in `specs/71_macos_horizontal_category_scroll_fix.md`.
+
+### Step 72: iOS & macOS Photo Details Image Canvas & Floating Footer Positioning Fix
+1.  **Constrain `ambientBackdrop` & `compactPhotoLayout` Bounds:**
+    *   Refactor `ambientBackdrop(photo:)` in `PhotoDetailsView.swift` to render the `.scaledToFill()` `KFImage` inside an `.overlay` on `Color.black` with `.clipped()` so it never inflates parent `ZStack` widths beyond `containerWidth`.
+    *   Constrain `compactPhotoLayout`'s outer `ZStack(alignment: .bottom)` explicitly to `.frame(width: containerWidth, height: geo.size.height)` so the main photo centers properly and `compactFloatingBar` fits within screen bounds with visible trailing action buttons.
+2.  **Immediate `initialPhoto` Hero Transition Seeding:**
+    *   Pass `initialPhoto: photo` from `PhotosFeedTabView` (`ContentView.swift`) into `PhotoDetailsView` so the destination photo canvas and `matchedGeometryEffect` mount on Frame 0 while `PhotoDetailsViewModel` initializes lazily in `.task(id: photoId)`.
+3.  **Reference Specification:**
+    *   Track blueprint in `specs/72_ios_photo_details_image_and_footer_positioning_fix.md`.
+
+
 
 
