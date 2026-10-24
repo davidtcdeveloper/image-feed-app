@@ -5,6 +5,7 @@ import SwiftUI
 
 struct PhotoDetailsView: View {
     let photoId: String
+    let initialPhoto: Photo?
     let heroNamespace: Namespace.ID
     let onDismiss: (() -> Void)?
     let onUserSelect: (String) -> Void
@@ -23,6 +24,10 @@ struct PhotoDetailsView: View {
     @State private var currentOffset: CGSize = .zero
     @State private var finalOffset: CGSize = .zero
     @State private var downloadFeedbackTrigger = 0
+
+    private var activePhoto: Photo? {
+        viewModel?.photo ?? initialPhoto
+    }
 
     private var isDualPane: Bool {
         #if os(iOS)
@@ -49,12 +54,14 @@ struct PhotoDetailsView: View {
 
     init(
         photoId: String,
+        initialPhoto: Photo? = nil,
         heroNamespace: Namespace.ID,
         onDismiss: (() -> Void)? = nil,
         onUserSelect: @escaping (String) -> Void,
         onTagSelect: @escaping (String) -> Void)
     {
         self.photoId = photoId
+        self.initialPhoto = initialPhoto
         self.heroNamespace = heroNamespace
         self.onDismiss = onDismiss
         self.onUserSelect = onUserSelect
@@ -67,11 +74,17 @@ struct PhotoDetailsView: View {
             Color.black
                 .ignoresSafeArea()
 
-            if let viewModel {
-                if viewModel.isLoading, viewModel.photo == nil {
+            if let photo = activePhoto {
+                if isDualPane {
+                    dualPaneLayout(photo: photo, viewModel: viewModel)
+                } else {
+                    compactPhotoLayout(photo: photo, viewModel: viewModel)
+                }
+            } else if let viewModel {
+                if viewModel.isLoading {
                     ProgressView()
                         .tint(.white)
-                } else if let error = viewModel.error, viewModel.photo == nil {
+                } else if let error = viewModel.error {
                     VStack(spacing: 16) {
                         Text("Failed to load details")
                             .font(.headline)
@@ -91,12 +104,9 @@ struct PhotoDetailsView: View {
                         }
                     }
                     .environment(\.colorScheme, .dark)
-                } else if let photo = viewModel.photo {
-                    if isDualPane {
-                        dualPaneLayout(photo: photo, viewModel: viewModel)
-                    } else {
-                        compactPhotoLayout(photo: photo, viewModel: viewModel)
-                    }
+                } else {
+                    ProgressView()
+                        .tint(.white)
                 }
             } else {
                 ProgressView()
@@ -171,10 +181,10 @@ struct PhotoDetailsView: View {
         .sensoryFeedback(.success, trigger: downloadFeedbackTrigger)
         #if os(iOS)
         .sheet(isPresented: Binding(
-            get: { showInspector && !isDualPane && viewModel?.photo != nil },
+            get: { showInspector && !isDualPane && activePhoto != nil },
             set: { showInspector = $0 }))
         {
-            if let viewModel, let photo = viewModel.photo {
+            if let viewModel, let photo = activePhoto {
                 ScrollView {
                     PhotoInspectorView(
                         photo: photo,
@@ -234,7 +244,7 @@ struct PhotoDetailsView: View {
 // MARK: - PhotoDetailsView Layout Helpers
 
 private extension PhotoDetailsView {
-    func dualPaneLayout(photo: Photo, viewModel: PhotoDetailsViewModel) -> some View {
+    func dualPaneLayout(photo: Photo, viewModel: PhotoDetailsViewModel?) -> some View {
         GeometryReader { totalGeo in
             let inspectorWidth = max(320, min(420, totalGeo.size.width * 0.42))
 
@@ -301,20 +311,27 @@ private extension PhotoDetailsView {
                     .environment(\.colorScheme, .dark)
                     .padding(16)
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .frame(width: max(0, totalGeo.size.width - inspectorWidth), height: totalGeo.size.height)
+                .clipped()
 
                 // Right: Inspector Pane
                 ScrollView {
-                    PhotoInspectorView(
-                        photo: photo,
-                        viewModel: viewModel,
-                        onUserSelect: onUserSelect,
-                        onTagSelect: onTagSelect,
-                        onDownload: {
-                            downloadFeedbackTrigger += 1
-                        })
-                        .padding(20)
-                        .padding(.bottom, 32)
+                    if let viewModel {
+                        PhotoInspectorView(
+                            photo: photo,
+                            viewModel: viewModel,
+                            onUserSelect: onUserSelect,
+                            onTagSelect: onTagSelect,
+                            onDownload: {
+                                downloadFeedbackTrigger += 1
+                            })
+                            .padding(20)
+                            .padding(.bottom, 32)
+                    } else {
+                        ProgressView()
+                            .tint(.white)
+                            .padding(.top, 40)
+                    }
                 }
                 .frame(width: inspectorWidth)
                 .background(GlassTheme.canvasBackgroundColor)
@@ -323,9 +340,11 @@ private extension PhotoDetailsView {
         .ignoresSafeArea(edges: .top)
     }
 
-    func compactPhotoLayout(photo: Photo, viewModel: PhotoDetailsViewModel) -> some View {
+    func compactPhotoLayout(photo: Photo, viewModel: PhotoDetailsViewModel?) -> some View {
         GeometryReader { geo in
             let containerWidth = geo.size.width
+            let containerHeight = geo.size.height
+            let bottomSafeArea = geo.safeAreaInsets.bottom
             let aspectRatio = max(0.1, CGFloat(photo.width) / CGFloat(photo.height))
             let calculatedHeight = containerWidth / aspectRatio
             #if os(iOS)
@@ -368,7 +387,7 @@ private extension PhotoDetailsView {
                                         }
                                     } else {
                                         let maxOffsetX = max(0, (containerWidth * (finalScale - 1)) / 2)
-                                        let maxOffsetY = max(0, (calculatedHeight * finalScale - geo.size.height) / 2)
+                                        let maxOffsetY = max(0, (calculatedHeight * finalScale - containerHeight) / 2)
                                         let clampedX = max(-maxOffsetX, min(maxOffsetX, finalOffset.width))
                                         let clampedY = max(-maxOffsetY, min(maxOffsetY, finalOffset.height))
                                         if clampedX != finalOffset.width || clampedY != finalOffset.height {
@@ -384,7 +403,7 @@ private extension PhotoDetailsView {
                                 .onChanged { value in
                                     guard currentScale > 1.05 else { return }
                                     let maxOffsetX = max(0, (containerWidth * (currentScale - 1)) / 2)
-                                    let maxOffsetY = max(0, (calculatedHeight * currentScale - geo.size.height) / 2)
+                                    let maxOffsetY = max(0, (calculatedHeight * currentScale - containerHeight) / 2)
                                     let newX = finalOffset.width + value.translation.width
                                     let newY = finalOffset.height + value.translation.height
                                     currentOffset = CGSize(
@@ -413,18 +432,20 @@ private extension PhotoDetailsView {
                             }
                         }
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .frame(width: containerWidth, height: containerHeight)
 
                 // Floating action bar when inspector is dismissed
                 if !showInspector {
-                    compactFloatingBar(photo: photo, viewModel: viewModel)
+                    compactFloatingBar(photo: photo, viewModel: viewModel, bottomSafeArea: bottomSafeArea)
+                        .frame(width: containerWidth)
                 }
             }
+            .frame(width: containerWidth, height: containerHeight)
         }
         .ignoresSafeArea()
     }
 
-    private func compactFloatingBar(photo: Photo, viewModel: PhotoDetailsViewModel) -> some View {
+    private func compactFloatingBar(photo: Photo, viewModel: PhotoDetailsViewModel?, bottomSafeArea: CGFloat) -> some View {
         HStack(spacing: 12) {
             // Photographer attribution button
             Button(action: {
@@ -452,7 +473,7 @@ private extension PhotoDetailsView {
             }
             .buttonStyle(.plain)
 
-            Spacer()
+            Spacer(minLength: 8)
 
             // Download Action
             GlassToolbarButton(
@@ -460,7 +481,7 @@ private extension PhotoDetailsView {
                 accessibilityLabel: "Download photo")
             {
                 downloadFeedbackTrigger += 1
-                viewModel.trackDownload()
+                viewModel?.trackDownload()
                 if let url = URL(string: photo.urls.full) {
                     URLHelper.open(url)
                 }
@@ -485,7 +506,7 @@ private extension PhotoDetailsView {
         .glassCapsule(style: .ultraThin, showBorder: true, hasShadow: true)
         .environment(\.colorScheme, .dark)
         .padding(.horizontal, 16)
-        .padding(.bottom, 24)
+        .padding(.bottom, max(24, bottomSafeArea + 12))
         .transition(.move(edge: .bottom).combined(with: .opacity))
     }
 
@@ -494,23 +515,24 @@ private extension PhotoDetailsView {
         if reduceTransparency {
             Color.black.ignoresSafeArea()
         } else {
-            ZStack {
-                Color.black
-                KFImage(URL(string: photo.urls.small), targetWidthPx: 160)
-                    .placeholder {
-                        Rectangle().fill(Color(hex: photo.color ?? "1E1E24"))
-                    }
-                    .resizable()
-                    .scaledToFill()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .scaleEffect(1.3)
-                    .blur(radius: 28)
-                    .clipped()
-                Color.black.opacity(0.42)
-            }
-            .drawingGroup()
-            .ignoresSafeArea()
-            .allowsHitTesting(false)
+            Color.black
+                .overlay {
+                    KFImage(URL(string: photo.urls.small), targetWidthPx: 160)
+                        .placeholder {
+                            Rectangle().fill(Color(hex: photo.color ?? "1E1E24"))
+                        }
+                        .resizable()
+                        .scaledToFill()
+                        .scaleEffect(1.3)
+                        .blur(radius: 28)
+                }
+                .overlay {
+                    Color.black.opacity(0.42)
+                }
+                .clipped()
+                .drawingGroup()
+                .ignoresSafeArea()
+                .allowsHitTesting(false)
         }
     }
 }

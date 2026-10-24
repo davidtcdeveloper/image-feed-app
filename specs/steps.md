@@ -1020,7 +1020,7 @@ These are the spec files that the implementation notes and planning references s
 3.  **Reference Specification:**
     *   Track blueprint in `specs/71_macos_horizontal_category_scroll_fix.md`.
 
-### Step 72: iOS & macOS Photo Details Image Canvas & Floating Footer Positioning Fix
+### Step 72: iOS & macOS Photo Details Image Canvas & Floating Footer Positioning Fix (Completed)
 1.  **Constrain `ambientBackdrop` & `compactPhotoLayout` Bounds:**
     *   Refactor `ambientBackdrop(photo:)` in `PhotoDetailsView.swift` to render the `.scaledToFill()` `KFImage` inside an `.overlay` on `Color.black` with `.clipped()` so it never inflates parent `ZStack` widths beyond `containerWidth`.
     *   Constrain `compactPhotoLayout`'s outer `ZStack(alignment: .bottom)` explicitly to `.frame(width: containerWidth, height: geo.size.height)` so the main photo centers properly and `compactFloatingBar` fits within screen bounds with visible trailing action buttons.

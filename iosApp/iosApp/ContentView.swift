@@ -425,6 +425,7 @@ struct PhotosFeedTabView: View {
                 if let photo = selectedPhotoForHero {
                     PhotoDetailsView(
                         photoId: photo.id,
+                        initialPhoto: photo,
                         heroNamespace: heroNamespace,
                         onDismiss: {
                             withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {

@@ -1,6 +1,6 @@
 # Specification 72: iOS & macOS Photo Details Image Canvas & Floating Footer Positioning Fix
 
-**Status:** Approved
+**Status:** Implemented
 
 ## 1. Overview & Problem Statement
 
@@ -94,8 +94,8 @@ flowchart TD
 
 ## 5. Acceptance Criteria
 
-- [ ] `ambientBackdrop(photo:)` in [`PhotoDetailsView.swift`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/iosApp/iosApp/PhotoDetailsView.swift) constrains its `.scaledToFill()` image inside an `.overlay` over `Color.black` with `.clipped()`, preventing any horizontal or vertical layout overflow into parent `ZStack` containers.
-- [ ] In `compactPhotoLayout`, the main photo renders centered horizontally and vertically at full `containerWidth` across portrait, square, and landscape aspect ratios without being shifted or clipped to the right.
-- [ ] In `compactPhotoLayout`, dismissing the inspector sheet displays `compactFloatingBar` fully within the horizontal screen bounds (`containerWidth` minus horizontal padding), with the photographer attribution on the leading side and both the download (`arrow.down.to.line`) and info (`info.circle`) buttons visible and interactive on the trailing side.
-- [ ] Presenting `PhotoDetailsView` from `PhotosFeedTabView` passes `initialPhoto: photo` so the hero `matchedGeometryEffect` target renders on Frame 0 without flashing a loading spinner or locking to column geometry.
-- [ ] Both `iosApp` (iOS Simulator) and `macosApp` (macOS) compile with zero warnings, and `swiftformat` / `swiftlint` pass with zero violations.
+- [x] `ambientBackdrop(photo:)` in [`PhotoDetailsView.swift`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/iosApp/iosApp/PhotoDetailsView.swift) constrains its `.scaledToFill()` image inside an `.overlay` over `Color.black` with `.clipped()`, preventing any horizontal or vertical layout overflow into parent `ZStack` containers.
+- [x] In `compactPhotoLayout`, the main photo renders centered horizontally and vertically at full `containerWidth` across portrait, square, and landscape aspect ratios without being shifted or clipped to the right.
+- [x] In `compactPhotoLayout`, dismissing the inspector sheet displays `compactFloatingBar` fully within the horizontal screen bounds (`containerWidth` minus horizontal padding), with the photographer attribution on the leading side and both the download (`arrow.down.to.line`) and info (`info.circle`) buttons visible and interactive on the trailing side.
+- [x] Presenting `PhotoDetailsView` from `PhotosFeedTabView` passes `initialPhoto: photo` so the hero `matchedGeometryEffect` target renders on Frame 0 without flashing a loading spinner or locking to column geometry.
+- [x] Both `iosApp` (iOS Simulator) and `macosApp` (macOS) compile with zero warnings, and `swiftformat` / `swiftlint` pass with zero violations.
