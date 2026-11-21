@@ -249,11 +249,11 @@ graph TD
     CoreNetwork --> CoreModel
 ```
 
-The migration is partitioned into four phased specifications:
-1. **Phase 1: Foundation & Core Extraction** ([Spec 46](specs/46_modularization_foundation_core_extraction.md)): Extract `:core:model`, `:core:mvi`, and `:core:network` (with `PhotoDownloadTracker` and `CollectionsExt`), eliminating centralized `:core:data`.
-2. **Phase 2: Pilot Feature Migration** ([Spec 47](specs/47_modularization_pilot_feature_details.md)): Migrate Photo Details (`:feature:details`) to vertically own `PhotoDetailsRepository`, `PhotoDetailsApiClient`, and `PhotoStats`, validating multi-module Metro assisted injection and Apple framework linking.
-3. **Phase 3: Remaining Feature Extractions** ([Spec 48](specs/48_modularization_remaining_features_extraction.md)): Extract `:feature:feed`, `:feature:search`, `:feature:collections`, and `:feature:profile` to vertically own their repositories, clients, fakes, and models (`UserStats`), completely retiring the legacy monolithic `UnsplashRepository`.
-4. **Phase 4: Umbrella Framework & Linking Optimization** ([Spec 49](specs/49_modularization_umbrella_and_linking_optimization.md)): Configure selective binary export to minimize Objective-C bridging stubs, leverage `internal` visibility linking benefits, optimize Gradle build caching, and tune CI execution matrices.
+The migration is partitioned into four phased specifications (archived as final historical records):
+1. **Phase 1: Foundation & Core Extraction** ([Spec 46](specs/archive/46_modularization_foundation_core_extraction.md)): Extract `:core:model`, `:core:mvi`, and `:core:network` (with `PhotoDownloadTracker` and `CollectionsExt`), eliminating centralized `:core:data`.
+2. **Phase 2: Pilot Feature Migration** ([Spec 47](specs/archive/47_modularization_pilot_feature_details.md)): Migrate Photo Details (`:feature:details`) to vertically own `PhotoDetailsRepository`, `PhotoDetailsApiClient`, and `PhotoStats`, validating multi-module Metro assisted injection and Apple framework linking.
+3. **Phase 3: Remaining Feature Extractions** ([Spec 48](specs/archive/48_modularization_remaining_features_extraction.md)): Extract `:feature:feed`, `:feature:search`, `:feature:collections`, and `:feature:profile` to vertically own their repositories, clients, fakes, and models (`UserStats`), completely retiring the legacy monolithic `UnsplashRepository`.
+4. **Phase 4: Umbrella Framework & Linking Optimization** ([Spec 49](specs/archive/49_modularization_umbrella_and_linking_optimization.md)): Configure selective binary export to minimize Objective-C bridging stubs, leverage `internal` visibility linking benefits, optimize Gradle build caching, and tune CI execution matrices.
 
 ---
 
@@ -285,7 +285,8 @@ To render inline Google Maps in Android's Photo Details screen:
 ## 🛠️ Development Workflow
 
 This project adheres to a strict spec-driven engineering workflow:
-* **Specs & Planning**: Every change is anchored in a specification document in `specs/`. Check `specs/steps.md` for historical implementation notes.
+* **Living Wiki & Business Rules**: Consult [`wiki/README.md`](wiki/README.md) for current architecture, product/technical business rules, design systems, performance engineering, ADRs, and [`wiki/issue-log.md`](wiki/issue-log.md).
+* **Specs & Immutable Archive**: Active specifications live in `specs/`. Upon completion, update `wiki/`, mark the spec `Implemented (Final)`, move it to [`specs/archive/`](specs/archive) (never edit archived specs), and index it in [`specs/steps.md`](specs/steps.md).
 * **Zero Warning Policy**: Code changes must produce zero compiler warnings and clean lint reports.
 * **Platform Build Policy**: Any change affecting `shared/` or platform logic must be verified on both Android and iOS targets. Apple-specific changes (`iosApp/**`, Apple Kotlin source sets, Kotlin/Native framework config) must also build the `macosApp` scheme, which compiles the same SwiftUI sources as `iosApp`.
 * **Architecture Rules**: Review `AGENTS.md` and the workspace skills in `.agents/skills/` for guidelines on MVI ViewModel lifecycles, cross-language interop, and UI styling.

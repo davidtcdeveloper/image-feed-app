@@ -1,0 +1,80 @@
+# Architecture & Modules
+
+The codebase uses a **Vertical Feature Ownership** modularization layout backed by a `:shared` umbrella framework, **compile-time Metro DI**, and **Shared MVI / Unidirectional Data Flow (UDF)**.
+
+---
+
+## 1. Module Topology & Dependency Graph
+
+Completed across Specs 46–49 (`specs/archive/46_*` through `49_*`), the project cleanly separates shared core primitives, vertical feature slices, the Apple umbrella framework, and thin native UI shells:
+
+```mermaid
+graph TD
+    subgraph Platform["Platform UI Shells (Thin Declarative Views)"]
+        Android["androidApp (Compose + Nav 3)"]
+        Apple["iosApp / macosApp (SwiftUI)"]
+    end
+
+    subgraph Umbrella["Assembly & Umbrella"]
+        Shared[":shared (Apple Static Framework & Metro Graph)"]
+    end
+
+    subgraph Features["Vertical Feature Modules (VM + Repo + ApiClient + Fakes)"]
+        Feed[":feature:feed"]
+        Details[":feature:details"]
+        Search[":feature:search"]
+        Collections[":feature:collections"]
+        Profile[":feature:profile"]
+    end
+
+    subgraph Core["Foundational Core Modules"]
+        Network[":core:network (Ktor Engine, AppErrorMapper, PhotoDownloadTracker, CollectionsExt)"]
+        Mvi[":core:mvi (MviViewModel, UiState, UiIntent, UiEffect, CommonFlow)"]
+        Model[":core:model (Photo, PhotoCollection, Topic, AppError, Statistics)"]
+    end
+
+    Android --> Shared
+    Apple --> Shared
+    Shared --> Feed & Details & Search & Collections & Profile
+    Feed & Details & Search & Collections & Profile --> Network & Mvi & Model
+    Network --> Model
+```
+
+* **Foundational Core (`:core:*`)**:
+  * `:core:model`: Pure `@Serializable` domain entities ([`Photo.kt`](../core/model/src/commonMain/kotlin/com/example/imagefeed/model/Photo.kt), [`AppError.kt`](../core/model/src/commonMain/kotlin/com/example/imagefeed/model/AppError.kt), `PhotoCollection`, `Topic`, `Statistics`).
+  * `:core:mvi`: Shared MVI contracts and lifecycle base class ([`MviViewModel.kt`](../core/mvi/src/commonMain/kotlin/com/example/imagefeed/presentation/mvi/MviViewModel.kt), [`CommonFlow.kt`](../core/mvi/src/commonMain/kotlin/com/example/imagefeed/presentation/mvi/CommonFlow.kt)).
+  * `:core:network`: Ktor client factory ([`HttpClientFactory.kt`](../core/network/src/commonMain/kotlin/com/example/imagefeed/core/network/HttpClientFactory.kt)), [`AppErrorMapper.kt`](../core/network/src/commonMain/kotlin/com/example/imagefeed/core/network/AppErrorMapper.kt), [`PhotoDownloadTracker.kt`](../core/network/src/commonMain/kotlin/com/example/imagefeed/core/network/PhotoDownloadTracker.kt), [`CollectionsExt.kt`](../core/network/src/commonMain/kotlin/com/example/imagefeed/core/network/CollectionsExt.kt), and [`AppScope.kt`](../core/network/src/commonMain/kotlin/com/example/imagefeed/core/network/di/AppScope.kt).
+* **Vertical Feature Modules (`:feature:*`)**:
+  * `:feature:feed`, `:feature:details`, `:feature:search`, `:feature:collections`, `:feature:profile` each own their API clients, repositories, Metro `@BindingContainer` modules, ViewModels, feature-local models (`PhotoStats`, `UserStats`), and `commonTest` suites.
+* **Umbrella Module (`:shared`)**:
+  * [`shared/build.gradle.kts`](../shared/build.gradle.kts) builds the static Apple framework (`baseName = "shared"`) for `iosArm64`, `iosSimulatorArm64`, and `macosArm64`, selectively exporting `:core:model`, `:core:mvi`, and all five `:feature:*` modules while keeping `:core:network` `implementation`-scoped to minimize ObjC/Swift bridging overhead.
+
+---
+
+## 2. Compile-Time Dependency Injection (Metro)
+
+* **Root Graph**: [`ApplicationGraph`](../shared/src/commonMain/kotlin/com/example/imagefeed/di/Metro.kt) uses `@DependencyGraph(scope = AppScope::class, bindingContainers = [...])` combining `AppModule` with `FeedModule`, `PhotoDetailsModule`, `SearchModule`, `CollectionsModule`, and `ProfileModule`.
+* **Singleton Scoping**: Core `HttpClient`, `PhotoDownloadTracker`, and feature repositories are annotated `@SingleIn(AppScope::class)` using [`AppScope`](../core/network/src/commonMain/kotlin/com/example/imagefeed/core/network/di/AppScope.kt) (`@HiddenFromObjC`).
+* **Factory & Direct ViewModel Provision**: Unparameterized ViewModels (`FeedViewModel`, `RandomPhotoViewModel`, `UnifiedSearchViewModel`, `CollectionsFeedViewModel`) use `@Inject`. Parameterized ViewModels (`PhotoDetailsViewModel`, `CollectionDetailViewModel`, `UserProfileViewModel`) use `@AssistedInject` with `@AssistedFactory` exposed through `MetroHelper`.
+
+---
+
+## 3. Shared MVI / UDF & Coroutine Lifecycle
+
+* **Base Class**: [`MviViewModel<S : UiState, I : UiIntent, E : UiEffect>`](../core/mvi/src/commonMain/kotlin/com/example/imagefeed/presentation/mvi/MviViewModel.kt) extends `androidx.lifecycle.ViewModel`.
+* **Streams**:
+  * `state: StateFlow<S>` (Android) and `iosState: CommonFlow<S>` (lazy `by lazy(PUBLICATION)` for Apple).
+  * `effects: Flow<E>` and `iosEffects: CommonFlow<E>` backed by a `Channel<E>(Channel.BUFFERED)` for one-off navigation/haptic/toast events.
+  * `dispatch(intent: I)` processes all UI events and mutates state atomically via `updateState { ... }`.
+* **Lifecycle & Deterministic Teardown**:
+  * All async coroutines launch in `viewModelScope` and rethrow `CancellationException` cleanly.
+  * **Android**: Navigation 3 entries scope ViewModels via `viewModel(key = ...) { MetroHelper.get...() }` inside `rememberViewModelStoreNavEntryDecorator()`, automatically invoking `onCleared()`.
+  * **Apple (`iosApp` / `macosApp`)**: Views defer KMP ViewModel instantiation out of `View.init` using lazy `@State` initialization (Spec 68); Swift `@Observable` wrappers cancel `Closeable` watchers and invoke `viewModel.clear()` in `deinit` (calling `viewModelScope.cancel()`, `_effects.close()`, and `teardown()`).
+
+---
+
+## 4. Apple Swift Interop Invariants
+
+* `iosApp` and `macosApp` targets in [`iosApp/project.yml`](../iosApp/project.yml) share the same `iosApp/iosApp` Swift source tree.
+* Kotlin declarations invoked only from Swift require `@Suppress("unused") // Invoked on Swift code`.
+* Kotlin properties colliding with Objective-C/Swift protocols (e.g., `Photo.description`) map to `description_` in Swift.

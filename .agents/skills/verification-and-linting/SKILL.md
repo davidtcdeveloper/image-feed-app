@@ -28,7 +28,7 @@ Build, test, and code-analysis commands interact directly with external system S
 - Apple Xcode developer tools and simulator runtimes (`xcrun`, `xcodebuild`, `simctl`).
 
 ### Policy
-In sandboxed agent environments, these commands require host execution permissions (e.g., `BypassSandbox: true` or elevated execution mode). Standard file reading, file editing, and basic git operations run in standard workspace mode.
+In sandboxed agent environments, these commands require host execution permissions (unsandboxed / elevated host execution mode). Standard file reading, file editing, and basic git operations run in standard workspace mode.
 
 ---
 
@@ -125,7 +125,12 @@ Do not introduce speculative, unused helper properties, functions, or parameters
 Before staging and committing changes:
 1. **Build Verification**: Run the Android (§2B) and iOS (§2D) builds with zero compiler warnings, plus the macOS build (§2E) for Apple-specific changes.
 2. **Static Analysis & Linters**: Execute `./gradlew ktlintCheck detekt` and `swiftformat --lint .` / `swiftlint lint iosApp/iosApp`.
-3. **Spec Checklist**: Confirm all acceptance criteria checkboxes in the active `specs/<id>.md` are completed (`- [x]`).
+3. **Spec Verification Record, Wiki & Knowledge Capture**:
+   - Confirm all acceptance criteria checkboxes in the active `specs/<id>.md` are completed (`- [x]`).
+   - Populate `## Verification Record` in `specs/<id>.md` with **Verified** (exact commands and observed outcomes) and **Unverified / Gaps** (what could not be verified locally and why).
+   - Update affected [`wiki/*.md`](../../../wiki/README.md) pages with lasting architectural or business-rule changes.
+   - Log any newly discovered systemic issues, doc drift, recurring verification gaps, or tooling friction in [`wiki/issue-log.md`](../../../wiki/issue-log.md) per [`.agents/skills/session-issue-capture/SKILL.md`](../session-issue-capture/SKILL.md).
+   - Mark the spec `**Status:** Implemented (Final)`, archive it to `specs/archive/<id>.md`, and add an entry to [`specs/steps.md`](../../../specs/steps.md).
 4. **Artifact Cleanup**: Remove all temporary review reports, logs, and teammate scratch directories from `.agents/`.
 5. **Scoped Staging**: Stage only the files targeted by the user's prompt (e.g., `git add <files>`), preserving the required commit message template.
 

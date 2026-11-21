@@ -25,8 +25,8 @@ Use this skill when:
 
 The application follows a strict Kotlin Multiplatform (KMP) division of responsibilities:
 
-### A. Shared Business Logic & Modularization Migration
-All core logic MUST reside in shared Kotlin code. The repository is executing a phased modularization migration from a monolithic `:shared` module to **Vertical Feature Modules with an Umbrella Framework** (see [`specs/researches/modularization_evaluation.md`](specs/researches/modularization_evaluation.md) and Specs [46](specs/46_modularization_foundation_core_extraction.md)–[49](specs/49_modularization_umbrella_and_linking_optimization.md)):
+### A. Shared Business Logic & Modularization Architecture
+All core logic MUST reside in shared Kotlin code organized as **Vertical Feature Modules with an Umbrella Framework** (see [Architecture Wiki](../../../wiki/architecture-and-modules.md), [`specs/researches/modularization_evaluation.md`](../../../specs/researches/modularization_evaluation.md), and archived Specs [46](../../../specs/archive/46_modularization_foundation_core_extraction.md)–[49](../../../specs/archive/49_modularization_umbrella_and_linking_optimization.md)):
 - **Foundational Core Modules**: `:core:model`, `:core:mvi`, `:core:network`.
 - **Vertical Feature Modules**: `:feature:feed`, `:feature:details`, `:feature:search`, `:feature:collections`, `:feature:profile` (owning their repositories and API clients).
 - **Umbrella Assembly & Gateway**: `:shared` compiles the unified Apple native framework and aggregates the root Metro DI graph.
@@ -49,12 +49,12 @@ Do not introduce speculative, unused helper functions, extension methods, or pro
 
 ## 2. Shared MVI & Unidirectional Data Flow (UDF) Pattern
 
-All presentation logic in this repository is built upon **Shared MVI / Unidirectional Data Flow (UDF)** centered around [`MviViewModel`](shared/src/commonMain/kotlin/com/example/imagefeed/presentation/mvi/MviViewModel.kt):
+All presentation logic in this repository is built upon **Shared MVI / Unidirectional Data Flow (UDF)** centered around [`MviViewModel`](../../../core/mvi/src/commonMain/kotlin/com/example/imagefeed/presentation/mvi/MviViewModel.kt):
 
 ### A. Core MVI Components
-- **State**: [`UiState`](shared/src/commonMain/kotlin/com/example/imagefeed/presentation/mvi/UiState.kt) represents immutable visual conditions streamed via `state: StateFlow<S>` and `iosState: CommonFlow<S>`.
-- **Intent**: [`UiIntent`](shared/src/commonMain/kotlin/com/example/imagefeed/presentation/mvi/UiIntent.kt) represents user interactions and lifecycle actions dispatched via `viewModel.dispatch(intent)`.
-- **Effect**: [`UiEffect`](shared/src/commonMain/kotlin/com/example/imagefeed/presentation/mvi/UiEffect.kt) represents one-off side effects (navigation commands, toast messages, sensory haptics) emitted through buffered channels exposed via `effects: Flow<E>` and `iosEffects: CommonFlow<E>`.
+- **State**: [`UiState`](../../../core/mvi/src/commonMain/kotlin/com/example/imagefeed/presentation/mvi/UiState.kt) represents immutable visual conditions streamed via `state: StateFlow<S>` and `iosState: CommonFlow<S>`.
+- **Intent**: [`UiIntent`](../../../core/mvi/src/commonMain/kotlin/com/example/imagefeed/presentation/mvi/UiIntent.kt) represents user interactions and lifecycle actions dispatched via `viewModel.dispatch(intent)`.
+- **Effect**: [`UiEffect`](../../../core/mvi/src/commonMain/kotlin/com/example/imagefeed/presentation/mvi/UiEffect.kt) represents one-off side effects (navigation commands, toast messages, sensory haptics) emitted through buffered channels exposed via `effects: Flow<E>` and `iosEffects: CommonFlow<E>`.
 
 ### B. Coroutine Lifecycles & Structured Concurrency
 - `MviViewModel` extends the official multiplatform `androidx.lifecycle.ViewModel`.

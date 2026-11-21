@@ -1,14 +1,12 @@
 # Agent Guidelines & Codebase Rules
 
 ## Purpose
+Agents act as senior project collaborators for this KMP image-feed app. Keep responses concise, follow non-negotiable invariants, consult [Project Wiki](wiki/README.md) for living system/business knowledge, and load skills on-demand.
 
-Agents act as senior project collaborators for this Kotlin Multiplatform image-feed app. Keep responses concise, adhere to non-negotiable repository invariants, and consult domain skills on-demand for procedural runbooks.
-
----
-
-## Workspace Skills & Runbooks
-
-For detailed implementation runbooks and domain guidelines, consult the relevant skill:
+## Knowledge Base, Skills & Runbooks
+* [Project Wiki](wiki/README.md) — Current architecture, business rules, design systems, ADRs, and [issue-log.md](wiki/issue-log.md).
+* [Session Issue Capture](.agents/skills/session-issue-capture/SKILL.md) — Post-session capture of systemic conflicts, doc drift, and tooling friction into `wiki/issue-log.md`.
+* [Issue Log Resolution](.agents/skills/issue-log-resolution/SKILL.md) — Manual on-demand evaluation and resolution of open issues in `wiki/issue-log.md`.
 * [KMP Architecture & Lifecycle](.agents/skills/kmp-architecture/SKILL.md) — Shared boundaries, MVI pattern, Metro DI, and coroutine scopes.
 * [Verification & Linting](.agents/skills/verification-and-linting/SKILL.md) — Build, test, lint, and formatting commands across Kotlin and Swift.
 * [KMP Testing Strategy](.agents/skills/kmp-testing/SKILL.md) — Shared MVI ViewModel test harness, fake repositories, and coroutine testing.
@@ -16,22 +14,18 @@ For detailed implementation runbooks and domain guidelines, consult the relevant
 * [Apple Glass Design & HIG](.agents/skills/ios-glass-design/SKILL.md) — SwiftUI GlassTheme, materials, detents, dark scrims, sensory feedback.
 * [Localization](.agents/skills/localization/SKILL.md) — Multiplatform string tables, AppError mapping, native formatters, RTL safety.
 
----
-
 ## Core Invariants
-
-These non-negotiable boundaries and policies must be observed on every change:
 
 1. **KMP Architecture Boundaries & Shared MVI / UDF**:
    * All business logic, models, networking, and presentation state reside in shared Kotlin code.
-   * **Modularization Migration Phase**: In transition from `:shared` monolith to vertical feature ownership (`:feature:*` owning repositories and API clients) with foundational core modules (`:core:*`), `:shared` as umbrella framework, and Metro DI aggregator (see [evaluation](specs/researches/modularization_evaluation.md) and Specs [46](specs/46_modularization_foundation_core_extraction.md)–[49](specs/49_modularization_umbrella_and_linking_optimization.md)).
+   * **Modular Structure**: Vertical feature modules (`:feature:*`), foundational core (`:core:*`), and `:shared` umbrella framework with Metro DI (see [Architecture Wiki](wiki/architecture-and-modules.md) and archived Specs [46](specs/archive/46_modularization_foundation_core_extraction.md)–[49](specs/archive/49_modularization_umbrella_and_linking_optimization.md)).
    * Platform modules (`androidApp`, `iosApp`, `macosApp`) remain thin, declarative view shells (Compose / SwiftUI). `macosApp` is a target in `iosApp/project.yml` that compiles the same `iosApp/iosApp` sources, so every Swift edit also builds for macOS.
    * Dependency injection is handled at compile time using **Metro** (`dev.zacsweers.metro`). Do not use Koin or dynamic DI.
-   * **Presentation Architecture**: Presentation logic is standardized on **Shared MVI / Unidirectional Data Flow (UDF)** built on [`MviViewModel`](shared/src/commonMain/kotlin/com/example/imagefeed/presentation/mvi/MviViewModel.kt), [`UiState`](shared/src/commonMain/kotlin/com/example/imagefeed/presentation/mvi/UiState.kt), [`UiIntent`](shared/src/commonMain/kotlin/com/example/imagefeed/presentation/mvi/UiIntent.kt), and [`UiEffect`](shared/src/commonMain/kotlin/com/example/imagefeed/presentation/mvi/UiEffect.kt).
-   * **Lifecycle & Teardown**: ViewModels manage coroutines within `viewModelScope`. On Android, ViewModels are scoped via standard Compose `viewModel { ... }`. On iOS/macOS, Swift `@Observable` wrappers invoke `viewModel.clear()` upon `deinit`.
+   * **Presentation Architecture**: Standardized on **Shared MVI / UDF** built on [`MviViewModel`](core/mvi/src/commonMain/kotlin/com/example/imagefeed/presentation/mvi/MviViewModel.kt), [`UiState`](core/mvi/src/commonMain/kotlin/com/example/imagefeed/presentation/mvi/UiState.kt), [`UiIntent`](core/mvi/src/commonMain/kotlin/com/example/imagefeed/presentation/mvi/UiIntent.kt), and [`UiEffect`](core/mvi/src/commonMain/kotlin/com/example/imagefeed/presentation/mvi/UiEffect.kt).
+   * **Lifecycle & Teardown**: ViewModels manage coroutines within `viewModelScope`. Android scopes via Compose `viewModel { ... }`; iOS/macOS `@Observable` wrappers invoke `viewModel.clear()` in `deinit`.
 
 2. **Platform Build Policy**:
-   * Whenever changes affect `shared/` or platform logic, verify **BOTH** Android and iOS; commands live in the verification skill.
+   * Whenever changes affect `shared/`, `:core:*`, `:feature:*`, or platform logic, verify **BOTH** Android and iOS; commands live in the verification skill.
    * Apple-specific changes (`iosApp/**`, Apple Kotlin source sets, Kotlin/Native framework config) must **also** build the `macosApp` scheme.
    * Never assume shared changes work in Swift just because Kotlin compiles.
 
@@ -39,9 +33,9 @@ These non-negotiable boundaries and policies must be observed on every change:
    * **Zero Compiler Warning Policy**: Monitor and resolve compiler warnings immediately after significant changes.
    * **Zero Dead Code Policy**: Eliminate obsolete properties, parameters, and imports in the same change set.
    * **Living Code & Anti-Staleness Policy**: Instructions and skills must never include verbatim boilerplate code samples or multi-line implementation blocks. Reference living, compiler-verified source files via file links or specify guidelines declaratively. Micro-snippets (< 4 lines) are restricted to compiler suppressions, CLI commands, or formulas.
-   * **Host Permissions**: Build, test, and lint commands require host execution (`BypassSandbox: true` in sandboxed agents).
+   * **Host Permissions**: Build, test, and lint commands require unsandboxed host execution when running in a restricted agent sandbox (access to JDK, Android SDK, ~/.gradle, Xcode).
    * **Strict Commit Scoping**: Stage and commit only specifically requested files; clean up temporary scratch files in `.agents/` prior to commit.
-   * **Spec Completeness**: Validate all acceptance criteria checkboxes (`- [x]`) before marking a spec as `Implemented`.
+   * **Spec Completeness**: Validate all acceptance criteria checkboxes (`- [x]`) before marking a spec `Implemented (Final)`.
 
 4. **Security & Unsplash API Compliance**:
    * **Never commit API keys or credentials**. Keys are loaded from `local.properties` via `BuildKonfig`.
@@ -54,8 +48,6 @@ These non-negotiable boundaries and policies must be observed on every change:
    * Zero hardcoded UI strings; externalize to Android XML and Apple String Catalogs.
    * Map typed `AppError` per-platform; use platform-native plural and compact number formatters.
 
----
-
 ## Commit & Planning Conventions
 
 Every commit message must follow this structure:
@@ -65,9 +57,8 @@ Every commit message must follow this structure:
 
 <quick description>
 
-Spec: specs/<actual-spec-file>.md
+Spec: specs/[archive/]<actual-spec-file>.md
 Model: <model name>
 ```
 
-* **Planning & Specs**: Every change must be anchored in an active specification in `specs/`. When implementation finishes, update the spec's `**Status:** Implemented` and mark the step in [`specs/steps.md`](specs/steps.md) as `(Completed)`.
-* For historical implementation notes and deep architectural blueprints, refer to [`specs/steps.md`](specs/steps.md).
+* **Planning, Wiki & Specs**: Active specs live in `specs/`. On completion: verify `- [x]`, update [`wiki/`](wiki/README.md), log systemic/unresolved session issues in [`wiki/issue-log.md`](wiki/issue-log.md), mark spec `Implemented (Final)`, archive to `specs/archive/` (never edit archived specs), and add a row to [`specs/steps.md`](specs/steps.md).
