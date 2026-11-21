@@ -28,9 +28,9 @@ struct CollectionDetailView: View {
 
     private var columnCount: Int {
         #if os(iOS)
-        return AdaptiveLayoutHelper.getColumnCount(sizeClass: sizeClass)
+        AdaptiveLayoutHelper.getColumnCount(sizeClass: sizeClass)
         #else
-        return AdaptiveLayoutHelper.getColumnCount()
+        AdaptiveLayoutHelper.getColumnCount()
         #endif
     }
 

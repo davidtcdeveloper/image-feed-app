@@ -15,6 +15,7 @@ import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import com.example.imagefeed.android.CollectionDetailScreen
 import com.example.imagefeed.android.CollectionsFeedScreen
+import com.example.imagefeed.android.FavoritesScreen
 import com.example.imagefeed.android.FeedScreen
 import com.example.imagefeed.android.PhotoDetailPlaceholder
 import com.example.imagefeed.android.PhotoDetailsScreen
@@ -111,6 +112,36 @@ fun EntryProviderScope<NavKey>.collectionsSection(
             onCollectionClick =
                 dropUnlessResumedWithArg { id ->
                     navigator.navigate(AppRoute.CollectionDetails(id))
+                },
+        )
+    }
+}
+
+fun EntryProviderScope<NavKey>.favoritesSection(
+    sharedTransitionScope: SharedTransitionScope,
+    navigator: Navigator,
+) {
+    entry<AppRoute.Favorites>(
+        metadata =
+            ListDetailSceneStrategy.listPane(
+                detailPlaceholder = { PhotoDetailPlaceholder() },
+            ),
+    ) {
+        FavoritesScreen(
+            sharedTransitionScope = sharedTransitionScope,
+            animatedVisibilityScope = LocalNavAnimatedContentScope.current,
+            viewModel =
+                viewModel(key = "favorites") {
+                    MetroHelper.getFavoritesViewModel()
+                },
+            reselectEvents = navigator.reselectEvents,
+            onPhotoClick =
+                dropUnlessResumedWithArg { photo ->
+                    navigator.navigate(AppRoute.PhotoDetails(photo.id))
+                },
+            onUserClick =
+                dropUnlessResumedWithArg { user ->
+                    navigator.navigate(AppRoute.UserProfile(user.username))
                 },
         )
     }

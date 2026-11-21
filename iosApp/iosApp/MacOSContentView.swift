@@ -5,6 +5,7 @@ struct MacOSContentView: View {
     enum SidebarSelection: Hashable {
         case photos
         case collections
+        case favorites
     }
 
     @State private var selection: SidebarSelection? = .photos
@@ -19,6 +20,10 @@ struct MacOSContentView: View {
                 NavigationLink(value: SidebarSelection.collections) {
                     Label("Collections", systemImage: "square.grid.2x2")
                 }
+
+                NavigationLink(value: SidebarSelection.favorites) {
+                    Label("Favorites", systemImage: "bookmark.fill")
+                }
             }
             .navigationTitle("Image Feed")
             .listStyle(SidebarListStyle())
@@ -31,6 +36,9 @@ struct MacOSContentView: View {
                         .frame(minWidth: 500)
                 case .collections:
                     CollectionsFeedTabView()
+                        .frame(minWidth: 500)
+                case .favorites:
+                    FavoritesTabView()
                         .frame(minWidth: 500)
                 }
             } else {

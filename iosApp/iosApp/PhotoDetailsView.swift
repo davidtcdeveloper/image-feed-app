@@ -31,9 +31,9 @@ struct PhotoDetailsView: View {
 
     private var isDualPane: Bool {
         #if os(iOS)
-        return horizontalSizeClass == .regular
+        horizontalSizeClass == .regular
         #else
-        return true
+        true
         #endif
     }
 
@@ -179,6 +179,18 @@ struct PhotoDetailsView: View {
             #endif
         }
         .sensoryFeedback(.success, trigger: downloadFeedbackTrigger)
+        .sensoryFeedback(.impact(weight: .medium), trigger: viewModel?.favoriteFeedbackTrigger ?? 0)
+        .overlay(alignment: .top) {
+            if let banner = viewModel?.favoriteToastBanner {
+                GlassToastPill(banner: banner)
+                    #if os(iOS)
+                    .padding(.top, 60)
+                    #else
+                    .padding(.top, 16)
+                    #endif
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
+        }
         #if os(iOS)
         .sheet(isPresented: Binding(
             get: { showInspector && !isDualPane && activePhoto != nil },
@@ -487,6 +499,14 @@ private extension PhotoDetailsView {
                 }
             }
 
+            // Local Bookmark Action
+            GlassToolbarButton(
+                systemName: viewModel?.isFavorite == true ? "bookmark.fill" : "bookmark",
+                accessibilityLabel: viewModel?.isFavorite == true ? "Remove Bookmark" : "Bookmark")
+            {
+                viewModel?.toggleFavorite(fallbackPhoto: photo)
+            }
+
             // Toggle Inspector Button
             GlassToolbarButton(
                 systemName: "info.circle",
@@ -534,5 +554,30 @@ private extension PhotoDetailsView {
                 .ignoresSafeArea()
                 .allowsHitTesting(false)
         }
+    }
+}
+
+struct GlassToastPill: View {
+    let banner: ToastBanner
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: banner.systemImage)
+                .font(.caption.weight(.semibold))
+            Text(banner.message)
+                .font(.footnote.weight(.semibold))
+                .lineLimit(2)
+                .multilineTextAlignment(.center)
+        }
+        .glassVibrancy(.primary)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 9)
+        .background {
+            Capsule()
+                .fill(Color.black.opacity(0.45))
+        }
+        .glassCapsule(style: .ultraThin, showBorder: true, hasShadow: true)
+        .environment(\.colorScheme, .dark)
+        .allowsHitTesting(false)
     }
 }

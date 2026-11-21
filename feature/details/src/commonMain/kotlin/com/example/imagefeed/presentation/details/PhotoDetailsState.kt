@@ -8,6 +8,7 @@ import com.example.imagefeed.presentation.mvi.UiState
 data class PhotoDetailsState(
     val photo: Photo? = null,
     val stats: PhotoStats? = null,
+    val isFavorite: Boolean = false,
     val isLoading: Boolean = false,
     val error: AppError? = null,
 ) : UiState

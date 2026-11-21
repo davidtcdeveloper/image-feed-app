@@ -2,6 +2,8 @@ package com.example.imagefeed.di
 
 import com.example.imagefeed.collections.data.CollectionsRepository
 import com.example.imagefeed.collections.di.CollectionsModule
+import com.example.imagefeed.core.database.FavoritesRepository
+import com.example.imagefeed.core.database.di.DatabaseModule
 import com.example.imagefeed.core.network.KtorPhotoDownloadTracker
 import com.example.imagefeed.core.network.PhotoDownloadTracker
 import com.example.imagefeed.core.network.createUnsplashHttpClient
@@ -13,6 +15,7 @@ import com.example.imagefeed.feed.di.FeedModule
 import com.example.imagefeed.presentation.collection.CollectionDetailViewModel
 import com.example.imagefeed.presentation.collections.CollectionsFeedViewModel
 import com.example.imagefeed.presentation.details.PhotoDetailsViewModel
+import com.example.imagefeed.presentation.favorites.FavoritesViewModel
 import com.example.imagefeed.presentation.feed.FeedViewModel
 import com.example.imagefeed.presentation.profile.UserProfileViewModel
 import com.example.imagefeed.presentation.random.RandomPhotoViewModel
@@ -46,6 +49,7 @@ internal object AppModule {
     scope = AppScope::class,
     bindingContainers = [
         AppModule::class,
+        DatabaseModule::class,
         PhotoDetailsModule::class,
         FeedModule::class,
         SearchModule::class,
@@ -54,12 +58,14 @@ internal object AppModule {
     ],
 )
 internal interface ApplicationGraph {
+    val favoritesRepository: FavoritesRepository
     val photoDetailsRepository: PhotoDetailsRepository
     val feedRepository: FeedRepository
     val searchRepository: SearchRepository
     val collectionsRepository: CollectionsRepository
     val profileRepository: ProfileRepository
 
+    val favoritesViewModel: FavoritesViewModel
     val photoDetailsViewModelFactory: PhotoDetailsViewModel.Factory
     val feedViewModel: FeedViewModel
     val randomPhotoViewModel: RandomPhotoViewModel
@@ -73,6 +79,8 @@ object MetroHelper {
     internal val graph: ApplicationGraph by lazy {
         createGraph<ApplicationGraph>()
     }
+
+    fun getFavoritesViewModel(): FavoritesViewModel = graph.favoritesViewModel
 
     fun getPhotoDetailsViewModel(photoId: String): PhotoDetailsViewModel = graph.photoDetailsViewModelFactory.create(photoId)
 

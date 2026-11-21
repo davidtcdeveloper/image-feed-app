@@ -29,44 +29,44 @@ public enum GlassTheme {
     /// Cross-platform semantic high-contrast background fallback
     public static var fallbackBackgroundColor: Color {
         #if os(iOS)
-        return Color(uiColor: .secondarySystemBackground)
+        Color(uiColor: .secondarySystemBackground)
         #elseif os(macOS)
-        return Color(nsColor: .windowBackgroundColor)
+        Color(nsColor: .windowBackgroundColor)
         #else
-        return Color.secondary.opacity(0.2)
+        Color.secondary.opacity(0.2)
         #endif
     }
 
     /// Cross-platform semantic high-contrast border fallback
     public static var fallbackBorderColor: Color {
         #if os(iOS)
-        return Color(uiColor: .separator)
+        Color(uiColor: .separator)
         #elseif os(macOS)
-        return Color(nsColor: .separatorColor)
+        Color(nsColor: .separatorColor)
         #else
-        return Color.secondary
+        Color.secondary
         #endif
     }
 
     /// Cross-platform semantic canvas background
     public static var canvasBackgroundColor: Color {
         #if os(iOS)
-        return Color(uiColor: .systemBackground)
+        Color(uiColor: .systemBackground)
         #elseif os(macOS)
-        return Color(nsColor: .windowBackgroundColor)
+        Color(nsColor: .windowBackgroundColor)
         #else
-        return Color.black
+        Color.black
         #endif
     }
 
     /// Cross-platform secondary surface background for cards, chips, skeletons
     public static var surfaceBackgroundColor: Color {
         #if os(iOS)
-        return Color(uiColor: .secondarySystemBackground)
+        Color(uiColor: .secondarySystemBackground)
         #elseif os(macOS)
-        return Color(nsColor: .controlBackgroundColor)
+        Color(nsColor: .controlBackgroundColor)
         #else
-        return Color.secondary.opacity(0.15)
+        Color.secondary.opacity(0.15)
         #endif
     }
 

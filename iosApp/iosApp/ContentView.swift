@@ -76,7 +76,9 @@ struct ContentView: View {
     @State private var selectedTab = 0
     @State private var photosPath = NavigationPath()
     @State private var collectionsPath = NavigationPath()
+    @State private var favoritesPath = NavigationPath()
     @State private var isPhotosDetailPresented = false
+    @State private var isFavoritesDetailPresented = false
     @State private var capsuleCoordinator = CapsuleScrollCoordinator()
 
     init() {
@@ -93,8 +95,10 @@ struct ContentView: View {
     private var isCapsuleVisible: Bool {
         if selectedTab == 0 {
             photosPath.isEmpty && !isPhotosDetailPresented
-        } else {
+        } else if selectedTab == 1 {
             collectionsPath.isEmpty
+        } else {
+            favoritesPath.isEmpty && !isFavoritesDetailPresented
         }
     }
 
@@ -115,6 +119,15 @@ struct ContentView: View {
                         Label("Collections", systemImage: "square.grid.2x2")
                     }
                     .tag(1)
+
+                FavoritesTabView(
+                    path: $favoritesPath,
+                    isDetailPresented: $isFavoritesDetailPresented,
+                    coordinator: capsuleCoordinator)
+                    .tabItem {
+                        Label("Favorites", systemImage: "bookmark.fill")
+                    }
+                    .tag(2)
             }
             .tint(Color.primary)
             #if os(iOS)
@@ -136,6 +149,11 @@ struct ContentView: View {
             capsuleCoordinator.expand()
         }
         .onChange(of: isPhotosDetailPresented) { _, isPresented in
+            if !isPresented {
+                capsuleCoordinator.expand()
+            }
+        }
+        .onChange(of: isFavoritesDetailPresented) { _, isPresented in
             if !isPresented {
                 capsuleCoordinator.expand()
             }
@@ -246,7 +264,7 @@ struct FeedPathItem: Hashable {
     }
 }
 
-private struct FeedScrollOffsetKey: PreferenceKey {
+struct FeedScrollOffsetKey: PreferenceKey {
     static var defaultValue: CGFloat = 0
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
         value = nextValue()
@@ -254,7 +272,8 @@ private struct FeedScrollOffsetKey: PreferenceKey {
 }
 
 #if os(iOS)
-private struct FeedScrollTrackingModifier: ViewModifier {
+struct FeedScrollTrackingModifier: ViewModifier {
+    var coordinateSpaceName: String = "photoFeedScroll"
     let onOffsetChange: (CGFloat) -> Void
 
     func body(content: Content) -> some View {
@@ -268,7 +287,7 @@ private struct FeedScrollTrackingModifier: ViewModifier {
                 }
         } else {
             content
-                .coordinateSpace(name: "photoFeedScroll")
+                .coordinateSpace(name: coordinateSpaceName)
                 .onPreferenceChange(FeedScrollOffsetKey.self) { offset in
                     onOffsetChange(offset)
                 }
@@ -315,9 +334,9 @@ struct PhotosFeedTabView: View {
 
     private var columnCount: Int {
         #if os(iOS)
-        return AdaptiveLayoutHelper.getColumnCount(sizeClass: sizeClass)
+        AdaptiveLayoutHelper.getColumnCount(sizeClass: sizeClass)
         #else
-        return AdaptiveLayoutHelper.getColumnCount()
+        AdaptiveLayoutHelper.getColumnCount()
         #endif
     }
 
@@ -367,7 +386,6 @@ struct PhotosFeedTabView: View {
                                             let photo = indexed.item
                                             PhotoCard(
                                                 photo: photo,
-                                                viewModel: viewModel,
                                                 heroNamespace: heroNamespace,
                                                 isHeroSource: selectedPhotoForHero?.id != photo.id,
                                                 onSelect: { _ in
@@ -377,6 +395,11 @@ struct PhotosFeedTabView: View {
                                                 },
                                                 onUserSelect: { username in
                                                     activePath.wrappedValue.append(FeedPathItem(id: username, type: .user))
+                                                },
+                                                onAppear: {
+                                                    if photo.id == viewModel.photos.last?.id {
+                                                        viewModel.loadNextPage()
+                                                    }
                                                 })
                                         }
                                     }
@@ -778,11 +801,11 @@ struct PhotoCard: View {
     #endif
 
     let photo: Photo
-    let viewModel: FeedViewModel
     let heroNamespace: Namespace.ID
     var isHeroSource: Bool = true
     let onSelect: (String) -> Void
     let onUserSelect: (String) -> Void
+    var onAppear: (() -> Void)?
 
     var body: some View {
         let screenWidth = AdaptiveLayoutHelper.getScreenWidth()
@@ -790,7 +813,7 @@ struct PhotoCard: View {
 
         // Dynamically resize image requesting only the resolution required by container
         let imageUrl = photo.urls.getOptimalUrl(targetWidthPx: Int32(itemWidth))
-        let aspectRatio = CGFloat(photo.width) / CGFloat(photo.height)
+        let aspectRatio = contentRatio(photoWidth: Int(photo.width), photoHeight: Int(photo.height))
 
         ZStack(alignment: .bottomLeading) {
             KFImage(URL(string: imageUrl))
@@ -806,7 +829,7 @@ struct PhotoCard: View {
                 }
                 .fade(duration: 0.25)
                 .resizable()
-                .aspectRatio(contentRatio(photoWidth: Int(photo.width), photoHeight: Int(photo.height)), contentMode: .fit)
+                .aspectRatio(aspectRatio, contentMode: .fit)
                 .matchedGeometryEffect(id: "photo-img-\(photo.id)", in: heroNamespace, isSource: isHeroSource)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 .contentShape(Rectangle())
@@ -842,10 +865,7 @@ struct PhotoCard: View {
         }
         .feedScrollTransition()
         .onAppear {
-            // Infinite pagination load trigger
-            if photo.id == viewModel.photos.last?.id {
-                viewModel.loadNextPage()
-            }
+            onAppear?()
         }
     }
 

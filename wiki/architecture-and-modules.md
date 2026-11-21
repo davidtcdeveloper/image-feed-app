@@ -22,12 +22,14 @@ graph TD
     subgraph Features["Vertical Feature Modules (VM + Repo + ApiClient + Fakes)"]
         Feed[":feature:feed"]
         Details[":feature:details"]
+        Favorites[":feature:favorites"]
         Search[":feature:search"]
         Collections[":feature:collections"]
         Profile[":feature:profile"]
     end
 
     subgraph Core["Foundational Core Modules"]
+        Database[":core:database (Room KMP, BundledSQLiteDriver, FavoritesRepository)"]
         Network[":core:network (Ktor Engine, AppErrorMapper, PhotoDownloadTracker, CollectionsExt)"]
         Mvi[":core:mvi (MviViewModel, UiState, UiIntent, UiEffect, CommonFlow)"]
         Model[":core:model (Photo, PhotoCollection, Topic, AppError, Statistics)"]
@@ -35,8 +37,10 @@ graph TD
 
     Android --> Shared
     Apple --> Shared
-    Shared --> Feed & Details & Search & Collections & Profile
-    Feed & Details & Search & Collections & Profile --> Network & Mvi & Model
+    Shared --> Feed & Details & Favorites & Search & Collections & Profile
+    Feed & Search & Collections & Profile --> Network & Mvi & Model
+    Details & Favorites --> Database & Network & Mvi & Model
+    Database --> Model
     Network --> Model
 ```
 
@@ -44,18 +48,19 @@ graph TD
   * `:core:model`: Pure `@Serializable` domain entities ([`Photo.kt`](../core/model/src/commonMain/kotlin/com/example/imagefeed/model/Photo.kt), [`AppError.kt`](../core/model/src/commonMain/kotlin/com/example/imagefeed/model/AppError.kt), `PhotoCollection`, `Topic`, `Statistics`).
   * `:core:mvi`: Shared MVI contracts and lifecycle base class ([`MviViewModel.kt`](../core/mvi/src/commonMain/kotlin/com/example/imagefeed/presentation/mvi/MviViewModel.kt), [`CommonFlow.kt`](../core/mvi/src/commonMain/kotlin/com/example/imagefeed/presentation/mvi/CommonFlow.kt)).
   * `:core:network`: Ktor client factory ([`HttpClientFactory.kt`](../core/network/src/commonMain/kotlin/com/example/imagefeed/core/network/HttpClientFactory.kt)), [`AppErrorMapper.kt`](../core/network/src/commonMain/kotlin/com/example/imagefeed/core/network/AppErrorMapper.kt), [`PhotoDownloadTracker.kt`](../core/network/src/commonMain/kotlin/com/example/imagefeed/core/network/PhotoDownloadTracker.kt), [`CollectionsExt.kt`](../core/network/src/commonMain/kotlin/com/example/imagefeed/core/network/CollectionsExt.kt), and [`AppScope.kt`](../core/network/src/commonMain/kotlin/com/example/imagefeed/core/network/di/AppScope.kt).
+  * `:core:database`: Local Room KMP + `sqlite-bundled` storage ([`FavoritesDatabase.kt`](../core/database/src/commonMain/kotlin/com/example/imagefeed/core/database/FavoritesDatabase.kt), [`FavoritesRepository.kt`](../core/database/src/commonMain/kotlin/com/example/imagefeed/core/database/FavoritesRepository.kt)). KSP (`room-compiler`) runs exclusively inside `:core:database`; Android initializes context via [`SharedAndroidInitializer`](../shared/src/androidMain/kotlin/com/example/imagefeed/di/SharedAndroidInitializer.kt), and Apple scopes storage by bundle ID with an `InMemoryFavoritesRepository` fallback in bare Kotlin/Native test executables ([`FavoritesDatabase.apple.kt`](../core/database/src/appleMain/kotlin/com/example/imagefeed/core/database/FavoritesDatabase.apple.kt)).
 * **Vertical Feature Modules (`:feature:*`)**:
-  * `:feature:feed`, `:feature:details`, `:feature:search`, `:feature:collections`, `:feature:profile` each own their API clients, repositories, Metro `@BindingContainer` modules, ViewModels, feature-local models (`PhotoStats`, `UserStats`), and `commonTest` suites.
+  * `:feature:feed`, `:feature:details`, `:feature:favorites`, `:feature:search`, `:feature:collections`, `:feature:profile` each own their API clients, repositories/storage integrations, Metro `@BindingContainer` modules, ViewModels, feature-local models (`PhotoStats`, `UserStats`), and `commonTest` suites.
 * **Umbrella Module (`:shared`)**:
-  * [`shared/build.gradle.kts`](../shared/build.gradle.kts) builds the static Apple framework (`baseName = "shared"`) for `iosArm64`, `iosSimulatorArm64`, and `macosArm64`, selectively exporting `:core:model`, `:core:mvi`, and all five `:feature:*` modules while keeping `:core:network` `implementation`-scoped to minimize ObjC/Swift bridging overhead.
+  * [`shared/build.gradle.kts`](../shared/build.gradle.kts) builds the static Apple framework (`baseName = "shared"`) for `iosArm64`, `iosSimulatorArm64`, and `macosArm64`, selectively exporting `:core:model`, `:core:mvi`, and all six `:feature:*` modules while keeping `:core:network` and `:core:database` `implementation`-scoped to minimize ObjC/Swift bridging overhead and hide internal Room types.
 
 ---
 
 ## 2. Compile-Time Dependency Injection (Metro)
 
-* **Root Graph**: [`ApplicationGraph`](../shared/src/commonMain/kotlin/com/example/imagefeed/di/Metro.kt) uses `@DependencyGraph(scope = AppScope::class, bindingContainers = [...])` combining `AppModule` with `FeedModule`, `PhotoDetailsModule`, `SearchModule`, `CollectionsModule`, and `ProfileModule`.
-* **Singleton Scoping**: Core `HttpClient`, `PhotoDownloadTracker`, and feature repositories are annotated `@SingleIn(AppScope::class)` using [`AppScope`](../core/network/src/commonMain/kotlin/com/example/imagefeed/core/network/di/AppScope.kt) (`@HiddenFromObjC`).
-* **Factory & Direct ViewModel Provision**: Unparameterized ViewModels (`FeedViewModel`, `RandomPhotoViewModel`, `UnifiedSearchViewModel`, `CollectionsFeedViewModel`) use `@Inject`. Parameterized ViewModels (`PhotoDetailsViewModel`, `CollectionDetailViewModel`, `UserProfileViewModel`) use `@AssistedInject` with `@AssistedFactory` exposed through `MetroHelper`.
+* **Root Graph**: [`ApplicationGraph`](../shared/src/commonMain/kotlin/com/example/imagefeed/di/Metro.kt) uses `@DependencyGraph(scope = AppScope::class, bindingContainers = [...])` combining `AppModule` with `DatabaseModule`, `FeedModule`, `PhotoDetailsModule`, `SearchModule`, `CollectionsModule`, and `ProfileModule`.
+* **Singleton Scoping**: Core `HttpClient`, `PhotoDownloadTracker`, `FavoritesRepository`, and feature repositories are annotated `@SingleIn(AppScope::class)` using [`AppScope`](../core/network/src/commonMain/kotlin/com/example/imagefeed/core/network/di/AppScope.kt) (`@HiddenFromObjC`).
+* **Factory & Direct ViewModel Provision**: Unparameterized ViewModels (`FeedViewModel`, `FavoritesViewModel`, `RandomPhotoViewModel`, `UnifiedSearchViewModel`, `CollectionsFeedViewModel`) use `@Inject`. Parameterized ViewModels (`PhotoDetailsViewModel`, `CollectionDetailViewModel`, `UserProfileViewModel`) use `@AssistedInject` with `@AssistedFactory` exposed through `MetroHelper`.
 
 ---
 

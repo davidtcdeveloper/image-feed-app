@@ -12,9 +12,9 @@ struct CollectionsFeedView: View {
 
     private var columnCount: Int {
         #if os(iOS)
-        return AdaptiveLayoutHelper.getCollectionColumnCount(sizeClass: sizeClass)
+        AdaptiveLayoutHelper.getCollectionColumnCount(sizeClass: sizeClass)
         #else
-        return AdaptiveLayoutHelper.getCollectionColumnCount()
+        AdaptiveLayoutHelper.getCollectionColumnCount()
         #endif
     }
 

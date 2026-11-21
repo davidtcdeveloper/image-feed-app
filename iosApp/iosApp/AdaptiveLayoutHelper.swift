@@ -32,9 +32,9 @@ enum AdaptiveLayoutHelper {
 
     static func getScreenWidth() -> CGFloat {
         #if os(iOS)
-        return UIScreen.main.bounds.width
+        UIScreen.main.bounds.width
         #else
-        return NSScreen.main?.frame.width ?? 1200
+        NSScreen.main?.frame.width ?? 1200
         #endif
     }
 
@@ -96,9 +96,9 @@ enum URLHelper {
 
     static func canOpen(_ url: URL) -> Bool {
         #if os(iOS)
-        return UIApplication.shared.canOpenURL(url)
+        UIApplication.shared.canOpenURL(url)
         #else
-        return true
+        true
         #endif
     }
 }

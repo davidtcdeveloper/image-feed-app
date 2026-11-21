@@ -10,5 +10,9 @@ sealed interface PhotoDetailsIntent : UiIntent {
         val photo: Photo,
     ) : PhotoDetailsIntent
 
+    data class ToggleFavorite(
+        val fallbackPhoto: Photo? = null,
+    ) : PhotoDetailsIntent
+
     data object Retry : PhotoDetailsIntent
 }

@@ -28,6 +28,7 @@ kotlin {
             export(project(":core:model"))
             export(project(":core:mvi"))
             export(project(":feature:details"))
+            export(project(":feature:favorites"))
             export(project(":feature:feed"))
             export(project(":feature:search"))
             export(project(":feature:collections"))
@@ -39,8 +40,10 @@ kotlin {
         commonMain.dependencies {
             api(project(":core:model"))
             api(project(":core:mvi"))
+            implementation(project(":core:database"))
             implementation(project(":core:network"))
             api(project(":feature:details"))
+            api(project(":feature:favorites"))
             api(project(":feature:feed"))
             api(project(":feature:search"))
             api(project(":feature:collections"))

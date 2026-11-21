@@ -40,7 +40,15 @@ This page documents both product-domain behaviors and non-business technical/ope
 
 ---
 
-## 5. Error Mapping, Localization & RTL Invariants
+## 5. Local Favorites Persistence Rules
+
+* **Local-Only Scope**: Bookmarks/favorites persist locally on-device with no cross-device sync or Unsplash OAuth user-likes integration.
+* **Metadata-Only Hotlinking Storage**: [`FavoritePhotoEntity`](../core/database/src/commonMain/kotlin/com/example/imagefeed/core/database/FavoritePhotoEntity.kt) stores serialized `Photo` JSON (`favorite_photos`) and `createdAt` timestamps without caching image binaries on disk, preserving Unsplash CDN hotlinking (`ixid` intact) and photographer attribution.
+* **Ordering & Offline Fallback**: Saved items sort newest-first (`ORDER BY createdAt DESC`), re-favoriting updates `createdAt` to the front, and [`PhotoDetailsViewModel`](../feature/details/src/commonMain/kotlin/com/example/imagefeed/presentation/details/PhotoDetailsViewModel.kt) seeds photo metadata from [`FavoritesRepository.getFavoriteById`](../core/database/src/commonMain/kotlin/com/example/imagefeed/core/database/FavoritesRepository.kt) so bookmarked photos remain viewable offline.
+
+---
+
+## 6. Error Mapping, Localization & RTL Invariants
 
 * **Typed Domain Errors**: Repositories and ViewModels never construct raw user-facing error strings. Exceptions map via [`Throwable.toAppError()`](../core/network/src/commonMain/kotlin/com/example/imagefeed/core/network/AppErrorMapper.kt) to sealed [`AppError`](../core/model/src/commonMain/kotlin/com/example/imagefeed/model/AppError.kt) (`Network`, `Timeout`, `NotFound`, `Server(code)`, `Unknown`).
 * **Platform Localization Tables**: All visible UI text is localized via Android `strings.xml` / `plurals.xml` (`AppErrorLocalization.kt`) and Apple [`Localizable.xcstrings`](../iosApp/iosApp/Localizable.xcstrings) ([`AppErrorLocalization.swift`](../iosApp/iosApp/AppErrorLocalization.swift)). Only internal API topic slugs, logging, and icon identifiers remain unlocalized.

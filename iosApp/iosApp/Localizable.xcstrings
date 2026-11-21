@@ -1091,6 +1091,28 @@
         }
       }
     },
+    "Favorites" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Favorites"
+          }
+        }
+      }
+    },
+    "FAVORITES" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "FAVORITES"
+          }
+        }
+      }
+    },
     "Feed" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1549,6 +1571,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No results found."
+          }
+        }
+      }
+    },
+    "No saved photos yet" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No saved photos yet"
           }
         }
       }
@@ -2630,6 +2663,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Teal"
+          }
+        }
+      }
+    },
+    "Tap the bookmark button on any photo to save it locally on this device." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap the bookmark button on any photo to save it locally on this device."
           }
         }
       }

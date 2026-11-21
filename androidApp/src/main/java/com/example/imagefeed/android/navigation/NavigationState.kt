@@ -18,7 +18,7 @@ import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 @Composable
 fun rememberAppNavigationState(
     startRoute: AppRoute = AppRoute.Feed,
-    topLevelRoutes: Set<AppRoute> = setOf(AppRoute.Feed, AppRoute.Collections, AppRoute.Search()),
+    topLevelRoutes: Set<AppRoute> = setOf(AppRoute.Feed, AppRoute.Collections, AppRoute.Favorites, AppRoute.Search()),
 ): NavigationState {
     val topLevelRoute =
         rememberSaveable(startRoute, topLevelRoutes) {

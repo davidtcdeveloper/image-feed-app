@@ -16,7 +16,7 @@ import kotlin.test.assertTrue
 class NavigatorTest {
     private fun createTestNavigator(
         startRoute: AppRoute = AppRoute.Feed,
-        topLevelRoutes: Set<AppRoute> = setOf(AppRoute.Feed, AppRoute.Collections, AppRoute.Search()),
+        topLevelRoutes: Set<AppRoute> = setOf(AppRoute.Feed, AppRoute.Collections, AppRoute.Favorites, AppRoute.Search()),
     ): Pair<Navigator, NavigationState> {
         val topLevelState = mutableStateOf(startRoute)
         val backStacks =
@@ -39,6 +39,9 @@ class NavigatorTest {
 
         navigator.navigate(AppRoute.Collections)
         assertEquals(AppRoute.Collections, state.topLevelRoute)
+
+        navigator.navigate(AppRoute.Favorites)
+        assertEquals(AppRoute.Favorites, state.topLevelRoute)
 
         navigator.navigate(AppRoute.Search())
         assertEquals(AppRoute.Search(), state.topLevelRoute)
@@ -149,10 +152,56 @@ class NavigatorTest {
         navigator.navigate(AppRoute.Collections)
         assertEquals(listOf(AppRoute.Feed, AppRoute.Collections), state.getTopLevelRoutesInUse())
 
+        // At favorites: [startRoute, favorites]
+        navigator.navigate(AppRoute.Favorites)
+        assertEquals(listOf(AppRoute.Feed, AppRoute.Favorites), state.getTopLevelRoutesInUse())
+
         // At search: [startRoute, search]
         navigator.navigate(AppRoute.Search())
         assertEquals(listOf(AppRoute.Feed, AppRoute.Search()), state.getTopLevelRoutesInUse())
     }
+
+    @Test
+    fun favoritesStackIsolationAndExitThroughHome() {
+        val (navigator, state) = createTestNavigator()
+
+        navigator.navigate(AppRoute.Favorites)
+        assertEquals(AppRoute.Favorites, state.topLevelRoute)
+
+        val photoRoute = AppRoute.PhotoDetails("fav_photo_1")
+        navigator.navigate(photoRoute)
+
+        assertEquals(listOf(AppRoute.Favorites, photoRoute), state.backStacks[AppRoute.Favorites]?.toList())
+        assertEquals(listOf(AppRoute.Feed), state.backStacks[AppRoute.Feed]?.toList())
+        assertEquals(listOf(AppRoute.Collections), state.backStacks[AppRoute.Collections]?.toList())
+
+        val poppedDetail = navigator.goBack()
+        assertTrue(poppedDetail)
+        assertEquals(AppRoute.Favorites, state.topLevelRoute)
+        assertEquals(listOf(AppRoute.Favorites), state.backStacks[AppRoute.Favorites]?.toList())
+
+        val poppedToFeed = navigator.goBack()
+        assertTrue(poppedToFeed)
+        assertEquals(AppRoute.Feed, state.topLevelRoute)
+
+        val poppedExit = navigator.goBack()
+        assertFalse(poppedExit)
+    }
+
+    @Test
+    fun reselectEventIsEmittedForFavorites() =
+        runTest {
+            val (navigator, _) = createTestNavigator()
+
+            var receivedEvent: NavKey? = null
+            backgroundScope.launch(kotlinx.coroutines.test.UnconfinedTestDispatcher(testScheduler)) {
+                receivedEvent = navigator.reselectEvents.first()
+            }
+
+            navigator.onReselect(AppRoute.Favorites)
+
+            assertEquals(AppRoute.Favorites, receivedEvent)
+        }
 
     @Test
     fun navigatingToSearchWithQuerySwitchesToSearchTabAndPushesToSearchStack() {

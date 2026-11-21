@@ -81,7 +81,6 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -181,8 +180,23 @@ fun PhotoDetailsScreen(
         viewModel.effects.collect { effect ->
             when (effect) {
                 is PhotoDetailsEffect.DismissScreen -> onBack()
+                is PhotoDetailsEffect.ShowFavoriteToggledSnackbar -> {
+                    val messageRes =
+                        if (effect.isFavorite) {
+                            R.string.details_bookmark_saved
+                        } else {
+                            R.string.details_bookmark_removed
+                        }
+                    snackbarHostState.currentSnackbarData?.dismiss()
+                    launch {
+                        snackbarHostState.showSnackbar(context.getString(messageRes))
+                    }
+                }
                 is PhotoDetailsEffect.ShowErrorSnackbar -> {
-                    snackbarHostState.showSnackbar(effect.error.localizedMessage(context))
+                    snackbarHostState.currentSnackbarData?.dismiss()
+                    launch {
+                        snackbarHostState.showSnackbar(effect.error.localizedMessage(context))
+                    }
                 }
             }
         }
@@ -194,6 +208,7 @@ fun PhotoDetailsScreen(
         state = state,
         onRetry = { viewModel.dispatch(PhotoDetailsIntent.Retry) },
         onTrackDownload = { photo -> viewModel.dispatch(PhotoDetailsIntent.TrackDownload(photo)) },
+        onToggleFavorite = { viewModel.dispatch(PhotoDetailsIntent.ToggleFavorite()) },
         onBack = onBack,
         onUserClick = onUserClick,
         onTagClick = onTagClick,
@@ -209,6 +224,7 @@ fun PhotoDetailsScreen(
     state: PhotoDetailsState,
     onRetry: () -> Unit,
     onTrackDownload: (Photo) -> Unit,
+    onToggleFavorite: () -> Unit,
     onBack: () -> Unit,
     onUserClick: (String) -> Unit,
     onTagClick: (String) -> Unit,
@@ -323,7 +339,9 @@ fun PhotoDetailsScreen(
                             animatedVisibilityScope = animatedVisibilityScope,
                             photo = photo,
                             stats = state.stats,
+                            isFavorite = state.isFavorite,
                             onTrackDownload = { onTrackDownload(photo) },
+                            onToggleFavorite = onToggleFavorite,
                             onUserClick = onUserClick,
                             onTagClick = onTagClick,
                             onShowSnackbar = { message ->
@@ -346,7 +364,9 @@ fun PhotoDetailsContent(
     animatedVisibilityScope: AnimatedVisibilityScope,
     photo: Photo,
     stats: PhotoStats?,
+    isFavorite: Boolean,
     onTrackDownload: () -> Unit,
+    onToggleFavorite: () -> Unit,
     onUserClick: (String) -> Unit,
     onTagClick: (String) -> Unit,
     onShowSnackbar: (String) -> Unit,
@@ -463,7 +483,9 @@ fun PhotoDetailsContent(
                     )
                     FloatingActionToolbar(
                         photo = photo,
+                        isFavorite = isFavorite,
                         onTrackDownload = onTrackDownload,
+                        onToggleFavorite = onToggleFavorite,
                         onShowSnackbar = onShowSnackbar,
                         modifier =
                             Modifier
@@ -527,7 +549,9 @@ fun PhotoDetailsContent(
                     )
                     FloatingActionToolbar(
                         photo = photo,
+                        isFavorite = isFavorite,
                         onTrackDownload = onTrackDownload,
+                        onToggleFavorite = onToggleFavorite,
                         onShowSnackbar = onShowSnackbar,
                         modifier =
                             Modifier
@@ -566,7 +590,9 @@ fun PhotoDetailsContent(
                 }
                 FloatingActionToolbar(
                     photo = photo,
+                    isFavorite = isFavorite,
                     onTrackDownload = onTrackDownload,
+                    onToggleFavorite = onToggleFavorite,
                     onShowSnackbar = onShowSnackbar,
                     modifier =
                         Modifier
@@ -1406,13 +1432,14 @@ fun SwatchPill(
 @Composable
 fun FloatingActionToolbar(
     photo: Photo,
+    isFavorite: Boolean,
     onTrackDownload: () -> Unit,
+    onToggleFavorite: () -> Unit,
     onShowSnackbar: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalPlatformContext.current
     val haptic = LocalHapticFeedback.current
-    var isBookmarked by rememberSaveable(photo.id) { mutableStateOf(false) }
 
     Surface(
         modifier = modifier,
@@ -1538,16 +1565,7 @@ fun FloatingActionToolbar(
             IconButton(
                 onClick = {
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    isBookmarked = !isBookmarked
-                    onShowSnackbar(
-                        if (isBookmarked) {
-                            context.getString(
-                                R.string.details_bookmark_saved,
-                            )
-                        } else {
-                            context.getString(R.string.details_bookmark_removed)
-                        },
-                    )
+                    onToggleFavorite()
                 },
                 modifier =
                     Modifier
@@ -1556,16 +1574,14 @@ fun FloatingActionToolbar(
                         .background(MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.6f)),
             ) {
                 Icon(
-                    imageVector = if (isBookmarked) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
+                    imageVector = if (isFavorite) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
                     contentDescription =
-                        if (isBookmarked) {
-                            stringResource(
-                                R.string.details_bookmark_remove,
-                            )
+                        if (isFavorite) {
+                            stringResource(R.string.details_bookmark_remove)
                         } else {
                             stringResource(R.string.details_bookmark_add)
                         },
-                    tint = if (isBookmarked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                    tint = if (isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.size(20.dp),
                 )
             }
@@ -1907,6 +1923,7 @@ fun PhotoDetailsScreenPreview() {
                     state = sampleState,
                     onRetry = {},
                     onTrackDownload = {},
+                    onToggleFavorite = {},
                     onBack = {},
                     onUserClick = {},
                     onTagClick = {},

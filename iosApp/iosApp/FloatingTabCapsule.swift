@@ -16,6 +16,7 @@ public struct FloatingTabCapsule: View {
         HStack(spacing: 4) {
             tabButton(index: 0, title: "Photos", systemImage: "photo.stack")
             tabButton(index: 1, title: "Collections", systemImage: "square.grid.2x2")
+            tabButton(index: 2, title: "Favorites", systemImage: "bookmark.fill")
         }
         .padding(4)
         .background {
@@ -70,9 +71,10 @@ public struct FloatingTabCapsule: View {
                 Text(title)
                     .font(.subheadline.weight(isSelected ? .bold : .medium))
                     .lineLimit(1)
+                    .minimumScaleFactor(0.8)
             }
             .glassVibrancy(isSelected ? .primary : .secondary)
-            .padding(.horizontal, 16)
+            .padding(.horizontal, 12)
             .padding(.vertical, 10)
             .background {
                 if isSelected {

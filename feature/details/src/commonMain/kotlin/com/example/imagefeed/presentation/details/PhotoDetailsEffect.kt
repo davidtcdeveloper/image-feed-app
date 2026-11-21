@@ -6,6 +6,10 @@ import com.example.imagefeed.presentation.mvi.UiEffect
 sealed interface PhotoDetailsEffect : UiEffect {
     data object DismissScreen : PhotoDetailsEffect
 
+    data class ShowFavoriteToggledSnackbar(
+        val isFavorite: Boolean,
+    ) : PhotoDetailsEffect
+
     data class ShowErrorSnackbar(
         val error: AppError,
     ) : PhotoDetailsEffect

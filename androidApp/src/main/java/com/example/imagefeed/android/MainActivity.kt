@@ -58,6 +58,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation3.runtime.NavKey
@@ -70,6 +71,7 @@ import com.example.imagefeed.android.navigation.AppRoute
 import com.example.imagefeed.android.navigation.Navigator
 import com.example.imagefeed.android.navigation.TOP_LEVEL_DESTINATIONS
 import com.example.imagefeed.android.navigation.collectionsSection
+import com.example.imagefeed.android.navigation.favoritesSection
 import com.example.imagefeed.android.navigation.feedSection
 import com.example.imagefeed.android.navigation.photoDetailsSection
 import com.example.imagefeed.android.navigation.rememberAppNavigationState
@@ -167,7 +169,7 @@ class MainActivity : ComponentActivity() {
                                                 Modifier
                                                     .fillMaxWidth()
                                                     .navigationBarsPadding()
-                                                    .padding(bottom = 12.dp, start = 24.dp, end = 24.dp),
+                                                    .padding(bottom = 12.dp, start = 16.dp, end = 16.dp),
                                             contentAlignment = Alignment.Center,
                                         ) {
                                             Surface(
@@ -215,7 +217,13 @@ class MainActivity : ComponentActivity() {
                                                                     contentDescription = null,
                                                                 )
                                                             },
-                                                            label = { Text(stringResource(destination.labelRes)) },
+                                                            label = {
+                                                                Text(
+                                                                    text = stringResource(destination.labelRes),
+                                                                    maxLines = 1,
+                                                                    overflow = TextOverflow.Ellipsis,
+                                                                )
+                                                            },
                                                             colors =
                                                                 NavigationBarItemDefaults.colors(
                                                                     indicatorColor = MaterialTheme.colorScheme.secondaryContainer,
@@ -245,6 +253,10 @@ class MainActivity : ComponentActivity() {
                                                         onRandomClick = { handleShake() },
                                                     )
                                                     collectionsSection(
+                                                        sharedTransitionScope = sharedTransitionScope,
+                                                        navigator = navigator,
+                                                    )
+                                                    favoritesSection(
                                                         sharedTransitionScope = sharedTransitionScope,
                                                         navigator = navigator,
                                                     )

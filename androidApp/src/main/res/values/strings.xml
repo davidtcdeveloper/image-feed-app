@@ -4,6 +4,7 @@
     <string name="app_name">Image Feed</string>
     <string name="nav_tab_photos">Photos</string>
     <string name="nav_tab_collections">Collections</string>
+    <string name="nav_tab_favorites">Favorites</string>
     <string name="nav_tab_search">Search</string>
     <string name="nav_back">Back</string>
     <string name="nav_search_accessibility">Search</string>
@@ -19,6 +20,11 @@
     <string name="feed_error_title">Error Loading Feed</string>
     <string name="feed_error_unknown">Unknown error</string>
     <string name="feed_action_retry">Retry</string>
+
+    <!-- Favorites Screen -->
+    <string name="favorites_title">Favorites</string>
+    <string name="favorites_empty_title">No saved photos yet</string>
+    <string name="favorites_empty_subtitle">Tap the bookmark button on any photo to save it locally on this device.</string>
 
     <!-- Curated Collections Feed -->
     <string name="collections_title">CURATED COLLECTIONS</string>

@@ -17,10 +17,11 @@ This document summarizes the active memory, image-decoding, scrolling, and relea
 
 ---
 
-## 2. Network & DI Hygiene
+## 2. Network, Storage & DI Hygiene
 
 * **Zero Pretty-Printing / Body Buffering**: [`HttpClientFactory.kt`](../core/network/src/commonMain/kotlin/com/example/imagefeed/core/network/HttpClientFactory.kt) shares a single `unsplashJson` (`prettyPrint = false`) and sets Ktor `LogLevel.NONE`.
-* **Scoped Repository Singletons**: Feature repositories and core `HttpClient` / `PhotoDownloadTracker` are `@SingleIn(AppScope::class)` in [`Metro.kt`](../shared/src/commonMain/kotlin/com/example/imagefeed/di/Metro.kt) to avoid duplicate client/repository allocations across screen pushes.
+* **Off-Main-Thread Local Storage Serialization**: [`RoomFavoritesRepository.kt`](../core/database/src/commonMain/kotlin/com/example/imagefeed/core/database/RoomFavoritesRepository.kt) moves `Photo` JSON encoding/decoding off the main thread onto `Dispatchers.Default` (`flowOn` / `withContext`) and deduplicates `observeIsFavorite` emissions via `.distinctUntilChanged()`.
+* **Scoped Repository Singletons**: Feature repositories, `FavoritesRepository`, and core `HttpClient` / `PhotoDownloadTracker` are `@SingleIn(AppScope::class)` in [`Metro.kt`](../shared/src/commonMain/kotlin/com/example/imagefeed/di/Metro.kt) to avoid duplicate client/repository allocations across screen pushes.
 
 ---
 
@@ -40,7 +41,8 @@ This document summarizes the active memory, image-decoding, scrolling, and relea
 
 ---
 
-## 4. Android Release & Startup Tooling
+## 4. Android Release, Startup & Apple Linking Tooling
 
-* **R8 Shrinking & Obfuscation**: [`androidApp/build.gradle.kts`](../androidApp/build.gradle.kts) enables `isMinifyEnabled = true` on release and benchmark builds.
+* **R8 Shrinking & Obfuscation**: [`androidApp/build.gradle.kts`](../androidApp/build.gradle.kts) enables `isMinifyEnabled = true` on release and benchmark builds, paired with Room KMP / `RoomDatabaseConstructor` keep rules in [`proguard-rules.pro`](../androidApp/proguard-rules.pro).
+* **Apple Dead-Code Stripping**: [`iosApp/project.yml`](../iosApp/project.yml) enables `DEAD_CODE_STRIPPING: YES` on `macosApp` so unreachable `sqlite-framework` cinterop stubs from `:core:database` strip cleanly during Debug linking.
 * **Macrobenchmark & Baseline Profiles**: The [`:benchmark`](../benchmark/build.gradle.kts) module generates [`baseline-prof.txt`](../androidApp/src/release/generated/baselineProfiles/baseline-prof.txt) and [`startup-prof.txt`](../androidApp/src/release/generated/baselineProfiles/startup-prof.txt) wired via `androidx.profileinstaller` to pre-compile hot Compose startup and scroll paths.

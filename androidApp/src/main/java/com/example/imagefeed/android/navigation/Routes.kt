@@ -3,6 +3,7 @@ package com.example.imagefeed.android.navigation
 import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -20,6 +21,9 @@ sealed interface AppRoute :
 
     @Serializable
     data object Collections : AppRoute
+
+    @Serializable
+    data object Favorites : AppRoute
 
     @Serializable
     data class CollectionDetails(
@@ -52,5 +56,6 @@ val TOP_LEVEL_DESTINATIONS =
     listOf(
         TopLevelDestination(AppRoute.Feed, Icons.Default.Home, R.string.nav_tab_photos),
         TopLevelDestination(AppRoute.Collections, Icons.AutoMirrored.Filled.List, R.string.nav_tab_collections),
+        TopLevelDestination(AppRoute.Favorites, Icons.Default.Bookmark, R.string.nav_tab_favorites),
         TopLevelDestination(AppRoute.Search(), Icons.Default.Search, R.string.nav_tab_search),
     )

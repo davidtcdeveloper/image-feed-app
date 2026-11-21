@@ -9,6 +9,7 @@ import coil3.memory.MemoryCache
 import coil3.request.allowRgb565
 import coil3.request.crossfade
 import com.example.imagefeed.android.util.BlurHashDecoder
+import com.example.imagefeed.di.SharedAndroidInitializer
 
 /**
  * Application entry point for the Android client.
@@ -21,6 +22,11 @@ import com.example.imagefeed.android.util.BlurHashDecoder
 class ImageFeedApplication :
     Application(),
     SingletonImageLoader.Factory {
+    override fun onCreate() {
+        super.onCreate()
+        SharedAndroidInitializer.init(this)
+    }
+
     override fun newImageLoader(context: PlatformContext): ImageLoader =
         ImageLoader
             .Builder(context)

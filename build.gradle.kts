@@ -17,6 +17,8 @@ plugins {
     alias(libs.plugins.metro) apply false
     alias(libs.plugins.ktlint) apply false
     alias(libs.plugins.detekt) apply false
+    alias(libs.plugins.ksp) apply false
+    alias(libs.plugins.androidx.room) apply false
 }
 
 subprojects {
@@ -30,12 +32,18 @@ subprojects {
         filter {
             exclude("**/build/**")
             exclude("**/BuildKonfig.kt")
+            exclude { element ->
+                element.file.path.contains("generated")
+            }
         }
     }
 
     tasks.withType<org.jlleitschuh.gradle.ktlint.tasks.BaseKtLintCheckTask>().configureEach {
         exclude("**/build/**")
         exclude("**/BuildKonfig.kt")
+        exclude { element ->
+            element.file.path.contains("generated")
+        }
     }
 
     tasks.withType<io.gitlab.arturbosch.detekt.Detekt>(io.gitlab.arturbosch.detekt.Detekt::class.java).configureEach {

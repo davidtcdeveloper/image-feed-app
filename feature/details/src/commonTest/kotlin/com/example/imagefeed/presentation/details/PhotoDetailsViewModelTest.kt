@@ -1,10 +1,12 @@
 package com.example.imagefeed.presentation.details
 
+import com.example.imagefeed.core.database.FavoritesRepository
 import com.example.imagefeed.core.network.PhotoDownloadTracker
 import com.example.imagefeed.details.data.PhotoDetailsRepository
 import com.example.imagefeed.details.model.HistoricalStats
 import com.example.imagefeed.details.model.PhotoStats
 import com.example.imagefeed.details.model.StatMetric
+import com.example.imagefeed.model.AppError
 import com.example.imagefeed.model.Photo
 import com.example.imagefeed.model.PhotoLinks
 import com.example.imagefeed.model.PhotoUrls
@@ -13,7 +15,12 @@ import com.example.imagefeed.model.User
 import com.example.imagefeed.model.UserLinks
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -23,6 +30,7 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -58,12 +66,14 @@ class PhotoDetailsViewModelTest {
                     photoStats = testStats,
                 )
             val downloadTracker = FakePhotoDownloadTracker()
+            val favoritesRepository = FakeFavoritesRepository()
 
             val viewModel =
                 PhotoDetailsViewModel(
                     photoId = "p-detail-1",
                     repository = repository,
                     downloadTracker = downloadTracker,
+                    favoritesRepository = favoritesRepository,
                 )
 
             advanceUntilIdle()
@@ -73,8 +83,185 @@ class PhotoDetailsViewModelTest {
             assertEquals("p-detail-1", state.photo.id)
             assertNotNull(state.stats)
             assertEquals(42, state.stats.downloads.total)
+            assertFalse(state.isFavorite)
             assertEquals(false, state.isLoading)
             assertNull(state.error)
+            viewModel.clear()
+        }
+
+    @Test
+    fun loadsInitialFavoriteStateWhenPhotoAlreadySaved() =
+        runTest(testDispatcher) {
+            val testPhoto = photo("p-saved-1")
+            val testStats = PhotoStats("p-saved-1", StatMetric(1, HistoricalStats()), StatMetric(2, HistoricalStats()))
+            val repository = FakePhotoDetailsRepository(testPhoto, testStats)
+            val downloadTracker = FakePhotoDownloadTracker()
+            val favoritesRepository = FakeFavoritesRepository(initialPhotos = listOf(testPhoto))
+
+            val viewModel =
+                PhotoDetailsViewModel(
+                    photoId = "p-saved-1",
+                    repository = repository,
+                    downloadTracker = downloadTracker,
+                    favoritesRepository = favoritesRepository,
+                )
+
+            advanceUntilIdle()
+
+            assertTrue(viewModel.state.value.isFavorite)
+            viewModel.clear()
+        }
+
+    @Test
+    fun observesExternalFavoriteChangesReactively() =
+        runTest(testDispatcher) {
+            val testPhoto = photo("p-external-1")
+            val testStats = PhotoStats("p-external-1", StatMetric(1, HistoricalStats()), StatMetric(2, HistoricalStats()))
+            val repository = FakePhotoDetailsRepository(testPhoto, testStats)
+            val downloadTracker = FakePhotoDownloadTracker()
+            val favoritesRepository = FakeFavoritesRepository()
+
+            val viewModel = PhotoDetailsViewModel("p-external-1", repository, downloadTracker, favoritesRepository)
+            advanceUntilIdle()
+            assertFalse(viewModel.state.value.isFavorite)
+
+            favoritesRepository.toggleFavorite(testPhoto)
+            advanceUntilIdle()
+            assertTrue(viewModel.state.value.isFavorite)
+
+            favoritesRepository.removeFavorite(testPhoto.id)
+            advanceUntilIdle()
+            assertFalse(viewModel.state.value.isFavorite)
+
+            viewModel.clear()
+        }
+
+    @Test
+    fun loadsLocalFavoriteFallbackWhenNetworkFails() =
+        runTest(testDispatcher) {
+            val savedPhoto = photo("p-offline-1")
+            val repository = FakePhotoDetailsRepository(photoDetails = null, photoStats = null, shouldFail = true)
+            val downloadTracker = FakePhotoDownloadTracker()
+            val favoritesRepository = FakeFavoritesRepository(initialPhotos = listOf(savedPhoto))
+
+            val viewModel = PhotoDetailsViewModel("p-offline-1", repository, downloadTracker, favoritesRepository)
+            advanceUntilIdle()
+
+            val state = viewModel.state.value
+            assertEquals(savedPhoto, state.photo)
+            assertTrue(state.isFavorite)
+            assertFalse(state.isLoading)
+            assertEquals(AppError.Network, state.error)
+
+            viewModel.clear()
+        }
+
+    @Test
+    fun toggleFavoritePersistsAndEmitsSnackbarEffects() =
+        runTest(testDispatcher) {
+            val testPhoto = photo("p-fav-toggle")
+            val testStats = PhotoStats("p-fav-toggle", StatMetric(1, HistoricalStats()), StatMetric(2, HistoricalStats()))
+            val repository = FakePhotoDetailsRepository(testPhoto, testStats)
+            val downloadTracker = FakePhotoDownloadTracker()
+            val favoritesRepository = FakeFavoritesRepository()
+
+            val viewModel =
+                PhotoDetailsViewModel(
+                    photoId = "p-fav-toggle",
+                    repository = repository,
+                    downloadTracker = downloadTracker,
+                    favoritesRepository = favoritesRepository,
+                )
+
+            advanceUntilIdle()
+            assertFalse(viewModel.state.value.isFavorite)
+
+            viewModel.dispatch(PhotoDetailsIntent.ToggleFavorite())
+            advanceUntilIdle()
+
+            assertTrue(viewModel.state.value.isFavorite)
+            assertTrue(favoritesRepository.isFavorite(testPhoto.id))
+            val savedEffect = viewModel.effects.first()
+            assertEquals(PhotoDetailsEffect.ShowFavoriteToggledSnackbar(isFavorite = true), savedEffect)
+
+            viewModel.dispatch(PhotoDetailsIntent.ToggleFavorite())
+            advanceUntilIdle()
+
+            assertFalse(viewModel.state.value.isFavorite)
+            assertFalse(favoritesRepository.isFavorite(testPhoto.id))
+            val removedEffect = viewModel.effects.first()
+            assertEquals(PhotoDetailsEffect.ShowFavoriteToggledSnackbar(isFavorite = false), removedEffect)
+            viewModel.clear()
+        }
+
+    @Test
+    fun toggleFavoriteWithFallbackPhotoWorksBeforeNetworkCompletes() =
+        runTest(testDispatcher) {
+            val testPhoto = photo("p-inflight-1")
+            val testStats = PhotoStats("p-inflight-1", StatMetric(1, HistoricalStats()), StatMetric(2, HistoricalStats()))
+            val repository = FakePhotoDetailsRepository(testPhoto, testStats).apply { delayMs = 500L }
+            val downloadTracker = FakePhotoDownloadTracker()
+            val favoritesRepository = FakeFavoritesRepository()
+
+            val viewModel = PhotoDetailsViewModel("p-inflight-1", repository, downloadTracker, favoritesRepository)
+            testScheduler.advanceTimeBy(100L)
+            assertNull(viewModel.state.value.photo)
+
+            viewModel.dispatch(PhotoDetailsIntent.ToggleFavorite(fallbackPhoto = testPhoto))
+            testScheduler.advanceTimeBy(50L)
+
+            assertTrue(viewModel.state.value.isFavorite)
+            assertTrue(favoritesRepository.isFavorite(testPhoto.id))
+            assertEquals(PhotoDetailsEffect.ShowFavoriteToggledSnackbar(isFavorite = true), viewModel.effects.first())
+            advanceUntilIdle()
+            viewModel.clear()
+        }
+
+    @Test
+    fun toggleFavoriteRemovesAlreadySavedPhotoWhenPhotoIsNull() =
+        runTest(testDispatcher) {
+            val savedPhoto = photo("p-remove-null-1")
+            val testStats = PhotoStats("p-remove-null-1", StatMetric(1, HistoricalStats()), StatMetric(2, HistoricalStats()))
+            val repository = FakePhotoDetailsRepository(savedPhoto, testStats).apply { delayMs = 500L }
+            val downloadTracker = FakePhotoDownloadTracker()
+            val favoritesRepository =
+                FakeFavoritesRepository(initialPhotos = listOf(savedPhoto)).apply {
+                    returnNullOnLookup = true
+                }
+
+            val viewModel = PhotoDetailsViewModel("p-remove-null-1", repository, downloadTracker, favoritesRepository)
+            testScheduler.advanceTimeBy(100L)
+            assertNull(viewModel.state.value.photo)
+            assertTrue(viewModel.state.value.isFavorite)
+
+            viewModel.dispatch(PhotoDetailsIntent.ToggleFavorite())
+            testScheduler.advanceTimeBy(50L)
+
+            assertFalse(viewModel.state.value.isFavorite)
+            assertFalse(favoritesRepository.isFavorite(savedPhoto.id))
+            assertEquals(PhotoDetailsEffect.ShowFavoriteToggledSnackbar(isFavorite = false), viewModel.effects.first())
+            advanceUntilIdle()
+            viewModel.clear()
+        }
+
+    @Test
+    fun toggleFavoriteStorageErrorEmitsErrorSnackbar() =
+        runTest(testDispatcher) {
+            val testPhoto = photo("p-storage-err")
+            val testStats = PhotoStats("p-storage-err", StatMetric(1, HistoricalStats()), StatMetric(2, HistoricalStats()))
+            val repository = FakePhotoDetailsRepository(testPhoto, testStats)
+            val downloadTracker = FakePhotoDownloadTracker()
+            val favoritesRepository = FakeFavoritesRepository().apply { shouldFailWrite = true }
+
+            val viewModel = PhotoDetailsViewModel("p-storage-err", repository, downloadTracker, favoritesRepository)
+            advanceUntilIdle()
+
+            viewModel.dispatch(PhotoDetailsIntent.ToggleFavorite())
+            advanceUntilIdle()
+
+            assertFalse(viewModel.state.value.isFavorite)
+            assertEquals(PhotoDetailsEffect.ShowErrorSnackbar(AppError.Network), viewModel.effects.first())
+            viewModel.clear()
         }
 
     @Test
@@ -89,12 +276,14 @@ class PhotoDetailsViewModelTest {
                 )
             val repository = FakePhotoDetailsRepository(testPhoto, testStats)
             val downloadTracker = FakePhotoDownloadTracker()
+            val favoritesRepository = FakeFavoritesRepository()
 
             val viewModel =
                 PhotoDetailsViewModel(
                     photoId = "p-detail-2",
                     repository = repository,
                     downloadTracker = downloadTracker,
+                    favoritesRepository = favoritesRepository,
                 )
 
             advanceUntilIdle()
@@ -104,6 +293,7 @@ class PhotoDetailsViewModelTest {
 
             assertTrue(downloadTracker.downloadTracked)
             assertEquals("download-location-p-detail-2", downloadTracker.trackedUrl)
+            viewModel.clear()
         }
 
     @Test
@@ -116,12 +306,14 @@ class PhotoDetailsViewModelTest {
                     shouldFail = true,
                 )
             val downloadTracker = FakePhotoDownloadTracker()
+            val favoritesRepository = FakeFavoritesRepository()
 
             val viewModel =
                 PhotoDetailsViewModel(
                     photoId = "p-error-1",
                     repository = repository,
                     downloadTracker = downloadTracker,
+                    favoritesRepository = favoritesRepository,
                 )
 
             advanceUntilIdle()
@@ -129,11 +321,12 @@ class PhotoDetailsViewModelTest {
             val state = viewModel.state.value
             assertEquals(false, state.isLoading)
             assertNull(state.photo)
-            assertEquals(com.example.imagefeed.model.AppError.Network, state.error)
+            assertEquals(AppError.Network, state.error)
 
             val effect = viewModel.effects.first()
             assertTrue(effect is PhotoDetailsEffect.ShowErrorSnackbar)
-            assertEquals(com.example.imagefeed.model.AppError.Network, effect.error)
+            assertEquals(AppError.Network, effect.error)
+            viewModel.clear()
         }
 
     @Test
@@ -154,16 +347,18 @@ class PhotoDetailsViewModelTest {
                     shouldFail = true,
                 )
             val downloadTracker = FakePhotoDownloadTracker()
+            val favoritesRepository = FakeFavoritesRepository()
 
             val viewModel =
                 PhotoDetailsViewModel(
                     photoId = "p-retry-1",
                     repository = repository,
                     downloadTracker = downloadTracker,
+                    favoritesRepository = favoritesRepository,
                 )
 
             advanceUntilIdle()
-            assertEquals(com.example.imagefeed.model.AppError.Network, viewModel.state.value.error)
+            assertEquals(AppError.Network, viewModel.state.value.error)
 
             repository.shouldFail = false
             viewModel.dispatch(PhotoDetailsIntent.Retry)
@@ -173,6 +368,27 @@ class PhotoDetailsViewModelTest {
             assertNotNull(state.photo)
             assertEquals("p-retry-1", state.photo.id)
             assertNull(state.error)
+            viewModel.clear()
+        }
+
+    @Test
+    fun clearCancelsFavoriteObservation() =
+        runTest(testDispatcher) {
+            val testPhoto = photo("p-fav-clear")
+            val testStats = PhotoStats("p-fav-clear", StatMetric(1, HistoricalStats()), StatMetric(1, HistoricalStats()))
+            val repository = FakePhotoDetailsRepository(testPhoto, testStats)
+            val downloadTracker = FakePhotoDownloadTracker()
+            val favoritesRepository = FakeFavoritesRepository()
+
+            val viewModel = PhotoDetailsViewModel("p-fav-clear", repository, downloadTracker, favoritesRepository)
+            advanceUntilIdle()
+            assertFalse(viewModel.state.value.isFavorite)
+
+            viewModel.clear()
+            favoritesRepository.toggleFavorite(testPhoto)
+            advanceUntilIdle()
+
+            assertFalse(viewModel.state.value.isFavorite)
         }
 
     @Test
@@ -181,8 +397,9 @@ class PhotoDetailsViewModelTest {
         val testStats = PhotoStats("p-clear-1", StatMetric(1, HistoricalStats()), StatMetric(1, HistoricalStats()))
         val repository = FakePhotoDetailsRepository(testPhoto, testStats)
         val downloadTracker = FakePhotoDownloadTracker()
+        val favoritesRepository = FakeFavoritesRepository()
 
-        val viewModel = PhotoDetailsViewModel("p-clear-1", repository, downloadTracker)
+        val viewModel = PhotoDetailsViewModel("p-clear-1", repository, downloadTracker, favoritesRepository)
         viewModel.clear()
     }
 
@@ -202,8 +419,9 @@ class PhotoDetailsViewModelTest {
                     photoStats = testStats,
                 ).apply { delayMs = 500L }
             val downloadTracker = FakePhotoDownloadTracker()
+            val favoritesRepository = FakeFavoritesRepository()
 
-            val viewModel = PhotoDetailsViewModel("p-concurrent-1", repository, downloadTracker)
+            val viewModel = PhotoDetailsViewModel("p-concurrent-1", repository, downloadTracker, favoritesRepository)
 
             testScheduler.advanceTimeBy(100L)
             assertTrue(viewModel.state.value.isLoading)
@@ -215,6 +433,7 @@ class PhotoDetailsViewModelTest {
             assertEquals(false, state.isLoading)
             assertNull(state.error)
             assertEquals("p-concurrent-1", state.photo?.id)
+            viewModel.clear()
         }
 
     @Test
@@ -233,8 +452,9 @@ class PhotoDetailsViewModelTest {
                     photoStats = testStats,
                 ).apply { delayMs = 500L }
             val downloadTracker = FakePhotoDownloadTracker()
+            val favoritesRepository = FakeFavoritesRepository()
 
-            val viewModel = PhotoDetailsViewModel("p-clear-2", repository, downloadTracker)
+            val viewModel = PhotoDetailsViewModel("p-clear-2", repository, downloadTracker, favoritesRepository)
             testScheduler.advanceTimeBy(100L)
             assertTrue(viewModel.state.value.isLoading)
 
@@ -255,8 +475,9 @@ class PhotoDetailsViewModelTest {
             val testStats = PhotoStats("p-empty-download", StatMetric(1, HistoricalStats()), StatMetric(1, HistoricalStats()))
             val repository = FakePhotoDetailsRepository(testPhoto, testStats)
             val downloadTracker = FakePhotoDownloadTracker()
+            val favoritesRepository = FakeFavoritesRepository()
 
-            val viewModel = PhotoDetailsViewModel("p-empty-download", repository, downloadTracker)
+            val viewModel = PhotoDetailsViewModel("p-empty-download", repository, downloadTracker, favoritesRepository)
             advanceUntilIdle()
 
             viewModel.dispatch(PhotoDetailsIntent.TrackDownload(testPhoto))
@@ -264,6 +485,23 @@ class PhotoDetailsViewModelTest {
 
             assertTrue(downloadTracker.downloadTracked)
             assertEquals("", downloadTracker.trackedUrl)
+            viewModel.clear()
+        }
+
+    @Test
+    fun observeFavoriteErrorEmitsErrorSnackbar() =
+        runTest(testDispatcher) {
+            val testPhoto = photo("p-obs-err")
+            val testStats = PhotoStats("p-obs-err", StatMetric(1, HistoricalStats()), StatMetric(1, HistoricalStats()))
+            val repository = FakePhotoDetailsRepository(testPhoto, testStats)
+            val downloadTracker = FakePhotoDownloadTracker()
+            val favoritesRepository = FakeFavoritesRepository().apply { shouldFailObserve = true }
+
+            val viewModel = PhotoDetailsViewModel("p-obs-err", repository, downloadTracker, favoritesRepository)
+            advanceUntilIdle()
+
+            assertEquals(PhotoDetailsEffect.ShowErrorSnackbar(AppError.Network), viewModel.effects.first())
+            viewModel.clear()
         }
 
     private fun photo(id: String) =
@@ -310,6 +548,49 @@ class PhotoDetailsViewModelTest {
         override suspend fun trackDownload(downloadLocationUrl: String) {
             downloadTracked = true
             trackedUrl = downloadLocationUrl
+        }
+    }
+
+    private class FakeFavoritesRepository(
+        initialPhotos: List<Photo> = emptyList(),
+    ) : FavoritesRepository {
+        private val savedPhotos = MutableStateFlow(initialPhotos)
+        var shouldFailWrite = false
+        var shouldFailObserve = false
+        var returnNullOnLookup = false
+
+        override fun observeIsFavorite(photoId: String): Flow<Boolean> =
+            if (shouldFailObserve) {
+                flow { throw IllegalStateException("Storage observe error") }
+            } else {
+                savedPhotos.map { list -> list.any { photo -> photo.id == photoId } }
+            }
+
+        override fun observeFavoritePhotos(): Flow<List<Photo>> = savedPhotos
+
+        override suspend fun getFavoriteById(photoId: String): Photo? =
+            if (returnNullOnLookup) {
+                null
+            } else {
+                savedPhotos.value.firstOrNull { photo -> photo.id == photoId }
+            }
+
+        override suspend fun isFavorite(photoId: String): Boolean = savedPhotos.value.any { photo -> photo.id == photoId }
+
+        override suspend fun toggleFavorite(photo: Photo): Boolean {
+            if (shouldFailWrite) throw IllegalStateException("Storage write error")
+            val exists = isFavorite(photo.id)
+            if (exists) {
+                savedPhotos.update { list -> list.filterNot { item -> item.id == photo.id } }
+            } else {
+                savedPhotos.update { list -> listOf(photo) + list.filterNot { item -> item.id == photo.id } }
+            }
+            return !exists
+        }
+
+        override suspend fun removeFavorite(photoId: String) {
+            if (shouldFailWrite) throw IllegalStateException("Storage write error")
+            savedPhotos.update { list -> list.filterNot { item -> item.id == photoId } }
         }
     }
 }

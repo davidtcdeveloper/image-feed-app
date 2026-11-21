@@ -60,3 +60,11 @@
 -dontwarn io.ktor.**
 -dontwarn okio.**
 -keep class coil3.** { *; }
+
+# --- Room KMP ---
+-keep class * extends androidx.room.RoomDatabase {
+    <init>();
+}
+-keep class * implements androidx.room.RoomDatabaseConstructor { *; }
+-keep @androidx.room.Entity class * { *; }
+-keep class com.example.imagefeed.core.database.FavoritesDatabase* { *; }

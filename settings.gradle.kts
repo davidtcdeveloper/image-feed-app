@@ -15,10 +15,12 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "image-feed-app"
+include(":core:database")
 include(":core:model")
 include(":core:mvi")
 include(":core:network")
 include(":feature:details")
+include(":feature:favorites")
 include(":feature:feed")
 include(":feature:search")
 include(":feature:collections")

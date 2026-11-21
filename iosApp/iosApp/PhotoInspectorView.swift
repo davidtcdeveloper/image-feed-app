@@ -80,24 +80,46 @@ struct PhotoInspectorView: View {
                     }
                 }
 
-                // Action Download button
-                Button(action: {
-                    onDownload?()
-                    viewModel.trackDownload()
-                    if let url = URL(string: photo.urls.full) {
-                        URLHelper.open(url)
-                    }
-                }) {
-                    HStack {
-                        Spacer()
-                        Image(systemName: "arrow.down.doc.fill")
-                        Text("Download High Resolution")
-                            .font(.subheadline.weight(.bold))
-                        Spacer()
-                    }
-                    .glassVibrancy(.primary)
-                    .padding(.vertical, 14)
-                    .glassBackground(style: .thin, shape: RoundedRectangle(cornerRadius: 12), showBorder: true)
+                // Action Download & Bookmark buttons
+                HStack(spacing: 12) {
+                    Button(
+                        action: {
+                            onDownload?()
+                            viewModel.trackDownload()
+                            if let url = URL(string: photo.urls.full) {
+                                URLHelper.open(url)
+                            }
+                        },
+                        label: {
+                            HStack(spacing: 8) {
+                                Spacer()
+                                Image(systemName: "arrow.down.doc.fill")
+                                Text("Download High Resolution")
+                                    .font(.subheadline.weight(.bold))
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.85)
+                                Spacer()
+                            }
+                            .glassVibrancy(.primary)
+                            .padding(.vertical, 14)
+                            .padding(.horizontal, 12)
+                            .glassBackground(style: .thin, shape: RoundedRectangle(cornerRadius: 12), showBorder: true)
+                        })
+                        .buttonStyle(.plain)
+
+                    Button(
+                        action: {
+                            viewModel.toggleFavorite(fallbackPhoto: photo)
+                        },
+                        label: {
+                            Image(systemName: viewModel.isFavorite ? "bookmark.fill" : "bookmark")
+                                .font(.title3.weight(.semibold))
+                                .foregroundStyle(viewModel.isFavorite ? Color.accentColor : Color.primary)
+                                .frame(width: 50, height: 48)
+                                .glassBackground(style: .thin, shape: RoundedRectangle(cornerRadius: 12), showBorder: true)
+                        })
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(Text(viewModel.isFavorite ? "Remove Bookmark" : "Bookmark"))
                 }
 
                 // EXIF Glassmorphic Card

@@ -40,6 +40,18 @@ This file captures systemic issues, documentation drift, skill gaps, build/tooli
 - **Symptom & Evidence**: [`shared/src/commonMain/kotlin/com/example/imagefeed/model/PhotoStats.kt`](../shared/src/commonMain/kotlin/com/example/imagefeed/model/PhotoStats.kt) and [`shared/src/commonMain/kotlin/com/example/imagefeed/model/UserStats.kt`](../shared/src/commonMain/kotlin/com/example/imagefeed/model/UserStats.kt) remain as backward-compatibility `typealias` shims pointing to `:feature:details` and `:feature:profile`. Only [`UserProfileScreen.kt`](../androidApp/src/main/java/com/example/imagefeed/android/UserProfileScreen.kt#L118) still imports `com.example.imagefeed.model.UserStats`; `PhotoStats` has no remaining Kotlin usages outside Swift interop checks. Evaluate migrating callers to the feature packages and retiring the shims cleanly.
 - **Suggested Layer**: `specs/` (or scoped cleanup task)
 
+### [OPEN] ISS-004: Worktree Builds Fail Without Exported `ANDROID_HOME` or Local SDK Config
+- **Date / Context**: 2026-11-21 (Spec 76 — Local Favorites Persistence & Favorites Screen)
+- **Category**: `tooling-friction`
+- **Symptom & Evidence**: Git worktrees omit git-ignored `local.properties`, causing `./gradlew` and `xcodebuild` pre-build script invocations (`:shared:embedAndSignAppleFrameworkForXcode` in [`iosApp/project.yml`](../iosApp/project.yml)) to fail with `SDK location not found` unless `ANDROID_HOME` is exported in the build command environment. Documenting the `ANDROID_HOME` fallback alongside `local.properties` notes would avoid repeated failures in fresh worktrees.
+- **Suggested Layer**: `.agents/skills/`
+
+### [OPEN] ISS-005: Pre-Existing Swift 6 Actor-Isolation & Localization Deprecation Warnings
+- **Date / Context**: 2026-11-21 (Spec 76 — Local Favorites Persistence & Favorites Screen)
+- **Category**: `code-inconsistency`
+- **Symptom & Evidence**: Building `iosApp` and `macosApp` emits pre-existing compiler warnings in untouched Apple views: [`KFImage.swift`](../iosApp/iosApp/KFImage.swift#L193) (`Placeholder` `#IsolatedConformances` and main-actor static `downsample(data:maxPixelSize:)` call) and [`UserProfileView.swift`](../iosApp/iosApp/UserProfileView.swift#L385) (`appendInterpolation` deprecation warning). Addressing these will restore strict zero-warning Swift builds across all targets.
+- **Suggested Layer**: `specs/` (or scoped Swift cleanup task)
+
 ---
 
 ## Dismissed Issues
