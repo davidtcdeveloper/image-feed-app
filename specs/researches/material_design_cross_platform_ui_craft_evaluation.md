@@ -1,6 +1,6 @@
 # Cross-Platform Material Craft Evaluation & Architecture Review
 
-* **Status:** Proposed (Exploratory Research & Architecture Review)
+* **Status:** Accepted (Exploratory Research & Architecture Review)
 * **Date:** 2026-11-22
 * **Reference Source:** TJ Dahunsi, *"Material is the metaphor: Pushing the limits of building with Material design cross platform with Jetpack Compose"* (Oct 14, 2026) — [tunjid.com article](https://www.tunjid.com/articles/material-is-the-metaphor-pushing-the-limits-of-building-with-material-design-cross-platform-with-jetpack-compose-6acf75b3c23999c5f99f8d5b)
 * **Target Platforms:** Android (`minSdk 29`, `compileSdk 37`, Compose BOM `2026.09.00+`), iOS (`17.0+` with progressive `18+` / `26+` enhancements), macOS (`14.0+` with progressive `15+` / `26+` Tahoe enhancements)
