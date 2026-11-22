@@ -354,12 +354,12 @@ struct ProfileTabPicker: View {
         .glassBackground(material: .ultraThinMaterial, shape: Rectangle(), showBorder: false)
     }
 
-    private func tabTitle(for tab: ProfileTab) -> LocalizedStringKey {
+    private func tabTitle(for tab: ProfileTab) -> String {
         switch tab {
-        case .portfolio: "Photos"
-        case .likes: "Likes"
-        case .collections: "Collections"
-        case .insights: "Insights"
+        case .portfolio: String(localized: "Photos")
+        case .likes: String(localized: "Likes")
+        case .collections: String(localized: "Collections")
+        case .insights: String(localized: "Insights")
         default: ""
         }
     }
@@ -382,7 +382,7 @@ struct ProfileTabPicker: View {
     private func tabAccessibilityLabel(for tab: ProfileTab) -> Text {
         let title = tabTitle(for: tab)
         if let count = tabCount(for: tab) {
-            return Text("\(title), \(count) items")
+            return Text("\(title), \(count.formatted()) items")
         }
         return Text(title)
     }

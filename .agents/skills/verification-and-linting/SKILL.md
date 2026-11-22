@@ -30,6 +30,9 @@ Build, test, and code-analysis commands interact directly with external system S
 ### Policy
 In sandboxed agent environments, these commands require host execution permissions (unsandboxed / elevated host execution mode). Standard file reading, file editing, and basic git operations run in standard workspace mode.
 
+### Worktree & Local SDK Configuration
+Git worktrees omit git-ignored `local.properties` (which holds `sdk.dir`, `unsplash.api.key`, and `google.maps.api.key`). Without `sdk.dir`, both `./gradlew` and `xcodebuild` (whose pre-build script invokes `:shared:embedAndSignAppleFrameworkForXcode` per [`iosApp/project.yml`](../../../iosApp/project.yml)) fail with `SDK location not found` unless `ANDROID_HOME` is exported in the command environment (for example, `ANDROID_HOME="$HOME/Library/Android/sdk"` on macOS) or `sdk.dir` is configured in `local.properties`.
+
 ---
 
 ## 2. Core Verification Commands
@@ -37,10 +40,11 @@ In sandboxed agent environments, these commands require host execution permissio
 Execute the following commands to verify builds and tests across target platforms:
 
 ### A. Shared Integration & Unit Tests
-Run the shared test suite in `shared/src/commonTest`:
+Run the shared test suites across all multiplatform modules (`:core:*`, `:feature:*`, and `:shared`):
 ```bash
-./gradlew :shared:allTests
+./gradlew allTests
 ```
+For fast targeted checks, run a module-scoped task (for example, `./gradlew :feature:<name>:allTests` or `./gradlew :shared:macosArm64Test`).
 
 ### B. Android Debug Application Build
 Verify compilation and packaging for the Android target:
@@ -106,7 +110,7 @@ Run the project linters and formatters to maintain a zero-violation baseline. Ne
 ## 4. Verification Policies & Hygiene Rules
 
 ### Platform Build Policy
-Whenever changes affect `shared/` or `iosApp/`, verify **BOTH** the Android build (`:androidApp:assembleDebug`) and the iOS build via `xcodebuild` (iOS Simulator). Never assume a shared change works in Swift simply because the Kotlin compiler passed.
+Whenever changes affect `:core:*`, `:feature:*`, `shared/`, or `iosApp/`, verify **BOTH** the Android build (`:androidApp:assembleDebug`) and the iOS build via `xcodebuild` (iOS Simulator). Never assume a shared change works in Swift simply because the Kotlin compiler passed.
 
 **Apple-specific changes** must additionally pass the macOS build (§2E). These are changes to:
 - `iosApp/**` (Swift sources, `Localizable.xcstrings`, asset catalogs, `project.yml`, `project.pbxproj`);
@@ -135,7 +139,7 @@ Before staging and committing changes:
 5. **Scoped Staging**: Stage only the files targeted by the user's prompt (e.g., `git add <files>`), preserving the required commit message template.
 
 ### Cross-Language Reference Auditing
-Before removing or refactoring any declaration in `shared/commonMain`, search both Kotlin files (`androidApp/`, `shared/`) and Swift files (`iosApp/`). Keep in mind Swift interop name transformations (e.g., Kotlin `description` maps to Swift `description_`, and callback signatures can vary). Code that is invoked exclusively from Swift and has no Kotlin call sites must be annotated with:
+Before removing or refactoring any declaration in shared KMP modules (`:core:*`, `:feature:*`, `:shared`), search both Kotlin files (`androidApp/`, `core/`, `feature/`, `shared/`) and Swift files (`iosApp/`). Keep in mind Swift interop name transformations (e.g., Kotlin `description` maps to Swift `description_`, and callback signatures can vary). Code that is invoked exclusively from Swift and has no Kotlin call sites must be annotated with:
 ```kotlin
 @Suppress("unused") // Invoked on Swift code
 ```

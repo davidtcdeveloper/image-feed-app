@@ -13,7 +13,7 @@ description: >-
 
 This skill defines the architectural boundaries, design patterns, dependency injection standards, and coroutine lifecycle rules for this repository.
 Use this skill when:
-- Designing or modifying shared business logic, data models, or repositories in `shared/commonMain`.
+- Designing or modifying shared business logic, data models, or repositories in shared KMP modules (`:core:*`, `:feature:*`, `:shared`).
 - Creating or refactoring shared MVI ViewModels, state, intents, effects, or state flows.
 - Configuring compile-time dependency injection with Metro (`dev.zacsweers.metro`).
 - Managing coroutine scopes, structured concurrency, or ViewModel teardown.
@@ -33,7 +33,7 @@ All core logic MUST reside in shared Kotlin code organized as **Vertical Feature
 - Platform modules (`androidApp`, `iosApp`, `macosApp`) MUST remain thin, declarative view shells (Jetpack Compose and SwiftUI). Do not duplicate data parsing or pagination offsets in platform code.
 
 ### B. Cross-Language Reference Auditing & Swift Interop
-Before refactoring or removing declarations in `shared/commonMain`, search both Kotlin files (`androidApp/`, `shared/`) and Swift files (`iosApp/`).
+Before refactoring or removing declarations in shared KMP modules (`:core:*`, `:feature:*`, `:shared`), search both Kotlin files (`androidApp/`, `core/`, `feature/`, `shared/`) and Swift files (`iosApp/`).
 Keep Swift interop name transformations in mind:
 - Kotlin `description` property maps to Swift `description_` to avoid collision with Swift's `CustomStringConvertible`.
 - Kotlin closures and coroutines map to Swift completion handlers or async signatures.

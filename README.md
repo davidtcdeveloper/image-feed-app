@@ -139,84 +139,40 @@ flowchart TD
 
 ## 🏗️ Technical Architecture
 
-The codebase follows the **Shared MVI / Unidirectional Data Flow (UDF) Pattern**, maximizing cross-platform code reuse while retaining completely native rendering and scrolling performance.
+The codebase follows the **Shared MVI / Unidirectional Data Flow (UDF) Pattern**, maximizing cross-platform code reuse while retaining completely native rendering and scrolling performance. For canonical module topology, DI graph, and lifecycle contracts, see [Architecture & Modules](wiki/architecture-and-modules.md).
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                             App View Shells                                 │
-│                                                                             │
-│   ┌───────────────────────────────┐         ┌───────────────────────────┐   │
-│   │   androidApp (Jetpack Compose)│         │     iosApp (SwiftUI)      │   │
-│   │   - Material 3 Design Tokens  │         │   - Glassmorphic Design   │   │
-│   │   - Jetpack Navigation 3      │         │   - NavigationStack       │   │
-│   │   - Adaptive Rail & Dual-Pane │         │   - Detented Sheets       │   │
-│   │   - Google Maps Integration   │         │   - iOS & macOS Targets   │   │
-│   └───────────────┬───────────────┘         └─────────────┬─────────────┘   │
-└───────────────────┼───────────────────────────────────────┼─────────────────┘
-                    │ (Collects StateFlow)                  │ (Observes CommonFlow)
-                    ▼                                       ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                    shared Module (Kotlin Multiplatform)                     │
-│                                                                             │
-│   ┌─────────────────────────────────────────────────────────────────────┐   │
-│   │                  Shared MVI ViewModels (UDF Pattern)                │   │
-│   │  (FeedViewModel, UnifiedSearchViewModel, PhotoDetailsViewModel,     │   │
-│   │   CollectionDetailViewModel, CollectionsFeedViewModel,              │   │
-│   │   RandomPhotoViewModel, UserProfileViewModel)                       │   │
-│   │   * MviViewModel (UiState, UiIntent, UiEffect) & viewModelScope     │   │
-│   └──────────────────────────────────┬──────────────────────────────────┘   │
-│                                      ▼                                      │
-│   ┌─────────────────────────────────────────────────────────────────────┐   │
-│   │               Metro Compile-Time Dependency Injection               │   │
-│   │         (@DependencyGraph, @Inject, @AssistedFactory)               │   │
-│   └──────────────────────────────────┬──────────────────────────────────┘   │
-│                                      ▼                                      │
-│   ┌─────────────────────────────────────────────────────────────────────┐   │
-│   │                         UnsplashRepository                          │   │
-│   └──────────────────────────────────┬──────────────────────────────────┘   │
-│                                      ▼                                      │
-│   ┌─────────────────────────────────────────────────────────────────────┐   │
-│   │                         UnsplashApiClient                           │   │
-│   │          (Ktor 3.6 HTTP Engine, ContentNegotiation, Json)           │   │
-│   └──────────────────────────────────┬──────────────────────────────────┘   │
-│                                      ▼                                      │
-│   ┌─────────────────────────────────────────────────────────────────────┐   │
-│   │              BuildKonfig (Compile-Time Config Injection)            │   │
-│   └─────────────────────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
-
-* **`shared` (`commonMain`, `appleMain`, `androidMain`)**:
-  * **Compile-Time DI**: Fast, reflection-free dependency injection with **Metro** (`dev.zacsweers.metro`).
-  * **Shared MVI / UDF Architecture**: Presentation logic is standardized on `MviViewModel`, `UiState`, `UiIntent`, and `UiEffect` scoped to `viewModelScope`, providing structured concurrency, predictable state transitions, and deterministic teardown.
-  * **Networking**: High-performance HTTP client using Ktor 3.6 with Darwin engine for Apple targets and OkHttp engine for Android.
+* **Foundational Core (`:core:model`, `:core:mvi`, `:core:network`, `:core:database`)**: Shared `@Serializable` domain entities, `MviViewModel`/`UiState`/`UiIntent`/`UiEffect` contracts, Ktor 3.6 networking (`Darwin` / `OkHttp`), `BuildKonfig` credential injection, and Room KMP + `sqlite-bundled` local persistence (`FavoritesRepository`).
+* **Vertical Feature Modules (`:feature:feed`, `:feature:details`, `:feature:favorites`, `:feature:search`, `:feature:collections`, `:feature:profile`)**: Self-contained vertical slices owning their ViewModels, repositories, API clients, and `commonTest` suites.
+* **Umbrella Assembly (`:shared`)**: Aggregates the compile-time **Metro** (`dev.zacsweers.metro`) `@DependencyGraph` and links the static Apple framework (`baseName = "shared"`), selectively exporting `:core:model`, `:core:mvi`, and `:feature:*` while keeping `:core:network` and `:core:database` `implementation`-scoped.
 * **`androidApp`**: Pure Jetpack Compose UI shell with Navigation 3, Coil 3.6 image pipeline, Google Maps Compose, and Material 3 design tokens.
-* **`iosApp`**: Pure SwiftUI shell observing shared Kotlin flows into Swift 5.9+ `@Observable` view models, supporting iOS 17+ and macOS 14+ targets.
+* **`iosApp` / `macosApp`**: Pure SwiftUI shell observing shared Kotlin flows into Swift `@Observable` view models, supporting iOS 17+ and macOS 14+ targets.
 
-### 📦 Modularization Architecture & Migration Roadmap
+### 📦 Modularization Architecture
 
-The codebase is executing a structured modularization migration from a monolithic `:shared` module to **Vertical Feature Modules with an Umbrella Framework** (**Option B: Vertical Feature Ownership**), as recommended in the architectural research evaluation ([`specs/researches/modularization_evaluation.md`](specs/researches/modularization_evaluation.md)):
+The codebase uses **Vertical Feature Modules with an Umbrella Framework** (**Option B: Vertical Feature Ownership**), completed across Specs 46–49 from the architectural research evaluation ([`specs/researches/modularization_evaluation.md`](specs/researches/modularization_evaluation.md)) and expanded with `:core:database` and `:feature:favorites` in [Spec 76](specs/archive/76_local_favorites_sqlite_storage_and_screen.md):
 
 ```mermaid
 graph TD
-    subgraph Platform UI Shells
+    subgraph Platform["Platform UI Shells"]
         Android["androidApp (Compose + Nav 3)"]
         Apple["iosApp / macosApp (SwiftUI)"]
     end
 
-    subgraph Assembly & Umbrella
+    subgraph Assembly["Assembly & Umbrella"]
         Umbrella[":shared (Umbrella Framework & Metro Graph)"]
     end
 
-    subgraph Feature Modules [Vertical Feature Modules (VM + Repo + Client)]
+    subgraph Features["Vertical Feature Modules (VM + Repo + Client)"]
         FeatFeed[":feature:feed"]
         FeatDetails[":feature:details"]
+        FeatFavorites[":feature:favorites"]
         FeatSearch[":feature:search"]
         FeatCollections[":feature:collections"]
         FeatProfile[":feature:profile"]
     end
 
-    subgraph Core Modules [Foundational Core Modules]
+    subgraph Core["Foundational Core Modules"]
+        CoreDatabase[":core:database (Room KMP, BundledSQLiteDriver, FavoritesRepository)"]
         CoreNetwork[":core:network (Ktor Engine, PhotoDownloadTracker, CollectionsExt)"]
         CoreModel[":core:model (Entities & DTOs)"]
         CoreMvi[":core:mvi (MviViewModel, UiState, UiIntent, UiEffect)"]
@@ -226,6 +182,7 @@ graph TD
     Apple --> Umbrella
     Umbrella --> FeatFeed
     Umbrella --> FeatDetails
+    Umbrella --> FeatFavorites
     Umbrella --> FeatSearch
     Umbrella --> FeatCollections
     Umbrella --> FeatProfile
@@ -233,9 +190,13 @@ graph TD
     FeatFeed --> CoreNetwork
     FeatFeed --> CoreMvi
     FeatFeed --> CoreModel
+    FeatDetails --> CoreDatabase
     FeatDetails --> CoreNetwork
     FeatDetails --> CoreMvi
     FeatDetails --> CoreModel
+    FeatFavorites --> CoreDatabase
+    FeatFavorites --> CoreMvi
+    FeatFavorites --> CoreModel
     FeatSearch --> CoreNetwork
     FeatSearch --> CoreMvi
     FeatSearch --> CoreModel
@@ -246,10 +207,11 @@ graph TD
     FeatProfile --> CoreMvi
     FeatProfile --> CoreModel
 
+    CoreDatabase --> CoreModel
     CoreNetwork --> CoreModel
 ```
 
-The migration is partitioned into four phased specifications (archived as final historical records):
+The original modularization migration was partitioned into four phased specifications (archived as final historical records):
 1. **Phase 1: Foundation & Core Extraction** ([Spec 46](specs/archive/46_modularization_foundation_core_extraction.md)): Extract `:core:model`, `:core:mvi`, and `:core:network` (with `PhotoDownloadTracker` and `CollectionsExt`), eliminating centralized `:core:data`.
 2. **Phase 2: Pilot Feature Migration** ([Spec 47](specs/archive/47_modularization_pilot_feature_details.md)): Migrate Photo Details (`:feature:details`) to vertically own `PhotoDetailsRepository`, `PhotoDetailsApiClient`, and `PhotoStats`, validating multi-module Metro assisted injection and Apple framework linking.
 3. **Phase 3: Remaining Feature Extractions** ([Spec 48](specs/archive/48_modularization_remaining_features_extraction.md)): Extract `:feature:feed`, `:feature:search`, `:feature:collections`, and `:feature:profile` to vertically own their repositories, clients, fakes, and models (`UserStats`), completely retiring the legacy monolithic `UnsplashRepository`.

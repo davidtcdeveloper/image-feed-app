@@ -36,7 +36,7 @@ All Apple UI components MUST adhere to native Human Interface Guidelines (HIG) a
 
 ### B. Specular Edge Lighting & Ambient Shadows
 Glass elements feature subtle specular highlights to define boundaries against dynamic photo backdrops:
-- **Mandatory**: Use the centralized convenience modifiers and design tokens defined in [`GlassTheme.swift`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/iosApp/iosApp/GlassTheme.swift):
+- **Mandatory**: Use the centralized convenience modifiers and design tokens defined in [`GlassTheme.swift`](../../../iosApp/iosApp/GlassTheme.swift):
   - View modifiers: `.glassBackground(...)`, `.glassCapsule()`, `.glassCard()`.
   - Design tokens: `GlassTheme.specularBorderGradient`, `GlassTheme.specularBorderWidth`, `GlassTheme.fallbackBorderWidth`.
 - **Prohibited**: Inlining raw `.overlay` stroke borders with hardcoded color opacity gradients.
@@ -96,7 +96,7 @@ When computing target photo dimensions for network requests (e.g. in `AdaptiveLa
 ## 5. iOS 17+ Motion, Transitions & Sensory Feedback
 
 ### Scroll-Driven Transitions
-Apply native iOS 17 scroll transitions for cards and feed items using the shared [`.feedScrollTransition()`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/iosApp/iosApp/AnimationPrimitives.swift) modifier defined in `AnimationPrimitives.swift`.
+Apply native iOS 17 scroll transitions for cards and feed items using the shared [`.feedScrollTransition()`](../../../iosApp/iosApp/AnimationPrimitives.swift) modifier defined in `AnimationPrimitives.swift`.
 
 ### Declarative Sensory Feedback
 Use SwiftUI declarative `.sensoryFeedback` instead of imperative feedback generators:
@@ -110,7 +110,7 @@ Use SwiftUI declarative `.sensoryFeedback` instead of imperative feedback genera
 ### Full-Canvas Photo Inspection (iPhone)
 - In detail views, high-resolution imagery takes center stage with full-width canvas presentation, pinch-to-zoom (1.0x to 4.0x), and double-tap toggle.
 - Non-modal interactive inspector sheets are configured using SwiftUI detents:
-  - Reference canonical sheet configuration in [`PhotoDetailsView.swift`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/iosApp/iosApp/PhotoDetailsView.swift).
+  - Reference canonical sheet configuration in [`PhotoDetailsView.swift`](../../../iosApp/iosApp/PhotoDetailsView.swift).
   - Multi-tier detents: `.presentationDetents([.fraction(0.35), .fraction(0.70), .large])` with background interaction enabled via `.presentationBackgroundInteraction(.enabled(upThrough: .fraction(0.70)))`.
   - Contrast & Scrim: In `.presentationBackground`, layer `GlassTheme.highContrastScrimColor.opacity(0.82)` over `.regularMaterial` (or fallback to `GlassTheme.fallbackBackgroundColor` when `accessibilityReduceTransparency` is true) to ensure WCAG AAA ($\ge 7:1$) contrast over bright imagery.
 - Automatically dismiss the inspector sheet prior to navigation push when users tap tags or photographer profiles.

@@ -190,7 +190,7 @@ public struct KFImage<Placeholder: View>: View {
 
             let maxPixelSize = inferMaxPixelSize(from: url, explicit: targetWidthPx)
             let decoded = await Task.detached(priority: .userInitiated) {
-                Self.downsample(data: data, maxPixelSize: maxPixelSize)
+                ImageDownsampler.downsample(data: data, maxPixelSize: maxPixelSize)
             }.value
 
             try Task.checkCancellation()
@@ -231,8 +231,10 @@ public struct KFImage<Placeholder: View>: View {
         }
         return 1080
     }
+}
 
-    private static func downsample(data: Data, maxPixelSize: Int) -> PlatformImage? {
+private enum ImageDownsampler {
+    static func downsample(data: Data, maxPixelSize: Int) -> PlatformImage? {
         let options: [CFString: Any] = [
             kCGImageSourceCreateThumbnailFromImageAlways: true,
             kCGImageSourceShouldCacheImmediately: true,

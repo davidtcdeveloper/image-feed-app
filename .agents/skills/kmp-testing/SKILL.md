@@ -9,9 +9,9 @@ description: >-
 
 ## Purpose & Triggers
 
-This skill defines the testing philosophy, test harness patterns, and execution procedures for the shared Kotlin Multiplatform module (`shared`).
+This skill defines the testing philosophy, test harness patterns, and execution procedures for shared Kotlin Multiplatform modules (`:core:*`, `:feature:*`, and `:shared`).
 Use this skill when:
-- Authoring new unit or integration tests for shared logic in `shared/src/commonTest`.
+- Authoring new unit or integration tests in shared `commonTest` (or `appleTest`) source sets across `:core:*`, `:feature:*`, and `:shared`.
 - Refactoring shared MVI ViewModels, UI state, intents, or effect flows.
 - Verifying coroutine lifecycle management, job cancellation, or error recovery.
 - Updating or expanding fake repository fixtures.
@@ -28,8 +28,8 @@ Use this skill when:
 
 ### Platform Boundary & Test Targets
 - The platform UI modules (`androidApp`, `iosApp`, `macosApp`) are thin declarative shells (Compose and SwiftUI) without dedicated unit test targets in `project.yml` or Gradle.
-- The shared test suite in `shared/src/commonTest` (`./gradlew :shared:allTests`) serves as the primary automated regression gate for business logic, pagination, filtering, and state management.
-- `:shared:allTests` includes `macosArm64Test`; run `./gradlew :shared:macosArm64Test` alone for a fast host-native Kotlin/Native check.
+- The shared test suites across `:core:*`, `:feature:*`, and `:shared` (`./gradlew allTests`) serve as the primary automated regression gate for business logic, pagination, filtering, and state management.
+- `allTests` includes `macosArm64Test`; run module-scoped tasks such as `./gradlew :feature:<name>:allTests` or `./gradlew :shared:macosArm64Test` for fast targeted checks.
 
 ---
 
@@ -38,12 +38,12 @@ Use this skill when:
 Shared ViewModels extend `MviViewModel` and run asynchronous workloads within `viewModelScope`.
 
 ### Canonical Test Fixture Reference
-Do not duplicate test fixture boilerplate in documentation. Reference the living, compiler-verified test suite in [`FeedViewModelTest.kt`](shared/src/commonTest/kotlin/com/example/imagefeed/presentation/feed/FeedViewModelTest.kt) as the canonical pattern for MVI ViewModel tests.
+Do not duplicate test fixture boilerplate in documentation. Reference the living, compiler-verified test suite in [`FeedViewModelTest.kt`](../../../feature/feed/src/commonTest/kotlin/com/example/imagefeed/presentation/feed/FeedViewModelTest.kt) as the canonical pattern for MVI ViewModel tests.
 
 Key scaffolding patterns:
 - **Coroutines & Dispatcher Scoping**: Set up `Dispatchers.setMain(testDispatcher)` in `@BeforeTest` and `Dispatchers.resetMain()` in `@AfterTest`.
 - **Deterministic Scheduling**: Advance asynchronous coroutines deterministically using `advanceUntilIdle()` or `testScheduler.runCurrent()`.
-- **Fakes over Mocks**: Use `FakeUnsplashRepository` (configured with seed topics, collections, or photos) rather than dynamic mocking frameworks.
+- **Fakes over Mocks**: Use feature-local fake repositories (e.g., fake `FeedRepository`, `PhotoDetailsRepository`, or `InMemoryFavoritesRepository`) rather than dynamic mocking frameworks.
 - **Teardown**: Optionally invoke `viewModel.clear()` at the end of tests to verify clean coroutine cancellation and prevent cross-test job leakage.
 
 ---
@@ -51,7 +51,7 @@ Key scaffolding patterns:
 ## 3. What and How to Test
 
 ### High-Value User Flows
-Always prioritize end-to-end user journeys within `shared/commonMain`:
+Always prioritize end-to-end user journeys within shared KMP feature and core modules (`:feature:*`, `:core:*`):
 1. **Initial Load & Pagination**: Verify initial data loads on creation or initial intent and that `LoadNextPage` appends items without duplicating.
 2. **Category / Topic Switching**: Verify that switching topics resets the photo list and updates the selected filter cleanly.
 3. **Pull-to-Refresh**: Verify that dispatching `Refresh` updates state flags, reloads fresh data, and clears transient error banners.
@@ -67,9 +67,9 @@ Verify that ViewModel coroutines respect lifecycle teardown:
 
 ## 4. Test Execution & Verification
 
-Run the shared test suite across all configured multiplatform test targets:
+Run the shared test suites across all configured multiplatform modules and test targets:
 ```bash
-./gradlew :shared:allTests
+./gradlew allTests
 ```
 
 If ViewModel models or state contracts were modified, also verify that platform applications compile cleanly:

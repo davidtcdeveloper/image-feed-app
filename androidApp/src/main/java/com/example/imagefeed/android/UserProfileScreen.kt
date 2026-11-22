@@ -115,12 +115,12 @@ import com.example.imagefeed.di.MetroHelper
 import com.example.imagefeed.model.Photo
 import com.example.imagefeed.model.PhotoCollection
 import com.example.imagefeed.model.User
-import com.example.imagefeed.model.UserStats
 import com.example.imagefeed.presentation.profile.ProfileTab
 import com.example.imagefeed.presentation.profile.UserProfileEffect
 import com.example.imagefeed.presentation.profile.UserProfileIntent
 import com.example.imagefeed.presentation.profile.UserProfileState
 import com.example.imagefeed.presentation.profile.UserProfileViewModel
+import com.example.imagefeed.profile.model.UserStats
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 import kotlin.math.roundToInt
