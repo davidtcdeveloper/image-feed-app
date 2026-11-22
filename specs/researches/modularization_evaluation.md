@@ -414,12 +414,12 @@ For an enterprise Kotlin Multiplatform application supporting Android, iOS, and 
 ### 8.1 Current Codebase State Assessment & Codebase Smells Inventory
 
 The current codebase is organized as follows:
-- **Project Structure**: A single monolithic shared module (`:shared`), an Android app (`:androidApp`), and native Apple applications (`iosApp`, `macosApp`) configured via XcodeGen ([`iosApp/project.yml`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/iosApp/project.yml)) embedding `:shared.framework`.
+- **Project Structure**: A single monolithic shared module (`:shared`), an Android app (`:androidApp`), and native Apple applications (`iosApp`, `macosApp`) configured via XcodeGen ([`iosApp/project.yml`](../../iosApp/project.yml)) embedding `:shared.framework`.
 - **Shared Architecture**:
-  - Presentation is standardized on **Shared MVI / UDF** with [`MviViewModel`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/src/commonMain/kotlin/com/example/imagefeed/presentation/mvi/MviViewModel.kt), [`UiState`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/src/commonMain/kotlin/com/example/imagefeed/presentation/mvi/UiState.kt), [`UiIntent`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/src/commonMain/kotlin/com/example/imagefeed/presentation/mvi/UiIntent.kt), and [`UiEffect`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/src/commonMain/kotlin/com/example/imagefeed/presentation/mvi/UiEffect.kt).
+  - Presentation is standardized on **Shared MVI / UDF** with [`MviViewModel`](../../shared/src/commonMain/kotlin/com/example/imagefeed/presentation/mvi/MviViewModel.kt), [`UiState`](../../shared/src/commonMain/kotlin/com/example/imagefeed/presentation/mvi/UiState.kt), [`UiIntent`](../../shared/src/commonMain/kotlin/com/example/imagefeed/presentation/mvi/UiIntent.kt), and [`UiEffect`](../../shared/src/commonMain/kotlin/com/example/imagefeed/presentation/mvi/UiEffect.kt).
   - Business logic spans distinct domains: Feed/Random (`presentation/feed`, `presentation/random`), Photo Details (`presentation/details`), Unified Search (`presentation/search`), Collections (`presentation/collections`, `presentation/collection`), and User Profiles (`presentation/profile`).
-  - Data access is unified under [`UnsplashRepository`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/src/commonMain/kotlin/com/example/imagefeed/repository/UnsplashRepository.kt) backed by [`UnsplashApiClient`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/src/commonMain/kotlin/com/example/imagefeed/api/UnsplashApiClient.kt) and Ktor.
-  - Compile-time dependency injection is handled via **Metro** (`dev.zacsweers.metro`) in [`Metro.kt`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/src/commonMain/kotlin/com/example/imagefeed/di/Metro.kt), exposing [`ApplicationGraph`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/src/commonMain/kotlin/com/example/imagefeed/di/Metro.kt) and [`MetroHelper`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/src/commonMain/kotlin/com/example/imagefeed/di/Metro.kt).
+  - Data access is unified under [`UnsplashRepository`](../../shared/src/commonMain/kotlin/com/example/imagefeed/repository/UnsplashRepository.kt) backed by [`UnsplashApiClient`](../../shared/src/commonMain/kotlin/com/example/imagefeed/api/UnsplashApiClient.kt) and Ktor.
+  - Compile-time dependency injection is handled via **Metro** (`dev.zacsweers.metro`) in [`Metro.kt`](../../shared/src/commonMain/kotlin/com/example/imagefeed/di/Metro.kt), exposing [`ApplicationGraph`](../../shared/src/commonMain/kotlin/com/example/imagefeed/di/Metro.kt) and [`MetroHelper`](../../shared/src/commonMain/kotlin/com/example/imagefeed/di/Metro.kt).
 - **Native UI Shells**:
   - **Android**: Jetpack Compose, Material 3 design tokens, Navigation 3 scenes, and adaptive layouts (`androidx.compose.material3.adaptive`).
   - **iOS & macOS**: SwiftUI views adhering to `GlassTheme` tokens, consuming shared ViewModels via `@Observable` Swift wrappers and calling `viewModel.clear()` upon `deinit`.
@@ -429,17 +429,17 @@ The current codebase is organized as follows:
 An in-depth structural inspection of `:shared` revealed six primary architectural smells that must be addressed during modularization:
 
 1. **Monolithic Repository Anti-Pattern (`UnsplashRepository` / `UnsplashApiClient`)**:
-   [`UnsplashRepository`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/src/commonMain/kotlin/com/example/imagefeed/repository/UnsplashRepository.kt) and [`UnsplashApiClient`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/src/commonMain/kotlin/com/example/imagefeed/api/UnsplashApiClient.kt) operate as massive god-abstractions spanning 17+ distinct methods across 6 unrelated domains (Editorial Feed, Topics, Random Photos, Search, Collections, User Profiles, Photo Details, and Download Tracking). Any modification to an endpoint signature in one domain forces recompilation across all features and invalidates Gradle build caches globally.
+   [`UnsplashRepository`](../../shared/src/commonMain/kotlin/com/example/imagefeed/repository/UnsplashRepository.kt) and [`UnsplashApiClient`](../../shared/src/commonMain/kotlin/com/example/imagefeed/api/UnsplashApiClient.kt) operate as massive god-abstractions spanning 17+ distinct methods across 6 unrelated domains (Editorial Feed, Topics, Random Photos, Search, Collections, User Profiles, Photo Details, and Download Tracking). Any modification to an endpoint signature in one domain forces recompilation across all features and invalidates Gradle build caches globally.
 2. **"God Fake" in Unit Testing**:
    Every ViewModel unit test file (`FeedViewModelTest`, `PhotoDetailsViewModelTest`, `UnifiedSearchViewModelTest`, `CollectionsFeedViewModelTest`, `CollectionDetailViewModelTest`, `UserProfileViewModelTest`, `RandomPhotoViewModelTest`) implements a bespoke `FakeUnsplashRepository` stubbing all 17 interface methods—even though each test exercises only 1 to 3 methods. This creates extreme test fragility: modifying any repository signature breaks all seven test suites simultaneously.
 3. **Cross-Cutting Download Tracking Duplication & Coupling**:
    Download tracking (`trackDownload(downloadLocationUrl: String)`) is duplicated across five ViewModels (`FeedViewModel`, `PhotoDetailsViewModel`, `RandomPhotoViewModel`, `CollectionDetailViewModel`, `UserProfileViewModel`) and coupled directly into `UnsplashRepository`. Download tracking is an Unsplash API compliance requirement that belongs in an isolated, reusable tracker utility rather than polluting domain repositories.
 4. **Domain Model Smells & Misplaced Entities**:
-   In [`Photo.kt`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/src/commonMain/kotlin/com/example/imagefeed/model/Photo.kt), feature-specific models such as `PhotoStats` (plus `StatMetric`, `HistoricalStats`, `StatsValue`)—used exclusively by Photo Details—and `UserStats`—used exclusively by User Profile—are bundled alongside core entities. This violates domain boundaries and prevents features from independently evolving their data models.
+   In [`Photo.kt`](../../shared/src/commonMain/kotlin/com/example/imagefeed/model/Photo.kt), feature-specific models such as `PhotoStats` (plus `StatMetric`, `HistoricalStats`, `StatsValue`)—used exclusively by Photo Details—and `UserStats`—used exclusively by User Profile—are bundled alongside core entities. This violates domain boundaries and prevents features from independently evolving their data models.
 5. **Horizontal Visibility Leaks & Lack of Encapsulation**:
    Because all repository and client code currently resides in a shared layer, all repository implementations and API client endpoints must be marked `public`. This prevents using Kotlin's `internal` visibility modifier to hide network details, leaking implementation specifics across feature boundaries and expanding the Objective-C bridging header surface in Apple native builds.
 6. **Misplaced Algorithmic Utilities (`CollectionsExt`)**:
-   [`CollectionsExt.kt`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/src/commonMain/kotlin/com/example/imagefeed/util/CollectionsExt.kt) (`filterDistinctAgainst`) provides pagination stream deduplication across network loads, yet resides in an untyped root utility package. It belongs in foundational network and collection processing infrastructure.
+   [`CollectionsExt.kt`](../../shared/src/commonMain/kotlin/com/example/imagefeed/util/CollectionsExt.kt) (`filterDistinctAgainst`) provides pagination stream deduplication across network loads, yet resides in an untyped root utility package. It belongs in foundational network and collection processing infrastructure.
 
 ---
 
@@ -531,50 +531,50 @@ graph TD
 
 #### 1. Core Infrastructure Modules
 - **`:core:model`**:
-  - **Contents**: Pure, universally shared Kotlin domain entities and serialization DTOs ([`Photo.kt`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/src/commonMain/kotlin/com/example/imagefeed/model/Photo.kt), [`Topic.kt`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/src/commonMain/kotlin/com/example/imagefeed/model/Topic.kt), [`PhotoCollection.kt`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/src/commonMain/kotlin/com/example/imagefeed/model/PhotoCollection.kt), [`CollectionSummary.kt`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/src/commonMain/kotlin/com/example/imagefeed/model/CollectionSummary.kt), `User`, `SearchResponse`).
+  - **Contents**: Pure, universally shared Kotlin domain entities and serialization DTOs ([`Photo.kt`](../../shared/src/commonMain/kotlin/com/example/imagefeed/model/Photo.kt), [`Topic.kt`](../../shared/src/commonMain/kotlin/com/example/imagefeed/model/Topic.kt), [`PhotoCollection.kt`](../../shared/src/commonMain/kotlin/com/example/imagefeed/model/PhotoCollection.kt), [`CollectionSummary.kt`](../../shared/src/commonMain/kotlin/com/example/imagefeed/model/CollectionSummary.kt), `User`, `SearchResponse`).
   - **Exclusions**: Feature-scoped models (`PhotoStats`, `UserStats`) are explicitly excluded and placed inside their owning feature modules.
   - **Dependencies**: Minimal (Kotlin serialization JSON only). Highly cacheable, rarely invalidated.
 - **`:core:mvi`**:
-  - **Contents**: Presentation foundation primitives ([`MviViewModel.kt`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/src/commonMain/kotlin/com/example/imagefeed/presentation/mvi/MviViewModel.kt), [`UiState.kt`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/src/commonMain/kotlin/com/example/imagefeed/presentation/mvi/UiState.kt), [`UiIntent.kt`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/src/commonMain/kotlin/com/example/imagefeed/presentation/mvi/UiIntent.kt), [`UiEffect.kt`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/src/commonMain/kotlin/com/example/imagefeed/presentation/mvi/UiEffect.kt), [`CommonFlow.kt`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/src/commonMain/kotlin/com/example/imagefeed/util/CommonFlow.kt)).
+  - **Contents**: Presentation foundation primitives ([`MviViewModel.kt`](../../shared/src/commonMain/kotlin/com/example/imagefeed/presentation/mvi/MviViewModel.kt), [`UiState.kt`](../../shared/src/commonMain/kotlin/com/example/imagefeed/presentation/mvi/UiState.kt), [`UiIntent.kt`](../../shared/src/commonMain/kotlin/com/example/imagefeed/presentation/mvi/UiIntent.kt), [`UiEffect.kt`](../../shared/src/commonMain/kotlin/com/example/imagefeed/presentation/mvi/UiEffect.kt), [`CommonFlow.kt`](../../shared/src/commonMain/kotlin/com/example/imagefeed/util/CommonFlow.kt)).
   - **Dependencies**: Coroutines core, `androidx.lifecycle.viewmodel`.
 - **`:core:network`**:
-  - **Contents**: Ktor client engine factory (`createUnsplashHttpClient`), logging, content negotiation, `BuildKonfig` (Unsplash API key extraction), dedicated `PhotoDownloadTracker` (handling compliant download tracking calls), and algorithmic deduplication utility [`CollectionsExt.kt`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/src/commonMain/kotlin/com/example/imagefeed/util/CollectionsExt.kt) (`filterDistinctAgainst`).
+  - **Contents**: Ktor client engine factory (`createUnsplashHttpClient`), logging, content negotiation, `BuildKonfig` (Unsplash API key extraction), dedicated `PhotoDownloadTracker` (handling compliant download tracking calls), and algorithmic deduplication utility [`CollectionsExt.kt`](../../shared/src/commonMain/kotlin/com/example/imagefeed/util/CollectionsExt.kt) (`filterDistinctAgainst`).
   - **Dependencies**: Ktor client bundles (OkHttp, Darwin, ContentNegotiation, Logging), `:core:model`.
 - **Note on `:core:data`**: Under Option B, a centralized `:core:data` module is **not created**. Data access is vertically owned by feature modules.
 
 #### 2. Vertical Feature Modules
 Each feature module encapsulates its entire vertical slice:
 - **`:feature:details`**:
-  - **Presentation**: [`PhotoDetailsViewModel`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/feature/details/src/commonMain/kotlin/com/example/imagefeed/presentation/details/PhotoDetailsViewModel.kt), `PhotoDetailsState`, `PhotoDetailsIntent`, `PhotoDetailsEffect`.
+  - **Presentation**: [`PhotoDetailsViewModel`](../../feature/details/src/commonMain/kotlin/com/example/imagefeed/presentation/details/PhotoDetailsViewModel.kt), `PhotoDetailsState`, `PhotoDetailsIntent`, `PhotoDetailsEffect`.
   - **Data / Domain**: `PhotoDetailsRepository` contract, `internal class PhotoDetailsRepositoryImpl`, `internal class PhotoDetailsApiClient`.
   - **Feature Models**: `PhotoStats`, `StatMetric`, `HistoricalStats`, `StatsValue`.
   - **Testing**: `FakePhotoDetailsRepository` in `commonTest`.
   - **Dependencies**: `:core:model`, `:core:mvi`, `:core:network`.
 - **`:feature:feed`**:
-  - **Presentation**: [`FeedViewModel`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/src/commonMain/kotlin/com/example/imagefeed/presentation/feed/FeedViewModel.kt), `FeedState`, `FeedIntent`, `FeedEffect`, plus [`RandomPhotoViewModel`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/src/commonMain/kotlin/com/example/imagefeed/presentation/random/RandomPhotoViewModel.kt).
+  - **Presentation**: [`FeedViewModel`](../../shared/src/commonMain/kotlin/com/example/imagefeed/presentation/feed/FeedViewModel.kt), `FeedState`, `FeedIntent`, `FeedEffect`, plus [`RandomPhotoViewModel`](../../shared/src/commonMain/kotlin/com/example/imagefeed/presentation/random/RandomPhotoViewModel.kt).
   - **Data / Domain**: `FeedRepository` contract, `internal class FeedRepositoryImpl`, `internal class FeedApiClient`.
   - **Testing**: `FakeFeedRepository` in `commonTest`.
   - **Dependencies**: `:core:model`, `:core:mvi`, `:core:network`.
 - **`:feature:search`**:
-  - **Presentation**: [`UnifiedSearchViewModel`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/src/commonMain/kotlin/com/example/imagefeed/presentation/search/UnifiedSearchViewModel.kt), `SearchState`, `UnifiedSearchIntent`, `UnifiedSearchEffect`.
+  - **Presentation**: [`UnifiedSearchViewModel`](../../shared/src/commonMain/kotlin/com/example/imagefeed/presentation/search/UnifiedSearchViewModel.kt), `SearchState`, `UnifiedSearchIntent`, `UnifiedSearchEffect`.
   - **Data / Domain**: `SearchRepository` contract, `internal class SearchRepositoryImpl`, `internal class SearchApiClient`.
   - **Testing**: `FakeSearchRepository` in `commonTest`.
   - **Dependencies**: `:core:model`, `:core:mvi`, `:core:network`.
 - **`:feature:collections`**:
-  - **Presentation**: [`CollectionsFeedViewModel`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/src/commonMain/kotlin/com/example/imagefeed/presentation/collections/CollectionsFeedViewModel.kt) and [`CollectionDetailViewModel`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/src/commonMain/kotlin/com/example/imagefeed/presentation/collection/CollectionDetailViewModel.kt).
+  - **Presentation**: [`CollectionsFeedViewModel`](../../shared/src/commonMain/kotlin/com/example/imagefeed/presentation/collections/CollectionsFeedViewModel.kt) and [`CollectionDetailViewModel`](../../shared/src/commonMain/kotlin/com/example/imagefeed/presentation/collection/CollectionDetailViewModel.kt).
   - **Data / Domain**: `CollectionsRepository` contract, `internal class CollectionsRepositoryImpl`, `internal class CollectionsApiClient`.
   - **Testing**: `FakeCollectionsRepository` in `commonTest`.
   - **Dependencies**: `:core:model`, `:core:mvi`, `:core:network`.
 - **`:feature:profile`**:
-  - **Presentation**: [`UserProfileViewModel`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/src/commonMain/kotlin/com/example/imagefeed/presentation/profile/UserProfileViewModel.kt), `UserProfileState`, `UserProfileIntent`, `UserProfileEffect`.
+  - **Presentation**: [`UserProfileViewModel`](../../shared/src/commonMain/kotlin/com/example/imagefeed/presentation/profile/UserProfileViewModel.kt), `UserProfileState`, `UserProfileIntent`, `UserProfileEffect`.
   - **Data / Domain**: `ProfileRepository` contract, `internal class ProfileRepositoryImpl`, `internal class ProfileApiClient`.
   - **Feature Models**: `UserStats`.
   - **Testing**: `FakeProfileRepository` in `commonTest`.
   - **Dependencies**: `:core:model`, `:core:mvi`, `:core:network`.
 
 #### 3. Assembly and Umbrella Gateway (`:shared`)
-- **Maintains the Apple Linking Contract**: Compiles the single static framework `shared.framework` via `embedAndSignAppleFrameworkForXcode` consumed by [`iosApp/project.yml`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/iosApp/project.yml).
-- **Dependency Injection Aggregator**: Configures the root Metro `@DependencyGraph` ([`ApplicationGraph`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/src/commonMain/kotlin/com/example/imagefeed/di/Metro.kt)) and [`MetroHelper`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/shared/src/commonMain/kotlin/com/example/imagefeed/di/Metro.kt), assembling feature repositories and ViewModels.
+- **Maintains the Apple Linking Contract**: Compiles the single static framework `shared.framework` via `embedAndSignAppleFrameworkForXcode` consumed by [`iosApp/project.yml`](../../iosApp/project.yml).
+- **Dependency Injection Aggregator**: Configures the root Metro `@DependencyGraph` ([`ApplicationGraph`](../../shared/src/commonMain/kotlin/com/example/imagefeed/di/Metro.kt)) and [`MetroHelper`](../../shared/src/commonMain/kotlin/com/example/imagefeed/di/Metro.kt), assembling feature repositories and ViewModels.
 - **Selective Binary Export**: Re-exports public feature ViewModels and core contracts to Swift while keeping internal feature repositories, API clients, and network engines unexported, minimizing Objective-C bridging header overhead.
 - **Transitional Role**: Temporarily holds legacy `UnsplashRepository` during Phase 1 & 2 until remaining features migrate in Phase 3, at which point legacy data classes are completely retired.
 

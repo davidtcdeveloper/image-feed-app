@@ -33,9 +33,9 @@ graph TD
 
 #### Finding 1.1: $O(N^2)$ Lookup Complexity During Scroll Rendering
 * **Locations**:
-  - [`SearchView.swift:151`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/iosApp/iosApp/SearchView.swift#L151)
-  - [`UserProfileView.swift:411`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/iosApp/iosApp/UserProfileView.swift#L411)
-  - [`CollectionDetailView.swift:214`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/iosApp/iosApp/CollectionDetailView.swift#L214)
+  - [`SearchView.swift:151`](../../iosApp/iosApp/SearchView.swift#L151)
+  - [`UserProfileView.swift:411`](../../iosApp/iosApp/UserProfileView.swift#L411)
+  - [`CollectionDetailView.swift:214`](../../iosApp/iosApp/CollectionDetailView.swift#L214)
 * **Mechanism**:
   Inside column `ForEach` loops, every item performs a linear scan to find its global flat index:
   ```swift
@@ -45,7 +45,7 @@ graph TD
   ```
   For a feed with $N = 100$ items, rendering triggers up to $10,000$ equality checks per body evaluation. During scrolling and pagination, this blocks the main thread.
 * **Finding 1.2: Inefficient Pagination Boundary Check**:
-  In [`CollectionsFeedView.swift:292`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/iosApp/iosApp/CollectionsFeedView.swift#L292):
+  In [`CollectionsFeedView.swift:292`](../../iosApp/iosApp/CollectionsFeedView.swift#L292):
   ```swift
   if let index = viewModel.collections.lastIndex(where: { $0.id == collection.id }),
      index >= viewModel.collections.count - 2 { ... }
@@ -54,7 +54,7 @@ graph TD
 
 #### Finding 1.3: Redundant Column Array Allocation in View `body`
 * **Locations**:
-  - [`AdaptiveLayoutHelper.swift:60-62`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/iosApp/iosApp/AdaptiveLayoutHelper.swift#L60-L62)
+  - [`AdaptiveLayoutHelper.swift:60-62`](../../iosApp/iosApp/AdaptiveLayoutHelper.swift#L60-L62)
   - Invoked in `ContentView.swift:284`, `CollectionsFeedView.swift:71`, `SearchView.swift:148`, `UserProfileView.swift:410`, `CollectionDetailView.swift:211`.
 * **Mechanism**:
   ```swift
@@ -67,16 +67,16 @@ graph TD
   On every view update, for an iPad layout with 4 columns, `photosForColumn` filters and allocates 4 distinct array instances. This produces continuous ephemeral memory allocations on the heap and GC/ARC pressure.
 
 #### Finding 1.4: Greedy Root `GeometryReader` Wrapping `ScrollView`
-* **Location**: [`CollectionsFeedView.swift:22-26`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/iosApp/iosApp/CollectionsFeedView.swift#L22-L26)
+* **Location**: [`CollectionsFeedView.swift:22-26`](../../iosApp/iosApp/CollectionsFeedView.swift#L22-L26)
 * **Mechanism**:
   The entire screen root is wrapped in `GeometryReader { geometry in ... }` solely to obtain `geometry.size.width` for calculating `cardWidth`. A root `GeometryReader` expands greedily, breaks default safe-area handling, and forces unnecessary parent/child layout passes on window and keyboard resize events.
 
 #### Finding 1.5: Eager ViewModel Instantiation Inside View Initializers
 * **Locations**:
-  - [`PhotoDetailsView.swift:62`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/iosApp/iosApp/PhotoDetailsView.swift#L62)
-  - [`SearchView.swift:27`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/iosApp/iosApp/SearchView.swift#L27)
-  - [`UserProfileView.swift:17`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/iosApp/iosApp/UserProfileView.swift#L17)
-  - [`CollectionDetailView.swift:23`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/iosApp/iosApp/CollectionDetailView.swift#L23)
+  - [`PhotoDetailsView.swift:62`](../../iosApp/iosApp/PhotoDetailsView.swift#L62)
+  - [`SearchView.swift:27`](../../iosApp/iosApp/SearchView.swift#L27)
+  - [`UserProfileView.swift:17`](../../iosApp/iosApp/UserProfileView.swift#L17)
+  - [`CollectionDetailView.swift:23`](../../iosApp/iosApp/CollectionDetailView.swift#L23)
 * **Mechanism**:
   ```swift
   init(photoId: String, ...) {
@@ -148,8 +148,8 @@ graph TD
 
 #### Finding 2.1: High-Frequency PreferenceKey Mutations Triggering Full Hierarchy Diffing
 * **Locations**:
-  - [`ContentView.swift:265-272`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/iosApp/iosApp/ContentView.swift#L265-L272)
-  - [`ContentView.swift:470-498`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/iosApp/iosApp/ContentView.swift#L470-L498)
+  - [`ContentView.swift:265-272`](../../iosApp/iosApp/ContentView.swift#L265-L272)
+  - [`ContentView.swift:470-498`](../../iosApp/iosApp/ContentView.swift#L470-L498)
 * **Mechanism**:
   ```swift
   GeometryReader { proxy in
@@ -173,7 +173,7 @@ graph TD
   - A background `Task.sleep` reset task is cancelled and rescheduled on every pixel scrolled.
 
 #### Finding 2.2: Keystroke Flooding Without Debounce in Search
-* **Location**: [`SearchView.swift:250-252`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/iosApp/iosApp/SearchView.swift#L250-L252)
+* **Location**: [`SearchView.swift:250-252`](../../iosApp/iosApp/SearchView.swift#L250-L252)
 * **Mechanism**:
   ```swift
   .onChange(of: searchText) { _, newValue in
@@ -183,7 +183,7 @@ graph TD
   Every typed character immediately dispatches `UnifiedSearchIntentUpdateQuery` to Kotlin Multiplatform, kicking off queries and state updates without cancellation or delay.
 
 #### Finding 2.3: Whole-Grid Spring Animation on Data Mutation
-* **Location**: [`SearchView.swift:164`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/iosApp/iosApp/SearchView.swift#L164)
+* **Location**: [`SearchView.swift:164`](../../iosApp/iosApp/SearchView.swift#L164)
 * **Mechanism**:
   ```swift
   .animation(.spring(), value: viewModel.photos)
@@ -248,7 +248,7 @@ graph TD
 ### 4.1 Detailed Technical Investigation
 
 #### Finding 4.1: Missing Decoded Image Cache in `KFImage`
-* **Location**: [`KFImage.swift:34-69`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/iosApp/iosApp/KFImage.swift#L34-L69)
+* **Location**: [`KFImage.swift:34-69`](../../iosApp/iosApp/KFImage.swift#L34-L69)
 * **Mechanism**:
   - `KFImage` wraps SwiftUI's `AsyncImage(url:)`.
   - `AsyncImage` caches compressed image bytes in `URLCache`, but **does not maintain an in-memory decoded `CGImage`/`UIImage` cache**.
@@ -257,9 +257,9 @@ graph TD
 
 #### Finding 4.2: Metal Offscreen Render Passes from Stacking Materials & Dynamic Shadows
 * **Locations**:
-  - [`GlassTheme.swift:122-165`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/iosApp/iosApp/GlassTheme.swift#L122-L165)
-  - [`ContentView.swift:686`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/iosApp/iosApp/ContentView.swift#L686)
-  - [`SearchPhotoGridCard` in SearchView.swift:322`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/iosApp/iosApp/SearchView.swift#L322)
+  - [`GlassTheme.swift:122-165`](../../iosApp/iosApp/GlassTheme.swift#L122-L165)
+  - [`ContentView.swift:686`](../../iosApp/iosApp/ContentView.swift#L686)
+  - [`SearchPhotoGridCard` in SearchView.swift:322`](../../iosApp/iosApp/SearchView.swift#L322)
 * **Mechanism**:
   In every single photo card:
   - The image placeholder renders `.ultraThinMaterial`.
@@ -267,7 +267,7 @@ graph TD
   With 20 to 30 visible cards during scroll flings, the GPU compositor must perform dozens of offscreen blur passes and shadow calculations simultaneously, saturating the GPU fill rate on mobile chipsets.
 
 #### Finding 4.3: Double-Pass Rendering in `ShimmerModifier`
-* **Location**: [`AnimationPrimitives.swift:48-74`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/iosApp/iosApp/AnimationPrimitives.swift#L48-L74)
+* **Location**: [`AnimationPrimitives.swift:48-74`](../../iosApp/iosApp/AnimationPrimitives.swift#L48-L74)
 * **Mechanism**:
   ```swift
   content
@@ -282,7 +282,7 @@ graph TD
   The modifier places `content`, then layers an overlay with a `GeometryReader`, and then uses `.mask(content)`, forcing SwiftUI to render `content` **twice** for every skeleton loader in every view hierarchy.
 
 #### Finding 4.4: Expensive 60pt Blur in Detail Ambient Backdrop
-* **Location**: [`PhotoDetailsView.swift:473-494`](file:///Users/davidtiagoconceicao/Developer/image-feed-app/iosApp/iosApp/PhotoDetailsView.swift#L473-L494)
+* **Location**: [`PhotoDetailsView.swift:473-494`](../../iosApp/iosApp/PhotoDetailsView.swift#L473-L494)
 * **Mechanism**:
   ```swift
   KFImage(URL(string: photo.urls.small))
