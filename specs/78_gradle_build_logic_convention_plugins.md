@@ -1,6 +1,6 @@
 # Specification 78: Gradle `build-logic` Convention Plugins & Isolated Projects Readiness
 
-**Status:** Draft
+**Status:** Accepted
 
 ---
 
