@@ -20,8 +20,6 @@ kotlin {
     jvmToolchain(17)
     android {
         namespace = "com.example.imagefeed.core.network"
-        compileSdk = 37
-        minSdk = 29
         withHostTest {}
     }
 

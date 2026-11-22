@@ -1,3 +1,8 @@
+import com.android.build.api.dsl.ApplicationExtension
+import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget
+import com.android.build.api.dsl.TestExtension
+import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
+
 plugins {
     // Kotlin plugins
     alias(libs.plugins.kotlin.multiplatform) apply false
@@ -21,7 +26,55 @@ plugins {
     alias(libs.plugins.androidx.room) apply false
 }
 
+val androidCompileSdk = libs.versions.android.compileSdk.get().toInt()
+val androidCompileSdkMinor = libs.versions.android.compileSdkMinor.get().toInt().takeIf { it > 0 }
+val androidMinSdk = libs.versions.android.minSdk.get().toInt()
+val androidTargetSdk = libs.versions.android.targetSdk.get().toInt()
+
 subprojects {
+    pluginManager.withPlugin("com.android.application") {
+        extensions.configure<ApplicationExtension> {
+            compileSdk {
+                version = release(androidCompileSdk) {
+                    minorApiLevel = androidCompileSdkMinor
+                }
+            }
+            defaultConfig {
+                minSdk = androidMinSdk
+                targetSdk = androidTargetSdk
+            }
+        }
+    }
+
+    pluginManager.withPlugin("com.android.test") {
+        extensions.configure<TestExtension> {
+            compileSdk {
+                version = release(androidCompileSdk) {
+                    minorApiLevel = androidCompileSdkMinor
+                }
+            }
+            defaultConfig {
+                minSdk = androidMinSdk
+                targetSdk = androidTargetSdk
+            }
+        }
+    }
+
+    pluginManager.withPlugin("com.android.kotlin.multiplatform.library") {
+        pluginManager.withPlugin("org.jetbrains.kotlin.multiplatform") {
+            extensions.configure<KotlinMultiplatformExtension> {
+                extensions.configure<KotlinMultiplatformAndroidLibraryTarget>("android") {
+                    compileSdk {
+                        version = release(androidCompileSdk) {
+                            minorApiLevel = androidCompileSdkMinor
+                        }
+                    }
+                    minSdk = androidMinSdk
+                }
+            }
+        }
+    }
+
     pluginManager.apply("org.jlleitschuh.gradle.ktlint")
     pluginManager.apply("io.gitlab.arturbosch.detekt")
 

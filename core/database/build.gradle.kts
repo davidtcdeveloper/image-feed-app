@@ -14,8 +14,6 @@ kotlin {
     }
     android {
         namespace = "com.example.imagefeed.core.database"
-        compileSdk = 37
-        minSdk = 29
         withHostTest {}
     }
 

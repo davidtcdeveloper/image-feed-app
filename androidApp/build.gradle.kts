@@ -17,11 +17,8 @@ val googleMapsApiKey = localProperties.getProperty("google.maps.api.key") ?: ""
 
 configure<com.android.build.api.dsl.ApplicationExtension> {
     namespace = "com.example.imagefeed.android"
-    compileSdk = 37
     defaultConfig {
         applicationId = "com.example.imagefeed.android"
-        minSdk = 29
-        targetSdk = 37
         versionCode = 1
         versionName = "1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

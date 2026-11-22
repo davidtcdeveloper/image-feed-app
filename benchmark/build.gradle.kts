@@ -5,11 +5,8 @@ plugins {
 
 android {
     namespace = "com.example.imagefeed.benchmark"
-    compileSdk = 37
 
     defaultConfig {
-        minSdk = 29
-        targetSdk = 37
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         testInstrumentationRunnerArguments["androidx.benchmark.suppressErrors"] = "EMULATOR,LOW-BATTERY"
     }

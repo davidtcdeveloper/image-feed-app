@@ -8,8 +8,6 @@ kotlin {
     jvmToolchain(17)
     android {
         namespace = "com.example.imagefeed.feature.favorites"
-        compileSdk = 37
-        minSdk = 29
         withHostTest {}
     }
 
