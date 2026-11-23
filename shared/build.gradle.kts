@@ -1,22 +1,12 @@
 plugins {
-    alias(libs.plugins.kotlin.multiplatform)
-    alias(libs.plugins.android.kotlin.multiplatform.library)
-    alias(libs.plugins.metro)
+    alias(libs.plugins.imagefeed.kmp.library)
+    alias(libs.plugins.imagefeed.metro)
 }
 
 kotlin {
-    jvmToolchain(17)
     android {
         namespace = "com.example.imagefeed"
-        withHostTest {}
     }
-
-    // Register iOS targets directly
-    iosArm64()
-    iosSimulatorArm64()
-
-    // Register macOS targets directly
-    macosArm64()
 
     // Configure frameworks for iOS targets
     targets.withType<org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget>().configureEach {
@@ -60,10 +50,4 @@ kotlin {
             implementation(libs.ktor.client.mock)
         }
     }
-}
-
-metro {
-    enabled = true
-    debug = false
-    // desugaredProviderSeverity = "WARN"
 }

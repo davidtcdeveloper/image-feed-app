@@ -100,6 +100,13 @@ androidx-room-runtime = { group = "androidx.room", name = "room-runtime", versio
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
 androidx-sqlite-bundled = { group = "androidx.sqlite", name = "sqlite-bundled", version.ref = "sqlite" }
 
+# Build Logic Plugin Classpath
+android-gradlePlugin = { group = "com.android.tools.build", name = "gradle", version.ref = "agp" }
+kotlin-gradlePlugin = { group = "org.jetbrains.kotlin", name = "kotlin-gradle-plugin", version.ref = "kotlin" }
+metro-gradlePlugin = { group = "dev.zacsweers.metro", name = "gradle-plugin", version.ref = "metro" }
+ktlint-gradlePlugin = { group = "org.jlleitschuh.gradle", name = "ktlint-gradle", version.ref = "ktlint" }
+detekt-gradlePlugin = { group = "io.gitlab.arturbosch.detekt", name = "detekt-gradle-plugin", version.ref = "detekt" }
+
 [bundles]
 # Grouping related dependencies for concise import blocks
 ktor-common = [
@@ -125,3 +132,11 @@ ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 androidx-room = { id = "androidx.room", version.ref = "room" }
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+
+# Convention Plugins (build-logic)
+imagefeed-quality = { id = "imagefeed.quality" }
+imagefeed-kmp-library = { id = "imagefeed.kmp.library" }
+imagefeed-metro = { id = "imagefeed.metro" }
+imagefeed-android-application = { id = "imagefeed.android.application" }
+imagefeed-android-test = { id = "imagefeed.android.test" }

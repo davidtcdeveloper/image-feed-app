@@ -1,25 +1,18 @@
 plugins {
-    alias(libs.plugins.kotlin.multiplatform)
-    alias(libs.plugins.android.kotlin.multiplatform.library)
+    alias(libs.plugins.imagefeed.kmp.library)
     alias(libs.plugins.kotlin.serialization)
-    alias(libs.plugins.metro)
+    alias(libs.plugins.imagefeed.metro)
     alias(libs.plugins.ksp)
     alias(libs.plugins.androidx.room)
 }
 
 kotlin {
-    jvmToolchain(17)
     compilerOptions {
         freeCompilerArgs.add("-Xexpect-actual-classes")
     }
     android {
         namespace = "com.example.imagefeed.core.database"
-        withHostTest {}
     }
-
-    iosArm64()
-    iosSimulatorArm64()
-    macosArm64()
 
     sourceSets {
         commonMain.dependencies {
@@ -47,9 +40,4 @@ dependencies {
 
 room {
     schemaDirectory("$projectDir/schemas")
-}
-
-metro {
-    enabled = true
-    debug = false
 }

@@ -1,31 +1,19 @@
 import com.codingfeline.buildkonfig.compiler.FieldSpec.Type
-import java.util.Properties
+import com.example.imagefeed.buildlogic.readLocalProperty
 
 plugins {
-    alias(libs.plugins.kotlin.multiplatform)
-    alias(libs.plugins.android.kotlin.multiplatform.library)
+    alias(libs.plugins.imagefeed.kmp.library)
     alias(libs.plugins.buildkonfig)
     alias(libs.plugins.kotlin.serialization)
-    alias(libs.plugins.metro)
+    alias(libs.plugins.imagefeed.metro)
 }
 
-val localProperties = Properties()
-val localPropertiesFile = rootProject.file("local.properties")
-if (localPropertiesFile.exists()) {
-    localProperties.load(localPropertiesFile.inputStream())
-}
-val unsplashApiKey = localProperties.getProperty("unsplash.api.key") ?: ""
+val unsplashApiKey = readLocalProperty("unsplash.api.key")
 
 kotlin {
-    jvmToolchain(17)
     android {
         namespace = "com.example.imagefeed.core.network"
-        withHostTest {}
     }
-
-    iosArm64()
-    iosSimulatorArm64()
-    macosArm64()
 
     sourceSets {
         commonMain.dependencies {
@@ -56,9 +44,4 @@ buildkonfig {
     defaultConfigs {
         buildConfigField(Type.STRING, "UNSPLASH_API_KEY", unsplashApiKey)
     }
-}
-
-metro {
-    enabled = true
-    debug = false
 }

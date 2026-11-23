@@ -1,19 +1,14 @@
-import java.util.Properties
+import com.example.imagefeed.buildlogic.readLocalProperty
 
 plugins {
-    alias(libs.plugins.android.application)
+    alias(libs.plugins.imagefeed.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.baselineprofile)
 }
 
 // Read Google Maps API Key from local.properties
-val localProperties = Properties()
-val localPropertiesFile = rootProject.file("local.properties")
-if (localPropertiesFile.exists()) {
-    localProperties.load(localPropertiesFile.inputStream())
-}
-val googleMapsApiKey = localProperties.getProperty("google.maps.api.key") ?: ""
+val googleMapsApiKey = readLocalProperty("google.maps.api.key")
 
 configure<com.android.build.api.dsl.ApplicationExtension> {
     namespace = "com.example.imagefeed.android"
@@ -44,17 +39,9 @@ configure<com.android.build.api.dsl.ApplicationExtension> {
             )
         }
     }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
     buildFeatures {
         compose = true
     }
-}
-
-kotlin {
-    jvmToolchain(17)
 }
 
 dependencies {

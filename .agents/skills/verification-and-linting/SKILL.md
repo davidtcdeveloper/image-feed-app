@@ -89,6 +89,7 @@ Run the project linters and formatters to maintain a zero-violation baseline. Ne
 - **Run Kotlin lint check & detekt static analysis:**
   ```bash
   ./gradlew ktlintCheck detekt
+  ./gradlew -p build-logic :convention:ktlintCheck
   ```
 
 ### B. Swift (shared `iosApp/iosApp` sources for iOS and macOS)

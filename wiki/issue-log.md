@@ -20,7 +20,11 @@ This file captures systemic issues, documentation drift, skill gaps, build/tooli
 
 ## Open Issues
 
-*(None currently open.)*
+### [OPEN] ISS-006: Upstream KSP `2.3.6` `nonSelfDeps` Blocks Global Gradle Isolated Projects
+- **Date / Context**: 2026-11-23 (Spec 78 — `build-logic` Convention Plugins & Isolated Projects Readiness)
+- **Category**: `tooling-friction`
+- **Symptom & Evidence**: Running `./gradlew :androidApp:assembleDebug -Dorg.gradle.unsafe.isolated-projects=true` fails during `:core:database:kspAndroidMain` task creation (`Project ':core:database' cannot access task dependencies directly` in `KSP 2.3.6` `KspSubpluginKt.nonSelfDeps`). All 12 non-KSP modules pass strict Isolated Projects with 0 violations, so `org.gradle.unsafe.isolated-projects=true` remains unset in [`gradle.properties`](../gradle.properties) until KSP is upgraded past `2.3.6` and `:androidApp:assembleDebug -Dorg.gradle.unsafe.isolated-projects=true` passes with 0 problems.
+- **Suggested Layer**: `wiki/` | `specs/`
 
 ---
 

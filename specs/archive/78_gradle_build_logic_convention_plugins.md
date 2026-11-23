@@ -1,6 +1,6 @@
 # Specification 78: Gradle `build-logic` Convention Plugins & Isolated Projects Readiness
 
-**Status:** Accepted
+**Status:** Implemented (Final)
 
 ---
 
@@ -216,30 +216,29 @@ Upon full implementation (not during this draft spec authoring):
 
 ## 10. Acceptance Criteria
 
-- [ ] `gradle/libs.versions.toml` defines `android-gradlePlugin`, `kotlin-gradlePlugin`, `metro-gradlePlugin`, `ktlint-gradlePlugin`, `detekt-gradlePlugin`, `kotlin-jvm`, and the 5 `imagefeed-*` plugin aliases alongside existing `# Android SDK` constants.
-- [ ] `build-logic/settings.gradle.kts` shares `../gradle/libs.versions.toml` and `build-logic/convention/build.gradle.kts` compiles cleanly with Java `21` compatibility and `compileOnly(...)` plugin classpath dependencies.
-- [ ] All 5 convention plugins (`imagefeed.quality`, `imagefeed.kmp.library`, `imagefeed.metro`, `imagefeed.android.application`, `imagefeed.android.test`) and `AndroidSdkConfig.kt` (`readLocalProperty` via `isolated.rootProject.projectDirectory`) are implemented without `kotlin-dsl`.
-- [ ] Root `settings.gradle.kts` includes `build-logic` via `pluginManagement.includeBuild("build-logic")`.
-- [ ] Root `build.gradle.kts` contains zero `subprojects { ... }` blocks, zero Android SDK declarations, and keeps only active `apply false` plugin declarations.
-- [ ] All 13 module `build.gradle.kts` files migrate to convention plugins with zero duplicated SDK versions, `jvmToolchain(17)`, Apple K/N target blocks, `withHostTest {}`, `metro { ... }` blocks, or `rootProject.file("local.properties")` calls.
-- [ ] `./gradlew :androidApp:assembleDebug`, `:androidApp:testDebugUnitTest`, `:benchmark:checkBenchmarkReleaseAarMetadata`, `:benchmark:compileBenchmarkReleaseKotlin`, `./gradlew allTests`, `:shared:compileKotlinIosSimulatorArm64`, `:shared:compileKotlinMacosArm64`, `./gradlew ktlintCheck detekt` (plus `build-logic` ktlint check) pass with zero new compiler warnings.
-- [ ] `xcodegen generate --spec iosApp/project.yml` and `xcodebuild` for both `iosApp` (iOS Simulator) and `macosApp` (`platform=macOS,arch=arm64`) succeed cleanly.
-- [ ] Configuration Cache stores and reuses entries cleanly; strict `-Dorg.gradle.unsafe.isolated-projects=true` produces 0 build-script violations across all modules and 0 total violations on non-KSP modules (with `org.gradle.unsafe.isolated-projects=true` gated per §3).
-- [ ] Living docs (`wiki/architecture-and-modules.md`, `wiki/adr-index.md` ADR-11, `wiki/issue-log.md` if KSP blocker remains) and `specs/steps.md` are updated and this spec is archived to `specs/archive/`.
+- [x] `gradle/libs.versions.toml` defines `android-gradlePlugin`, `kotlin-gradlePlugin`, `metro-gradlePlugin`, `ktlint-gradlePlugin`, `detekt-gradlePlugin`, `kotlin-jvm`, and the 5 `imagefeed-*` plugin aliases alongside existing `# Android SDK` constants.
+- [x] `build-logic/settings.gradle.kts` shares `../gradle/libs.versions.toml` and `build-logic/convention/build.gradle.kts` compiles cleanly with Java `21` compatibility and `compileOnly(...)` plugin classpath dependencies.
+- [x] All 5 convention plugins (`imagefeed.quality`, `imagefeed.kmp.library`, `imagefeed.metro`, `imagefeed.android.application`, `imagefeed.android.test`) and `AndroidSdkConfig.kt` (`readLocalProperty` via `isolated.rootProject.projectDirectory`) are implemented without `kotlin-dsl`.
+- [x] Root `settings.gradle.kts` includes `build-logic` via `pluginManagement.includeBuild("build-logic")`.
+- [x] Root `build.gradle.kts` contains zero `subprojects { ... }` blocks, zero Android SDK declarations, and keeps only active `apply false` plugin declarations.
+- [x] All 13 module `build.gradle.kts` files migrate to convention plugins with zero duplicated SDK versions, `jvmToolchain(17)`, Apple K/N target blocks, `withHostTest {}`, `metro { ... }` blocks, or `rootProject.file("local.properties")` calls.
+- [x] `./gradlew :androidApp:assembleDebug`, `:androidApp:testDebugUnitTest`, `:benchmark:checkBenchmarkReleaseAarMetadata`, `:benchmark:compileBenchmarkReleaseKotlin`, `./gradlew allTests`, `:shared:compileKotlinIosSimulatorArm64`, `:shared:compileKotlinMacosArm64`, `./gradlew ktlintCheck detekt` (plus `build-logic` ktlint check) pass with zero new compiler warnings.
+- [x] `xcodegen generate --spec iosApp/project.yml` and `xcodebuild` for both `iosApp` (iOS Simulator) and `macosApp` (`platform=macOS,arch=arm64`) succeed cleanly.
+- [x] Configuration Cache stores and reuses entries cleanly; strict `-Dorg.gradle.unsafe.isolated-projects=true` produces 0 build-script violations across all modules and 0 total violations on non-KSP modules (with `org.gradle.unsafe.isolated-projects=true` gated per §3).
+- [x] Living docs (`wiki/architecture-and-modules.md`, `wiki/adr-index.md` ADR-11, `wiki/issue-log.md` if KSP blocker remains) and `specs/steps.md` are updated and this spec is archived to `specs/archive/`.
 
 ---
 
-## 11. Verification Record (Pre-Implementation Spike)
+## 11. Verification Record
 
-* **Verified (Prototype Spike in Worktree on `eca2095`, Gradle `9.9.2`, Reverted Cleanly Before Spec Commit)**:
-  * Baseline IP probe (`ANDROID_HOME=/Users/davidtiagoconceicao/Library/Android/sdk ./gradlew :androidApp:assembleDebug -Dorg.gradle.unsafe.isolated-projects=true --configuration-cache-problems=warn -Dorg.gradle.configuration-cache.max-problems=5000`): failed at `build.gradle.kts:35` (`Project ':' cannot access 'Project.pluginManager' functionality on subprojects`), confirming `subprojects {}` prevents Isolated Projects evaluation.
-  * Prototype standard build (`./gradlew :androidApp:assembleDebug :benchmark:compileBenchmarkReleaseKotlin :shared:compileKotlinIosSimulatorArm64 :shared:compileKotlinMacosArm64 ktlintCheck detekt`): `BUILD SUCCESSFUL in 51s` (`318 actionable tasks: 304 executed, 10 from cache, 4 up-to-date`), `Configuration cache entry stored`.
-  * Prototype Isolated Projects strict probes (`-Dorg.gradle.unsafe.isolated-projects=true`):
-    * `:benchmark:compileBenchmarkReleaseKotlin` -> `BUILD SUCCESSFUL in 609ms` (`0` problems, CC stored).
-    * `:core:network:compileAndroidMain` -> `BUILD SUCCESSFUL in 545ms` (`0` problems, CC stored).
-    * `detekt` (all 13 modules) -> `BUILD SUCCESSFUL in 482ms` (`0` problems, CC stored).
-    * `:feature:feed:ktlintCheck :androidApp:ktlintCheck :benchmark:ktlintCheck :feature:feed:compileKotlinIosSimulatorArm64` -> `BUILD SUCCESSFUL in 585ms` (`0` problems, CC stored).
-    * `:feature:collections:compileAndroidMain :feature:profile:compileAndroidMain :feature:search:compileAndroidMain` -> `BUILD SUCCESSFUL in 526ms` (`0` problems, CC stored).
-    * `:androidApp:assembleDebug`, `:shared:compileKotlinIosSimulatorArm64`, `ktlintCheck` (root aggregate), and `:core:database:compileAndroidMain` -> failed solely on `KSP 2.3.6` (`com.google.devtools.ksp.gradle.KspSubpluginKt.nonSelfDeps(KspSubplugin.kt:493)` inside `KspAATask$Companion$registerKspAATask` throwing `Project ':core:database' cannot access task dependencies directly`).
-* **Pending Full-Implementation Verification**:
-  * Full `./gradlew allTests`, `:androidApp:testDebugUnitTest`, `:benchmark:checkBenchmarkReleaseAarMetadata`, `xcodegen generate --spec iosApp/project.yml` + `xcodebuild` for `iosApp` and `macosApp`, `build-logic` self-ktlint verification, and re-testing `:androidApp:assembleDebug -Dorg.gradle.unsafe.isolated-projects=true` when upgrading KSP past `2.3.6`.
+* **Verified (Full Implementation, Gradle `9.9.2`):**
+  * `./gradlew -p build-logic :convention:compileKotlin :convention:ktlintCheck`: `BUILD SUCCESSFUL in 1s` (`6 actionable tasks: 3 executed, 3 up-to-date`).
+  * `./gradlew :androidApp:assembleDebug :androidApp:testDebugUnitTest :benchmark:checkBenchmarkReleaseAarMetadata :benchmark:compileBenchmarkReleaseKotlin :shared:compileKotlinIosSimulatorArm64 :shared:compileKotlinMacosArm64 ktlintCheck detekt`: `BUILD SUCCESSFUL in 30s` (`336 actionable tasks: 193 executed, 143 from cache`, `Configuration cache entry stored`).
+  * `./gradlew allTests`: `BUILD SUCCESSFUL in 25s` (`314 actionable tasks: 209 executed, 105 up-to-date`, `Configuration cache entry stored`).
+  * `xcodegen generate --spec iosApp/project.yml` + `xcodebuild` for `iosApp` (`generic/platform=iOS Simulator`) and `macosApp` (`platform=macOS,arch=arm64`): `** BUILD SUCCEEDED **` for both targets.
+  * Isolated Projects strict probes (`-Dorg.gradle.unsafe.isolated-projects=true`):
+    * `:benchmark:compileBenchmarkReleaseKotlin :core:network:compileAndroidMain detekt :feature:feed:ktlintCheck :androidApp:ktlintCheck :benchmark:ktlintCheck :feature:collections:compileAndroidMain :feature:profile:compileAndroidMain :feature:search:compileAndroidMain`: `BUILD SUCCESSFUL in 717ms` (`0` problems, `Configuration cache entry stored`).
+    * Repeated `:benchmark:compileBenchmarkReleaseKotlin :core:network:compileAndroidMain detekt -Dorg.gradle.unsafe.isolated-projects=true`: `BUILD SUCCESSFUL in 592ms` (`0` problems).
+    * `:androidApp:assembleDebug -Dorg.gradle.unsafe.isolated-projects=true`: fails solely on upstream `KSP 2.3.6` (`:core:database:kspAndroidMain` -> `Project ':core:database' cannot access task dependencies directly`); logged as `[OPEN] ISS-006` in [`wiki/issue-log.md`](../../wiki/issue-log.md), keeping `org.gradle.unsafe.isolated-projects=true` unset in `gradle.properties`.
+* **Unverified / Gaps:**
+  * `readLocalProperty` fallback behavior when `local.properties` is absent in a fresh git worktree was not separately exercised in this workspace (where `local.properties` is present).

@@ -1,5 +1,5 @@
 plugins {
-    alias(libs.plugins.android.test)
+    alias(libs.plugins.imagefeed.android.test)
     alias(libs.plugins.baselineprofile)
 }
 
@@ -20,10 +20,6 @@ android {
     }
 
     targetProjectPath = ":androidApp"
-}
-
-kotlin {
-    jvmToolchain(17)
 }
 
 dependencies {
