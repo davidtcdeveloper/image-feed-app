@@ -15,8 +15,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Grid
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -36,6 +35,9 @@ import androidx.compose.foundation.lazy.staggeredgrid.itemsIndexed
 import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.input.clearText
+import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -47,11 +49,9 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DockedSearchBar
+import androidx.compose.material3.ExpandedDockedSearchBar
+import androidx.compose.material3.ExpandedFullScreenSearchBar
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -59,12 +59,14 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SearchBar
 import androidx.compose.material3.SearchBarDefaults
+import androidx.compose.material3.SearchBarValue
 import androidx.compose.material3.SecondaryTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
+import androidx.compose.material3.rememberSearchBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -94,6 +96,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.PopupProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavKey
 import androidx.navigationevent.NavigationEventInfo
@@ -105,6 +108,9 @@ import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.example.imagefeed.android.adaptive.LocalAdaptiveLayoutInfo
 import com.example.imagefeed.android.navigation.AppRoute
+import com.example.imagefeed.android.theme.ConnectedToggleGroup
+import com.example.imagefeed.android.theme.ExpressiveLoadingIndicator
+import com.example.imagefeed.android.theme.ExpressiveWavyProgressIndicator
 import com.example.imagefeed.android.util.BLURHASH_PLACEHOLDER_WIDTH
 import com.example.imagefeed.android.util.CollectionMosaicCardSkeleton
 import com.example.imagefeed.android.util.PhotoGridSkeleton
@@ -180,13 +186,53 @@ fun SearchScreen(
         }
     }
 
+    val textFieldState = rememberTextFieldState(initialText = state.query)
+    LaunchedEffect(textFieldState) {
+        snapshotFlow { textFieldState.text.toString() }
+            .distinctUntilChanged()
+            .collect { text ->
+                if (text != state.query) {
+                    viewModel.dispatch(UnifiedSearchIntent.UpdateQuery(text))
+                }
+            }
+    }
+    LaunchedEffect(state.query) {
+        if (textFieldState.text.toString() != state.query) {
+            textFieldState.setTextAndPlaceCursorAtEnd(state.query)
+        }
+    }
+
+    val searchBarState =
+        rememberSearchBarState(
+            initialValue =
+                if (state.isSearchActive) {
+                    SearchBarValue.Expanded
+                } else {
+                    SearchBarValue.Collapsed
+                },
+        )
+    LaunchedEffect(state.isSearchActive) {
+        if (state.isSearchActive && searchBarState.targetValue != SearchBarValue.Expanded) {
+            searchBarState.animateToExpanded()
+        } else if (!state.isSearchActive && searchBarState.targetValue != SearchBarValue.Collapsed) {
+            searchBarState.animateToCollapsed()
+        }
+    }
+    LaunchedEffect(searchBarState) {
+        snapshotFlow { searchBarState.targetValue == SearchBarValue.Expanded }
+            .distinctUntilChanged()
+            .collect { expanded ->
+                if (expanded != state.isSearchActive) {
+                    viewModel.dispatch(UnifiedSearchIntent.SetSearchActive(expanded))
+                }
+            }
+    }
+
     val searchInputField = @Composable {
         SearchBarDefaults.InputField(
-            query = state.query,
-            onQueryChange = { viewModel.dispatch(UnifiedSearchIntent.UpdateQuery(it)) },
+            textFieldState = textFieldState,
+            searchBarState = searchBarState,
             onSearch = { viewModel.dispatch(UnifiedSearchIntent.SubmitSearch(it)) },
-            expanded = state.isSearchActive,
-            onExpandedChange = { viewModel.dispatch(UnifiedSearchIntent.SetSearchActive(it)) },
             placeholder = {
                 Text(
                     stringResource(R.string.search_input_prompt),
@@ -213,8 +259,13 @@ fun SearchScreen(
             },
             trailingIcon = {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (state.query.isNotEmpty()) {
-                        IconButton(onClick = { viewModel.dispatch(UnifiedSearchIntent.UpdateQuery("")) }) {
+                    if (textFieldState.text.isNotEmpty()) {
+                        IconButton(
+                            onClick = {
+                                textFieldState.clearText()
+                                viewModel.dispatch(UnifiedSearchIntent.UpdateQuery(""))
+                            },
+                        ) {
                             Icon(
                                 Icons.Default.Clear,
                                 contentDescription = stringResource(R.string.search_action_clear_accessibility),
@@ -245,18 +296,21 @@ fun SearchScreen(
     Scaffold(
         topBar = {
             Column(modifier = Modifier.background(MaterialTheme.colorScheme.surface)) {
+                SearchBar(
+                    state = searchBarState,
+                    inputField = searchInputField,
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(
+                                horizontal = if (isCompact) 12.dp else 16.dp,
+                                vertical = 8.dp,
+                            ),
+                )
                 if (isCompact) {
-                    SearchBar(
+                    ExpandedFullScreenSearchBar(
+                        state = searchBarState,
                         inputField = searchInputField,
-                        expanded = state.isSearchActive,
-                        onExpandedChange = { viewModel.dispatch(UnifiedSearchIntent.SetSearchActive(it)) },
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(
-                                    horizontal = if (state.isSearchActive) 0.dp else 12.dp,
-                                    vertical = if (state.isSearchActive) 0.dp else 8.dp,
-                                ),
                     ) {
                         SearchSuggestionsAndHistory(
                             history = state.searchHistory,
@@ -268,14 +322,10 @@ fun SearchScreen(
                         )
                     }
                 } else {
-                    DockedSearchBar(
+                    ExpandedDockedSearchBar(
+                        state = searchBarState,
                         inputField = searchInputField,
-                        expanded = state.isSearchActive,
-                        onExpandedChange = { viewModel.dispatch(UnifiedSearchIntent.SetSearchActive(it)) },
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                        properties = PopupProperties(focusable = true, blurBehindRadius = 16.dp),
                     ) {
                         SearchSuggestionsAndHistory(
                             history = state.searchHistory,
@@ -386,7 +436,7 @@ fun SearchScreen(
                             }
                             SearchTab.USERS -> {
                                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                    CircularProgressIndicator()
+                                    ExpressiveLoadingIndicator()
                                 }
                             }
                         }
@@ -578,17 +628,19 @@ fun SearchSuggestionsAndHistory(
         )
         Spacer(modifier = Modifier.height(12.dp))
 
-        @OptIn(ExperimentalLayoutApi::class)
-        FlowRow(
+        val isCompact = LocalAdaptiveLayoutInfo.current.isCompactWidth
+        Grid(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+            config = {
+                repeat(if (isCompact) 2 else 4) { column(1.fr) }
+                gap(10.dp)
+            },
         ) {
             POPULAR_TOPICS.forEach { topic ->
                 Box(
                     modifier =
                         Modifier
-                            .width(120.dp)
+                            .fillMaxWidth()
                             .height(64.dp)
                             .clip(MaterialTheme.shapes.large)
                             .background(suggestionGradient(topic))
@@ -699,7 +751,7 @@ fun PhotosResultGrid(
                             .padding(16.dp),
                     contentAlignment = Alignment.Center,
                 ) {
-                    CircularProgressIndicator()
+                    ExpressiveWavyProgressIndicator()
                 }
             }
         }
@@ -776,7 +828,7 @@ fun CollectionsResultList(
                             .padding(16.dp),
                     contentAlignment = Alignment.Center,
                 ) {
-                    CircularProgressIndicator()
+                    ExpressiveWavyProgressIndicator()
                 }
             }
         }
@@ -947,7 +999,7 @@ fun UsersResultList(
                             .padding(16.dp),
                     contentAlignment = Alignment.Center,
                 ) {
-                    CircularProgressIndicator()
+                    ExpressiveWavyProgressIndicator()
                 }
             }
         }
@@ -1160,26 +1212,18 @@ fun SearchFiltersSheet(
                 letterSpacing = 1.sp,
             )
             Spacer(modifier = Modifier.height(8.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilterChip(
-                    selected = selectedOrderBy == "relevant",
-                    onClick = {
-                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                        selectedOrderBy = "relevant"
-                    },
-                    label = { Text(stringResource(R.string.search_filter_sort_relevant)) },
-                    colors = FilterChipDefaults.filterChipColors(),
-                )
-                FilterChip(
-                    selected = selectedOrderBy == "latest",
-                    onClick = {
-                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                        selectedOrderBy = "latest"
-                    },
-                    label = { Text(stringResource(R.string.search_filter_sort_latest)) },
-                    colors = FilterChipDefaults.filterChipColors(),
-                )
-            }
+            ConnectedToggleGroup(
+                options =
+                    listOf(
+                        "relevant" to stringResource(R.string.search_filter_sort_relevant),
+                        "latest" to stringResource(R.string.search_filter_sort_latest),
+                    ),
+                selected = selectedOrderBy,
+                onSelect = { orderBy ->
+                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    selectedOrderBy = orderBy
+                },
+            )
 
             Spacer(modifier = Modifier.height(20.dp))
 
@@ -1192,35 +1236,19 @@ fun SearchFiltersSheet(
                 letterSpacing = 1.sp,
             )
             Spacer(modifier = Modifier.height(8.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilterChip(
-                    selected = selectedOrientation == null,
-                    onClick = {
-                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                        selectedOrientation = null
-                    },
-                    label = { Text(stringResource(R.string.search_filter_orientation_all)) },
-                    colors = FilterChipDefaults.filterChipColors(),
-                )
-                FilterChip(
-                    selected = selectedOrientation == "landscape",
-                    onClick = {
-                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                        selectedOrientation = "landscape"
-                    },
-                    label = { Text(stringResource(R.string.search_filter_orientation_landscape)) },
-                    colors = FilterChipDefaults.filterChipColors(),
-                )
-                FilterChip(
-                    selected = selectedOrientation == "portrait",
-                    onClick = {
-                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                        selectedOrientation = "portrait"
-                    },
-                    label = { Text(stringResource(R.string.search_filter_orientation_portrait)) },
-                    colors = FilterChipDefaults.filterChipColors(),
-                )
-            }
+            ConnectedToggleGroup(
+                options =
+                    listOf(
+                        null to stringResource(R.string.search_filter_orientation_all),
+                        "landscape" to stringResource(R.string.search_filter_orientation_landscape),
+                        "portrait" to stringResource(R.string.search_filter_orientation_portrait),
+                    ),
+                selected = selectedOrientation,
+                onSelect = { orientation ->
+                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    selectedOrientation = orientation
+                },
+            )
 
             Spacer(modifier = Modifier.height(20.dp))
 

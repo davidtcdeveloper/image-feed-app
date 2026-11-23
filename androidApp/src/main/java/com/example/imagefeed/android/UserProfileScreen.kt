@@ -15,7 +15,9 @@ import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.FlexBox
+import androidx.compose.foundation.layout.FlexJustifyContent
+import androidx.compose.foundation.layout.FlexWrap
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -51,8 +53,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -103,6 +103,8 @@ import coil3.compose.LocalPlatformContext
 import coil3.compose.rememberAsyncImagePainter
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import com.example.imagefeed.android.theme.ExpressiveLoadingIndicator
+import com.example.imagefeed.android.theme.ExpressiveWavyProgressIndicator
 import com.example.imagefeed.android.util.BLURHASH_PLACEHOLDER_WIDTH
 import com.example.imagefeed.android.util.CollectionMosaicCardSkeleton
 import com.example.imagefeed.android.util.PhotoCardSkeleton
@@ -125,7 +127,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 import kotlin.math.roundToInt
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun UserProfileScreen(
     sharedTransitionScope: SharedTransitionScope,
@@ -387,7 +389,7 @@ fun UserProfileContent(
                                         .padding(16.dp),
                                 contentAlignment = Alignment.Center,
                             ) {
-                                CircularProgressIndicator()
+                                ExpressiveWavyProgressIndicator()
                             }
                         }
                     }
@@ -438,7 +440,7 @@ fun UserProfileContent(
                                         .padding(16.dp),
                                 contentAlignment = Alignment.Center,
                             ) {
-                                CircularProgressIndicator()
+                                ExpressiveWavyProgressIndicator()
                             }
                         }
                     }
@@ -554,9 +556,13 @@ fun ProfileHeaderSection(user: User) {
 
         if (hasInstagram || hasTwitter || hasPortfolio) {
             Spacer(modifier = Modifier.height(16.dp))
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+            FlexBox(
+                modifier = Modifier.fillMaxWidth(),
+                config = {
+                    wrap(FlexWrap.Wrap)
+                    justifyContent(FlexJustifyContent.Center)
+                    gap(8.dp)
+                },
             ) {
                 if (instagramHandle != null) {
                     AssistChip(
@@ -873,7 +879,7 @@ fun InsightsTabContent(
                         .padding(48.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                CircularProgressIndicator()
+                ExpressiveLoadingIndicator()
             }
         } else if (error != null && stats == null) {
             Box(

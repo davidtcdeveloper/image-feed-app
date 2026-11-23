@@ -20,8 +20,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -51,6 +49,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavKey
 import com.example.imagefeed.android.navigation.AppRoute
+import com.example.imagefeed.android.theme.ExpressiveLoadingIndicator
 import com.example.imagefeed.android.util.localizedMessage
 import com.example.imagefeed.model.Photo
 import com.example.imagefeed.model.User
@@ -61,7 +60,6 @@ import com.example.imagefeed.presentation.favorites.FavoritesViewModel
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FavoritesScreen(
     sharedTransitionScope: SharedTransitionScope,
@@ -138,7 +136,7 @@ fun FavoritesScreen(
                     .padding(paddingValues),
         ) {
             if (state.isLoading) {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                ExpressiveLoadingIndicator(modifier = Modifier.align(Alignment.Center))
             } else if (state.photos.isEmpty()) {
                 Column(
                     modifier =

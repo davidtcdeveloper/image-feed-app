@@ -24,7 +24,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.FlexBox
+import androidx.compose.foundation.layout.FlexWrap
+import androidx.compose.foundation.layout.Grid
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -58,8 +60,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -84,6 +84,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.BlurredEdgeTreatment
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawWithCache
@@ -93,6 +95,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.blur.BlurRadiusSpec
+import androidx.compose.ui.graphics.blur.BlurStop
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.Painter
@@ -115,6 +119,7 @@ import coil3.request.crossfade
 import com.example.imagefeed.android.adaptive.AdaptiveLayoutInfo
 import com.example.imagefeed.android.adaptive.DevicePosture
 import com.example.imagefeed.android.adaptive.LocalAdaptiveLayoutInfo
+import com.example.imagefeed.android.theme.ExpressiveLoadingIndicator
 import com.example.imagefeed.android.theme.PhotoSwatch
 import com.example.imagefeed.android.theme.deriveTonalSwatches
 import com.example.imagefeed.android.theme.generatePhotoColorScheme
@@ -158,7 +163,7 @@ private const val DUAL_PANE_INSPECTOR_WEIGHT = 0.42f
 private const val MIN_ZOOM_SCALE = 1f
 private const val MAX_ZOOM_SCALE = 4f
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun PhotoDetailsScreen(
     sharedTransitionScope: SharedTransitionScope,
@@ -216,7 +221,7 @@ fun PhotoDetailsScreen(
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun PhotoDetailsScreen(
     sharedTransitionScope: SharedTransitionScope,
@@ -300,7 +305,7 @@ fun PhotoDetailsScreen(
             ) {
                 if (state.isLoading && state.photo == null) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
+                        ExpressiveLoadingIndicator()
                     }
                 } else if (state.error != null && state.photo == null) {
                     Column(
@@ -357,7 +362,7 @@ fun PhotoDetailsScreen(
     }
 }
 
-@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class, ExperimentalSharedTransitionApi::class)
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun PhotoDetailsContent(
     sharedTransitionScope: SharedTransitionScope,
@@ -652,7 +657,8 @@ fun PhotoCanvasPane(
                                 scaleY = scale,
                                 translationX = offset.x,
                                 translationY = offset.y,
-                            ).sharedElement(
+                            ).attributionBottomProgressiveBlur(enabled = scale <= MIN_ZOOM_SCALE)
+                            .sharedElement(
                                 sharedContentState = rememberSharedContentState(key = "photo_img_${photo.id}"),
                                 animatedVisibilityScope = animatedVisibilityScope,
                             ),
@@ -745,6 +751,7 @@ fun PhotoCanvasPane(
                     modifier =
                         Modifier
                             .fillMaxSize()
+                            .attributionBottomProgressiveBlur()
                             .sharedElement(
                                 sharedContentState = rememberSharedContentState(key = "photo_img_${photo.id}"),
                                 animatedVisibilityScope = animatedVisibilityScope,
@@ -824,7 +831,29 @@ fun PhotoCanvasPane(
     }
 }
 
-@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+private const val ATTRIBUTION_BLUR_START_FRACTION = 0.72f
+private val ATTRIBUTION_BLUR_MAX_RADIUS = 14.dp
+
+/**
+ * Applies a subtle progressive vertical blur over the bottom attribution region of a photo
+ * so foreground attribution controls remain legible without blurring the full image.
+ */
+private fun Modifier.attributionBottomProgressiveBlur(enabled: Boolean = true): Modifier =
+    if (!enabled) {
+        this
+    } else {
+        blur {
+            blurRadiusSpec =
+                BlurRadiusSpec.verticalGradient(
+                    listOf(
+                        BlurStop(fraction = ATTRIBUTION_BLUR_START_FRACTION, radius = 0.dp),
+                        BlurStop(fraction = 1f, radius = ATTRIBUTION_BLUR_MAX_RADIUS),
+                    ),
+                )
+            edgeTreatment = BlurredEdgeTreatment.Rectangle
+        }
+    }
+
 @Composable
 fun PhotoInspectorPane(
     modifier: Modifier = Modifier,
@@ -1030,44 +1059,34 @@ fun PhotoInspectorPane(
                     } ?: "--"
                 val isoVal = exif.iso?.toString() ?: "--"
 
-                Column(
+                val isCompact = LocalAdaptiveLayoutInfo.current.isCompactWidth
+                Grid(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    config = {
+                        repeat(if (isCompact) 2 else 4) { column(1.fr) }
+                        gap(8.dp)
+                    },
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        ExifBentoCell(
-                            icon = Icons.Default.Camera,
-                            label = stringResource(R.string.details_exif_aperture),
-                            value = apertureVal,
-                            modifier = Modifier.weight(1f),
-                        )
-                        ExifBentoCell(
-                            icon = Icons.Default.Timer,
-                            label = stringResource(R.string.details_exif_exposure),
-                            value = shutterVal,
-                            modifier = Modifier.weight(1f),
-                        )
-                    }
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        ExifBentoCell(
-                            icon = Icons.Default.Lens,
-                            label = stringResource(R.string.details_exif_focal_length),
-                            value = focalVal,
-                            modifier = Modifier.weight(1f),
-                        )
-                        ExifBentoCell(
-                            icon = Icons.Default.Iso,
-                            label = stringResource(R.string.details_exif_iso),
-                            value = isoVal,
-                            modifier = Modifier.weight(1f),
-                        )
-                    }
+                    ExifBentoCell(
+                        icon = Icons.Default.Camera,
+                        label = stringResource(R.string.details_exif_aperture),
+                        value = apertureVal,
+                    )
+                    ExifBentoCell(
+                        icon = Icons.Default.Timer,
+                        label = stringResource(R.string.details_exif_exposure),
+                        value = shutterVal,
+                    )
+                    ExifBentoCell(
+                        icon = Icons.Default.Lens,
+                        label = stringResource(R.string.details_exif_focal_length),
+                        value = focalVal,
+                    )
+                    ExifBentoCell(
+                        icon = Icons.Default.Iso,
+                        label = stringResource(R.string.details_exif_iso),
+                        value = isoVal,
+                    )
                 }
             }
         }
@@ -1272,10 +1291,12 @@ fun PhotoInspectorPane(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
 
-                FlowRow(
+                FlexBox(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    config = {
+                        wrap(FlexWrap.Wrap)
+                        gap(8.dp)
+                    },
                 ) {
                     tags.forEach { tag ->
                         SuggestionChip(
@@ -1825,7 +1846,7 @@ fun formatStatValue(
 }
 
 @Preview(showBackground = true, name = "Photo Details - Compact")
-@OptIn(ExperimentalSharedTransitionApi::class, ExperimentalMaterial3Api::class, ExperimentalMaterial3WindowSizeClassApi::class)
+@OptIn(ExperimentalSharedTransitionApi::class, ExperimentalMaterial3WindowSizeClassApi::class)
 @Composable
 fun PhotoDetailsScreenPreview() {
     val samplePhoto =

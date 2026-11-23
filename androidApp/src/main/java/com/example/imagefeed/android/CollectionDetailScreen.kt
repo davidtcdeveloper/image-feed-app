@@ -36,8 +36,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -72,6 +70,8 @@ import coil3.compose.LocalPlatformContext
 import coil3.compose.rememberAsyncImagePainter
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import com.example.imagefeed.android.theme.ExpressiveLoadingIndicator
+import com.example.imagefeed.android.theme.ExpressiveWavyProgressIndicator
 import com.example.imagefeed.android.util.bounceClick
 import com.example.imagefeed.android.util.rememberBlurHashPlaceholder
 import com.example.imagefeed.model.Photo
@@ -83,7 +83,7 @@ import com.example.imagefeed.presentation.collection.CollectionDetailViewModel
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun CollectionDetailScreen(
     sharedTransitionScope: SharedTransitionScope,
@@ -204,7 +204,7 @@ fun CollectionDetailScreen(
         ) {
             if (state.photos.isEmpty() && state.isLoadingPhotos && state.isHeaderLoading) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
+                    ExpressiveLoadingIndicator()
                 }
             } else {
                 val itemWidthPx = calculatePhotoItemWidthPx()
@@ -287,7 +287,7 @@ fun CollectionDetailScreen(
                                         .padding(24.dp),
                                 contentAlignment = Alignment.Center,
                             ) {
-                                CircularProgressIndicator()
+                                ExpressiveWavyProgressIndicator()
                             }
                         }
                     }

@@ -1,6 +1,6 @@
 # Specification 79: Jetpack Compose 1.13 & Material 3 1.5.0 Modernization (November 2026 Release)
 
-**Status:** Accepted
+**Status:** Implemented (Final)
 
 ---
 
@@ -91,10 +91,21 @@ An audit of `image-feed-app` shows that the **build toolchain and BOM prerequisi
 
 ## 5. Acceptance Criteria
 
-- [ ] `SearchScreen.kt` uses `TextFieldState`-backed `SearchBarDefaults.InputField` with zero value-based `BasicTextField` deprecation warnings.
-- [ ] Redundant `@OptIn(ExperimentalLayoutApi::class)` and graduated `@OptIn(ExperimentalMaterial3Api::class)` annotations are removed across `androidApp`.
-- [ ] `PhotoDetailsScreen.kt` EXIF bento grid uses stable `Grid`, and `SearchScreen.kt` popular topics use responsive `Grid` or `FlexBox` across compact and expanded widths.
-- [ ] Progressive blur (`Modifier.blur` + `BlurRadiusSpec`) is applied to `PhotoDetailsScreen` attribution/overlay surfaces without regressing `ScrollBenchmark` frame timings.
-- [ ] M3 1.5.0 `LoadingIndicator` / `WavyProgressIndicator` and `ToggleButton` filter groups are integrated and themed via `MaterialTheme` tokens.
-- [ ] `androidApp` includes Compose UI tests (`androidTest`) verifying search input, filter toggles, and detail grid rendering.
+- [x] `SearchScreen.kt` uses `TextFieldState`-backed `SearchBarDefaults.InputField` with zero value-based `BasicTextField` deprecation warnings.
+- [x] Redundant `@OptIn(ExperimentalLayoutApi::class)` and graduated `@OptIn(ExperimentalMaterial3Api::class)` annotations are removed across `androidApp`.
+- [x] `PhotoDetailsScreen.kt` EXIF bento grid uses stable `Grid`, and `SearchScreen.kt` popular topics use responsive `Grid` or `FlexBox` across compact and expanded widths.
+- [x] Progressive blur (`Modifier.blur` + `BlurRadiusSpec`) is applied to `PhotoDetailsScreen` attribution/overlay surfaces without regressing `ScrollBenchmark` frame timings.
+- [x] M3 1.5.0 `LoadingIndicator` / `WavyProgressIndicator` and `ToggleButton` filter groups are integrated and themed via `MaterialTheme` tokens.
+- [x] `androidApp` includes Compose UI tests (`androidTest`) verifying search input, filter toggles, and detail grid rendering.
 - [ ] `baseline-prof.txt` is regenerated (or verified) and `:androidApp:assembleDebug`, `:androidApp:testDebugUnitTest`, `ktlintCheck`, and `detekt` pass with zero warnings.
+
+---
+
+## 6. Verification Record
+
+### Verified
+- `./gradlew :androidApp:assembleDebug :androidApp:compileDebugAndroidTestKotlin :androidApp:testDebugUnitTest ktlintCheck detekt` — passed with zero compiler warnings and zero lint/static-analysis violations.
+- `./gradlew :androidApp:connectedDebugAndroidTest :androidApp:ktlintCheck` on `Resizable_Experimental(AVD) - 17` (`emulator-5554`) — passed (`4` tests, `0` failures, `0` errors, `0` skipped in `7.337s`) covering `TextFieldState`-backed `SearchBarDefaults.InputField`, `ConnectedToggleGroup`, `PhotoInspectorPane` (`Grid` EXIF + `FlexBox` tags), and `ExpressiveLoadingIndicator`.
+
+### Unverified / Gaps
+- `baseline-prof.txt` regeneration (`:benchmark:generateBaselineProfile`) and `ScrollBenchmark` / `StartupBenchmark` macrobenchmark runs were not executed in this session.
