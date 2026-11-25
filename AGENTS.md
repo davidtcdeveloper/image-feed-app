@@ -49,6 +49,18 @@ Agents act as senior project collaborators for this KMP image-feed app. Keep res
    * Zero hardcoded UI strings; externalize to Android XML and Apple String Catalogs.
    * Map typed `AppError` per-platform; use platform-native plural and compact number formatters.
 
+## Token-efficient agent work
+
+- Search first, then read only the lines you need. Don't re-read a file you already have unless it changed.
+- Run the narrowest test first. Run the full suite once, at the end.
+- Wait inside one command instead of repeated sleep-and-check turns.
+- Load a skill only when the task needs it. Never load two skills that cover the same framework.
+- Give search and exploration subagents the smallest, fast model. Keep the main model for decisions and edits.
+- Before adding code, check whether this codebase, the Swift standard library, an Apple framework, a Kotlin standard library, KotlinX library or JetPack Compose library, already solves it. Then write the smallest change that works, without dropping validation, error handling, or accessibility.
+- Lead with the result. Skip restating the plan and narrating tool calls, but keep sentences complete.
+- After two failed attempts at the same fix, stop and report what you learned instead of looping.
+- Delegate self-contained searches and investigations to a subagent so their reads stay out of this conversation. When the user switches to an unrelated task, suggest a new chat with a short handoff note.
+
 ## Commit & Planning Conventions
 
 Every commit message must follow this structure:
