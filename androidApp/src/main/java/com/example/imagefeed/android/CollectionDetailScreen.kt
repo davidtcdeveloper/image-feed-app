@@ -1,7 +1,5 @@
 package com.example.imagefeed.android
 
-import android.content.Intent
-import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
@@ -70,12 +68,14 @@ import coil3.compose.LocalPlatformContext
 import coil3.compose.rememberAsyncImagePainter
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import com.example.imagefeed.android.components.PhotoCard
 import com.example.imagefeed.android.theme.ExpressiveLoadingIndicator
 import com.example.imagefeed.android.theme.ExpressiveWavyProgressIndicator
 import com.example.imagefeed.android.util.bounceClick
 import com.example.imagefeed.android.util.rememberBlurHashPlaceholder
 import com.example.imagefeed.model.Photo
 import com.example.imagefeed.model.PhotoCollection
+import com.example.imagefeed.model.User
 import com.example.imagefeed.presentation.collection.CollectionDetailEffect
 import com.example.imagefeed.presentation.collection.CollectionDetailIntent
 import com.example.imagefeed.presentation.collection.CollectionDetailState
@@ -97,8 +97,8 @@ fun CollectionDetailScreen(
     onBack: () -> Unit,
     onPhotoClick: (Photo) -> Unit,
     onCollectionClick: (String) -> Unit,
+    onUserClick: (User) -> Unit = {},
 ) {
-    val context = LocalPlatformContext.current
     val state by viewModel.state.collectAsStateWithLifecycle(initialValue = CollectionDetailState())
 
     LaunchedEffect(viewModel) {
@@ -226,6 +226,7 @@ fun CollectionDetailScreen(
                             sharedTransitionScope = sharedTransitionScope,
                             animatedVisibilityScope = animatedVisibilityScope,
                             collection = state.collection,
+                            onUserClick = onUserClick,
                         )
                     }
 
@@ -270,9 +271,7 @@ fun CollectionDetailScreen(
                                     onPhotoClick(photo)
                                 },
                                 onUserClick = {
-                                    val userProfileUrl = "${photo.user.links.html}?utm_source=ImageFeedApp&utm_medium=referral"
-                                    val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(userProfileUrl))
-                                    context.startActivity(browserIntent)
+                                    onUserClick(photo.user)
                                 },
                             )
                         }
@@ -303,6 +302,7 @@ fun CollectionDetailHeader(
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope,
     collection: PhotoCollection?,
+    onUserClick: (User) -> Unit = {},
 ) {
     val context = LocalPlatformContext.current
     if (collection == null) {
@@ -384,9 +384,7 @@ fun CollectionDetailHeader(
                 modifier =
                     Modifier
                         .clickable {
-                            val utmProfile = "${collection.user.links.html}?utm_source=ImageFeedApp&utm_medium=referral"
-                            val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(utmProfile))
-                            context.startActivity(browserIntent)
+                            onUserClick(collection.user)
                         }.padding(bottom = 12.dp),
             ) {
                 Image(

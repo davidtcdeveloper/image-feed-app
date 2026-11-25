@@ -1,17 +1,63 @@
 package com.example.imagefeed.android
 
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
 import com.example.imagefeed.android.adaptive.LocalAdaptiveLayoutInfo
+import kotlin.math.roundToInt
+
+private const val PANE_WIDTH_QUANTIZE_STEP_DP = 4
+
+val LocalPaneWidthDp = compositionLocalOf<Dp?> { null }
+
+fun quantizePaneWidthDp(
+    widthDp: Dp,
+    stepDp: Int = PANE_WIDTH_QUANTIZE_STEP_DP,
+): Dp {
+    val safeStep = stepDp.coerceAtLeast(1)
+    val raw = widthDp.value.roundToInt().coerceAtLeast(0)
+    return ((raw / safeStep) * safeStep).dp
+}
+
+fun resolveEffectiveWidthDp(
+    paneWidthDp: Dp?,
+    screenWidthDp: Int,
+): Int = paneWidthDp?.value?.roundToInt()?.takeIf { it > 0 } ?: screenWidthDp
+
+@Composable
+fun ProvidePaneWidth(
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit,
+) {
+    BoxWithConstraints(modifier = modifier.fillMaxSize()) {
+        val quantizedWidth = remember(maxWidth) { quantizePaneWidthDp(maxWidth) }
+        CompositionLocalProvider(LocalPaneWidthDp provides quantizedWidth) {
+            content()
+        }
+    }
+}
+
+@Composable
+private fun rememberEffectiveWidthDp(): Int {
+    val paneWidthDp = LocalPaneWidthDp.current
+    val screenWidthDp = LocalAdaptiveLayoutInfo.current.screenWidthDp
+    return remember(paneWidthDp, screenWidthDp) {
+        resolveEffectiveWidthDp(paneWidthDp, screenWidthDp)
+    }
+}
 
 private const val WIDTH_EXPANDED_ULTRA_DP = 1200
 private const val WIDTH_EXPANDED_LARGE_DP = 840
@@ -86,51 +132,51 @@ fun computeCollectionMosaicCardWidthPx(
 
 @Composable
 fun calculateGridColumns(): StaggeredGridCells {
-    val adaptiveLayoutInfo = LocalAdaptiveLayoutInfo.current
-    return remember(adaptiveLayoutInfo.screenWidthDp) {
-        computeGridColumns(adaptiveLayoutInfo.screenWidthDp)
+    val widthDp = rememberEffectiveWidthDp()
+    return remember(widthDp) {
+        computeGridColumns(widthDp)
     }
 }
 
 @Composable
 fun calculateGridColumnCount(): Int {
-    val adaptiveLayoutInfo = LocalAdaptiveLayoutInfo.current
-    return remember(adaptiveLayoutInfo.screenWidthDp) {
-        computeGridColumnCount(adaptiveLayoutInfo.screenWidthDp)
+    val widthDp = rememberEffectiveWidthDp()
+    return remember(widthDp) {
+        computeGridColumnCount(widthDp)
     }
 }
 
 @Composable
 fun calculateCollectionGridColumns(): StaggeredGridCells {
-    val adaptiveLayoutInfo = LocalAdaptiveLayoutInfo.current
-    return remember(adaptiveLayoutInfo.screenWidthDp) {
-        computeCollectionGridColumns(adaptiveLayoutInfo.screenWidthDp)
+    val widthDp = rememberEffectiveWidthDp()
+    return remember(widthDp) {
+        computeCollectionGridColumns(widthDp)
     }
 }
 
 @Composable
 fun calculateUserGridColumns(): StaggeredGridCells {
-    val adaptiveLayoutInfo = LocalAdaptiveLayoutInfo.current
-    return remember(adaptiveLayoutInfo.screenWidthDp) {
-        computeUserGridColumns(adaptiveLayoutInfo.screenWidthDp)
+    val widthDp = rememberEffectiveWidthDp()
+    return remember(widthDp) {
+        computeUserGridColumns(widthDp)
     }
 }
 
 @Composable
 fun calculatePhotoItemWidthPx(columnCount: Int = calculateGridColumnCount()): Int {
-    val adaptiveLayoutInfo = LocalAdaptiveLayoutInfo.current
+    val widthDp = rememberEffectiveWidthDp()
     val density = LocalDensity.current
-    return remember(adaptiveLayoutInfo.screenWidthDp, columnCount, density) {
-        computePhotoItemWidthPx(adaptiveLayoutInfo.screenWidthDp, columnCount, density)
+    return remember(widthDp, columnCount, density) {
+        computePhotoItemWidthPx(widthDp, columnCount, density)
     }
 }
 
 @Composable
 fun calculateCollectionMosaicCardWidthPx(): Int {
-    val adaptiveLayoutInfo = LocalAdaptiveLayoutInfo.current
+    val widthDp = rememberEffectiveWidthDp()
     val density = LocalDensity.current
-    return remember(adaptiveLayoutInfo.screenWidthDp, density) {
-        computeCollectionMosaicCardWidthPx(adaptiveLayoutInfo.screenWidthDp, density)
+    return remember(widthDp, density) {
+        computeCollectionMosaicCardWidthPx(widthDp, density)
     }
 }
 

@@ -19,8 +19,10 @@ import com.example.imagefeed.android.FavoritesScreen
 import com.example.imagefeed.android.FeedScreen
 import com.example.imagefeed.android.PhotoDetailPlaceholder
 import com.example.imagefeed.android.PhotoDetailsScreen
+import com.example.imagefeed.android.ProvidePaneWidth
 import com.example.imagefeed.android.SearchScreen
 import com.example.imagefeed.android.UserProfileScreen
+import com.example.imagefeed.android.designsystem.ProvideAppSharedTransition
 import com.example.imagefeed.di.MetroHelper
 
 @Composable
@@ -44,24 +46,31 @@ fun EntryProviderScope<NavKey>.feedSection(
                 detailPlaceholder = { PhotoDetailPlaceholder() },
             ),
     ) {
-        FeedScreen(
+        ProvideAppSharedTransition(
             sharedTransitionScope = sharedTransitionScope,
             animatedVisibilityScope = LocalNavAnimatedContentScope.current,
-            viewModel =
-                viewModel(key = "feed") {
-                    MetroHelper.getFeedViewModel()
-                },
-            reselectEvents = navigator.reselectEvents,
-            onPhotoClick =
-                dropUnlessResumedWithArg { photo ->
-                    navigator.navigate(AppRoute.PhotoDetails(photo.id))
-                },
-            onUserClick =
-                dropUnlessResumedWithArg { user ->
-                    navigator.navigate(AppRoute.UserProfile(user.username))
-                },
-            onRandomClick = onRandomClick,
-        )
+        ) {
+            ProvidePaneWidth {
+                FeedScreen(
+                    sharedTransitionScope = sharedTransitionScope,
+                    animatedVisibilityScope = LocalNavAnimatedContentScope.current,
+                    viewModel =
+                        viewModel(key = "feed") {
+                            MetroHelper.getFeedViewModel()
+                        },
+                    reselectEvents = navigator.reselectEvents,
+                    onPhotoClick =
+                        dropUnlessResumedWithArg { photo ->
+                            navigator.navigate(AppRoute.PhotoDetails(photo.id))
+                        },
+                    onUserClick =
+                        dropUnlessResumedWithArg { user ->
+                            navigator.navigate(AppRoute.UserProfile(user.username))
+                        },
+                    onRandomClick = onRandomClick,
+                )
+            }
+        }
     }
 }
 
@@ -75,45 +84,67 @@ fun EntryProviderScope<NavKey>.collectionsSection(
                 detailPlaceholder = { PhotoDetailPlaceholder() },
             ),
     ) {
-        CollectionsFeedScreen(
+        ProvideAppSharedTransition(
             sharedTransitionScope = sharedTransitionScope,
             animatedVisibilityScope = LocalNavAnimatedContentScope.current,
-            viewModel =
-                viewModel(key = "collections") {
-                    MetroHelper.getCollectionsFeedViewModel()
-                },
-            reselectEvents = navigator.reselectEvents,
-            onCollectionClick =
-                dropUnlessResumedWithArg { collection ->
-                    navigator.navigate(AppRoute.CollectionDetails(collection.id))
-                },
-            onSearchClick =
-                dropUnlessResumed {
-                    navigator.navigate(AppRoute.Search())
-                },
-        )
+        ) {
+            ProvidePaneWidth {
+                CollectionsFeedScreen(
+                    sharedTransitionScope = sharedTransitionScope,
+                    animatedVisibilityScope = LocalNavAnimatedContentScope.current,
+                    viewModel =
+                        viewModel(key = "collections") {
+                            MetroHelper.getCollectionsFeedViewModel()
+                        },
+                    reselectEvents = navigator.reselectEvents,
+                    onCollectionClick =
+                        dropUnlessResumedWithArg { collection ->
+                            navigator.navigate(AppRoute.CollectionDetails(collection.id))
+                        },
+                    onSearchClick =
+                        dropUnlessResumed {
+                            navigator.navigate(AppRoute.Search())
+                        },
+                    onUserClick =
+                        dropUnlessResumedWithArg { user ->
+                            navigator.navigate(AppRoute.UserProfile(user.username))
+                        },
+                )
+            }
+        }
     }
     entry<AppRoute.CollectionDetails>(
         metadata = ListDetailSceneStrategy.detailPane(),
     ) { key ->
-        CollectionDetailScreen(
+        ProvideAppSharedTransition(
             sharedTransitionScope = sharedTransitionScope,
             animatedVisibilityScope = LocalNavAnimatedContentScope.current,
-            collectionId = key.collectionId,
-            viewModel =
-                viewModel(key = "collection_${key.collectionId}") {
-                    MetroHelper.getCollectionDetailViewModel(key.collectionId)
-                },
-            onBack = dropUnlessResumed { navigator.goBack() },
-            onPhotoClick =
-                dropUnlessResumedWithArg { photo ->
-                    navigator.navigate(AppRoute.PhotoDetails(photo.id))
-                },
-            onCollectionClick =
-                dropUnlessResumedWithArg { id ->
-                    navigator.navigate(AppRoute.CollectionDetails(id))
-                },
-        )
+        ) {
+            ProvidePaneWidth {
+                CollectionDetailScreen(
+                    sharedTransitionScope = sharedTransitionScope,
+                    animatedVisibilityScope = LocalNavAnimatedContentScope.current,
+                    collectionId = key.collectionId,
+                    viewModel =
+                        viewModel(key = "collection_${key.collectionId}") {
+                            MetroHelper.getCollectionDetailViewModel(key.collectionId)
+                        },
+                    onBack = dropUnlessResumed { navigator.goBack() },
+                    onPhotoClick =
+                        dropUnlessResumedWithArg { photo ->
+                            navigator.navigate(AppRoute.PhotoDetails(photo.id))
+                        },
+                    onCollectionClick =
+                        dropUnlessResumedWithArg { id ->
+                            navigator.navigate(AppRoute.CollectionDetails(id))
+                        },
+                    onUserClick =
+                        dropUnlessResumedWithArg { user ->
+                            navigator.navigate(AppRoute.UserProfile(user.username))
+                        },
+                )
+            }
+        }
     }
 }
 
@@ -127,23 +158,30 @@ fun EntryProviderScope<NavKey>.favoritesSection(
                 detailPlaceholder = { PhotoDetailPlaceholder() },
             ),
     ) {
-        FavoritesScreen(
+        ProvideAppSharedTransition(
             sharedTransitionScope = sharedTransitionScope,
             animatedVisibilityScope = LocalNavAnimatedContentScope.current,
-            viewModel =
-                viewModel(key = "favorites") {
-                    MetroHelper.getFavoritesViewModel()
-                },
-            reselectEvents = navigator.reselectEvents,
-            onPhotoClick =
-                dropUnlessResumedWithArg { photo ->
-                    navigator.navigate(AppRoute.PhotoDetails(photo.id))
-                },
-            onUserClick =
-                dropUnlessResumedWithArg { user ->
-                    navigator.navigate(AppRoute.UserProfile(user.username))
-                },
-        )
+        ) {
+            ProvidePaneWidth {
+                FavoritesScreen(
+                    sharedTransitionScope = sharedTransitionScope,
+                    animatedVisibilityScope = LocalNavAnimatedContentScope.current,
+                    viewModel =
+                        viewModel(key = "favorites") {
+                            MetroHelper.getFavoritesViewModel()
+                        },
+                    reselectEvents = navigator.reselectEvents,
+                    onPhotoClick =
+                        dropUnlessResumedWithArg { photo ->
+                            navigator.navigate(AppRoute.PhotoDetails(photo.id))
+                        },
+                    onUserClick =
+                        dropUnlessResumedWithArg { user ->
+                            navigator.navigate(AppRoute.UserProfile(user.username))
+                        },
+                )
+            }
+        }
     }
 }
 
@@ -157,29 +195,36 @@ fun EntryProviderScope<NavKey>.searchSection(
                 detailPlaceholder = { PhotoDetailPlaceholder() },
             ),
     ) { key ->
-        SearchScreen(
+        ProvideAppSharedTransition(
             sharedTransitionScope = sharedTransitionScope,
             animatedVisibilityScope = LocalNavAnimatedContentScope.current,
-            initialQuery = key.query,
-            viewModel =
-                viewModel(key = if (key.query.isEmpty()) "search_root" else "search_tag_${key.query}") {
-                    MetroHelper.getUnifiedSearchViewModel()
-                },
-            reselectEvents = navigator.reselectEvents,
-            onBack = dropUnlessResumed { navigator.goBack() },
-            onPhotoClick =
-                dropUnlessResumedWithArg { photo ->
-                    navigator.navigate(AppRoute.PhotoDetails(photo.id))
-                },
-            onUserClick =
-                dropUnlessResumedWithArg { user ->
-                    navigator.navigate(AppRoute.UserProfile(user.username))
-                },
-            onCollectionClick =
-                dropUnlessResumedWithArg { collection ->
-                    navigator.navigate(AppRoute.CollectionDetails(collection.id))
-                },
-        )
+        ) {
+            ProvidePaneWidth {
+                SearchScreen(
+                    sharedTransitionScope = sharedTransitionScope,
+                    animatedVisibilityScope = LocalNavAnimatedContentScope.current,
+                    initialQuery = key.query,
+                    viewModel =
+                        viewModel(key = if (key.query.isEmpty()) "search_root" else "search_tag_${key.query}") {
+                            MetroHelper.getUnifiedSearchViewModel()
+                        },
+                    reselectEvents = navigator.reselectEvents,
+                    onBack = dropUnlessResumed { navigator.goBack() },
+                    onPhotoClick =
+                        dropUnlessResumedWithArg { photo ->
+                            navigator.navigate(AppRoute.PhotoDetails(photo.id))
+                        },
+                    onUserClick =
+                        dropUnlessResumedWithArg { user ->
+                            navigator.navigate(AppRoute.UserProfile(user.username))
+                        },
+                    onCollectionClick =
+                        dropUnlessResumedWithArg { collection ->
+                            navigator.navigate(AppRoute.CollectionDetails(collection.id))
+                        },
+                )
+            }
+        }
     }
 }
 
@@ -190,24 +235,31 @@ fun EntryProviderScope<NavKey>.photoDetailsSection(
     entry<AppRoute.PhotoDetails>(
         metadata = ListDetailSceneStrategy.detailPane(),
     ) { key ->
-        PhotoDetailsScreen(
+        ProvideAppSharedTransition(
             sharedTransitionScope = sharedTransitionScope,
             animatedVisibilityScope = LocalNavAnimatedContentScope.current,
-            photoId = key.photoId,
-            viewModel =
-                viewModel(key = "photo_${key.photoId}") {
-                    MetroHelper.getPhotoDetailsViewModel(key.photoId)
-                },
-            onBack = dropUnlessResumed { navigator.goBack() },
-            onUserClick =
-                dropUnlessResumedWithArg { username ->
-                    navigator.navigate(AppRoute.UserProfile(username))
-                },
-            onTagClick =
-                dropUnlessResumedWithArg { tag ->
-                    navigator.navigate(AppRoute.Search(query = tag))
-                },
-        )
+        ) {
+            ProvidePaneWidth {
+                PhotoDetailsScreen(
+                    sharedTransitionScope = sharedTransitionScope,
+                    animatedVisibilityScope = LocalNavAnimatedContentScope.current,
+                    photoId = key.photoId,
+                    viewModel =
+                        viewModel(key = "photo_${key.photoId}") {
+                            MetroHelper.getPhotoDetailsViewModel(key.photoId)
+                        },
+                    onBack = dropUnlessResumed { navigator.goBack() },
+                    onUserClick =
+                        dropUnlessResumedWithArg { username ->
+                            navigator.navigate(AppRoute.UserProfile(username))
+                        },
+                    onTagClick =
+                        dropUnlessResumedWithArg { tag ->
+                            navigator.navigate(AppRoute.Search(query = tag))
+                        },
+                )
+            }
+        }
     }
 }
 
@@ -218,29 +270,36 @@ fun EntryProviderScope<NavKey>.userProfileSection(
     entry<AppRoute.UserProfile>(
         metadata = ListDetailSceneStrategy.extraPane(),
     ) { key ->
-        UserProfileScreen(
+        ProvideAppSharedTransition(
             sharedTransitionScope = sharedTransitionScope,
             animatedVisibilityScope = LocalNavAnimatedContentScope.current,
-            username = key.username,
-            viewModel =
-                viewModel(key = "user_${key.username}") {
-                    MetroHelper.getUserProfileViewModel(key.username)
-                },
-            onBack = dropUnlessResumed { navigator.goBack() },
-            onPhotoClick =
-                dropUnlessResumedWithArg { photo ->
-                    navigator.navigate(AppRoute.PhotoDetails(photo.id))
-                },
-            onCollectionClick =
-                dropUnlessResumedWithArg { collection ->
-                    navigator.navigate(AppRoute.CollectionDetails(collection.id))
-                },
-            onUserClick =
-                dropUnlessResumedWithArg { user ->
-                    if (user.username != key.username) {
-                        navigator.navigate(AppRoute.UserProfile(user.username))
-                    }
-                },
-        )
+        ) {
+            ProvidePaneWidth {
+                UserProfileScreen(
+                    sharedTransitionScope = sharedTransitionScope,
+                    animatedVisibilityScope = LocalNavAnimatedContentScope.current,
+                    username = key.username,
+                    viewModel =
+                        viewModel(key = "user_${key.username}") {
+                            MetroHelper.getUserProfileViewModel(key.username)
+                        },
+                    onBack = dropUnlessResumed { navigator.goBack() },
+                    onPhotoClick =
+                        dropUnlessResumedWithArg { photo ->
+                            navigator.navigate(AppRoute.PhotoDetails(photo.id))
+                        },
+                    onCollectionClick =
+                        dropUnlessResumedWithArg { collection ->
+                            navigator.navigate(AppRoute.CollectionDetails(collection.id))
+                        },
+                    onUserClick =
+                        dropUnlessResumedWithArg { user ->
+                            if (user.username != key.username) {
+                                navigator.navigate(AppRoute.UserProfile(user.username))
+                            }
+                        },
+                )
+            }
+        }
     }
 }

@@ -30,6 +30,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.imagefeed.android.adaptive.AdaptiveLayoutInfo
 import com.example.imagefeed.android.adaptive.DevicePosture
 import com.example.imagefeed.android.adaptive.LocalAdaptiveLayoutInfo
+import com.example.imagefeed.android.details.PhotoInspectorPane
 import com.example.imagefeed.android.theme.ConnectedToggleGroup
 import com.example.imagefeed.android.theme.ExpressiveLoadingIndicator
 import com.example.imagefeed.android.theme.ImageFeedTheme

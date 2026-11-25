@@ -7,19 +7,15 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -27,7 +23,6 @@ import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.foundation.lazy.staggeredgrid.itemsIndexed
 import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material3.Button
@@ -54,10 +49,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
@@ -70,6 +63,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavKey
@@ -77,15 +71,15 @@ import coil3.compose.LocalPlatformContext
 import coil3.compose.rememberAsyncImagePainter
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import com.example.imagefeed.android.components.PhotoCard
 import com.example.imagefeed.android.navigation.AppRoute
+import com.example.imagefeed.android.preview.PreviewScaffold
+import com.example.imagefeed.android.preview.UiPreviewFixtures
 import com.example.imagefeed.android.theme.ExpressiveWavyProgressIndicator
-import com.example.imagefeed.android.util.BLURHASH_PLACEHOLDER_WIDTH
-import com.example.imagefeed.android.util.BlurHashDecoder
 import com.example.imagefeed.android.util.PhotoGridSkeleton
 import com.example.imagefeed.android.util.bounceClick
 import com.example.imagefeed.android.util.localizedMessage
 import com.example.imagefeed.android.util.rememberBlurHashPlaceholder
-import com.example.imagefeed.android.util.staggeredEntrance
 import com.example.imagefeed.model.Photo
 import com.example.imagefeed.model.User
 import com.example.imagefeed.presentation.feed.FeedEffect
@@ -109,21 +103,6 @@ fun FeedScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle(initialValue = FeedState())
     val listState = rememberLazyStaggeredGridState()
-    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
-    val isScrolled by remember(scrollBehavior) {
-        derivedStateOf { scrollBehavior.state.contentOffset < 0f }
-    }
-    val topicStripBackgroundColor by animateColorAsState(
-        targetValue =
-            if (isScrolled) {
-                MaterialTheme.colorScheme.surfaceContainer
-            } else {
-                MaterialTheme.colorScheme.surface
-            },
-        label = "TopicStripBackgroundColor",
-    )
-    val pullToRefreshState = rememberPullToRefreshState()
-    val haptic = LocalHapticFeedback.current
 
     LaunchedEffect(viewModel) {
         viewModel.effects.collect { effect ->
@@ -142,6 +121,50 @@ fun FeedScreen(
         }
     }
 
+    FeedScreenContent(
+        sharedTransitionScope = sharedTransitionScope,
+        animatedVisibilityScope = animatedVisibilityScope,
+        state = state,
+        listState = listState,
+        onSelectTopic = { slug -> viewModel.dispatch(FeedIntent.SelectTopic(slug)) },
+        onRefresh = { viewModel.dispatch(FeedIntent.Refresh) },
+        onLoadNextPage = { viewModel.dispatch(FeedIntent.LoadNextPage) },
+        onPhotoClick = onPhotoClick,
+        onUserClick = onUserClick,
+        onRandomClick = onRandomClick,
+    )
+}
+
+@OptIn(ExperimentalSharedTransitionApi::class)
+@Composable
+fun FeedScreenContent(
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedVisibilityScope,
+    state: FeedState,
+    onSelectTopic: (String) -> Unit,
+    onRefresh: () -> Unit,
+    onLoadNextPage: () -> Unit,
+    onPhotoClick: (Photo) -> Unit,
+    onUserClick: (User) -> Unit,
+    onRandomClick: () -> Unit,
+    listState: androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridState = rememberLazyStaggeredGridState(),
+) {
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
+    val isScrolled by remember(scrollBehavior) {
+        derivedStateOf { scrollBehavior.state.contentOffset < 0f }
+    }
+    val topicStripBackgroundColor by animateColorAsState(
+        targetValue =
+            if (isScrolled) {
+                MaterialTheme.colorScheme.surfaceContainer
+            } else {
+                MaterialTheme.colorScheme.surface
+            },
+        label = "TopicStripBackgroundColor",
+    )
+    val pullToRefreshState = rememberPullToRefreshState()
+    val haptic = LocalHapticFeedback.current
+
     LaunchedEffect(pullToRefreshState.distanceFraction) {
         if (pullToRefreshState.distanceFraction >= 1f) {
             haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
@@ -151,6 +174,7 @@ fun FeedScreen(
     // Infinite scrolling logic
     val currentLoading by rememberUpdatedState(state.isLoading)
     val currentHasReachedEnd by rememberUpdatedState(state.hasReachedEnd)
+    val currentOnLoadNextPage by rememberUpdatedState(onLoadNextPage)
 
     LaunchedEffect(listState) {
         snapshotFlow {
@@ -161,7 +185,7 @@ fun FeedScreen(
         }.distinctUntilChanged()
             .filter { shouldLoad -> shouldLoad && !currentLoading && !currentHasReachedEnd }
             .collect {
-                viewModel.dispatch(FeedIntent.LoadNextPage)
+                currentOnLoadNextPage()
             }
     }
 
@@ -213,7 +237,7 @@ fun FeedScreen(
                                 title = stringResource(R.string.feed_editorial_tab),
                                 coverPhoto = null,
                                 isSelected = state.selectedTopicSlug == "editorial",
-                                onClick = { viewModel.dispatch(FeedIntent.SelectTopic("editorial")) },
+                                onClick = { onSelectTopic("editorial") },
                             )
                         }
                         items(
@@ -224,7 +248,7 @@ fun FeedScreen(
                                 title = topic.title,
                                 coverPhoto = topic.coverPhoto,
                                 isSelected = state.selectedTopicSlug == topic.slug,
-                                onClick = { viewModel.dispatch(FeedIntent.SelectTopic(topic.slug)) },
+                                onClick = { onSelectTopic(topic.slug) },
                             )
                         }
                     }
@@ -236,7 +260,7 @@ fun FeedScreen(
             isRefreshing = state.isRefreshing,
             onRefresh = {
                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                viewModel.dispatch(FeedIntent.Refresh)
+                onRefresh()
             },
             state = pullToRefreshState,
             modifier =
@@ -247,9 +271,7 @@ fun FeedScreen(
             if (state.photos.isEmpty() && state.isLoading) {
                 PhotoGridSkeleton()
             } else if (state.photos.isEmpty() && state.error != null) {
-                ErrorView(error = state.error?.localizedMessage() ?: stringResource(R.string.feed_error_unknown), onRetry = {
-                    viewModel.dispatch(FeedIntent.Refresh)
-                })
+                ErrorView(error = state.error?.localizedMessage() ?: stringResource(R.string.feed_error_unknown), onRetry = onRefresh)
             } else {
                 // Main content: Photo Feed
                 val itemWidthPx = calculatePhotoItemWidthPx()
@@ -312,149 +334,6 @@ fun FeedScreen(
     }
 }
 
-private val PhotoAttributionScrimBrush =
-    Brush.verticalGradient(
-        colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.75f)),
-    )
-
-@OptIn(ExperimentalSharedTransitionApi::class)
-@Composable
-fun PhotoCard(
-    sharedTransitionScope: SharedTransitionScope,
-    animatedVisibilityScope: AnimatedVisibilityScope,
-    index: Int,
-    photo: Photo,
-    onClick: () -> Unit,
-    onUserClick: () -> Unit,
-    itemWidthPx: Int = calculatePhotoItemWidthPx(),
-    showAttribution: Boolean = true,
-    isTransitionSource: Boolean = false,
-) {
-    val context = LocalPlatformContext.current
-    val aspectRatio = photo.width.toFloat() / photo.height.toFloat()
-    val placeholderHeight = BlurHashDecoder.quantizeHeight(BLURHASH_PLACEHOLDER_WIDTH, aspectRatio)
-
-    // Decode BlurHash placeholder in background with LRU cache
-    val placeholderPainter =
-        rememberBlurHashPlaceholder(
-            blurHash = photo.blurHash,
-            width = BLURHASH_PLACEHOLDER_WIDTH,
-            height = placeholderHeight,
-        )
-
-    val photoUrl =
-        remember(photo.id, photo.urls.raw, itemWidthPx) {
-            photo.urls.getOptimalUrl(itemWidthPx)
-        }
-
-    val photoRequest =
-        remember(context, photoUrl) {
-            ImageRequest
-                .Builder(context)
-                .data(photoUrl)
-                .crossfade(true)
-                .build()
-        }
-
-    val painter =
-        rememberAsyncImagePainter(
-            model = photoRequest,
-            placeholder = placeholderPainter,
-        )
-
-    Card(
-        shape = MaterialTheme.shapes.medium,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .staggeredEntrance(index = index)
-                .bounceClick(onClick = onClick),
-    ) {
-        Box(
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            with(sharedTransitionScope) {
-                val imageModifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(aspectRatio)
-                        .let { mod ->
-                            if (isTransitionSource) {
-                                mod.sharedElement(
-                                    sharedContentState = rememberSharedContentState(key = "photo_img_${photo.id}"),
-                                    animatedVisibilityScope = animatedVisibilityScope,
-                                )
-                            } else {
-                                mod
-                            }
-                        }
-
-                Image(
-                    painter = painter,
-                    contentDescription = photo.altDescription ?: photo.description,
-                    modifier = imageModifier,
-                    contentScale = ContentScale.Crop,
-                )
-            }
-
-            if (showAttribution) {
-                // Dynamic bottom overlay containing photographer attribution
-                Box(
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .align(Alignment.BottomCenter)
-                            .background(PhotoAttributionScrimBrush)
-                            .padding(8.dp),
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .clickable { onUserClick() },
-                    ) {
-                        val avatarRequest =
-                            remember(context, photo.user.profileImage.small) {
-                                ImageRequest
-                                    .Builder(context)
-                                    .data(photo.user.profileImage.small)
-                                    .crossfade(true)
-                                    .build()
-                            }
-
-                        val userProfileImagePainter =
-                            rememberAsyncImagePainter(
-                                model = avatarRequest,
-                            )
-
-                        Image(
-                            painter = userProfileImagePainter,
-                            contentDescription = stringResource(R.string.feed_user_profile_accessibility),
-                            modifier =
-                                Modifier
-                                    .size(24.dp)
-                                    .clip(CircleShape),
-                        )
-
-                        Spacer(modifier = Modifier.width(6.dp))
-
-                        Text(
-                            text = photo.user.name,
-                            color = Color.White,
-                            style = MaterialTheme.typography.titleSmall,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(1f),
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
 @Composable
 fun ErrorView(
     error: String,
@@ -503,6 +382,18 @@ private fun TopicCapsuleCard(
     val blurHash = coverPhoto?.blurHash
     val placeholderPainter = rememberBlurHashPlaceholder(blurHash, 16, 12)
     val coverUrl = coverPhoto?.urls?.small ?: coverPhoto?.urls?.regular
+    val containerColor =
+        if (isSelected) {
+            MaterialTheme.colorScheme.secondaryContainer
+        } else {
+            MaterialTheme.colorScheme.surfaceContainerHigh
+        }
+    val labelColor =
+        if (isSelected) {
+            MaterialTheme.colorScheme.onSecondaryContainer
+        } else {
+            MaterialTheme.colorScheme.onSurface
+        }
 
     Card(
         shape = MaterialTheme.shapes.large,
@@ -510,9 +401,9 @@ private fun TopicCapsuleCard(
             if (isSelected) {
                 BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
             } else {
-                BorderStroke(1.dp, Color.White.copy(alpha = 0.15f))
+                BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
             },
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHighest),
+        colors = CardDefaults.cardColors(containerColor = containerColor),
         modifier =
             modifier
                 .width(110.dp)
@@ -546,22 +437,8 @@ private fun TopicCapsuleCard(
                             .background(
                                 Brush.verticalGradient(
                                     listOf(
-                                        Color.Black.copy(alpha = 0.35f),
-                                        Color.Black.copy(alpha = 0.70f),
-                                    ),
-                                ),
-                            ),
-                )
-            } else {
-                Box(
-                    modifier =
-                        Modifier
-                            .fillMaxSize()
-                            .background(
-                                Brush.linearGradient(
-                                    listOf(
-                                        Color(0xFF1E293B),
-                                        Color(0xFF0F172A),
+                                        containerColor.copy(alpha = 0.62f),
+                                        containerColor.copy(alpha = 0.84f),
                                     ),
                                 ),
                             ),
@@ -578,7 +455,7 @@ private fun TopicCapsuleCard(
                 Text(
                     text = title,
                     style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                    color = Color.White,
+                    color = labelColor,
                     textAlign = TextAlign.Center,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
@@ -589,3 +466,60 @@ private fun TopicCapsuleCard(
 }
 
 private const val PAGINATION_THRESHOLD = 6
+
+@Preview(showBackground = true, widthDp = 412, heightDp = 892, name = "Feed - Compact Light")
+@OptIn(ExperimentalSharedTransitionApi::class)
+@Composable
+fun FeedScreenPreview() {
+    PreviewScaffold(widthDp = 412, heightDp = 892, darkTheme = false) { sharedScope, visibilityScope ->
+        FeedScreenContent(
+            sharedTransitionScope = sharedScope,
+            animatedVisibilityScope = visibilityScope,
+            state = UiPreviewFixtures.feedState,
+            onSelectTopic = {},
+            onRefresh = {},
+            onLoadNextPage = {},
+            onPhotoClick = {},
+            onUserClick = {},
+            onRandomClick = {},
+        )
+    }
+}
+
+@Preview(showBackground = true, widthDp = 412, heightDp = 892, name = "Feed - Compact Dark")
+@OptIn(ExperimentalSharedTransitionApi::class)
+@Composable
+fun FeedScreenDarkPreview() {
+    PreviewScaffold(widthDp = 412, heightDp = 892, darkTheme = true) { sharedScope, visibilityScope ->
+        FeedScreenContent(
+            sharedTransitionScope = sharedScope,
+            animatedVisibilityScope = visibilityScope,
+            state = UiPreviewFixtures.feedState,
+            onSelectTopic = {},
+            onRefresh = {},
+            onLoadNextPage = {},
+            onPhotoClick = {},
+            onUserClick = {},
+            onRandomClick = {},
+        )
+    }
+}
+
+@Preview(showBackground = true, widthDp = 900, heightDp = 700, name = "Feed - Expanded")
+@OptIn(ExperimentalSharedTransitionApi::class)
+@Composable
+fun FeedScreenExpandedPreview() {
+    PreviewScaffold(widthDp = 900, heightDp = 700, darkTheme = false) { sharedScope, visibilityScope ->
+        FeedScreenContent(
+            sharedTransitionScope = sharedScope,
+            animatedVisibilityScope = visibilityScope,
+            state = UiPreviewFixtures.feedState,
+            onSelectTopic = {},
+            onRefresh = {},
+            onLoadNextPage = {},
+            onPhotoClick = {},
+            onUserClick = {},
+            onRandomClick = {},
+        )
+    }
+}

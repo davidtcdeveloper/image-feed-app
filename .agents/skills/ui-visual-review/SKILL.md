@@ -83,3 +83,6 @@ Always run `xcodegen generate --spec iosApp/project.yml` after any `project.yml`
 
 * **Currently Snapshot-Ready Screens** *(update as screens become ready; log unsuccessful or deferred readiness gaps in [`wiki/issue-log.md`](../../../wiki/issue-log.md))*:
   * [`PhotoDetailsScreen.kt`](../../../androidApp/src/main/java/com/example/imagefeed/android/PhotoDetailsScreen.kt) & [`PhotoDetailsView.swift`](../../../iosApp/iosApp/PhotoDetailsView.swift) (pilot baseline).
+  * [`FeedScreen.kt`](../../../androidApp/src/main/java/com/example/imagefeed/android/FeedScreen.kt) (`FeedScreenContent`, Compact Light/Dark + Expanded `900×700`).
+  * [`CollectionsFeedScreen.kt`](../../../androidApp/src/main/java/com/example/imagefeed/android/CollectionsFeedScreen.kt) (`CollectionsFeedScreenContent`, Compact Light/Dark + Expanded `900×700`).
+  * [`SearchScreen.kt`](../../../androidApp/src/main/java/com/example/imagefeed/android/SearchScreen.kt) (`SearchScreenContent`, Discovery Light/Dark/Expanded `900×700` + Search Results Compact Light).

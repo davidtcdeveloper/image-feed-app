@@ -30,6 +30,8 @@ This document summarizes the active memory, image-decoding, scrolling, and relea
 ## 3. Compose & SwiftUI Hot-Path Optimizations
 
 ### Android Compose
+* **Zero-Blur Matte Card Invariant**: [`PhotoCard.kt`](../androidApp/src/main/java/com/example/imagefeed/android/components/PhotoCard.kt), [`CollectionMosaicCard.kt`](../androidApp/src/main/java/com/example/imagefeed/android/components/CollectionMosaicCard.kt), and [`MatteSurface`](../androidApp/src/main/java/com/example/imagefeed/android/designsystem/SurfaceTokens.kt) use opaque/tonal Material 3 surfaces with zero live backdrop blur passes during masonry grid flings; progressive blur is restricted to top-edge Satin headers on API 33+.
+* **Pane-Width Retina CDN Sizing**: [`AdaptiveUtils.kt`](../androidApp/src/main/java/com/example/imagefeed/android/AdaptiveUtils.kt) resolves `LocalPaneWidthDp` (measured and quantized at Navigation 3 pane boundaries via `ProvidePaneWidth`) so `calculatePhotoItemWidthPx` and `calculateCollectionMosaicCardWidthPx` request appropriately sized Unsplash CDN images inside narrow `ListDetailSceneStrategy` panes rather than over-fetching full-window widths.
 * **Single-Transition Shimmer**: [`AnimationUtils.kt`](../androidApp/src/main/java/com/example/imagefeed/android/util/AnimationUtils.kt) shares a single `InfiniteTransition` and caches `ShaderBrush` draws via `drawWithCache`.
 * **Hoisted Card Requests**: Feed and detail screens hoist aspect ratio calculations, BlurHash painters, and Coil `ImageRequest` objects outside scroll frames.
 * **Full-Screen Virtualized Grids**: `UserProfileScreen` uses a single `LazyVerticalStaggeredGrid` with `StaggeredGridItemSpan.FullLine` header/tab spans rather than nested scrollable containers.

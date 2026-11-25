@@ -1,36 +1,21 @@
 package com.example.imagefeed.android
 
-import android.content.Intent
-import android.net.Uri
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.foundation.lazy.staggeredgrid.itemsIndexed
 import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -51,30 +36,23 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil3.compose.LocalPlatformContext
-import coil3.compose.rememberAsyncImagePainter
-import coil3.request.ImageRequest
-import coil3.request.crossfade
+import com.example.imagefeed.android.components.CollectionMosaicCard
+import com.example.imagefeed.android.preview.PreviewScaffold
+import com.example.imagefeed.android.preview.UiPreviewFixtures
 import com.example.imagefeed.android.theme.ExpressiveWavyProgressIndicator
-import com.example.imagefeed.android.util.BLURHASH_PLACEHOLDER_WIDTH
 import com.example.imagefeed.android.util.CollectionMosaicCardSkeleton
-import com.example.imagefeed.android.util.bounceClick
 import com.example.imagefeed.android.util.localizedMessage
-import com.example.imagefeed.android.util.rememberBlurHashPlaceholder
-import com.example.imagefeed.android.util.staggeredEntrance
 import com.example.imagefeed.model.PhotoCollection
+import com.example.imagefeed.model.User
 import com.example.imagefeed.presentation.collections.CollectionsFeedEffect
 import com.example.imagefeed.presentation.collections.CollectionsFeedIntent
 import com.example.imagefeed.presentation.collections.CollectionsFeedState
@@ -91,12 +69,10 @@ fun CollectionsFeedScreen(
     reselectEvents: kotlinx.coroutines.flow.SharedFlow<androidx.navigation3.runtime.NavKey>? = null,
     onCollectionClick: (PhotoCollection) -> Unit,
     onSearchClick: () -> Unit,
+    onUserClick: (User) -> Unit = {},
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle(initialValue = CollectionsFeedState())
     val listState = rememberLazyStaggeredGridState()
-    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
-    val pullToRefreshState = rememberPullToRefreshState()
-    val haptic = LocalHapticFeedback.current
 
     LaunchedEffect(viewModel) {
         viewModel.effects.collect { effect ->
@@ -115,6 +91,36 @@ fun CollectionsFeedScreen(
         }
     }
 
+    CollectionsFeedScreenContent(
+        sharedTransitionScope = sharedTransitionScope,
+        animatedVisibilityScope = animatedVisibilityScope,
+        state = state,
+        listState = listState,
+        onRefresh = { viewModel.dispatch(CollectionsFeedIntent.Refresh) },
+        onLoadNextPage = { viewModel.dispatch(CollectionsFeedIntent.LoadNextPage) },
+        onCollectionClick = onCollectionClick,
+        onSearchClick = onSearchClick,
+        onUserClick = onUserClick,
+    )
+}
+
+@OptIn(ExperimentalSharedTransitionApi::class)
+@Composable
+fun CollectionsFeedScreenContent(
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedVisibilityScope,
+    state: CollectionsFeedState,
+    onRefresh: () -> Unit,
+    onLoadNextPage: () -> Unit,
+    onCollectionClick: (PhotoCollection) -> Unit,
+    onSearchClick: () -> Unit,
+    onUserClick: (User) -> Unit = {},
+    listState: androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridState = rememberLazyStaggeredGridState(),
+) {
+    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
+    val pullToRefreshState = rememberPullToRefreshState()
+    val haptic = LocalHapticFeedback.current
+
     LaunchedEffect(pullToRefreshState.distanceFraction) {
         if (pullToRefreshState.distanceFraction >= 1f) {
             haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
@@ -124,6 +130,7 @@ fun CollectionsFeedScreen(
     // Infinite scrolling logic
     val currentLoading by rememberUpdatedState(state.isLoading)
     val currentHasReachedEnd by rememberUpdatedState(state.hasReachedEnd)
+    val currentOnLoadNextPage by rememberUpdatedState(onLoadNextPage)
 
     LaunchedEffect(listState) {
         snapshotFlow {
@@ -134,7 +141,7 @@ fun CollectionsFeedScreen(
         }.distinctUntilChanged()
             .filter { shouldLoad -> shouldLoad && !currentLoading && !currentHasReachedEnd }
             .collect {
-                viewModel.dispatch(CollectionsFeedIntent.LoadNextPage)
+                currentOnLoadNextPage()
             }
     }
 
@@ -175,7 +182,7 @@ fun CollectionsFeedScreen(
             isRefreshing = state.isRefreshing,
             onRefresh = {
                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                viewModel.dispatch(CollectionsFeedIntent.Refresh)
+                onRefresh()
             },
             state = pullToRefreshState,
             modifier =
@@ -203,7 +210,7 @@ fun CollectionsFeedScreen(
                     }
                 }
             } else if (state.collections.isEmpty() && state.error != null) {
-                ErrorView(error = state.error!!.localizedMessage(), onRetry = { viewModel.dispatch(CollectionsFeedIntent.Refresh) })
+                ErrorView(error = state.error!!.localizedMessage(), onRetry = onRefresh)
             } else {
                 val cardWidthPx = calculateCollectionMosaicCardWidthPx()
                 val sideWidthPx = remember(cardWidthPx) { cardWidthPx / 3 }
@@ -242,6 +249,7 @@ fun CollectionsFeedScreen(
                                 selectedCollectionId = collection.id
                                 onCollectionClick(collection)
                             },
+                            onUserClick = onUserClick,
                         )
                     }
 
@@ -264,315 +272,53 @@ fun CollectionsFeedScreen(
     }
 }
 
+@Preview(showBackground = true, widthDp = 412, heightDp = 892, name = "Collections - Compact Light")
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
-fun CollectionMosaicCard(
-    sharedTransitionScope: SharedTransitionScope,
-    animatedVisibilityScope: AnimatedVisibilityScope,
-    index: Int,
-    collection: PhotoCollection,
-    onClick: () -> Unit,
-    cardWidthPx: Int = calculateCollectionMosaicCardWidthPx(),
-    sideWidthPx: Int = cardWidthPx / 3,
-    isTransitionSource: Boolean = false,
-) {
-    val context = LocalPlatformContext.current
+fun CollectionsFeedScreenPreview() {
+    PreviewScaffold(widthDp = 412, heightDp = 892, darkTheme = false) { sharedScope, visibilityScope ->
+        CollectionsFeedScreenContent(
+            sharedTransitionScope = sharedScope,
+            animatedVisibilityScope = visibilityScope,
+            state = UiPreviewFixtures.collectionsFeedState,
+            onRefresh = {},
+            onLoadNextPage = {},
+            onCollectionClick = {},
+            onSearchClick = {},
+        )
+    }
+}
 
-    // Use BlurHash from cover photo as card background placeholder with LRU cache
-    val blurHash = collection.coverPhoto?.blurHash
-    val placeholderPainter = rememberBlurHashPlaceholder(blurHash, BLURHASH_PLACEHOLDER_WIDTH, 18)
+@Preview(showBackground = true, widthDp = 412, heightDp = 892, name = "Collections - Compact Dark")
+@OptIn(ExperimentalSharedTransitionApi::class)
+@Composable
+fun CollectionsFeedScreenDarkPreview() {
+    PreviewScaffold(widthDp = 412, heightDp = 892, darkTheme = true) { sharedScope, visibilityScope ->
+        CollectionsFeedScreenContent(
+            sharedTransitionScope = sharedScope,
+            animatedVisibilityScope = visibilityScope,
+            state = UiPreviewFixtures.collectionsFeedState,
+            onRefresh = {},
+            onLoadNextPage = {},
+            onCollectionClick = {},
+            onSearchClick = {},
+        )
+    }
+}
 
-    Card(
-        shape = MaterialTheme.shapes.extraLarge,
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .staggeredEntrance(index = index)
-                .bounceClick(onClick = onClick),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
-    ) {
-        Column(modifier = Modifier.fillMaxWidth()) {
-            // Mosaic Grid: Left large cover, right two smaller thumbnails
-            Row(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(1.4f),
-            ) {
-                // Left Image: Cover Photo (weight 0.62f)
-                val coverUrl =
-                    remember(collection.id, collection.coverPhoto?.id, collection.coverPhoto?.urls?.raw, cardWidthPx) {
-                        collection.coverPhoto
-                            ?.urls
-                            ?.getOptimalUrl(cardWidthPx * 2 / 3)
-                            ?: collection.previewPhotos
-                                ?.firstOrNull()
-                                ?.urls
-                                ?.getOptimalUrl(cardWidthPx * 2 / 3)
-                    }
-
-                val coverRequest =
-                    remember(context, coverUrl) {
-                        coverUrl?.let {
-                            ImageRequest
-                                .Builder(context)
-                                .data(it)
-                                .crossfade(true)
-                                .build()
-                        }
-                    }
-
-                val coverPainter =
-                    rememberAsyncImagePainter(
-                        model = coverRequest,
-                        placeholder = placeholderPainter,
-                    )
-
-                Box(
-                    modifier =
-                        Modifier
-                            .weight(0.62f)
-                            .fillMaxHeight()
-                            .background(MaterialTheme.colorScheme.surfaceContainerHighest),
-                ) {
-                    if (coverUrl != null) {
-                        with(sharedTransitionScope) {
-                            val coverModifier =
-                                Modifier
-                                    .fillMaxSize()
-                                    .let { mod ->
-                                        if (isTransitionSource) {
-                                            mod.sharedBounds(
-                                                sharedContentState =
-                                                    rememberSharedContentState(
-                                                        key = "col_cover_${collection.id}",
-                                                    ),
-                                                animatedVisibilityScope = animatedVisibilityScope,
-                                            )
-                                        } else {
-                                            mod
-                                        }
-                                    }
-
-                            Image(
-                                painter = coverPainter,
-                                contentDescription = collection.title,
-                                modifier = coverModifier,
-                                contentScale = ContentScale.Crop,
-                            )
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.width(4.dp))
-
-                // Right Column: Two thumbnails (weight 0.38f)
-                Column(
-                    modifier =
-                        Modifier
-                            .weight(0.38f)
-                            .fillMaxHeight(),
-                ) {
-                    // Top Thumbnail
-                    val topThumbPhoto =
-                        collection.previewPhotos
-                            ?.getOrNull(1)
-                            ?: collection.previewPhotos
-                                ?.getOrNull(0)
-                    val topThumbUrl =
-                        remember(topThumbPhoto?.id, topThumbPhoto?.urls, sideWidthPx) {
-                            topThumbPhoto?.urls?.getOptimalUrl(sideWidthPx)
-                        }
-                    val topPlaceholderPainter =
-                        rememberBlurHashPlaceholder(topThumbPhoto?.blurHash, BLURHASH_PLACEHOLDER_WIDTH / 2, 12)
-
-                    val topThumbRequest =
-                        remember(context, topThumbUrl) {
-                            topThumbUrl?.let {
-                                ImageRequest
-                                    .Builder(context)
-                                    .data(it)
-                                    .crossfade(true)
-                                    .build()
-                            }
-                        }
-
-                    val topThumbPainter =
-                        rememberAsyncImagePainter(
-                            model = topThumbRequest,
-                            placeholder = topPlaceholderPainter,
-                        )
-
-                    Box(
-                        modifier =
-                            Modifier
-                                .weight(1f)
-                                .fillMaxWidth()
-                                .background(MaterialTheme.colorScheme.surfaceContainerHighest),
-                    ) {
-                        if (topThumbUrl != null) {
-                            Image(
-                                painter = topThumbPainter,
-                                contentDescription = stringResource(R.string.collections_preview_1_accessibility),
-                                modifier = Modifier.fillMaxSize(),
-                                contentScale = ContentScale.Crop,
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(4.dp))
-
-                    // Bottom Thumbnail
-                    val bottomThumbPhoto =
-                        collection.previewPhotos
-                            ?.getOrNull(2)
-                            ?: collection.previewPhotos
-                                ?.getOrNull(1)
-                    val bottomThumbUrl =
-                        remember(bottomThumbPhoto?.id, bottomThumbPhoto?.urls, sideWidthPx) {
-                            bottomThumbPhoto?.urls?.getOptimalUrl(sideWidthPx)
-                        }
-                    val bottomPlaceholderPainter =
-                        rememberBlurHashPlaceholder(bottomThumbPhoto?.blurHash, BLURHASH_PLACEHOLDER_WIDTH / 2, 12)
-
-                    val bottomThumbRequest =
-                        remember(context, bottomThumbUrl) {
-                            bottomThumbUrl?.let {
-                                ImageRequest
-                                    .Builder(context)
-                                    .data(it)
-                                    .crossfade(true)
-                                    .build()
-                            }
-                        }
-
-                    val bottomThumbPainter =
-                        rememberAsyncImagePainter(
-                            model = bottomThumbRequest,
-                            placeholder = bottomPlaceholderPainter,
-                        )
-
-                    Box(
-                        modifier =
-                            Modifier
-                                .weight(1f)
-                                .fillMaxWidth()
-                                .background(MaterialTheme.colorScheme.surfaceContainerHighest),
-                    ) {
-                        if (bottomThumbUrl != null) {
-                            Image(
-                                painter = bottomThumbPainter,
-                                contentDescription = stringResource(R.string.collections_preview_2_accessibility),
-                                modifier = Modifier.fillMaxSize(),
-                                contentScale = ContentScale.Crop,
-                            )
-                        }
-                    }
-                }
-            }
-
-            // Collection Information Footer
-            Column(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(12.dp),
-            ) {
-                Text(
-                    text = collection.title,
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-
-                val description = collection.description
-                if (!description.isNullOrBlank()) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = description,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    // Curator Profile & Attribution
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier =
-                            Modifier
-                                .weight(1f)
-                                .clickable {
-                                    val userHtml = collection.user.links.html
-                                    val utmProfile = "$userHtml?utm_source=ImageFeedApp&utm_medium=referral"
-                                    val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(utmProfile))
-                                    context.startActivity(browserIntent)
-                                },
-                    ) {
-                        val curatorAvatarRequest =
-                            remember(context, collection.user.profileImage.small) {
-                                ImageRequest
-                                    .Builder(context)
-                                    .data(collection.user.profileImage.small)
-                                    .crossfade(true)
-                                    .build()
-                            }
-
-                        val avatarPainter =
-                            rememberAsyncImagePainter(
-                                model = curatorAvatarRequest,
-                            )
-
-                        Image(
-                            painter = avatarPainter,
-                            contentDescription = stringResource(R.string.collections_curator_avatar_accessibility),
-                            modifier =
-                                Modifier
-                                    .size(24.dp)
-                                    .clip(CircleShape),
-                        )
-
-                        Spacer(modifier = Modifier.width(8.dp))
-
-                        Column {
-                            Text(
-                                text = stringResource(R.string.collections_curated_by),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                            Text(
-                                text = collection.user.name,
-                                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
-                                color = MaterialTheme.colorScheme.onSurface,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                        }
-                    }
-
-                    // Total photos badge
-                    Box(
-                        modifier =
-                            Modifier
-                                .background(MaterialTheme.colorScheme.surfaceContainerHighest, MaterialTheme.shapes.small)
-                                .padding(horizontal = 10.dp, vertical = 4.dp),
-                    ) {
-                        Text(
-                            text = pluralStringResource(R.plurals.collections_photos_count, collection.totalPhotos, collection.totalPhotos),
-                            color = MaterialTheme.colorScheme.onSurface,
-                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                        )
-                    }
-                }
-            }
-        }
+@Preview(showBackground = true, widthDp = 900, heightDp = 700, name = "Collections - Expanded")
+@OptIn(ExperimentalSharedTransitionApi::class)
+@Composable
+fun CollectionsFeedScreenExpandedPreview() {
+    PreviewScaffold(widthDp = 900, heightDp = 700, darkTheme = false) { sharedScope, visibilityScope ->
+        CollectionsFeedScreenContent(
+            sharedTransitionScope = sharedScope,
+            animatedVisibilityScope = visibilityScope,
+            state = UiPreviewFixtures.collectionsFeedState,
+            onRefresh = {},
+            onLoadNextPage = {},
+            onCollectionClick = {},
+            onSearchClick = {},
+        )
     }
 }

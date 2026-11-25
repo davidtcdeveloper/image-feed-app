@@ -48,6 +48,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavKey
+import com.example.imagefeed.android.components.PhotoCard
 import com.example.imagefeed.android.navigation.AppRoute
 import com.example.imagefeed.android.theme.ExpressiveLoadingIndicator
 import com.example.imagefeed.android.util.localizedMessage

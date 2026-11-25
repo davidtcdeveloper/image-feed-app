@@ -34,6 +34,13 @@ Never use raw color literals (`Color(0xFF...)`, `Color.White`, `Color.Black`, `C
 
 *Exception*: Domain-specific content colors (such as Unsplash average photo background colors or camera sensor metadata tags).
 
+### D. `designsystem/` Package (`Matte → Satin → Float`)
+Organize shared UI surface primitives under `androidApp/src/main/java/com/example/imagefeed/android/designsystem/`:
+- **Matte (`SurfaceTokens.kt`)**: Use `MatteSurface` and `SurfaceTokens` for opaque/tonal masonry cards, inspector panels, and discovery tiles with zero live backdrop blur. Photo cards ([`PhotoCard.kt`](../../../androidApp/src/main/java/com/example/imagefeed/android/components/PhotoCard.kt)) use a compact Matte corner attribution capsule (`SurfaceTokens.matteScrimPillColor()` + `outlineVariant` border) rather than full-width bottom scrims.
+- **Satin (`SatinHeaderScaffold.kt`)**: Apply `Modifier.satinProgressiveBlur` for top-edge headers, strictly gated on `Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU` (API 33+) and disabled under reduced motion or `LocalInspectionMode.current`, degrading cleanly on API 29–32 to a multi-stop vertical `MaterialTheme.colorScheme.surface` alpha scrim.
+- **Shared Transitions (`SharedTransitionLocals.kt`)**: Use `LocalAppSharedTransition` (`ProvideAppSharedTransition`) and `SatinOcclusionController` instead of deep manual scope parameter threading.
+- **Float (`FloatNavigationChrome.kt`, `ExpressiveShapes.kt`)**: Centralizes floating navigation chrome and expressive shape tokens.
+
 ### B. Typography Scale
 Never use ad-hoc font sizes (e.g., `fontSize = 14.sp`, `fontSize = 20.sp`). Apply `style = MaterialTheme.typography.*` to support system-wide Dynamic Type font scaling:
 - `displayLarge` / `displayMedium` / `displaySmall`: Hero banners and splash displays.
@@ -89,7 +96,7 @@ Layouts must adapt dynamically across device form factors:
 - **Window Size Classes**:
   - `Compact` (< 600dp): Bottom `NavigationBar`, single-column or 2-column phone layout.
   - `Medium` (600–839dp) & `Expanded` ($\ge$ 840dp): Start-docked `NavigationRail`, multi-column adaptive grids.
-- **Adaptive Grids & Non-Lazy Clusters**: Use `StaggeredGridCells.Adaptive` and column calculation utilities from `AdaptiveUtils.kt` (calculating image CDN widths from container column widths rather than screen dimensions). Use stable Compose 1.13 non-lazy `Grid` and `FlexBox` for bounded EXIF bento, topic tile, and tag clusters (see [`PhotoDetailsScreen.kt`](../../../androidApp/src/main/java/com/example/imagefeed/android/PhotoDetailsScreen.kt) and [`SearchScreen.kt`](../../../androidApp/src/main/java/com/example/imagefeed/android/SearchScreen.kt)).
+- **Adaptive Grids & Non-Lazy Clusters**: Use `StaggeredGridCells.Adaptive` and column calculation utilities from [`AdaptiveUtils.kt`](../../../androidApp/src/main/java/com/example/imagefeed/android/AdaptiveUtils.kt), which read quantized `LocalPaneWidthDp.current` (provided at Navigation 3 pane boundaries via `ProvidePaneWidth`, falling back to `LocalAdaptiveLayoutInfo.current.screenWidthDp`) so column counts and Retina CDN widths adapt accurately inside `ListDetailSceneStrategy` panes. Use stable Compose 1.13 non-lazy `Grid` and `FlexBox` for bounded EXIF bento, topic tile, and tag clusters (see [`PhotoInspectorPane.kt`](../../../androidApp/src/main/java/com/example/imagefeed/android/details/PhotoInspectorPane.kt) and [`SearchDiscoveryView.kt`](../../../androidApp/src/main/java/com/example/imagefeed/android/search/SearchDiscoveryView.kt)).
 - **Dual-Pane Detail Views**:
   - Medium/Expanded widths & Book posture: Side-by-side dual-pane layout (Left: Photo Canvas; Right: Inspector sidebar with stats, map, EXIF, tags).
   - TableTop posture: Horizontal split (Top: Photo; Bottom: Controls & metadata).

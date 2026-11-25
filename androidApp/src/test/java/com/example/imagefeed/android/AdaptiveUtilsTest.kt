@@ -1,10 +1,44 @@
 package com.example.imagefeed.android
 
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class AdaptiveUtilsTest {
+    @Test
+    fun quantizePaneWidthDpRoundsDownToStepAndClampsNegativeValues() {
+        assertEquals(0.dp, quantizePaneWidthDp((-12).dp))
+        assertEquals(448.dp, quantizePaneWidthDp(450.dp))
+        assertEquals(600.dp, quantizePaneWidthDp(600.dp))
+        assertEquals(840.dp, quantizePaneWidthDp(841.dp))
+    }
+
+    @Test
+    fun resolveEffectiveWidthDpPrefersPaneWidthOverFullScreenWidth() {
+        assertEquals(448, resolveEffectiveWidthDp(paneWidthDp = 448.dp, screenWidthDp = 1024))
+        assertEquals(1024, resolveEffectiveWidthDp(paneWidthDp = null, screenWidthDp = 1024))
+        assertEquals(1024, resolveEffectiveWidthDp(paneWidthDp = 0.dp, screenWidthDp = 1024))
+    }
+
+    @Test
+    fun narrowListPaneInsideWideWindowAdaptsColumnsAndCdnWidthToPaneWidth() {
+        val fullWindowWidthDp = 1024
+        val listPaneWidthDp = resolveEffectiveWidthDp(paneWidthDp = 448.dp, screenWidthDp = fullWindowWidthDp)
+        val density = Density(2f)
+
+        val columnCount = computeGridColumnCount(listPaneWidthDp)
+        assertEquals(2, columnCount)
+        assertEquals(StaggeredGridCells.Fixed(2), computeGridColumns(listPaneWidthDp))
+        assertEquals(StaggeredGridCells.Fixed(1), computeCollectionGridColumns(listPaneWidthDp))
+        assertEquals(StaggeredGridCells.Fixed(1), computeUserGridColumns(listPaneWidthDp))
+
+        // Full window would have yielded 4+ columns and smaller or differently scaled item widths
+        assertEquals(448, computePhotoItemWidthPx(listPaneWidthDp, columnCount, density))
+        assertEquals(848, computeCollectionMosaicCardWidthPx(listPaneWidthDp, density))
+    }
+
     @Test
     fun computeBottomContentPaddingReturnsDefaultPaddingWhenNavigationRailIsActive() {
         val result =

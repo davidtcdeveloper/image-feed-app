@@ -1,6 +1,6 @@
 # Specification 82: Android Design System Foundation, Matte Tokens, Screen Decomposition & Pane-Aware Layout
 
-**Status:** Accepted
+**Status:** Implemented (Final)
 
 * **Wave:** Wave 1 — Disjoint Foundations
 * **Depends On:** None
@@ -81,20 +81,23 @@ Building on Compose BOM `2026.11.01` ([Spec 79](archive/79_jetpack_compose_1_13_
 
 ## 5. Acceptance Criteria
 
-- [ ] `designsystem/` provides `SurfaceTokens.kt` (`MatteSurface`), `SatinHeaderScaffold.kt` + API 33+-gated `Modifier.satinProgressiveBlur` (with API 29–32 scrim fallback), `SharedTransitionLocals.kt`, and clean `FloatNavigationChrome.kt` / `ExpressiveShapes.kt` scaffolds.
-- [ ] `LocalPaneWidthDp` feeds `AdaptiveUtils` so column counts and Retina CDN widths adapt accurately inside `ListDetailSceneStrategy` panes, verified by unit tests.
-- [ ] `PhotoDetailsScreen`, `SearchScreen`, `UserProfileScreen`, shared `PhotoCard` / `CollectionMosaicCard`, and `PhotoThemePalette` are decomposed into clean subpackages with preserved screen behavior.
-- [ ] `PhotoCard` uses a compact Matte corner attribution capsule, and `TopicCapsuleCard` / Popular Topics use semantic `MaterialTheme.colorScheme` tokens in Light and Dark themes.
-- [ ] All photographer and curator taps across `SearchScreen`, `CollectionsFeedScreen`, and `CollectionDetailScreen` navigate in-app to `AppRoute.UserProfile(username)`.
-- [ ] Before/After Compose Preview Sidecar visual review is approved, and `:androidApp:assembleDebug`, `:androidApp:testDebugUnitTest`, `:androidApp:connectedDebugAndroidTest`, `ktlintCheck`, and `detekt` pass with zero warnings.
-- [ ] Affected [`wiki/`](../wiki/README.md) pages, [`.agents/skills/android-m3-design/SKILL.md`](../.agents/skills/android-m3-design/SKILL.md), and [`.agents/skills/ui-visual-review/SKILL.md`](../.agents/skills/ui-visual-review/SKILL.md) are updated.
+- [x] `designsystem/` provides `SurfaceTokens.kt` (`MatteSurface`), `SatinHeaderScaffold.kt` + API 33+-gated `Modifier.satinProgressiveBlur` (with API 29–32 scrim fallback), `SharedTransitionLocals.kt`, and clean `FloatNavigationChrome.kt` / `ExpressiveShapes.kt` scaffolds.
+- [x] `LocalPaneWidthDp` feeds `AdaptiveUtils` so column counts and Retina CDN widths adapt accurately inside `ListDetailSceneStrategy` panes, verified by unit tests.
+- [x] `PhotoDetailsScreen`, `SearchScreen`, `UserProfileScreen`, shared `PhotoCard` / `CollectionMosaicCard`, and `PhotoThemePalette` are decomposed into clean subpackages with preserved screen behavior.
+- [x] `PhotoCard` uses a compact Matte corner attribution capsule, and `TopicCapsuleCard` / Popular Topics use semantic `MaterialTheme.colorScheme` tokens in Light and Dark themes.
+- [x] All photographer and curator taps across `SearchScreen`, `CollectionsFeedScreen`, and `CollectionDetailScreen` navigate in-app to `AppRoute.UserProfile(username)`.
+- [x] Before/After Compose Preview Sidecar visual review is approved, and `:androidApp:assembleDebug`, `:androidApp:testDebugUnitTest`, `:androidApp:connectedDebugAndroidTest`, `ktlintCheck`, and `detekt` pass with zero warnings.
+- [x] Affected [`wiki/`](../wiki/README.md) pages, [`.agents/skills/android-m3-design/SKILL.md`](../.agents/skills/android-m3-design/SKILL.md), and [`.agents/skills/ui-visual-review/SKILL.md`](../.agents/skills/ui-visual-review/SKILL.md) are updated.
 
 ---
 
 ## 6. Verification Record
 
 ### Verified
-*(Pending implementation)*
+- `./gradlew :androidApp:assembleDebug :androidApp:testDebugUnitTest :androidApp:compileDebugAndroidTestKotlin ktlintCheck detekt` — passed (`41` unit tests across `AdaptiveUtilsTest` [5], `NavigatorTest` [11], `DynamicThemeTest` [13], `BlurHashDecoderTest` [9], and `PaginationFlowTest` [3], `0` failures, `0` skipped; `ktlintCheck` and `detekt` passed) after final `jetpack-compose-performance` stability fixes (`rememberUpdatedState`, `@Stable AppSharedTransition`, cached `BorderStroke`).
+- `./gradlew :androidApp:compileDebugKotlin :androidApp:compileDebugUnitTestKotlin :androidApp:compileDebugAndroidTestKotlin --rerun-tasks --console=plain` — zero compiler warnings in any Spec 82 files; only the pre-existing `MainActivity.kt:87` `getFeedRepository()` deprecation (`pending deletion in Spec 84`, `MainActivity.kt` untouched per Spec 82 constraints).
+- `./gradlew :androidApp:connectedDebugAndroidTest` on `Resizable_Experimental(AVD) - 17` (`emulator-5554`) — passed (`4` tests in `ComposeUiModernizationTest`, `0` failures, `0` errors, `0` skipped in `8.580s`).
+- Compose Preview Sidecar (`http://127.0.0.1:61740`, `gradle://.?:androidApp@debug`) — rendered `13` Before and `13` After PNGs (`FeedScreen`, `CollectionsFeedScreen`, `SearchScreen` Discovery & Results, `PhotoDetailsScreen` across Compact Light, Compact Dark, and Expanded `900×700`), inspected via `read_file`, presented in the Before/After visual review artifact, and approved for final commit.
 
 ### Unverified / Gaps
-*(Pending implementation)*
+- None (`connectedDebugAndroidTest` was not re-run after the final stability-only edits to `rememberUpdatedState` / `@Stable` / `BorderStroke`, though `:androidApp:compileDebugAndroidTestKotlin` and all `41` JVM unit tests re-ran and passed after those edits).
