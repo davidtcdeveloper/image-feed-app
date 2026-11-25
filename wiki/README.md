@@ -21,7 +21,7 @@ Welcome to the living documentation for the **Unsplash Image Feed** Kotlin Multi
 
 * **[Business Rules & API Compliance](business-rules.md)** — Unsplash API mandates, API key injection, Retina CDN sizing math, pagination/deduplication rules, search debouncing, and typed error & localization invariants.
 * **[Architecture & Modules](architecture-and-modules.md)** — Vertical feature modularization (`:core:*`, `:feature:*`, `:shared` umbrella), compile-time Metro DI graph, and Shared MVI / UDF lifecycle.
-* **[Design Systems & Navigation](design-systems-and-navigation.md)** — Android Material 3 Expressive + Jetpack Navigation 3 adaptive scenes, and Apple iOS/macOS Liquid Glass + multi-target navigation.
+* **[Design Systems & Navigation](design-systems-and-navigation.md)** — Android Material 3 Expressive + Jetpack Navigation 3 adaptive scenes, Apple iOS/macOS Liquid Glass + multi-target navigation, and cross-platform UI visual review.
 * **[Performance & Memory](performance-and-memory.md)** — BlurHash decoding & caches, Coil / `ImageMemoryCache` pipelines, Compose & SwiftUI hot-path optimizations, static map snapshots, and R8 / Baseline Profiles.
 * **[Architecture Decision Record (ADR) Index](adr-index.md)** — Chronological log of major technical decisions linking to immutable archived specifications.
 * **[Known Issues & Evolution Queue](issue-log.md)** — Post-session capture via [`session-issue-capture`](../.agents/skills/session-issue-capture/SKILL.md); triaged manually via [`issue-log-resolution`](../.agents/skills/issue-log-resolution/SKILL.md).

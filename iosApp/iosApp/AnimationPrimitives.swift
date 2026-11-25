@@ -1,5 +1,16 @@
 import SwiftUI
 
+private struct UISnapshotModeKey: EnvironmentKey {
+    static let defaultValue: Bool = ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1"
+}
+
+extension EnvironmentValues {
+    var isUISnapshotMode: Bool {
+        get { self[UISnapshotModeKey.self] }
+        set { self[UISnapshotModeKey.self] = newValue }
+    }
+}
+
 // MARK: - SpringCardButtonStyle
 
 /// A custom `ButtonStyle` that handles scale transformations (`scaleEffect`)
@@ -18,20 +29,26 @@ struct SpringCardButtonStyle: ButtonStyle {
 /// A custom `ViewModifier` that applies a bottom-up slide offset (from `y: 35` to `0`)
 /// and opacity fade animation with a capped index-based delay to cascade entry.
 struct StaggeredRevealModifier: ViewModifier {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.isUISnapshotMode) private var isUISnapshotMode
     let index: Int
     @State private var isVisible = false
 
     func body(content: Content) -> some View {
-        content
-            .opacity(isVisible ? 1.0 : 0.0)
-            .offset(y: isVisible ? 0 : 35)
-            .onAppear {
-                // Cap index-based delay calculation at 8 to prevent extreme lag for large scroll jumps
-                let staggerDelay = Double(index % 8) * 0.045
-                withAnimation(.spring(response: 0.48, dampingFraction: 0.82).delay(staggerDelay)) {
-                    isVisible = true
+        if reduceMotion || isUISnapshotMode {
+            content
+        } else {
+            content
+                .opacity(isVisible ? 1.0 : 0.0)
+                .offset(y: isVisible ? 0 : 35)
+                .onAppear {
+                    // Cap index-based delay calculation at 8 to prevent extreme lag for large scroll jumps
+                    let staggerDelay = Double(index % 8) * 0.045
+                    withAnimation(.spring(response: 0.48, dampingFraction: 0.82).delay(staggerDelay)) {
+                        isVisible = true
+                    }
                 }
-            }
+        }
     }
 }
 

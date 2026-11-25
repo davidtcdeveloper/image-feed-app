@@ -18,10 +18,27 @@ final class PhotoDetailsViewModel {
     var favoriteFeedbackTrigger = 0
     var favoriteToastBanner: ToastBanner?
 
-    private let viewModel: shared.PhotoDetailsViewModel
+    private let viewModel: shared.PhotoDetailsViewModel?
     @ObservationIgnored private nonisolated(unsafe) var stateCloseable: Closeable?
     @ObservationIgnored private nonisolated(unsafe) var effectsCloseable: Closeable?
     @ObservationIgnored private nonisolated(unsafe) var toastDismissTask: Task<Void, Never>?
+
+    #if DEBUG
+    init(
+        previewPhoto: Photo?,
+        previewStats: PhotoStats? = nil,
+        isFavorite: Bool = false,
+        isLoading: Bool = false,
+        error: String? = nil)
+    {
+        self.viewModel = nil
+        self.photo = previewPhoto
+        self.stats = previewStats
+        self.isFavorite = isFavorite
+        self.isLoading = isLoading
+        self.error = error
+    }
+    #endif
 
     init(photoId: String) {
         let viewModel = MetroHelper.shared.getPhotoDetailsViewModel(photoId: photoId)
@@ -95,31 +112,31 @@ final class PhotoDetailsViewModel {
     }
 
     func send(_ intent: PhotoDetailsIntent) {
-        viewModel.dispatch(intent: intent)
+        viewModel?.dispatch(intent: intent)
     }
 
     func loadDetails() {
-        viewModel.dispatch(intent: PhotoDetailsIntentLoadDetails.shared)
+        viewModel?.dispatch(intent: PhotoDetailsIntentLoadDetails.shared)
     }
 
     func retry() {
-        viewModel.dispatch(intent: PhotoDetailsIntentRetry.shared)
+        viewModel?.dispatch(intent: PhotoDetailsIntentRetry.shared)
     }
 
     func trackDownload() {
         if let photo {
-            viewModel.dispatch(intent: PhotoDetailsIntentTrackDownload(photo: photo))
+            viewModel?.dispatch(intent: PhotoDetailsIntentTrackDownload(photo: photo))
         }
     }
 
     func toggleFavorite(fallbackPhoto: Photo? = nil) {
-        viewModel.dispatch(intent: PhotoDetailsIntentToggleFavorite(fallbackPhoto: fallbackPhoto))
+        viewModel?.dispatch(intent: PhotoDetailsIntentToggleFavorite(fallbackPhoto: fallbackPhoto))
     }
 
     deinit {
         toastDismissTask?.cancel()
         stateCloseable?.close()
         effectsCloseable?.close()
-        viewModel.clear()
+        viewModel?.clear()
     }
 }

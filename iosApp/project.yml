@@ -9,6 +9,10 @@ targets:
     type: application
     platform: iOS
     deploymentTarget: "17.0"
+    scheme:
+      testTargets:
+        - iosAppTests
+        - iosAppUITests
     sources:
       - iosApp
     settings:
@@ -59,11 +63,73 @@ targets:
           fi
         shell: /bin/sh
 
+  iosAppTests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - iosAppTests
+    dependencies:
+      - target: iosApp
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.imagefeed.iosAppTests
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/iosApp.app/iosApp"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+        DEVELOPMENT_TEAM: ""
+        CODE_SIGN_IDENTITY: ""
+        CODE_SIGNING_REQUIRED: NO
+        CODE_SIGNING_ALLOWED: NO
+        "EXCLUDED_ARCHS[sdk=iphonesimulator*]": x86_64
+
+  macosAppTests:
+    type: bundle.unit-test
+    platform: macOS
+    deploymentTarget: "14.0"
+    sources:
+      - iosAppTests
+    dependencies:
+      - target: macosApp
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.imagefeed.macosAppTests
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/macosApp.app/Contents/MacOS/macosApp"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+        ENABLE_APP_SANDBOX: NO
+        DEVELOPMENT_TEAM: ""
+        CODE_SIGN_IDENTITY: ""
+        CODE_SIGNING_REQUIRED: NO
+        CODE_SIGNING_ALLOWED: NO
+        "EXCLUDED_ARCHS[sdk=macosx*]": x86_64
+
+  iosAppUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - iosAppUITests
+    dependencies:
+      - target: iosApp
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.imagefeed.iosAppUITests
+        TEST_TARGET_NAME: iosApp
+        DEVELOPMENT_TEAM: ""
+        CODE_SIGN_IDENTITY: ""
+        CODE_SIGNING_REQUIRED: NO
+        CODE_SIGNING_ALLOWED: NO
+        "EXCLUDED_ARCHS[sdk=iphonesimulator*]": x86_64
+
   macosApp:
     type: application
     platform: macOS
     deploymentTarget: "14.0"
-    scheme: {}
+    scheme:
+      testTargets:
+        - macosAppTests
     sources:
       - iosApp
     settings:
@@ -111,3 +177,63 @@ targets:
             "$SRCROOT/../gradlew" -p "$SRCROOT/.." :shared:embedAndSignAppleFrameworkForXcode
           fi
         shell: /bin/sh
+
+  iosAppTests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - iosAppTests
+    dependencies:
+      - target: iosApp
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.imagefeed.iosAppTests
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/iosApp.app/iosApp"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+        DEVELOPMENT_TEAM: ""
+        CODE_SIGN_IDENTITY: ""
+        CODE_SIGNING_REQUIRED: NO
+        CODE_SIGNING_ALLOWED: NO
+        "EXCLUDED_ARCHS[sdk=iphonesimulator*]": x86_64
+
+  macosAppTests:
+    type: bundle.unit-test
+    platform: macOS
+    deploymentTarget: "14.0"
+    sources:
+      - iosAppTests
+    dependencies:
+      - target: macosApp
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.imagefeed.macosAppTests
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/macosApp.app/Contents/MacOS/macosApp"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+        ENABLE_APP_SANDBOX: NO
+        DEVELOPMENT_TEAM: ""
+        CODE_SIGN_IDENTITY: ""
+        CODE_SIGNING_REQUIRED: NO
+        CODE_SIGNING_ALLOWED: NO
+        "EXCLUDED_ARCHS[sdk=macosx*]": x86_64
+
+  iosAppUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - iosAppUITests
+    dependencies:
+      - target: iosApp
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.imagefeed.iosAppUITests
+        TEST_TARGET_NAME: iosApp
+        DEVELOPMENT_TEAM: ""
+        CODE_SIGN_IDENTITY: ""
+        CODE_SIGNING_REQUIRED: NO
+        CODE_SIGNING_ALLOWED: NO
+        "EXCLUDED_ARCHS[sdk=iphonesimulator*]": x86_64

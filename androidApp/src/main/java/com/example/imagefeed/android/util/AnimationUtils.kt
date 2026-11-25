@@ -56,6 +56,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.dp
 import com.example.imagefeed.android.calculateBottomContentPadding
@@ -70,7 +71,7 @@ fun Modifier.staggeredEntrance(
     stepDelayMs: Int = 25,
     maxAnimatedIndex: Int = 6,
 ): Modifier {
-    if (index >= maxAnimatedIndex) {
+    if (index >= maxAnimatedIndex || LocalInspectionMode.current) {
         return this
     }
 

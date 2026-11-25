@@ -55,6 +55,7 @@ struct PhotoDetailsView: View {
     init(
         photoId: String,
         initialPhoto: Photo? = nil,
+        initialViewModel: PhotoDetailsViewModel? = nil,
         heroNamespace: Namespace.ID,
         onDismiss: (() -> Void)? = nil,
         onUserSelect: @escaping (String) -> Void,
@@ -66,7 +67,7 @@ struct PhotoDetailsView: View {
         self.onDismiss = onDismiss
         self.onUserSelect = onUserSelect
         self.onTagSelect = onTagSelect
-        self._viewModel = State(initialValue: nil)
+        self._viewModel = State(initialValue: initialViewModel)
     }
 
     var body: some View {
@@ -581,3 +582,10 @@ struct GlassToastPill: View {
         .allowsHitTesting(false)
     }
 }
+
+#if DEBUG
+#Preview("Photo Details") {
+    UIPreviewFixtures.makeView(for: .photoDetails)
+        .preferredColorScheme(.dark)
+}
+#endif

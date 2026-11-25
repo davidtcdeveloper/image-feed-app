@@ -9,6 +9,7 @@ Agents act as senior project collaborators for this KMP image-feed app. Keep res
 * [Issue Log Resolution](.agents/skills/issue-log-resolution/SKILL.md) — Manual on-demand evaluation and resolution of open issues in `wiki/issue-log.md`.
 * [KMP Architecture & Lifecycle](.agents/skills/kmp-architecture/SKILL.md) — Shared boundaries, MVI pattern, Metro DI, and coroutine scopes.
 * [Verification & Linting](.agents/skills/verification-and-linting/SKILL.md) — Build, test, lint, and formatting commands across Kotlin and Swift.
+* [UI Visual Review](.agents/skills/ui-visual-review/SKILL.md) — Ephemeral Before/After UI captures (Compose Preview Sidecar, iOS/macOS snapshot suites) and visual review gate.
 * [KMP Testing Strategy](.agents/skills/kmp-testing/SKILL.md) — Shared MVI ViewModel test harness, fake repositories, and coroutine testing.
 * [Android Material 3 & Navigation 3](.agents/skills/android-m3-design/SKILL.md) — Compose M3 tokens, Navigation 3 scenes, predictive back, adaptive layouts.
 * [Apple Glass Design & HIG](.agents/skills/ios-glass-design/SKILL.md) — SwiftUI GlassTheme, materials, detents, dark scrims, sensory feedback.

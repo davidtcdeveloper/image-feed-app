@@ -6,10 +6,8 @@ import android.content.Context
 import android.content.Intent
 import android.icu.text.CompactDecimalFormat
 import android.net.Uri
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
-import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
@@ -71,10 +69,7 @@ import androidx.compose.material3.SuggestionChipDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
-import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -104,11 +99,11 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -116,9 +111,10 @@ import coil3.compose.LocalPlatformContext
 import coil3.compose.rememberAsyncImagePainter
 import coil3.request.ImageRequest
 import coil3.request.crossfade
-import com.example.imagefeed.android.adaptive.AdaptiveLayoutInfo
 import com.example.imagefeed.android.adaptive.DevicePosture
 import com.example.imagefeed.android.adaptive.LocalAdaptiveLayoutInfo
+import com.example.imagefeed.android.preview.PreviewScaffold
+import com.example.imagefeed.android.preview.UiPreviewFixtures
 import com.example.imagefeed.android.theme.ExpressiveLoadingIndicator
 import com.example.imagefeed.android.theme.PhotoSwatch
 import com.example.imagefeed.android.theme.deriveTonalSwatches
@@ -128,18 +124,8 @@ import com.example.imagefeed.android.util.BlurHashDecoder
 import com.example.imagefeed.android.util.localizedMessage
 import com.example.imagefeed.android.util.rememberBlurHashPlaceholder
 import com.example.imagefeed.details.model.PhotoStats
-import com.example.imagefeed.details.model.StatMetric
 import com.example.imagefeed.di.MetroHelper
-import com.example.imagefeed.model.Exif
-import com.example.imagefeed.model.Location
 import com.example.imagefeed.model.Photo
-import com.example.imagefeed.model.PhotoLinks
-import com.example.imagefeed.model.PhotoUrls
-import com.example.imagefeed.model.Position
-import com.example.imagefeed.model.ProfileImage
-import com.example.imagefeed.model.Tag
-import com.example.imagefeed.model.User
-import com.example.imagefeed.model.UserLinks
 import com.example.imagefeed.presentation.details.PhotoDetailsEffect
 import com.example.imagefeed.presentation.details.PhotoDetailsIntent
 import com.example.imagefeed.presentation.details.PhotoDetailsState
@@ -1258,18 +1244,35 @@ fun PhotoInspectorPane(
                                         .height(180.dp)
                                         .clip(MaterialTheme.shapes.small),
                             ) {
-                                GoogleMap(
-                                    modifier = Modifier.fillMaxSize(),
-                                    cameraPositionState = cameraPositionState,
-                                    googleMapOptionsFactory = { GoogleMapOptions().liteMode(true) },
-                                    properties = mapProperties,
-                                    uiSettings = mapUiSettings,
-                                ) {
-                                    val markerTitle = location.name ?: stringResource(R.string.details_location_captured)
-                                    Marker(
-                                        state = remember(positionLatLng) { MarkerState(position = positionLatLng) },
-                                        title = markerTitle,
-                                    )
+                                if (LocalInspectionMode.current) {
+                                    Box(
+                                        modifier =
+                                            Modifier
+                                                .fillMaxSize()
+                                                .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.LocationOn,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(36.dp),
+                                        )
+                                    }
+                                } else {
+                                    GoogleMap(
+                                        modifier = Modifier.fillMaxSize(),
+                                        cameraPositionState = cameraPositionState,
+                                        googleMapOptionsFactory = { GoogleMapOptions().liteMode(true) },
+                                        properties = mapProperties,
+                                        uiSettings = mapUiSettings,
+                                    ) {
+                                        val markerTitle = location.name ?: stringResource(R.string.details_location_captured)
+                                        Marker(
+                                            state = remember(positionLatLng) { MarkerState(position = positionLatLng) },
+                                            title = markerTitle,
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -1845,111 +1848,59 @@ fun formatStatValue(
     return threadLocalFormatter.get()?.format(value.toLong()) ?: value.toString()
 }
 
-@Preview(showBackground = true, name = "Photo Details - Compact")
-@OptIn(ExperimentalSharedTransitionApi::class, ExperimentalMaterial3WindowSizeClassApi::class)
+@Preview(showBackground = true, widthDp = 412, heightDp = 892, name = "Photo Details - Compact")
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun PhotoDetailsScreenPreview() {
-    val samplePhoto =
-        Photo(
-            id = "photo_123",
-            createdAt = "2026-01-01T00:00:00Z",
-            width = 1920,
-            height = 1080,
-            color = "#000000",
-            blurHash = "LEHV6nWB2yk8pyo0adR*.7kCMdnj",
-            description = "A beautiful scenery",
-            altDescription = "Scenic view",
-            urls =
-                PhotoUrls(
-                    raw = "https://example.com/raw.jpg",
-                    full = "https://example.com/full.jpg",
-                    regular = "https://example.com/regular.jpg",
-                    small = "https://example.com/small.jpg",
-                    thumb = "https://example.com/thumb.jpg",
-                ),
-            user =
-                User(
-                    id = "user_1",
-                    username = "johndoe",
-                    name = "John Doe",
-                    profileImage =
-                        ProfileImage(
-                            small = "https://example.com/s.jpg",
-                            medium = "https://example.com/m.jpg",
-                            large = "https://example.com/l.jpg",
-                        ),
-                    links =
-                        UserLinks(
-                            self = "https://api.unsplash.com/users/johndoe",
-                            html = "https://unsplash.com/@johndoe",
-                            photos = "https://api.unsplash.com/users/johndoe/photos",
-                        ),
-                ),
-            links =
-                PhotoLinks(
-                    self = "https://api.unsplash.com/photos/photo_123",
-                    html = "https://unsplash.com/photos/photo_123",
-                    download = "https://unsplash.com/photos/photo_123/download",
-                    downloadLocation = "https://api.unsplash.com/photos/photo_123/download?ixid=123",
-                ),
-            exif =
-                Exif(
-                    make = "Canon",
-                    model = "EOS R5",
-                    exposureTime = "1/200",
-                    aperture = "2.8",
-                    focalLength = "50.0",
-                    iso = 100,
-                ),
-            location =
-                Location(
-                    name = "Lisbon, Portugal",
-                    city = "Lisbon",
-                    country = "Portugal",
-                    position = Position(latitude = 38.7223, longitude = -9.1393),
-                ),
-            tags = listOf(Tag(title = "nature")),
+    PreviewScaffold(widthDp = 412, heightDp = 892, darkTheme = false) { sharedScope, visibilityScope ->
+        PhotoDetailsScreen(
+            sharedTransitionScope = sharedScope,
+            animatedVisibilityScope = visibilityScope,
+            state = UiPreviewFixtures.photoDetailsState,
+            onRetry = {},
+            onTrackDownload = {},
+            onToggleFavorite = {},
+            onBack = {},
+            onUserClick = {},
+            onTagClick = {},
         )
+    }
+}
 
-    val sampleStats =
-        PhotoStats(
-            id = "photo_123",
-            downloads = StatMetric(total = 120),
-            views = StatMetric(total = 5000),
-            likes = StatMetric(total = 350),
+@Preview(showBackground = true, widthDp = 412, heightDp = 892, name = "Photo Details - Dark")
+@OptIn(ExperimentalSharedTransitionApi::class)
+@Composable
+fun PhotoDetailsDarkPreview() {
+    PreviewScaffold(widthDp = 412, heightDp = 892, darkTheme = true) { sharedScope, visibilityScope ->
+        PhotoDetailsScreen(
+            sharedTransitionScope = sharedScope,
+            animatedVisibilityScope = visibilityScope,
+            state = UiPreviewFixtures.photoDetailsState,
+            onRetry = {},
+            onTrackDownload = {},
+            onToggleFavorite = {},
+            onBack = {},
+            onUserClick = {},
+            onTagClick = {},
         )
+    }
+}
 
-    val sampleState =
-        PhotoDetailsState(
-            photo = samplePhoto,
-            stats = sampleStats,
-            isLoading = false,
-            error = null,
+@Preview(showBackground = true, widthDp = 900, heightDp = 700, name = "Photo Details - Expanded")
+@OptIn(ExperimentalSharedTransitionApi::class)
+@Composable
+fun PhotoDetailsExpandedPreview() {
+    PreviewScaffold(widthDp = 900, heightDp = 700, darkTheme = false) { sharedScope, visibilityScope ->
+        PhotoDetailsScreen(
+            sharedTransitionScope = sharedScope,
+            animatedVisibilityScope = visibilityScope,
+            state = UiPreviewFixtures.photoDetailsState,
+            onRetry = {},
+            onTrackDownload = {},
+            onToggleFavorite = {},
+            onBack = {},
+            onUserClick = {},
+            onTagClick = {},
         )
-
-    CompositionLocalProvider(
-        LocalAdaptiveLayoutInfo provides
-            AdaptiveLayoutInfo(
-                windowSizeClass = WindowSizeClass.calculateFromSize(DpSize(400.dp, 800.dp)),
-                posture = DevicePosture.Normal,
-                screenWidthDp = 400,
-                screenHeightDp = 800,
-            ),
-    ) {
-        SharedTransitionLayout {
-            AnimatedVisibility(visible = true) {
-                PhotoDetailsScreen(
-                    sharedTransitionScope = this@SharedTransitionLayout,
-                    animatedVisibilityScope = this@AnimatedVisibility,
-                    state = sampleState,
-                    onRetry = {},
-                    onTrackDownload = {},
-                    onToggleFavorite = {},
-                    onBack = {},
-                    onUserClick = {},
-                    onTagClick = {},
-                )
-            }
-        }
     }
 }
