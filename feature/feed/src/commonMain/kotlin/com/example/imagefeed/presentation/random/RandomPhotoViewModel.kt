@@ -6,20 +6,30 @@ import com.example.imagefeed.core.network.toAppError
 import com.example.imagefeed.feed.data.FeedRepository
 import com.example.imagefeed.model.AppError
 import com.example.imagefeed.presentation.mvi.MviViewModel
-import dev.zacsweers.metro.Inject
+import dev.zacsweers.metro.Assisted
+import dev.zacsweers.metro.AssistedFactory
+import dev.zacsweers.metro.AssistedInject
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
-@Inject
+@AssistedInject
 class RandomPhotoViewModel(
     private val repository: FeedRepository,
     private val downloadTracker: PhotoDownloadTracker,
+    @Assisted private val autoFetchOnInit: Boolean = true,
 ) : MviViewModel<RandomPhotoState, RandomPhotoIntent, RandomPhotoEffect>(RandomPhotoState()) {
+    @AssistedFactory
+    interface Factory {
+        fun create(autoFetchOnInit: Boolean): RandomPhotoViewModel
+    }
+
     private var fetchJob: Job? = null
 
     init {
-        dispatch(RandomPhotoIntent.FetchRandomPhoto())
+        if (autoFetchOnInit) {
+            dispatch(RandomPhotoIntent.FetchRandomPhoto())
+        }
     }
 
     override fun dispatch(intent: RandomPhotoIntent) {

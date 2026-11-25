@@ -6,12 +6,15 @@ import com.example.imagefeed.core.network.PhotoDownloadTracker
 import com.example.imagefeed.core.network.toAppError
 import com.example.imagefeed.details.data.PhotoDetailsRepository
 import com.example.imagefeed.model.Photo
+import com.example.imagefeed.model.cache.NavigationPreviewCache
 import com.example.imagefeed.presentation.mvi.MviViewModel
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
 import dev.zacsweers.metro.AssistedInject
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
 
@@ -21,7 +24,10 @@ class PhotoDetailsViewModel(
     private val repository: PhotoDetailsRepository,
     private val downloadTracker: PhotoDownloadTracker,
     private val favoritesRepository: FavoritesRepository,
-) : MviViewModel<PhotoDetailsState, PhotoDetailsIntent, PhotoDetailsEffect>(PhotoDetailsState()) {
+    previewCache: NavigationPreviewCache = NavigationPreviewCache(),
+) : MviViewModel<PhotoDetailsState, PhotoDetailsIntent, PhotoDetailsEffect>(
+        PhotoDetailsState(photo = previewCache.getPhoto(photoId)),
+    ) {
     @AssistedFactory
     interface Factory {
         fun create(photoId: String): PhotoDetailsViewModel
@@ -77,8 +83,17 @@ class PhotoDetailsViewModel(
                         }
                     }
 
-                    val details = repository.getPhotoDetails(photoId)
-                    val stats = repository.getPhotoStats(photoId)
+                    val (details, stats) =
+                        coroutineScope {
+                            val detailsDeferred =
+                                async {
+                                    val loadedDetails = repository.getPhotoDetails(photoId)
+                                    updateState { it.copy(photo = loadedDetails) }
+                                    loadedDetails
+                                }
+                            val statsDeferred = async { repository.getPhotoStats(photoId) }
+                            detailsDeferred.await() to statsDeferred.await()
+                        }
                     updateState {
                         it.copy(
                             photo = details,

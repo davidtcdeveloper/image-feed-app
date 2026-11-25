@@ -13,6 +13,7 @@ import com.example.imagefeed.model.PhotoUrls
 import com.example.imagefeed.model.ProfileImage
 import com.example.imagefeed.model.User
 import com.example.imagefeed.model.UserLinks
+import com.example.imagefeed.model.cache.NavigationPreviewCache
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -504,6 +505,111 @@ class PhotoDetailsViewModelTest {
             viewModel.clear()
         }
 
+    @Test
+    fun seedsPhotoSynchronouslyOnFrameZeroFromPreviewCache() =
+        runTest(testDispatcher) {
+            val previewPhoto = photo("p-frame0-1").copy(description = "cached-preview")
+            val fullPhoto = previewPhoto.copy(description = "full-details")
+            val testStats = PhotoStats("p-frame0-1", StatMetric(7, HistoricalStats()), StatMetric(14, HistoricalStats()))
+            val repository = FakePhotoDetailsRepository(fullPhoto, testStats).apply { delayMs = 500L }
+            val downloadTracker = FakePhotoDownloadTracker()
+            val favoritesRepository = FakeFavoritesRepository()
+            val previewCache = NavigationPreviewCache().apply { seedPhoto(previewPhoto) }
+
+            val viewModel =
+                PhotoDetailsViewModel(
+                    photoId = "p-frame0-1",
+                    repository = repository,
+                    downloadTracker = downloadTracker,
+                    favoritesRepository = favoritesRepository,
+                    previewCache = previewCache,
+                )
+
+            // Synchronous Frame-0 assertion before advancing the coroutine scheduler
+            assertEquals(previewPhoto, viewModel.state.value.photo)
+            assertTrue(viewModel.state.value.isLoading)
+
+            advanceUntilIdle()
+
+            assertEquals(fullPhoto, viewModel.state.value.photo)
+            assertEquals(testStats, viewModel.state.value.stats)
+            assertFalse(viewModel.state.value.isLoading)
+            viewModel.clear()
+        }
+
+    @Test
+    fun emitsPhotoDetailsConcurrentlyBeforeDelayedStatsComplete() =
+        runTest(testDispatcher) {
+            val testPhoto = photo("p-parallel-1")
+            val testStats = PhotoStats("p-parallel-1", StatMetric(30, HistoricalStats()), StatMetric(90, HistoricalStats()))
+            val repository =
+                FakePhotoDetailsRepository(testPhoto, testStats).apply {
+                    detailsDelayMs = 100L
+                    statsDelayMs = 500L
+                }
+            val downloadTracker = FakePhotoDownloadTracker()
+            val favoritesRepository = FakeFavoritesRepository()
+
+            val viewModel =
+                PhotoDetailsViewModel(
+                    photoId = "p-parallel-1",
+                    repository = repository,
+                    downloadTracker = downloadTracker,
+                    favoritesRepository = favoritesRepository,
+                )
+
+            testScheduler.advanceTimeBy(150L)
+            testScheduler.runCurrent()
+
+            // Details are visible immediately without blocking on slower stats
+            assertEquals(testPhoto, viewModel.state.value.photo)
+            assertNull(viewModel.state.value.stats)
+            assertTrue(viewModel.state.value.isLoading)
+
+            // Total elapsed time 550ms (< 600ms sequential sum) proves concurrent execution
+            testScheduler.advanceTimeBy(400L)
+            testScheduler.runCurrent()
+
+            assertEquals(testPhoto, viewModel.state.value.photo)
+            assertEquals(testStats, viewModel.state.value.stats)
+            assertFalse(viewModel.state.value.isLoading)
+            assertNull(viewModel.state.value.error)
+            viewModel.clear()
+        }
+
+    @Test
+    fun surfacesErrorCleanlyWhenStatsFailAfterDetailsSucceed() =
+        runTest(testDispatcher) {
+            val testPhoto = photo("p-stats-fail-1")
+            val testStats = PhotoStats("p-stats-fail-1", StatMetric(1, HistoricalStats()), StatMetric(2, HistoricalStats()))
+            val repository =
+                FakePhotoDetailsRepository(testPhoto, testStats).apply {
+                    detailsDelayMs = 50L
+                    statsDelayMs = 150L
+                    shouldFailStats = true
+                }
+            val downloadTracker = FakePhotoDownloadTracker()
+            val favoritesRepository = FakeFavoritesRepository()
+
+            val viewModel =
+                PhotoDetailsViewModel(
+                    photoId = "p-stats-fail-1",
+                    repository = repository,
+                    downloadTracker = downloadTracker,
+                    favoritesRepository = favoritesRepository,
+                )
+
+            advanceUntilIdle()
+
+            val state = viewModel.state.value
+            assertEquals(testPhoto, state.photo)
+            assertNull(state.stats)
+            assertFalse(state.isLoading)
+            assertEquals(AppError.Network, state.error)
+            assertEquals(PhotoDetailsEffect.ShowErrorSnackbar(AppError.Network), viewModel.effects.first())
+            viewModel.clear()
+        }
+
     private fun photo(id: String) =
         Photo(
             id = id,
@@ -527,16 +633,22 @@ class PhotoDetailsViewModelTest {
         var shouldFail: Boolean = false,
     ) : PhotoDetailsRepository {
         var delayMs: Long = 0L
+        var detailsDelayMs: Long? = null
+        var statsDelayMs: Long? = null
+        var shouldFailDetails: Boolean = false
+        var shouldFailStats: Boolean = false
 
         override suspend fun getPhotoDetails(id: String): Photo {
-            if (delayMs > 0) kotlinx.coroutines.delay(delayMs)
-            if (shouldFail) throw RuntimeException("Network error occurred")
+            val effectiveDelay = detailsDelayMs ?: delayMs
+            if (effectiveDelay > 0) kotlinx.coroutines.delay(effectiveDelay)
+            if (shouldFail || shouldFailDetails) throw RuntimeException("Network error occurred")
             return photoDetails ?: error("No photo details")
         }
 
         override suspend fun getPhotoStats(id: String): PhotoStats {
-            if (delayMs > 0) kotlinx.coroutines.delay(delayMs)
-            if (shouldFail) throw RuntimeException("Network error occurred")
+            val effectiveDelay = statsDelayMs ?: delayMs
+            if (effectiveDelay > 0) kotlinx.coroutines.delay(effectiveDelay)
+            if (shouldFail || shouldFailStats) throw RuntimeException("Network error occurred")
             return photoStats ?: error("No photo stats")
         }
     }

@@ -27,7 +27,7 @@ The application follows a strict Kotlin Multiplatform (KMP) division of responsi
 
 ### A. Shared Business Logic & Modularization Architecture
 All core logic MUST reside in shared Kotlin code organized as **Vertical Feature Modules with an Umbrella Framework** (see [Architecture Wiki](../../../wiki/architecture-and-modules.md), [`specs/researches/modularization_evaluation.md`](../../../specs/researches/modularization_evaluation.md), and archived Specs [46](../../../specs/archive/46_modularization_foundation_core_extraction.md)–[49](../../../specs/archive/49_modularization_umbrella_and_linking_optimization.md)):
-- **Foundational Core Modules**: `:core:model`, `:core:mvi`, `:core:network`, `:core:database`.
+- **Foundational Core Modules**: `:core:model` (domain DTOs, pure UI-color math in [`PhotoColorEngine`](../../../core/model/src/commonMain/kotlin/com/example/imagefeed/model/color/PhotoColorEngine.kt), and ephemeral metadata cache [`NavigationPreviewCache`](../../../core/model/src/commonMain/kotlin/com/example/imagefeed/model/cache/NavigationPreviewCache.kt) with `maxEntries = 16`), `:core:mvi`, `:core:network`, `:core:database`.
 - **Vertical Feature Modules**: `:feature:feed`, `:feature:details`, `:feature:favorites`, `:feature:search`, `:feature:collections`, `:feature:profile` (owning their repositories, storage integrations, and API clients).
 - **Umbrella Assembly & Gateway**: `:shared` compiles the unified Apple native framework (`implementation`-scoping `:core:network` and `:core:database` so internal symbols stay hidden from ObjC/Swift) and aggregates the root Metro DI graph.
 - Platform modules (`androidApp`, `iosApp`, `macosApp`) MUST remain thin, declarative view shells (Jetpack Compose and SwiftUI). Do not duplicate data parsing or pagination offsets in platform code.
@@ -71,16 +71,16 @@ Dependency injection is handled at compile time using **Metro** (`dev.zacsweers.
 ### A. Graph & Scoping Architecture
 - The root dependency container is defined via `@DependencyGraph interface ApplicationGraph` in `shared/src/commonMain/kotlin/com/example/imagefeed/di/Metro.kt`.
 - Application-level singletons are scoped using `@SingleIn(AppScope::class)`.
-- Core networking and storage bindings are declared in `AppModule` and `DatabaseModule`.
-- Access to the graph is centralized through `MetroHelper.graph`.
+- Core networking, storage, and navigation preview cache (`@SingleIn(AppScope::class)` `NavigationPreviewCache`, `maxEntries = 16`) bindings are declared in `AppModule` and `DatabaseModule`.
+- Access to the graph is centralized through `MetroHelper.graph` (including `MetroHelper` preview seed/read accessors for `Photo`, `PhotoCollection`, and `User`).
 
 ### B. ViewModel Injection Patterns
-1. **Un-parameterized ViewModels** (e.g. `FeedViewModel`, `FavoritesViewModel`, `CollectionsFeedViewModel`, `UnifiedSearchViewModel`, `RandomPhotoViewModel`):
+1. **Un-parameterized ViewModels** (e.g. `FeedViewModel`, `FavoritesViewModel`, `CollectionsFeedViewModel`, `UnifiedSearchViewModel`):
    - Defined with `@Inject constructor(...)`.
    - Exposed directly on `ApplicationGraph` as properties (e.g., `val feedViewModel: FeedViewModel`).
-2. **Parameterized ViewModels** (e.g. `PhotoDetailsViewModel`, `CollectionDetailViewModel`, `UserProfileViewModel`):
-   - Use `@AssistedInject` and `@Assisted` injection for runtime parameters (e.g. `photoId`, `collectionId`, `username`).
-   - Define dedicated `@AssistedFactory` interfaces exposed on `ApplicationGraph` (e.g., `val photoDetailsViewModelFactory: PhotoDetailsViewModel.Factory`).
+2. **Parameterized ViewModels** (e.g. `PhotoDetailsViewModel`, `CollectionDetailViewModel`, `UserProfileViewModel`, `RandomPhotoViewModel`):
+   - Use `@AssistedInject` and `@Assisted` injection for runtime parameters (e.g. `photoId`, `collectionId`, `username`, `autoFetchOnInit: Boolean = true`).
+   - Define dedicated `@AssistedFactory` interfaces exposed on `ApplicationGraph` (e.g., `val photoDetailsViewModelFactory: PhotoDetailsViewModel.Factory`, `val randomPhotoViewModelFactory: RandomPhotoViewModel.Factory`, with no-arg `MetroHelper.getRandomPhotoViewModel()` defaulting `autoFetchOnInit = true`).
 
 ---
 

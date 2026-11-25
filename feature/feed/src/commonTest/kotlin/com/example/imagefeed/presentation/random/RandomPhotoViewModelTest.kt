@@ -20,7 +20,9 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -100,10 +102,41 @@ class RandomPhotoViewModelTest {
             assertEquals("download-location-random-1", tracker.trackedUrl)
         }
 
+    @Test
+    fun doesNotAutoFetchWhenAutoFetchOnInitIsFalseAndFetchesOnExplicitIntent() =
+        runTest(testDispatcher) {
+            val photo = testPhoto("random-manual-1")
+            val repository = FakeFeedRepository(randomPhotos = listOf(photo))
+            val tracker = FakePhotoDownloadTracker()
+            val viewModel = RandomPhotoViewModel(repository, tracker, autoFetchOnInit = false)
+
+            advanceUntilIdle()
+
+            assertEquals(0, repository.randomCallCount)
+            assertNull(viewModel.state.value.photo)
+            assertFalse(viewModel.state.value.isLoading)
+            assertNull(viewModel.state.value.error)
+
+            viewModel.dispatch(RandomPhotoIntent.FetchRandomPhoto())
+            advanceUntilIdle()
+
+            assertEquals(1, repository.randomCallCount)
+            assertEquals(
+                "random-manual-1",
+                viewModel.state.value.photo
+                    ?.id,
+            )
+            assertFalse(viewModel.state.value.isLoading)
+            assertNull(viewModel.state.value.error)
+            viewModel.clear()
+        }
+
     private class FakeFeedRepository(
         private val randomPhotos: List<Photo> = emptyList(),
         private val shouldFail: Boolean = false,
     ) : FeedRepository {
+        var randomCallCount: Int = 0
+
         override suspend fun getPhotos(
             page: Int,
             perPage: Int,
@@ -114,6 +147,7 @@ class RandomPhotoViewModelTest {
             query: String?,
             count: Int?,
         ): List<Photo> {
+            randomCallCount++
             if (shouldFail) throw RuntimeException("Random failure")
             return randomPhotos
         }

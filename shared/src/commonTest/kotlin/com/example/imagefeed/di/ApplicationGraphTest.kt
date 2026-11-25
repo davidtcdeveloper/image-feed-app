@@ -1,6 +1,14 @@
 package com.example.imagefeed.di
 
+import com.example.imagefeed.model.Photo
+import com.example.imagefeed.model.PhotoCollection
+import com.example.imagefeed.model.PhotoLinks
+import com.example.imagefeed.model.PhotoUrls
+import com.example.imagefeed.model.ProfileImage
+import com.example.imagefeed.model.User
+import com.example.imagefeed.model.UserLinks
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNotSame
 
@@ -15,6 +23,7 @@ class ApplicationGraphTest {
         assertNotNull(graph.searchRepository, "SearchRepository should not be null")
         assertNotNull(graph.collectionsRepository, "CollectionsRepository should not be null")
         assertNotNull(graph.profileRepository, "ProfileRepository should not be null")
+        assertNotNull(graph.navigationPreviewCache, "NavigationPreviewCache should not be null")
 
         val favoritesVm = MetroHelper.getFavoritesViewModel()
         assertNotNull(favoritesVm, "FavoritesViewModel should be resolvable")
@@ -24,12 +33,21 @@ class ApplicationGraphTest {
         assertNotNull(feedVm, "FeedViewModel should be resolvable")
         feedVm.clear()
 
+        @Suppress("DEPRECATION")
         val feedRepo = MetroHelper.getFeedRepository()
         assertNotNull(feedRepo, "FeedRepository should be resolvable via MetroHelper")
 
         val randomVm = MetroHelper.getRandomPhotoViewModel()
         assertNotNull(randomVm, "RandomPhotoViewModel should be resolvable")
         randomVm.clear()
+
+        val idleRandomVm1 = MetroHelper.getRandomPhotoViewModel(autoFetchOnInit = false)
+        val idleRandomVm2 = MetroHelper.getRandomPhotoViewModel(autoFetchOnInit = false)
+        assertNotNull(idleRandomVm1)
+        assertNotNull(idleRandomVm2)
+        assertNotSame(idleRandomVm1, idleRandomVm2, "Factory must create distinct RandomPhotoViewModel instances")
+        idleRandomVm1.clear()
+        idleRandomVm2.clear()
 
         val searchVm = MetroHelper.getUnifiedSearchViewModel()
         assertNotNull(searchVm, "UnifiedSearchViewModel should be resolvable")
@@ -63,5 +81,44 @@ class ApplicationGraphTest {
         assertNotSame(photoVm1, photoVm2, "Factory must create distinct PhotoDetailsViewModel instances")
         photoVm1.clear()
         photoVm2.clear()
+
+        // Verify MetroHelper preview cache seeding injects synchronously into PhotoDetailsViewModel Frame 0
+        val previewUser =
+            User(
+                id = "u-preview",
+                username = "previewer",
+                name = "Preview User",
+                profileImage = ProfileImage("s", "m", "l"),
+                links = UserLinks("self", "html", "photos"),
+            )
+        val previewPhoto =
+            Photo(
+                id = "photo-preview-1",
+                width = 200,
+                height = 300,
+                urls = PhotoUrls("raw", "full", "regular", "small", "thumb"),
+                user = previewUser,
+                links = PhotoLinks("self", "html", "download", "dl-loc"),
+            )
+        val previewCollection =
+            PhotoCollection(
+                id = "col-preview-1",
+                title = "Preview Collection",
+                totalPhotos = 5,
+                user = previewUser,
+            )
+
+        MetroHelper.seedPhotoPreview(previewPhoto)
+        MetroHelper.seedCollectionPreview(previewCollection)
+        MetroHelper.seedUserPreview(previewUser)
+
+        assertEquals(previewPhoto, MetroHelper.getPhotoPreview("photo-preview-1"))
+        assertEquals(previewCollection, MetroHelper.getCollectionPreview("col-preview-1"))
+        assertEquals(previewUser, MetroHelper.getUserPreview("previewer"))
+
+        val seededDetailsVm = MetroHelper.getPhotoDetailsViewModel("photo-preview-1")
+        assertEquals(previewPhoto, seededDetailsVm.state.value.photo)
+        seededDetailsVm.clear()
+        graph.navigationPreviewCache.clear()
     }
 }

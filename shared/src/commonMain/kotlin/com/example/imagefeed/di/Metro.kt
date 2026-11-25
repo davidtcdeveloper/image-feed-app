@@ -12,6 +12,10 @@ import com.example.imagefeed.details.data.PhotoDetailsRepository
 import com.example.imagefeed.details.di.PhotoDetailsModule
 import com.example.imagefeed.feed.data.FeedRepository
 import com.example.imagefeed.feed.di.FeedModule
+import com.example.imagefeed.model.Photo
+import com.example.imagefeed.model.PhotoCollection
+import com.example.imagefeed.model.User
+import com.example.imagefeed.model.cache.NavigationPreviewCache
 import com.example.imagefeed.presentation.collection.CollectionDetailViewModel
 import com.example.imagefeed.presentation.collections.CollectionsFeedViewModel
 import com.example.imagefeed.presentation.details.PhotoDetailsViewModel
@@ -42,6 +46,10 @@ internal object AppModule {
     @Provides
     @SingleIn(AppScope::class)
     fun providePhotoDownloadTracker(client: HttpClient): PhotoDownloadTracker = KtorPhotoDownloadTracker(client)
+
+    @Provides
+    @SingleIn(AppScope::class)
+    fun provideNavigationPreviewCache(): NavigationPreviewCache = NavigationPreviewCache()
 }
 
 @SingleIn(AppScope::class)
@@ -68,13 +76,15 @@ internal interface ApplicationGraph {
     val favoritesViewModel: FavoritesViewModel
     val photoDetailsViewModelFactory: PhotoDetailsViewModel.Factory
     val feedViewModel: FeedViewModel
-    val randomPhotoViewModel: RandomPhotoViewModel
+    val randomPhotoViewModelFactory: RandomPhotoViewModel.Factory
     val unifiedSearchViewModel: UnifiedSearchViewModel
     val collectionsFeedViewModel: CollectionsFeedViewModel
     val collectionDetailViewModelFactory: CollectionDetailViewModel.Factory
     val userProfileViewModelFactory: UserProfileViewModel.Factory
+    val navigationPreviewCache: NavigationPreviewCache
 }
 
+@Suppress("TooManyFunctions", "MaxLineLength")
 object MetroHelper {
     internal val graph: ApplicationGraph by lazy {
         createGraph<ApplicationGraph>()
@@ -86,7 +96,9 @@ object MetroHelper {
 
     fun getFeedViewModel(): FeedViewModel = graph.feedViewModel
 
-    fun getRandomPhotoViewModel(): RandomPhotoViewModel = graph.randomPhotoViewModel
+    fun getRandomPhotoViewModel(): RandomPhotoViewModel = getRandomPhotoViewModel(autoFetchOnInit = true)
+
+    fun getRandomPhotoViewModel(autoFetchOnInit: Boolean): RandomPhotoViewModel = graph.randomPhotoViewModelFactory.create(autoFetchOnInit)
 
     fun getUnifiedSearchViewModel(): UnifiedSearchViewModel = graph.unifiedSearchViewModel
 
@@ -97,6 +109,29 @@ object MetroHelper {
 
     fun getUserProfileViewModel(username: String): UserProfileViewModel = graph.userProfileViewModelFactory.create(username)
 
+    @Suppress("unused") // Invoked on Android & Swift navigation entry points
+    fun seedPhotoPreview(photo: Photo) = graph.navigationPreviewCache.seedPhoto(photo)
+
+    @Suppress("unused") // Invoked on Android & Swift navigation entry points
+    fun getPhotoPreview(photoId: String): Photo? = graph.navigationPreviewCache.getPhoto(photoId)
+
+    @Suppress("unused") // Invoked on Android & Swift navigation entry points
+    fun seedCollectionPreview(collection: PhotoCollection) = graph.navigationPreviewCache.seedCollection(collection)
+
+    @Suppress("unused") // Invoked on Android & Swift navigation entry points
+    fun getCollectionPreview(collectionId: String): PhotoCollection? = graph.navigationPreviewCache.getCollection(collectionId)
+
+    @Suppress("unused") // Invoked on Android & Swift navigation entry points
+    fun seedUserPreview(user: User) = graph.navigationPreviewCache.seedUser(user)
+
+    @Suppress("unused") // Invoked on Android & Swift navigation entry points
+    fun getUserPreview(username: String): User? = graph.navigationPreviewCache.getUser(username)
+
+    @Deprecated(
+        message =
+            "Use MetroHelper.getRandomPhotoViewModel(autoFetchOnInit = false) instead; " +
+                "pending deletion in Spec 84.",
+    )
     @OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
     @kotlin.native.HiddenFromObjC
     fun getFeedRepository(): FeedRepository = graph.feedRepository

@@ -1,6 +1,6 @@
 # Specification 81: Shared KMP Color Engine, Preview Seeding & Parallel Photo Details
 
-**Status:** Accepted
+**Status:** Implemented (Final)
 
 * **Wave:** Wave 1 — Disjoint Foundations
 * **Depends On:** None
@@ -73,19 +73,25 @@ Per [`.agents/skills/verification-and-linting/SKILL.md`](../.agents/skills/verif
 
 ## 5. Acceptance Criteria
 
-- [ ] `PhotoColorEngine` in `:core:model` implements `HexRgb`, `PhotoTonalSwatch`, `parseHexRgb`, `deriveTonalSwatches`, and `deriveAccentHex` with `commonTest` coverage.
-- [ ] `NavigationPreviewCache` (`maxEntries = 16`, `@SingleIn(AppScope::class)`) caches metadata DTOs only and seeds `PhotoDetailsViewModel` synchronously on Frame 0 before Room fallback.
-- [ ] `PhotoDetailsViewModel.loadDetails()` fetches details and stats concurrently, emitting `photo` immediately upon `getPhotoDetails` completion, verified by `PhotoDetailsViewModelTest`.
-- [ ] `RandomPhotoViewModel` supports `autoFetchOnInit: Boolean = true` without breaking `FeedViewModel.swift` or existing tests, and `MetroHelper.getRandomPhotoViewModel(autoFetchOnInit: Boolean)` is exposed.
-- [ ] `./gradlew allTests :androidApp:assembleDebug ktlintCheck detekt` and `xcodebuild` (`iosApp` + `macosApp`) pass with zero compiler warnings.
-- [ ] Affected [`wiki/`](../wiki/README.md) pages and [`.agents/skills/kmp-architecture/SKILL.md`](../.agents/skills/kmp-architecture/SKILL.md) are updated.
+- [x] `PhotoColorEngine` in `:core:model` implements `HexRgb`, `PhotoTonalSwatch`, `parseHexRgb`, `deriveTonalSwatches`, and `deriveAccentHex` with `commonTest` coverage.
+- [x] `NavigationPreviewCache` (`maxEntries = 16`, `@SingleIn(AppScope::class)`) caches metadata DTOs only and seeds `PhotoDetailsViewModel` synchronously on Frame 0 before Room fallback.
+- [x] `PhotoDetailsViewModel.loadDetails()` fetches details and stats concurrently, emitting `photo` immediately upon `getPhotoDetails` completion, verified by `PhotoDetailsViewModelTest`.
+- [x] `RandomPhotoViewModel` supports `autoFetchOnInit: Boolean = true` without breaking `FeedViewModel.swift` or existing tests, and `MetroHelper.getRandomPhotoViewModel(autoFetchOnInit: Boolean)` is exposed.
+- [x] `./gradlew allTests :androidApp:assembleDebug ktlintCheck detekt` and `xcodebuild` (`iosApp` + `macosApp`) pass with zero compiler warnings.
+- [x] Affected [`wiki/`](../wiki/README.md) pages and [`.agents/skills/kmp-architecture/SKILL.md`](../.agents/skills/kmp-architecture/SKILL.md) are updated.
 
 ---
 
 ## 6. Verification Record
 
 ### Verified
-*(Pending implementation)*
+* `ANDROID_HOME="$HOME/Library/Android/sdk" ./gradlew ktlintCheck detekt :core:model:detektMetadataCommonMain :core:model:detektMetadataAppleMain :core:model:detektAndroidMain :feature:details:detektMetadataCommonMain :feature:feed:detektMetadataCommonMain :shared:detektMetadataCommonMain allTests :androidApp:assembleDebug :androidApp:testDebugUnitTest :shared:compileKotlinIosSimulatorArm64 :shared:compileKotlinMacosArm64` — Exited `0`.
+  * `ktlintCheck`: Passed across all modules with 0 style violations.
+  * `detekt` / `detektMetadataCommonMain`: 0 new findings in `PhotoColorEngine.kt`, `NavigationPreviewCache.kt`, `CacheLock.kt`, and `Metro.kt`; existing `TooGenericExceptionCaught` (`e.toAppError()` boundaries) unchanged in `PhotoDetailsViewModel.kt` and `RandomPhotoViewModel.kt`.
+  * `allTests` + `:androidApp:testDebugUnitTest`: Passed with 0 failures and 0 skipped across all 12 modules (`:core:model` 60 tests, `:core:mvi` 12, `:core:network` 36, `:core:database` 18, `:feature:details` 72, `:feature:feed` 39, `:feature:favorites` 12, `:feature:search` 39, `:feature:collections` 36, `:feature:profile` 24, `:shared` 3, `:androidApp` 38).
+  * Compilation warnings: 0 warnings in `:core:model`, `:feature:details`, `:feature:feed`, and `:shared` (across Android, `iosSimulatorArm64`, and `macosArm64`).
+* `xcodegen generate --spec iosApp/project.yml` & `xcodebuild` (`iosApp` iOS Simulator + `macosApp` `platform=macOS,arch=arm64`) — Both targets reported `** BUILD SUCCEEDED **` with 0 Swift compiler warnings.
 
 ### Unverified / Gaps
-*(Pending implementation)*
+* `:androidApp` compilation retains one intentional `@Deprecated` call-site warning at [`MainActivity.kt#L87`](../../androidApp/src/main/java/com/example/imagefeed/android/MainActivity.kt#L87) for `MetroHelper.getFeedRepository()`, which is explicitly deferred to Spec 84 per §3 Non-Goals.
+* Live Unsplash API calls and UI visual snapshots were not executed (UI shells are untouched per §3 Non-Goals; visual review is scoped to downstream Specs 82–89).
