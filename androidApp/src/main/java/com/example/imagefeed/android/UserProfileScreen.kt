@@ -2,9 +2,7 @@ package com.example.imagefeed.android
 
 import android.content.Intent
 import android.net.Uri
-import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
-import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -27,7 +25,6 @@ import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -41,14 +38,20 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.LocalPlatformContext
 import com.example.imagefeed.android.components.PhotoCard
+import com.example.imagefeed.android.designsystem.LocalSatinHeaderPadding
+import com.example.imagefeed.android.designsystem.SatinHeaderScaffold
+import com.example.imagefeed.android.preview.PreviewScaffold
+import com.example.imagefeed.android.preview.UiPreviewFixtures
 import com.example.imagefeed.android.profile.CollectionRowLayout
 import com.example.imagefeed.android.profile.InsightsTabContent
 import com.example.imagefeed.android.profile.ProfileHeaderSection
@@ -74,8 +77,6 @@ import kotlinx.coroutines.flow.filter
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun UserProfileScreen(
-    sharedTransitionScope: SharedTransitionScope,
-    animatedVisibilityScope: AnimatedVisibilityScope,
     username: String,
     viewModel: UserProfileViewModel =
         androidx.lifecycle.viewmodel.compose.viewModel(key = "user_$username") {
@@ -86,7 +87,6 @@ fun UserProfileScreen(
     onCollectionClick: (PhotoCollection) -> Unit,
     onUserClick: (User) -> Unit = {},
 ) {
-    val context = LocalPlatformContext.current
     val state by viewModel.state.collectAsStateWithLifecycle(initialValue = UserProfileState())
 
     LaunchedEffect(viewModel) {
@@ -98,7 +98,32 @@ fun UserProfileScreen(
         }
     }
 
-    Scaffold(
+    UserProfileScreenContent(
+        state = state,
+        onBack = onBack,
+        onRetry = { viewModel.dispatch(UserProfileIntent.LoadProfile) },
+        onTabSelect = { viewModel.dispatch(UserProfileIntent.SelectTab(it)) },
+        onLoadMore = { viewModel.dispatch(UserProfileIntent.LoadNextPage) },
+        onPhotoClick = onPhotoClick,
+        onCollectionClick = onCollectionClick,
+        onUserClick = onUserClick,
+    )
+}
+
+@OptIn(ExperimentalSharedTransitionApi::class)
+@Composable
+fun UserProfileScreenContent(
+    state: UserProfileState,
+    onBack: () -> Unit,
+    onRetry: () -> Unit,
+    onTabSelect: (ProfileTab) -> Unit,
+    onLoadMore: () -> Unit,
+    onPhotoClick: (Photo) -> Unit,
+    onCollectionClick: (PhotoCollection) -> Unit,
+    onUserClick: (User) -> Unit = {},
+) {
+    val context = LocalPlatformContext.current
+    SatinHeaderScaffold(
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
@@ -140,7 +165,7 @@ fun UserProfileScreen(
                 },
                 colors =
                     TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.surface,
+                        containerColor = Color.Transparent,
                         titleContentColor = MaterialTheme.colorScheme.onSurface,
                         navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
                         actionIconContentColor = MaterialTheme.colorScheme.onSurface,
@@ -152,16 +177,18 @@ fun UserProfileScreen(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .padding(paddingValues)
                     .background(MaterialTheme.colorScheme.surface),
         ) {
             if (state.isHeaderLoading && state.user == null) {
-                UserProfileHeaderSkeleton()
+                Box(modifier = Modifier.padding(top = paddingValues.calculateTopPadding())) {
+                    UserProfileHeaderSkeleton()
+                }
             } else if (state.error != null && state.user == null) {
                 Column(
                     modifier =
                         Modifier
                             .fillMaxSize()
+                            .padding(top = paddingValues.calculateTopPadding())
                             .padding(24.dp),
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -180,7 +207,7 @@ fun UserProfileScreen(
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Button(
-                        onClick = { viewModel.dispatch(UserProfileIntent.LoadProfile) },
+                        onClick = { onRetry() },
                     ) {
                         Text(stringResource(R.string.action_retry))
                     }
@@ -188,12 +215,10 @@ fun UserProfileScreen(
             } else {
                 state.user?.let { user ->
                     UserProfileContent(
-                        sharedTransitionScope = sharedTransitionScope,
-                        animatedVisibilityScope = animatedVisibilityScope,
                         user = user,
                         state = state,
-                        onTabSelect = { viewModel.dispatch(UserProfileIntent.SelectTab(it)) },
-                        onLoadMore = { viewModel.dispatch(UserProfileIntent.LoadNextPage) },
+                        onTabSelect = { onTabSelect(it) },
+                        onLoadMore = { onLoadMore() },
                         onPhotoClick = onPhotoClick,
                         onCollectionClick = onCollectionClick,
                         onUserClick = onUserClick,
@@ -207,8 +232,6 @@ fun UserProfileScreen(
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun UserProfileContent(
-    sharedTransitionScope: SharedTransitionScope,
-    animatedVisibilityScope: AnimatedVisibilityScope,
     user: User,
     state: UserProfileState,
     onTabSelect: (ProfileTab) -> Unit,
@@ -253,7 +276,7 @@ fun UserProfileContent(
         contentPadding =
             PaddingValues(
                 start = 8.dp,
-                top = 8.dp,
+                top = LocalSatinHeaderPadding.current + 8.dp,
                 end = 8.dp,
                 bottom = calculateBottomContentPadding(8.dp),
             ),
@@ -310,8 +333,6 @@ fun UserProfileContent(
                         contentType = { _, _ -> "photo_card" },
                     ) { index, photo ->
                         PhotoCard(
-                            sharedTransitionScope = sharedTransitionScope,
-                            animatedVisibilityScope = animatedVisibilityScope,
                             index = index,
                             photo = photo,
                             itemWidthPx = itemWidthPx,
@@ -401,5 +422,53 @@ fun UserProfileContent(
                 }
             }
         }
+    }
+}
+
+@Preview(showBackground = true, widthDp = 412, heightDp = 892, name = "Profile - Compact Light")
+@Composable
+fun UserProfileScreenPreview() {
+    PreviewScaffold(widthDp = 412, heightDp = 892, darkTheme = false) { _, _ ->
+        UserProfileScreenContent(
+            state = UiPreviewFixtures.userProfileState,
+            onBack = {},
+            onRetry = {},
+            onTabSelect = {},
+            onLoadMore = {},
+            onPhotoClick = {},
+            onCollectionClick = {},
+        )
+    }
+}
+
+@Preview(showBackground = true, widthDp = 412, heightDp = 892, name = "Profile - Compact Dark")
+@Composable
+fun UserProfileScreenDarkPreview() {
+    PreviewScaffold(widthDp = 412, heightDp = 892, darkTheme = true) { _, _ ->
+        UserProfileScreenContent(
+            state = UiPreviewFixtures.userProfileState,
+            onBack = {},
+            onRetry = {},
+            onTabSelect = {},
+            onLoadMore = {},
+            onPhotoClick = {},
+            onCollectionClick = {},
+        )
+    }
+}
+
+@Preview(showBackground = true, widthDp = 900, heightDp = 700, name = "Profile - Expanded")
+@Composable
+fun UserProfileScreenExpandedPreview() {
+    PreviewScaffold(widthDp = 900, heightDp = 700, darkTheme = false) { _, _ ->
+        UserProfileScreenContent(
+            state = UiPreviewFixtures.userProfileState,
+            onBack = {},
+            onRetry = {},
+            onTabSelect = {},
+            onLoadMore = {},
+            onPhotoClick = {},
+            onCollectionClick = {},
+        )
     }
 }

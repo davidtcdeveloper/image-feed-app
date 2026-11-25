@@ -24,6 +24,7 @@ import com.example.imagefeed.android.SearchScreen
 import com.example.imagefeed.android.UserProfileScreen
 import com.example.imagefeed.android.designsystem.ProvideAppSharedTransition
 import com.example.imagefeed.di.MetroHelper
+import com.example.imagefeed.model.PhotoCollection
 
 @Composable
 fun <T> dropUnlessResumedWithArg(block: (T) -> Unit): (T) -> Unit {
@@ -52,8 +53,6 @@ fun EntryProviderScope<NavKey>.feedSection(
         ) {
             ProvidePaneWidth {
                 FeedScreen(
-                    sharedTransitionScope = sharedTransitionScope,
-                    animatedVisibilityScope = LocalNavAnimatedContentScope.current,
                     viewModel =
                         viewModel(key = "feed") {
                             MetroHelper.getFeedViewModel()
@@ -61,10 +60,12 @@ fun EntryProviderScope<NavKey>.feedSection(
                     reselectEvents = navigator.reselectEvents,
                     onPhotoClick =
                         dropUnlessResumedWithArg { photo ->
+                            MetroHelper.seedPhotoPreview(photo)
                             navigator.navigate(AppRoute.PhotoDetails(photo.id))
                         },
                     onUserClick =
                         dropUnlessResumedWithArg { user ->
+                            MetroHelper.seedUserPreview(user)
                             navigator.navigate(AppRoute.UserProfile(user.username))
                         },
                     onRandomClick = onRandomClick,
@@ -90,8 +91,6 @@ fun EntryProviderScope<NavKey>.collectionsSection(
         ) {
             ProvidePaneWidth {
                 CollectionsFeedScreen(
-                    sharedTransitionScope = sharedTransitionScope,
-                    animatedVisibilityScope = LocalNavAnimatedContentScope.current,
                     viewModel =
                         viewModel(key = "collections") {
                             MetroHelper.getCollectionsFeedViewModel()
@@ -99,6 +98,7 @@ fun EntryProviderScope<NavKey>.collectionsSection(
                     reselectEvents = navigator.reselectEvents,
                     onCollectionClick =
                         dropUnlessResumedWithArg { collection ->
+                            MetroHelper.seedCollectionPreview(collection)
                             navigator.navigate(AppRoute.CollectionDetails(collection.id))
                         },
                     onSearchClick =
@@ -107,6 +107,7 @@ fun EntryProviderScope<NavKey>.collectionsSection(
                         },
                     onUserClick =
                         dropUnlessResumedWithArg { user ->
+                            MetroHelper.seedUserPreview(user)
                             navigator.navigate(AppRoute.UserProfile(user.username))
                         },
                 )
@@ -122,8 +123,6 @@ fun EntryProviderScope<NavKey>.collectionsSection(
         ) {
             ProvidePaneWidth {
                 CollectionDetailScreen(
-                    sharedTransitionScope = sharedTransitionScope,
-                    animatedVisibilityScope = LocalNavAnimatedContentScope.current,
                     collectionId = key.collectionId,
                     viewModel =
                         viewModel(key = "collection_${key.collectionId}") {
@@ -132,6 +131,7 @@ fun EntryProviderScope<NavKey>.collectionsSection(
                     onBack = dropUnlessResumed { navigator.goBack() },
                     onPhotoClick =
                         dropUnlessResumedWithArg { photo ->
+                            MetroHelper.seedPhotoPreview(photo)
                             navigator.navigate(AppRoute.PhotoDetails(photo.id))
                         },
                     onCollectionClick =
@@ -140,6 +140,7 @@ fun EntryProviderScope<NavKey>.collectionsSection(
                         },
                     onUserClick =
                         dropUnlessResumedWithArg { user ->
+                            MetroHelper.seedUserPreview(user)
                             navigator.navigate(AppRoute.UserProfile(user.username))
                         },
                 )
@@ -164,8 +165,6 @@ fun EntryProviderScope<NavKey>.favoritesSection(
         ) {
             ProvidePaneWidth {
                 FavoritesScreen(
-                    sharedTransitionScope = sharedTransitionScope,
-                    animatedVisibilityScope = LocalNavAnimatedContentScope.current,
                     viewModel =
                         viewModel(key = "favorites") {
                             MetroHelper.getFavoritesViewModel()
@@ -173,10 +172,12 @@ fun EntryProviderScope<NavKey>.favoritesSection(
                     reselectEvents = navigator.reselectEvents,
                     onPhotoClick =
                         dropUnlessResumedWithArg { photo ->
+                            MetroHelper.seedPhotoPreview(photo)
                             navigator.navigate(AppRoute.PhotoDetails(photo.id))
                         },
                     onUserClick =
                         dropUnlessResumedWithArg { user ->
+                            MetroHelper.seedUserPreview(user)
                             navigator.navigate(AppRoute.UserProfile(user.username))
                         },
                 )
@@ -201,8 +202,6 @@ fun EntryProviderScope<NavKey>.searchSection(
         ) {
             ProvidePaneWidth {
                 SearchScreen(
-                    sharedTransitionScope = sharedTransitionScope,
-                    animatedVisibilityScope = LocalNavAnimatedContentScope.current,
                     initialQuery = key.query,
                     viewModel =
                         viewModel(key = if (key.query.isEmpty()) "search_root" else "search_tag_${key.query}") {
@@ -212,14 +211,27 @@ fun EntryProviderScope<NavKey>.searchSection(
                     onBack = dropUnlessResumed { navigator.goBack() },
                     onPhotoClick =
                         dropUnlessResumedWithArg { photo ->
+                            MetroHelper.seedPhotoPreview(photo)
                             navigator.navigate(AppRoute.PhotoDetails(photo.id))
                         },
                     onUserClick =
                         dropUnlessResumedWithArg { user ->
+                            MetroHelper.seedUserPreview(user)
                             navigator.navigate(AppRoute.UserProfile(user.username))
                         },
                     onCollectionClick =
                         dropUnlessResumedWithArg { collection ->
+                            MetroHelper.seedCollectionPreview(
+                                PhotoCollection(
+                                    id = collection.id,
+                                    title = collection.title,
+                                    description = collection.description,
+                                    totalPhotos = collection.totalPhotos,
+                                    coverPhoto = collection.coverPhoto,
+                                    user = collection.user,
+                                    links = collection.links,
+                                ),
+                            )
                             navigator.navigate(AppRoute.CollectionDetails(collection.id))
                         },
                 )
@@ -276,8 +288,6 @@ fun EntryProviderScope<NavKey>.userProfileSection(
         ) {
             ProvidePaneWidth {
                 UserProfileScreen(
-                    sharedTransitionScope = sharedTransitionScope,
-                    animatedVisibilityScope = LocalNavAnimatedContentScope.current,
                     username = key.username,
                     viewModel =
                         viewModel(key = "user_${key.username}") {
@@ -286,15 +296,18 @@ fun EntryProviderScope<NavKey>.userProfileSection(
                     onBack = dropUnlessResumed { navigator.goBack() },
                     onPhotoClick =
                         dropUnlessResumedWithArg { photo ->
+                            MetroHelper.seedPhotoPreview(photo)
                             navigator.navigate(AppRoute.PhotoDetails(photo.id))
                         },
                     onCollectionClick =
                         dropUnlessResumedWithArg { collection ->
+                            MetroHelper.seedCollectionPreview(collection)
                             navigator.navigate(AppRoute.CollectionDetails(collection.id))
                         },
                     onUserClick =
                         dropUnlessResumedWithArg { user ->
                             if (user.username != key.username) {
+                                MetroHelper.seedUserPreview(user)
                                 navigator.navigate(AppRoute.UserProfile(user.username))
                             }
                         },

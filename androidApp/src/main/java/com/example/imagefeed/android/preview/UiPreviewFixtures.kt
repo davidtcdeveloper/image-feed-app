@@ -36,9 +36,12 @@ import com.example.imagefeed.model.Tag
 import com.example.imagefeed.model.Topic
 import com.example.imagefeed.model.User
 import com.example.imagefeed.model.UserLinks
+import com.example.imagefeed.presentation.collection.CollectionDetailState
 import com.example.imagefeed.presentation.collections.CollectionsFeedState
 import com.example.imagefeed.presentation.details.PhotoDetailsState
+import com.example.imagefeed.presentation.favorites.FavoritesState
 import com.example.imagefeed.presentation.feed.FeedState
+import com.example.imagefeed.presentation.profile.UserProfileState
 import com.example.imagefeed.presentation.search.SearchState
 
 @Suppress("MagicNumber")
@@ -262,6 +265,23 @@ object UiPreviewFixtures {
                 user = sampleUser2,
                 previewPhotos = samplePreviewPhotos.reversed(),
             ),
+        )
+
+    val favoritesState = FavoritesState(photos = samplePhotos, isLoading = false)
+
+    val collectionDetailState =
+        CollectionDetailState(
+            collection = sampleCollections.first(),
+            photos = samplePhotos,
+            related = sampleCollections.drop(1),
+            hasReachedEnd = true,
+        )
+
+    val userProfileState =
+        UserProfileState(
+            user = sampleUser1,
+            portfolioPhotos = samplePhotos,
+            portfolioReachedEnd = true,
         )
 
     val collectionsFeedState =

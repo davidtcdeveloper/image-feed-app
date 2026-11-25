@@ -1,8 +1,6 @@
 package com.example.imagefeed.android
 
-import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
-import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -28,7 +26,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SearchBar
 import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.SearchBarValue
@@ -36,7 +33,7 @@ import androidx.compose.material3.SecondaryTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.material3.rememberSearchBarState
 import androidx.compose.runtime.Composable
@@ -49,7 +46,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.stringResource
@@ -63,6 +64,8 @@ import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
 import com.example.imagefeed.android.adaptive.LocalAdaptiveLayoutInfo
+import com.example.imagefeed.android.designsystem.SatinHeaderScaffold
+import com.example.imagefeed.android.designsystem.SatinPullToRefreshBox
 import com.example.imagefeed.android.preview.PreviewScaffold
 import com.example.imagefeed.android.preview.UiPreviewFixtures
 import com.example.imagefeed.android.search.CollectionsResultList
@@ -88,14 +91,13 @@ import com.example.imagefeed.presentation.search.UnifiedSearchIntent
 import com.example.imagefeed.presentation.search.UnifiedSearchViewModel
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlin.math.roundToInt
 
 private const val SKELETON_COLLECTION_COUNT = 4
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
 fun SearchScreen(
-    sharedTransitionScope: SharedTransitionScope,
-    animatedVisibilityScope: AnimatedVisibilityScope,
     initialQuery: String = "",
     viewModel: UnifiedSearchViewModel =
         androidx.lifecycle.viewmodel.compose.viewModel(key = "search_$initialQuery") {
@@ -135,8 +137,6 @@ fun SearchScreen(
     }
 
     SearchScreenContent(
-        sharedTransitionScope = sharedTransitionScope,
-        animatedVisibilityScope = animatedVisibilityScope,
         state = state,
         reselectEvents = reselectEvents,
         onQueryChange = { viewModel.dispatch(UnifiedSearchIntent.UpdateQuery(it)) },
@@ -159,8 +159,6 @@ fun SearchScreen(
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
 fun SearchScreenContent(
-    sharedTransitionScope: SharedTransitionScope,
-    animatedVisibilityScope: AnimatedVisibilityScope,
     state: SearchState,
     reselectEvents: SharedFlow<NavKey>? = null,
     onQueryChange: (String) -> Unit,
@@ -305,9 +303,12 @@ fun SearchScreenContent(
         )
     }
 
-    Scaffold(
+    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
+
+    SatinHeaderScaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
-            Column(modifier = Modifier.background(MaterialTheme.colorScheme.surface)) {
+            Column {
                 SearchBar(
                     state = searchBarState,
                     inputField = searchInputField,
@@ -347,68 +348,89 @@ fun SearchScreenContent(
                 }
 
                 if (!state.isSearchActive) {
-                    SearchColorDial(
-                        selectedColor = state.filters.color,
-                        onSelectColor = onSelectColor,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-
-                    // Search Category Tabs
-                    SecondaryTabRow(
-                        selectedTabIndex = state.activeTab.ordinal,
-                        containerColor = MaterialTheme.colorScheme.surface,
-                        contentColor = MaterialTheme.colorScheme.primary,
-                        indicator = {
-                            TabRowDefaults.SecondaryIndicator(
-                                modifier = Modifier.tabIndicatorOffset(state.activeTab.ordinal),
-                                color = MaterialTheme.colorScheme.primary,
-                            )
-                        },
-                    ) {
-                        SearchTab.entries.forEach { tab ->
-                            val tabLabel =
-                                when (tab) {
-                                    SearchTab.PHOTOS -> stringResource(R.string.search_tab_photos)
-                                    SearchTab.COLLECTIONS -> stringResource(R.string.search_tab_collections)
-                                    SearchTab.USERS -> stringResource(R.string.search_tab_users)
-                                }
-                            Tab(
-                                selected = state.activeTab == tab,
-                                onClick = { onSelectSearchType(tab) },
-                                text = {
-                                    Text(
-                                        text = tabLabel,
-                                        style = MaterialTheme.typography.labelLarge,
-                                        fontWeight = FontWeight.Bold,
-                                    )
+                    Column(
+                        modifier =
+                            Modifier
+                                .clipToBounds()
+                                .layout { measurable, constraints ->
+                                    // Quick-return via layout-phase reads (no recomposition).
+                                    val placeable = measurable.measure(constraints)
+                                    scrollBehavior.state.heightOffsetLimit = -placeable.height.toFloat()
+                                    val visibleHeight =
+                                        (placeable.height + scrollBehavior.state.heightOffset)
+                                            .roundToInt()
+                                            .coerceIn(0, placeable.height)
+                                    layout(placeable.width, visibleHeight) {
+                                        placeable.place(0, visibleHeight - placeable.height)
+                                    }
                                 },
-                                selectedContentColor = MaterialTheme.colorScheme.primary,
-                                unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
+                    ) {
+                        SearchColorDial(
+                            selectedColor = state.filters.color,
+                            onSelectColor = onSelectColor,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+
+                        // Search Category Tabs
+                        SecondaryTabRow(
+                            selectedTabIndex = state.activeTab.ordinal,
+                            containerColor = Color.Transparent,
+                            contentColor = MaterialTheme.colorScheme.primary,
+                            indicator = {
+                                TabRowDefaults.SecondaryIndicator(
+                                    modifier = Modifier.tabIndicatorOffset(state.activeTab.ordinal),
+                                    color = MaterialTheme.colorScheme.primary,
+                                )
+                            },
+                        ) {
+                            SearchTab.entries.forEach { tab ->
+                                val tabLabel =
+                                    when (tab) {
+                                        SearchTab.PHOTOS -> stringResource(R.string.search_tab_photos)
+                                        SearchTab.COLLECTIONS -> stringResource(R.string.search_tab_collections)
+                                        SearchTab.USERS -> stringResource(R.string.search_tab_users)
+                                    }
+                                Tab(
+                                    selected = state.activeTab == tab,
+                                    onClick = { onSelectSearchType(tab) },
+                                    text = {
+                                        Text(
+                                            text = tabLabel,
+                                            style = MaterialTheme.typography.labelLarge,
+                                            fontWeight = FontWeight.Bold,
+                                        )
+                                    },
+                                    selectedContentColor = MaterialTheme.colorScheme.primary,
+                                    unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
                         }
                     }
                 }
             }
         },
     ) { paddingValues ->
+        val headerTop = paddingValues.calculateTopPadding()
         Box(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .padding(paddingValues)
+                    .padding(bottom = paddingValues.calculateBottomPadding())
                     .background(MaterialTheme.colorScheme.surface),
         ) {
             if (state.query.isBlank()) {
                 if (!state.isSearchActive) {
-                    SearchSuggestionsAndHistory(
-                        history = state.searchHistory,
-                        onItemClick = onSearchSubmit,
-                        onDeleteClick = onRemoveHistoryEntry,
-                        onClearAll = onClearHistory,
-                    )
+                    Box(modifier = Modifier.padding(top = headerTop)) {
+                        SearchSuggestionsAndHistory(
+                            history = state.searchHistory,
+                            onItemClick = onSearchSubmit,
+                            onDeleteClick = onRemoveHistoryEntry,
+                            onClearAll = onClearHistory,
+                        )
+                    }
                 }
             } else {
-                PullToRefreshBox(
+                SatinPullToRefreshBox(
                     isRefreshing = state.isRefreshing,
                     onRefresh = {
                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
@@ -420,7 +442,9 @@ fun SearchScreenContent(
                     if (state.isLoading) {
                         when (state.activeTab) {
                             SearchTab.PHOTOS -> {
-                                PhotoGridSkeleton()
+                                Box(modifier = Modifier.padding(top = headerTop)) {
+                                    PhotoGridSkeleton()
+                                }
                             }
                             SearchTab.COLLECTIONS -> {
                                 Column(
@@ -429,7 +453,7 @@ fun SearchScreenContent(
                                             .fillMaxSize()
                                             .padding(
                                                 start = 12.dp,
-                                                top = 12.dp,
+                                                top = headerTop + 12.dp,
                                                 end = 12.dp,
                                                 bottom = calculateBottomContentPadding(12.dp),
                                             ).verticalScroll(rememberScrollState()),
@@ -441,7 +465,10 @@ fun SearchScreenContent(
                                 }
                             }
                             SearchTab.USERS -> {
-                                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                Box(
+                                    modifier = Modifier.fillMaxSize().padding(top = headerTop),
+                                    contentAlignment = Alignment.Center,
+                                ) {
                                     ExpressiveLoadingIndicator()
                                 }
                             }
@@ -451,6 +478,7 @@ fun SearchScreenContent(
                             modifier =
                                 Modifier
                                     .fillMaxSize()
+                                    .padding(top = headerTop)
                                     .padding(24.dp),
                             verticalArrangement = Arrangement.Center,
                             horizontalAlignment = Alignment.CenterHorizontally,
@@ -473,11 +501,11 @@ fun SearchScreenContent(
                         when (state.activeTab) {
                             SearchTab.PHOTOS -> {
                                 if (state.photos.isEmpty()) {
-                                    NoResultsView()
+                                    Box(modifier = Modifier.padding(top = headerTop)) {
+                                        NoResultsView()
+                                    }
                                 } else {
                                     PhotosResultGrid(
-                                        sharedTransitionScope = sharedTransitionScope,
-                                        animatedVisibilityScope = animatedVisibilityScope,
                                         photos = state.photos,
                                         isLoadingMore = state.isLoadingMore,
                                         hasReachedEnd = state.hasReachedEnd,
@@ -490,7 +518,9 @@ fun SearchScreenContent(
                             }
                             SearchTab.COLLECTIONS -> {
                                 if (state.collections.isEmpty()) {
-                                    NoResultsView()
+                                    Box(modifier = Modifier.padding(top = headerTop)) {
+                                        NoResultsView()
+                                    }
                                 } else {
                                     CollectionsResultList(
                                         collections = state.collections,
@@ -504,7 +534,9 @@ fun SearchScreenContent(
                             }
                             SearchTab.USERS -> {
                                 if (state.users.isEmpty()) {
-                                    NoResultsView()
+                                    Box(modifier = Modifier.padding(top = headerTop)) {
+                                        NoResultsView()
+                                    }
                                 } else {
                                     UsersResultList(
                                         users = state.users,
@@ -537,10 +569,8 @@ fun SearchScreenContent(
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun SearchScreenPreview() {
-    PreviewScaffold(widthDp = 412, heightDp = 892, darkTheme = false) { sharedScope, visibilityScope ->
+    PreviewScaffold(widthDp = 412, heightDp = 892, darkTheme = false) { _, _ ->
         SearchScreenContent(
-            sharedTransitionScope = sharedScope,
-            animatedVisibilityScope = visibilityScope,
             state = UiPreviewFixtures.searchDiscoveryState,
             onQueryChange = {},
             onSearchSubmit = {},
@@ -564,10 +594,8 @@ fun SearchScreenPreview() {
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun SearchScreenDarkPreview() {
-    PreviewScaffold(widthDp = 412, heightDp = 892, darkTheme = true) { sharedScope, visibilityScope ->
+    PreviewScaffold(widthDp = 412, heightDp = 892, darkTheme = true) { _, _ ->
         SearchScreenContent(
-            sharedTransitionScope = sharedScope,
-            animatedVisibilityScope = visibilityScope,
             state = UiPreviewFixtures.searchDiscoveryState,
             onQueryChange = {},
             onSearchSubmit = {},
@@ -591,10 +619,8 @@ fun SearchScreenDarkPreview() {
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun SearchScreenExpandedPreview() {
-    PreviewScaffold(widthDp = 900, heightDp = 700, darkTheme = false) { sharedScope, visibilityScope ->
+    PreviewScaffold(widthDp = 900, heightDp = 700, darkTheme = false) { _, _ ->
         SearchScreenContent(
-            sharedTransitionScope = sharedScope,
-            animatedVisibilityScope = visibilityScope,
             state = UiPreviewFixtures.searchDiscoveryState,
             onQueryChange = {},
             onSearchSubmit = {},
@@ -618,10 +644,8 @@ fun SearchScreenExpandedPreview() {
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun SearchResultsScreenPreview() {
-    PreviewScaffold(widthDp = 412, heightDp = 892, darkTheme = false) { sharedScope, visibilityScope ->
+    PreviewScaffold(widthDp = 412, heightDp = 892, darkTheme = false) { _, _ ->
         SearchScreenContent(
-            sharedTransitionScope = sharedScope,
-            animatedVisibilityScope = visibilityScope,
             state = UiPreviewFixtures.searchResultsState,
             onQueryChange = {},
             onSearchSubmit = {},

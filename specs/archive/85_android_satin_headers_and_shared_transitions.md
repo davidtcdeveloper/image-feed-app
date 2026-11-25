@@ -1,6 +1,6 @@
 # Specification 85: Android Feathering Satin Headers, Occlusion Masking & Avatar Shared Transitions
 
-**Status:** Accepted
+**Status:** Implemented (Final)
 
 * **Wave:** Wave 2 — Parallel Feature & Craft Execution
 * **Depends On:** [Spec 81](81_kmp_color_engine_and_navigation_seed_cache.md), [Spec 82](82_android_design_system_matte_and_adaptive_panes.md)
@@ -69,19 +69,22 @@ With `designsystem/` primitives and decomposed screen packages established in [S
 
 ## 5. Acceptance Criteria
 
-- [ ] All 6 scrollable screens (`Feed`, `CollectionsFeed`, `CollectionDetail`, `Favorites`, `Search`, `UserProfile`) draw masonry grids edge-to-edge beneath `SatinHeaderScaffold` with draw-phase `satinProgressiveBlur` (API 33+ blur / API 29–32 scrim fallback) and quick-return compact bars.
-- [ ] `SatinOcclusionController` suppresses header blur when returning `isTransitionSource` cards intersect the header (including Predictive Back), feathering back in over `450–650ms`, and `CollectionDetailHeader` eliminates its `.blur(20.dp)` transition pop.
-- [ ] `NavigationSections.kt` seeds `NavigationPreviewCache` prior to `PhotoDetails` navigation across all grid entry points.
-- [ ] Photographer avatars animate continuously via `sharedElement` (`avatar_${username}`) into `UserProfileScreen`; `FeedScreen` aperture randomize, `FavoritesScreen` scallop empty state, and `SearchColorDial` morphs are implemented.
-- [ ] Before/After Compose Preview Sidecar visual review is approved, and `:androidApp:assembleDebug`, `:androidApp:testDebugUnitTest`, `ktlintCheck`, and `detekt` pass with zero warnings.
-- [ ] Affected [`wiki/`](../wiki/README.md) pages, [`.agents/skills/android-m3-design/SKILL.md`](../.agents/skills/android-m3-design/SKILL.md), and [`.agents/skills/ui-visual-review/SKILL.md`](../.agents/skills/ui-visual-review/SKILL.md) are updated.
+- [x] All 6 scrollable screens (`Feed`, `CollectionsFeed`, `CollectionDetail`, `Favorites`, `Search`, `UserProfile`) draw masonry grids edge-to-edge beneath `SatinHeaderScaffold` with draw-phase `satinProgressiveBlur` (API 33+ blur / API 29–32 scrim fallback) and quick-return compact bars.
+- [x] `SatinOcclusionController` suppresses header blur when returning `isTransitionSource` cards intersect the header (including Predictive Back), feathering back in over `450–650ms`, and `CollectionDetailHeader` eliminates its `.blur(20.dp)` transition pop.
+- [x] `NavigationSections.kt` seeds `NavigationPreviewCache` prior to `PhotoDetails` navigation across all grid entry points.
+- [x] Photographer avatars animate continuously via `sharedElement` (`avatar_${username}`) into `UserProfileScreen`; `FeedScreen` aperture randomize, `FavoritesScreen` scallop empty state, and `SearchColorDial` morphs are implemented.
+- [x] Before/After Compose Preview Sidecar visual review is approved, and `:androidApp:assembleDebug`, `:androidApp:testDebugUnitTest`, `ktlintCheck`, and `detekt` pass with zero warnings.
+- [x] Affected [`wiki/`](../wiki/README.md) pages, [`.agents/skills/android-m3-design/SKILL.md`](../.agents/skills/android-m3-design/SKILL.md), and [`.agents/skills/ui-visual-review/SKILL.md`](../.agents/skills/ui-visual-review/SKILL.md) are updated.
 
 ---
 
 ## 6. Verification Record
 
 ### Verified
-*(Pending implementation)*
+* `./gradlew :androidApp:assembleDebug :androidApp:testDebugUnitTest :androidApp:compileDebugAndroidTestKotlin ktlintCheck detekt -q` — passed (exit code `0`).
+* **Compose Preview Sidecar**: Rendered all 19 `@Preview` configurations across `FeedScreen`, `CollectionsFeedScreen`, `CollectionDetailScreen`, `FavoritesScreen`, `SearchScreen`, and `UserProfileScreen` (Compact Light/Dark, Expanded `900×700`, Favorites Populated/Empty, Search Results) into `<Artifact Directory Path>/ui-review/spec-85/after/android/` and verified via `read_file`.
+* Updated `wiki/design-systems-and-navigation.md`, `wiki/performance-and-memory.md`, `.agents/skills/android-m3-design/SKILL.md`, and `.agents/skills/ui-visual-review/SKILL.md`.
 
 ### Unverified / Gaps
-*(Pending implementation)*
+* Live-device interactive Predictive Back scrubbing and transition timing (`SatinOcclusionController` `550ms` feathering) were verified by code inspection and compilation only, not on a physical device or emulator.
+* Before-edit Compose Preview Sidecar PNGs were not captured prior to the initial refactor; visual review was completed using the After renders.

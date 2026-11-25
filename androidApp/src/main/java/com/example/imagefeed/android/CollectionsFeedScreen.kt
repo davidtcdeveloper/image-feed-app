@@ -1,8 +1,6 @@
 package com.example.imagefeed.android
 
-import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
-import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,10 +18,8 @@ import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -36,6 +32,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -46,6 +43,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.imagefeed.android.components.CollectionMosaicCard
+import com.example.imagefeed.android.designsystem.SatinHeaderScaffold
+import com.example.imagefeed.android.designsystem.SatinPullToRefreshBox
 import com.example.imagefeed.android.preview.PreviewScaffold
 import com.example.imagefeed.android.preview.UiPreviewFixtures
 import com.example.imagefeed.android.theme.ExpressiveWavyProgressIndicator
@@ -63,8 +62,6 @@ import kotlinx.coroutines.flow.filter
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun CollectionsFeedScreen(
-    sharedTransitionScope: SharedTransitionScope,
-    animatedVisibilityScope: AnimatedVisibilityScope,
     viewModel: CollectionsFeedViewModel,
     reselectEvents: kotlinx.coroutines.flow.SharedFlow<androidx.navigation3.runtime.NavKey>? = null,
     onCollectionClick: (PhotoCollection) -> Unit,
@@ -92,8 +89,6 @@ fun CollectionsFeedScreen(
     }
 
     CollectionsFeedScreenContent(
-        sharedTransitionScope = sharedTransitionScope,
-        animatedVisibilityScope = animatedVisibilityScope,
         state = state,
         listState = listState,
         onRefresh = { viewModel.dispatch(CollectionsFeedIntent.Refresh) },
@@ -107,8 +102,6 @@ fun CollectionsFeedScreen(
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun CollectionsFeedScreenContent(
-    sharedTransitionScope: SharedTransitionScope,
-    animatedVisibilityScope: AnimatedVisibilityScope,
     state: CollectionsFeedState,
     onRefresh: () -> Unit,
     onLoadNextPage: () -> Unit,
@@ -145,7 +138,7 @@ fun CollectionsFeedScreenContent(
             }
     }
 
-    Scaffold(
+    SatinHeaderScaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             CenterAlignedTopAppBar(
@@ -169,8 +162,8 @@ fun CollectionsFeedScreenContent(
                 },
                 colors =
                     TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.surface,
-                        scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                        containerColor = Color.Transparent,
+                        scrolledContainerColor = Color.Transparent,
                         titleContentColor = MaterialTheme.colorScheme.onSurface,
                         actionIconContentColor = MaterialTheme.colorScheme.onSurface,
                     ),
@@ -178,7 +171,7 @@ fun CollectionsFeedScreenContent(
             )
         },
     ) { paddingValues ->
-        PullToRefreshBox(
+        SatinPullToRefreshBox(
             isRefreshing = state.isRefreshing,
             onRefresh = {
                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
@@ -189,7 +182,7 @@ fun CollectionsFeedScreenContent(
                 Modifier
                     .fillMaxSize()
                     .background(MaterialTheme.colorScheme.surface)
-                    .padding(paddingValues),
+                    .padding(bottom = paddingValues.calculateBottomPadding()),
         ) {
             if (state.collections.isEmpty() && state.isLoading) {
                 LazyVerticalStaggeredGrid(
@@ -198,7 +191,7 @@ fun CollectionsFeedScreenContent(
                     contentPadding =
                         PaddingValues(
                             start = 12.dp,
-                            top = 12.dp,
+                            top = paddingValues.calculateTopPadding() + 12.dp,
                             end = 12.dp,
                             bottom = calculateBottomContentPadding(12.dp),
                         ),
@@ -210,7 +203,9 @@ fun CollectionsFeedScreenContent(
                     }
                 }
             } else if (state.collections.isEmpty() && state.error != null) {
-                ErrorView(error = state.error!!.localizedMessage(), onRetry = onRefresh)
+                Box(modifier = Modifier.padding(top = paddingValues.calculateTopPadding())) {
+                    ErrorView(error = state.error!!.localizedMessage(), onRetry = onRefresh)
+                }
             } else {
                 val cardWidthPx = calculateCollectionMosaicCardWidthPx()
                 val sideWidthPx = remember(cardWidthPx) { cardWidthPx / 3 }
@@ -225,7 +220,7 @@ fun CollectionsFeedScreenContent(
                     contentPadding =
                         PaddingValues(
                             start = 12.dp,
-                            top = 12.dp,
+                            top = paddingValues.calculateTopPadding() + 12.dp,
                             end = 12.dp,
                             bottom = calculateBottomContentPadding(12.dp),
                         ),
@@ -238,8 +233,6 @@ fun CollectionsFeedScreenContent(
                         contentType = { _, _ -> "collection_card" },
                     ) { index, collection ->
                         CollectionMosaicCard(
-                            sharedTransitionScope = sharedTransitionScope,
-                            animatedVisibilityScope = animatedVisibilityScope,
                             index = index,
                             collection = collection,
                             cardWidthPx = cardWidthPx,
@@ -276,10 +269,8 @@ fun CollectionsFeedScreenContent(
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun CollectionsFeedScreenPreview() {
-    PreviewScaffold(widthDp = 412, heightDp = 892, darkTheme = false) { sharedScope, visibilityScope ->
+    PreviewScaffold(widthDp = 412, heightDp = 892, darkTheme = false) { _, _ ->
         CollectionsFeedScreenContent(
-            sharedTransitionScope = sharedScope,
-            animatedVisibilityScope = visibilityScope,
             state = UiPreviewFixtures.collectionsFeedState,
             onRefresh = {},
             onLoadNextPage = {},
@@ -293,10 +284,8 @@ fun CollectionsFeedScreenPreview() {
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun CollectionsFeedScreenDarkPreview() {
-    PreviewScaffold(widthDp = 412, heightDp = 892, darkTheme = true) { sharedScope, visibilityScope ->
+    PreviewScaffold(widthDp = 412, heightDp = 892, darkTheme = true) { _, _ ->
         CollectionsFeedScreenContent(
-            sharedTransitionScope = sharedScope,
-            animatedVisibilityScope = visibilityScope,
             state = UiPreviewFixtures.collectionsFeedState,
             onRefresh = {},
             onLoadNextPage = {},
@@ -310,10 +299,8 @@ fun CollectionsFeedScreenDarkPreview() {
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun CollectionsFeedScreenExpandedPreview() {
-    PreviewScaffold(widthDp = 900, heightDp = 700, darkTheme = false) { sharedScope, visibilityScope ->
+    PreviewScaffold(widthDp = 900, heightDp = 700, darkTheme = false) { _, _ ->
         CollectionsFeedScreenContent(
-            sharedTransitionScope = sharedScope,
-            animatedVisibilityScope = visibilityScope,
             state = UiPreviewFixtures.collectionsFeedState,
             onRefresh = {},
             onLoadNextPage = {},

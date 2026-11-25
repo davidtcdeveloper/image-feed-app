@@ -3,6 +3,7 @@ package com.example.imagefeed.android.search
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -37,7 +38,18 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import androidx.graphics.shapes.Morph
+import androidx.graphics.shapes.RoundedPolygon
+import androidx.graphics.shapes.circle
 import com.example.imagefeed.android.R
+import com.example.imagefeed.android.designsystem.MorphPolygonShape
+import com.example.imagefeed.android.theme.ExpressiveShapeTokens
+
+private val SwatchMorph =
+    Morph(
+        start = RoundedPolygon.circle(numVertices = 4).normalized(),
+        end = ExpressiveShapeTokens.SquirclePolygon,
+    )
 
 @Suppress("MagicNumber")
 @Composable
@@ -82,6 +94,13 @@ fun SearchColorDial(
                 animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
                 label = "color_selection_padding",
             )
+            // Selected swatch morphs CircleShape <-> rounded squircle.
+            val morphProgress by animateFloatAsState(
+                targetValue = if (isSelected) 1f else 0f,
+                animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+                label = "color_selection_morph",
+            )
+            val swatchShape = MorphPolygonShape(morph = SwatchMorph, percentage = morphProgress)
             val ringColor by animateColorAsState(
                 targetValue = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
                 animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
@@ -146,9 +165,9 @@ fun SearchColorDial(
                             .border(
                                 width = ringBorderWidth,
                                 color = ringColor,
-                                shape = CircleShape,
+                                shape = swatchShape,
                             ).padding(ringPadding)
-                            .clip(CircleShape)
+                            .clip(swatchShape)
                             .then(
                                 if (colorKey == "white" && !isSelected) {
                                     Modifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape)

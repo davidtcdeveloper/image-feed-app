@@ -1,8 +1,6 @@
 package com.example.imagefeed.android.search
 
-import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
-import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -63,6 +61,8 @@ import com.example.imagefeed.android.calculateGridColumns
 import com.example.imagefeed.android.calculatePhotoItemWidthPx
 import com.example.imagefeed.android.calculateUserGridColumns
 import com.example.imagefeed.android.components.PhotoCard
+import com.example.imagefeed.android.designsystem.LocalAppSharedTransition
+import com.example.imagefeed.android.designsystem.LocalSatinHeaderPadding
 import com.example.imagefeed.android.navigation.AppRoute
 import com.example.imagefeed.android.theme.ExpressiveWavyProgressIndicator
 import com.example.imagefeed.android.util.BLURHASH_PLACEHOLDER_WIDTH
@@ -91,8 +91,6 @@ private val CollectionRowScrimBrush =
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun PhotosResultGrid(
-    sharedTransitionScope: SharedTransitionScope,
-    animatedVisibilityScope: AnimatedVisibilityScope,
     photos: List<Photo>,
     isLoadingMore: Boolean,
     hasReachedEnd: Boolean = false,
@@ -140,7 +138,7 @@ fun PhotosResultGrid(
         contentPadding =
             PaddingValues(
                 start = 8.dp,
-                top = 8.dp,
+                top = LocalSatinHeaderPadding.current + 8.dp,
                 end = 8.dp,
                 bottom = calculateBottomContentPadding(8.dp),
             ),
@@ -153,8 +151,6 @@ fun PhotosResultGrid(
             contentType = { _, _ -> "photo_card" },
         ) { index, photo ->
             PhotoCard(
-                sharedTransitionScope = sharedTransitionScope,
-                animatedVisibilityScope = animatedVisibilityScope,
                 index = index,
                 photo = photo,
                 itemWidthPx = itemWidthPx,
@@ -228,7 +224,7 @@ fun CollectionsResultList(
         contentPadding =
             PaddingValues(
                 start = 12.dp,
-                top = 12.dp,
+                top = LocalSatinHeaderPadding.current + 12.dp,
                 end = 12.dp,
                 bottom = calculateBottomContentPadding(12.dp),
             ),
@@ -357,6 +353,8 @@ fun UsersResultList(
     onUserClick: (User) -> Unit,
 ) {
     val listState = rememberLazyStaggeredGridState()
+    // UI-element transition state gating the avatar sharedElement; ViewModel remains the SSOT.
+    var selectedUsername by rememberSaveable { mutableStateOf<String?>(null) }
 
     LaunchedEffect(reselectEvents) {
         reselectEvents?.collect { key ->
@@ -390,7 +388,7 @@ fun UsersResultList(
         contentPadding =
             PaddingValues(
                 start = 12.dp,
-                top = 12.dp,
+                top = LocalSatinHeaderPadding.current + 12.dp,
                 end = 12.dp,
                 bottom = calculateBottomContentPadding(12.dp),
             ),
@@ -405,7 +403,9 @@ fun UsersResultList(
             UserRowCard(
                 user = user,
                 modifier = Modifier.staggeredEntrance(index),
+                isTransitionSource = user.username == selectedUsername,
                 onClick = {
+                    selectedUsername = user.username
                     onUserClick(user)
                 },
             )
@@ -427,10 +427,12 @@ fun UsersResultList(
     }
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun UserRowCard(
     user: User,
     modifier: Modifier = Modifier,
+    isTransitionSource: Boolean = false,
     onClick: () -> Unit,
 ) {
     val context = LocalPlatformContext.current
@@ -458,12 +460,24 @@ fun UserRowCard(
                     .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            val sharedTransition = LocalAppSharedTransition.current
+            val baseAvatarModifier = Modifier.size(54.dp)
+            val avatarModifier =
+                if (isTransitionSource && sharedTransition != null) {
+                    with(sharedTransition.sharedTransitionScope) {
+                        baseAvatarModifier.sharedElement(
+                            sharedContentState = rememberSharedContentState(key = "avatar_${user.username}"),
+                            animatedVisibilityScope = sharedTransition.animatedVisibilityScope,
+                        )
+                    }
+                } else {
+                    baseAvatarModifier
+                }
             Image(
                 painter = rememberAsyncImagePainter(model = avatarRequest),
                 contentDescription = user.name,
                 modifier =
-                    Modifier
-                        .size(54.dp)
+                    avatarModifier
                         .clip(CircleShape)
                         .background(MaterialTheme.colorScheme.surfaceContainerHighest),
                 contentScale = ContentScale.Crop,

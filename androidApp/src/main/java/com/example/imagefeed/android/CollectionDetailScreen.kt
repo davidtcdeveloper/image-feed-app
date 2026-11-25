@@ -1,11 +1,8 @@
 package com.example.imagefeed.android
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
-import androidx.compose.animation.SharedTransitionScope
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -24,6 +21,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridState
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.foundation.lazy.staggeredgrid.itemsIndexed
@@ -37,7 +35,6 @@ import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -54,14 +51,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.LocalPlatformContext
@@ -69,6 +69,10 @@ import coil3.compose.rememberAsyncImagePainter
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.example.imagefeed.android.components.PhotoCard
+import com.example.imagefeed.android.designsystem.LocalAppSharedTransition
+import com.example.imagefeed.android.designsystem.SatinHeaderScaffold
+import com.example.imagefeed.android.preview.PreviewScaffold
+import com.example.imagefeed.android.preview.UiPreviewFixtures
 import com.example.imagefeed.android.theme.ExpressiveLoadingIndicator
 import com.example.imagefeed.android.theme.ExpressiveWavyProgressIndicator
 import com.example.imagefeed.android.util.bounceClick
@@ -86,8 +90,6 @@ import kotlinx.coroutines.flow.filter
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun CollectionDetailScreen(
-    sharedTransitionScope: SharedTransitionScope,
-    animatedVisibilityScope: AnimatedVisibilityScope,
     collectionId: String,
     viewModel: CollectionDetailViewModel =
         androidx.lifecycle.viewmodel.compose.viewModel(key = "collection_$collectionId") {
@@ -129,42 +131,70 @@ fun CollectionDetailScreen(
             }
     }
 
-    // Sticky Header transparency control based on scroll position
+    CollectionDetailScreenContent(
+        state = state,
+        gridState = gridState,
+        onBack = onBack,
+        onPhotoClick = onPhotoClick,
+        onCollectionClick = onCollectionClick,
+        onUserClick = onUserClick,
+    )
+}
+
+@Composable
+fun CollectionDetailScreenContent(
+    state: CollectionDetailState,
+    onBack: () -> Unit,
+    onPhotoClick: (Photo) -> Unit,
+    onCollectionClick: (String) -> Unit,
+    onUserClick: (User) -> Unit = {},
+    gridState: LazyStaggeredGridState = rememberLazyStaggeredGridState(),
+) {
+    // Scroll-linked header feathering: 0f at rest, 1f once the cover has scrolled away (read in draw/layer phases only).
+    val collapseProgress: () -> Float = {
+        if (gridState.firstVisibleItemIndex > 0) {
+            1f
+        } else {
+            (gridState.firstVisibleItemScrollOffset / COLLAPSE_DISTANCE_PX).coerceIn(0f, 1f)
+        }
+    }
     val showCollapsedTitle =
         remember {
             derivedStateOf {
-                gridState.firstVisibleItemIndex > 0 || gridState.firstVisibleItemScrollOffset > 300
+                gridState.firstVisibleItemIndex > 0 || gridState.firstVisibleItemScrollOffset > COLLAPSE_DISTANCE_PX / 2
             }
         }
 
-    Scaffold(
+    SatinHeaderScaffold(
         topBar = {
+            val headerSurface = MaterialTheme.colorScheme.surface
             CenterAlignedTopAppBar(
+                modifier =
+                    Modifier.drawBehind {
+                        drawRect(headerSurface, alpha = collapseProgress() * COLLAPSED_SURFACE_ALPHA)
+                    },
                 title = {
-                    AnimatedVisibility(
-                        visible = showCollapsedTitle.value,
-                        enter = fadeIn(),
-                        exit = fadeOut(),
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.graphicsLayer { alpha = collapseProgress() },
                     ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = state.collection?.title ?: stringResource(R.string.collection_detail_title_fallback),
+                            style =
+                                MaterialTheme.typography.titleMedium.copy(
+                                    fontWeight = FontWeight.Bold,
+                                ),
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.widthIn(max = 200.dp),
+                        )
+                        state.collection?.let {
                             Text(
-                                text = state.collection?.title ?: stringResource(R.string.collection_detail_title_fallback),
-                                style =
-                                    MaterialTheme.typography.titleMedium.copy(
-                                        fontWeight = FontWeight.Bold,
-                                    ),
-                                color = MaterialTheme.colorScheme.onSurface,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.widthIn(max = 200.dp),
+                                text = pluralStringResource(R.plurals.collections_photos_count, it.totalPhotos, it.totalPhotos),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
-                            state.collection?.let {
-                                Text(
-                                    text = pluralStringResource(R.plurals.collections_photos_count, it.totalPhotos, it.totalPhotos),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
                         }
                     }
                 },
@@ -178,12 +208,7 @@ fun CollectionDetailScreen(
                 },
                 colors =
                     TopAppBarDefaults.topAppBarColors(
-                        containerColor =
-                            if (showCollapsedTitle.value) {
-                                MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)
-                            } else {
-                                Color.Transparent
-                            },
+                        containerColor = Color.Transparent,
                         titleContentColor = MaterialTheme.colorScheme.onSurface,
                         navigationIconContentColor =
                             if (showCollapsedTitle.value) {
@@ -200,7 +225,7 @@ fun CollectionDetailScreen(
                 Modifier
                     .fillMaxSize()
                     .background(MaterialTheme.colorScheme.surface)
-                    .padding(bottom = paddingValues.calculateBottomPadding()), // top is drawn fully behind transparent top bar
+                    .padding(bottom = paddingValues.calculateBottomPadding()), // cover header draws edge-to-edge behind the Satin bar
         ) {
             if (state.photos.isEmpty() && state.isLoadingPhotos && state.isHeaderLoading) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -223,8 +248,6 @@ fun CollectionDetailScreen(
                     // Header Item: Spans full width
                     item(span = StaggeredGridItemSpan.FullLine, contentType = "header") {
                         CollectionDetailHeader(
-                            sharedTransitionScope = sharedTransitionScope,
-                            animatedVisibilityScope = animatedVisibilityScope,
                             collection = state.collection,
                             onUserClick = onUserClick,
                         )
@@ -260,8 +283,6 @@ fun CollectionDetailScreen(
                     ) { index, photo ->
                         Box(modifier = Modifier.padding(horizontal = 4.dp)) {
                             PhotoCard(
-                                sharedTransitionScope = sharedTransitionScope,
-                                animatedVisibilityScope = animatedVisibilityScope,
                                 index = index,
                                 photo = photo,
                                 itemWidthPx = itemWidthPx,
@@ -271,6 +292,7 @@ fun CollectionDetailScreen(
                                     onPhotoClick(photo)
                                 },
                                 onUserClick = {
+                                    selectedPhotoId = photo.id
                                     onUserClick(photo.user)
                                 },
                             )
@@ -299,12 +321,11 @@ fun CollectionDetailScreen(
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun CollectionDetailHeader(
-    sharedTransitionScope: SharedTransitionScope,
-    animatedVisibilityScope: AnimatedVisibilityScope,
     collection: PhotoCollection?,
     onUserClick: (User) -> Unit = {},
 ) {
     val context = LocalPlatformContext.current
+    val sharedTransition = LocalAppSharedTransition.current
     if (collection == null) {
         Box(
             modifier =
@@ -318,6 +339,13 @@ fun CollectionDetailHeader(
 
     val blurHash = collection.coverPhoto?.blurHash
     val placeholderPainter = rememberBlurHashPlaceholder(blurHash, 16, 12)
+    // Backdrop blur stays at 0 while the col_cover shared bounds animate, then feathers in (no static blur pop).
+    val backdropBlur by animateDpAsState(
+        targetValue = if (sharedTransition?.sharedTransitionScope?.isTransitionActive == true) 0.dp else COVER_BACKDROP_BLUR,
+        animationSpec = tween(COVER_BLUR_FEATHER_MS),
+        label = "CollectionCoverBackdropBlur",
+    )
+    var curatorTapped by remember { mutableStateOf(false) }
 
     Box(
         modifier =
@@ -327,29 +355,35 @@ fun CollectionDetailHeader(
     ) {
         // Blurred Background Cover Photo to act as beautiful backdrop
         collection.coverPhoto?.urls?.small?.let { coverUrl ->
-            with(sharedTransitionScope) {
-                Image(
-                    painter =
-                        rememberAsyncImagePainter(
-                            model =
-                                ImageRequest
-                                    .Builder(context)
-                                    .data(coverUrl)
-                                    .crossfade(true)
-                                    .build(),
-                            placeholder = placeholderPainter,
-                        ),
-                    contentDescription = null,
-                    modifier =
-                        Modifier
-                            .fillMaxSize()
-                            .sharedBounds(
-                                sharedContentState = rememberSharedContentState(key = "col_cover_${collection.id}"),
-                                animatedVisibilityScope = animatedVisibilityScope,
-                            ).blur(20.dp),
-                    contentScale = ContentScale.Crop,
-                )
-            }
+            Image(
+                painter =
+                    rememberAsyncImagePainter(
+                        model =
+                            ImageRequest
+                                .Builder(context)
+                                .data(coverUrl)
+                                .crossfade(true)
+                                .build(),
+                        placeholder = placeholderPainter,
+                    ),
+                contentDescription = null,
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .then(
+                            if (sharedTransition != null) {
+                                with(sharedTransition.sharedTransitionScope) {
+                                    Modifier.sharedBounds(
+                                        sharedContentState = rememberSharedContentState(key = "col_cover_${collection.id}"),
+                                        animatedVisibilityScope = sharedTransition.animatedVisibilityScope,
+                                    )
+                                }
+                            } else {
+                                Modifier
+                            },
+                        ).blur(backdropBlur),
+                contentScale = ContentScale.Crop,
+            )
         }
 
         // Overlay Gradient for contrast
@@ -384,16 +418,26 @@ fun CollectionDetailHeader(
                 modifier =
                     Modifier
                         .clickable {
+                            curatorTapped = true
                             onUserClick(collection.user)
                         }.padding(bottom = 12.dp),
             ) {
+                val baseAvatarModifier = Modifier.size(36.dp)
+                val avatarModifier =
+                    if (curatorTapped && sharedTransition != null) {
+                        with(sharedTransition.sharedTransitionScope) {
+                            baseAvatarModifier.sharedElement(
+                                sharedContentState = rememberSharedContentState(key = "avatar_${collection.user.username}"),
+                                animatedVisibilityScope = sharedTransition.animatedVisibilityScope,
+                            )
+                        }
+                    } else {
+                        baseAvatarModifier
+                    }
                 Image(
                     painter = rememberAsyncImagePainter(model = collection.user.profileImage.medium),
                     contentDescription = collection.user.name,
-                    modifier =
-                        Modifier
-                            .size(36.dp)
-                            .clip(CircleShape),
+                    modifier = avatarModifier.clip(CircleShape),
                 )
 
                 Spacer(modifier = Modifier.width(10.dp))
@@ -559,5 +603,49 @@ fun RelatedCollectionCard(
                 )
             }
         }
+    }
+}
+
+private const val COLLAPSE_DISTANCE_PX = 300f
+private const val COLLAPSED_SURFACE_ALPHA = 0.95f
+private const val COVER_BLUR_FEATHER_MS = 550
+private val COVER_BACKDROP_BLUR = 20.dp
+
+@Preview(showBackground = true, widthDp = 412, heightDp = 892, name = "CollectionDetail - Compact Light")
+@Composable
+fun CollectionDetailScreenLightPreview() {
+    PreviewScaffold(widthDp = 412, heightDp = 892, darkTheme = false) { _, _ ->
+        CollectionDetailScreenContent(
+            state = UiPreviewFixtures.collectionDetailState,
+            onBack = {},
+            onPhotoClick = {},
+            onCollectionClick = {},
+        )
+    }
+}
+
+@Preview(showBackground = true, widthDp = 412, heightDp = 892, name = "CollectionDetail - Compact Dark")
+@Composable
+fun CollectionDetailScreenDarkPreview() {
+    PreviewScaffold(widthDp = 412, heightDp = 892, darkTheme = true) { _, _ ->
+        CollectionDetailScreenContent(
+            state = UiPreviewFixtures.collectionDetailState,
+            onBack = {},
+            onPhotoClick = {},
+            onCollectionClick = {},
+        )
+    }
+}
+
+@Preview(showBackground = true, widthDp = 900, heightDp = 700, name = "CollectionDetail - Expanded")
+@Composable
+fun CollectionDetailScreenExpandedPreview() {
+    PreviewScaffold(widthDp = 900, heightDp = 700, darkTheme = false) { _, _ ->
+        CollectionDetailScreenContent(
+            state = UiPreviewFixtures.collectionDetailState,
+            onBack = {},
+            onPhotoClick = {},
+            onCollectionClick = {},
+        )
     }
 }

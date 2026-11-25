@@ -69,7 +69,7 @@ Never hardcode arbitrary radii (e.g., `RoundedCornerShape(16.dp)`). Use semantic
 - **Pull-to-Refresh**: Use Material 3 `PullToRefreshBox` with `PullToRefreshDefaults`.
 - **Buttons**: Prefer `FilledTonalButton` or `Button` with theme colors. Avoid hardcoding button background fills.
 - **Cards**: Use `Card`, `ElevatedCard`, or `OutlinedCard` with `CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)`.
-- **App Bars**: Connect `TopAppBarDefaults.pinnedScrollBehavior()` or `enterAlwaysScrollBehavior()` to list scroll states.
+- **App Bars**: Use [`SatinHeaderScaffold`](../../../androidApp/src/main/java/com/example/imagefeed/android/designsystem/SatinHeaderScaffold.kt) for edge-to-edge scrollable screens, passing the measured header height into grid `contentPadding` (and `SatinPullToRefreshBox`), driving draw-phase `satinProgressiveBlur` (API 33+ blur / API 29–32 scrim fallback) and `TopAppBarDefaults.enterAlwaysScrollBehavior()` quick-return collapse without scroll recompositions.
 
 ---
 
@@ -86,9 +86,10 @@ The application uses **Jetpack Navigation 3** (`androidx.navigation3`). Legacy N
 4. **Predictive Back & Gestures**:
    - Enable `android:enableOnBackInvokedCallback="true"` in `AndroidManifest.xml`.
    - Intercept back events in sub-components (such as active search) with `NavigationBackHandler` and `rememberNavigationEventState` before popping the stack.
-5. **Shared Element Transitions**:
-   - Wrap navigation with `SharedTransitionLayout`.
-   - Thread `LocalNavAnimatedContentScope.current` as `animatedVisibilityScope` to screen composables for hero transitions.
+5. **Shared Element Transitions & Seeding**:
+   - Wrap navigation with `SharedTransitionLayout` and provide `LocalAppSharedTransition` (`ProvideAppSharedTransition`) at every Navigation 3 entry boundary instead of threading `SharedTransitionScope` / `AnimatedVisibilityScope` parameters through screens and cards.
+   - Gate `sharedElement` (`photo_img_${photo.id}`, `avatar_${username}`) with `isTransitionSource` and track source bounds via `SatinOcclusionController` so Satin header blur drops to `0.dp` when a returning card overlaps the header (including Predictive Back) and feathers back in over `450–650ms`.
+   - Seed `NavigationPreviewCache` via `MetroHelper` in [`NavigationSections.kt`](../../../androidApp/src/main/java/com/example/imagefeed/android/navigation/NavigationSections.kt) right before navigating to `PhotoDetails`, `CollectionDetails`, or `UserProfile` for Frame-0 rendering.
 
 ---
 

@@ -20,11 +20,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -36,6 +39,7 @@ import coil3.request.crossfade
 import com.example.imagefeed.android.R
 import com.example.imagefeed.android.calculatePhotoItemWidthPx
 import com.example.imagefeed.android.designsystem.LocalAppSharedTransition
+import com.example.imagefeed.android.designsystem.LocalSatinOcclusionController
 import com.example.imagefeed.android.designsystem.SurfaceTokens
 import com.example.imagefeed.android.util.BLURHASH_PLACEHOLDER_WIDTH
 import com.example.imagefeed.android.util.BlurHashDecoder
@@ -68,6 +72,11 @@ fun PhotoCard(
             width = BLURHASH_PLACEHOLDER_WIDTH,
             height = placeholderHeight,
         )
+
+    val occlusionController = LocalSatinOcclusionController.current
+    DisposableEffect(isTransitionSource, occlusionController) {
+        onDispose { if (isTransitionSource) occlusionController?.clearSource() }
+    }
 
     val photoUrl =
         remember(photo.id, photo.urls.raw, itemWidthPx) {
@@ -108,10 +117,14 @@ fun PhotoCard(
             val imageModifier =
                 if (isTransitionSource && sharedTransitionScope != null && animatedVisibilityScope != null) {
                     with(sharedTransitionScope) {
-                        baseImageModifier.sharedElement(
-                            sharedContentState = rememberSharedContentState(key = "photo_img_${photo.id}"),
-                            animatedVisibilityScope = animatedVisibilityScope,
-                        )
+                        baseImageModifier
+                            .sharedElement(
+                                sharedContentState = rememberSharedContentState(key = "photo_img_${photo.id}"),
+                                animatedVisibilityScope = animatedVisibilityScope,
+                            ).onGloballyPositioned {
+                                val top = it.positionInRoot().y
+                                occlusionController?.updateSourceBounds(top, top + it.size.height)
+                            }
                     }
                 } else {
                     baseImageModifier
@@ -159,13 +172,23 @@ fun PhotoCard(
                                 model = avatarRequest,
                             )
 
+                        val baseAvatarModifier = Modifier.size(24.dp)
+                        val avatarModifier =
+                            if (isTransitionSource && sharedTransitionScope != null && animatedVisibilityScope != null) {
+                                with(sharedTransitionScope) {
+                                    baseAvatarModifier.sharedElement(
+                                        sharedContentState = rememberSharedContentState(key = "avatar_${photo.user.username}"),
+                                        animatedVisibilityScope = animatedVisibilityScope,
+                                    )
+                                }
+                            } else {
+                                baseAvatarModifier
+                            }
+
                         Image(
                             painter = userProfileImagePainter,
                             contentDescription = stringResource(R.string.feed_user_profile_accessibility),
-                            modifier =
-                                Modifier
-                                    .size(24.dp)
-                                    .clip(CircleShape),
+                            modifier = avatarModifier.clip(CircleShape),
                         )
 
                         Spacer(modifier = Modifier.width(6.dp))

@@ -1,9 +1,6 @@
 package com.example.imagefeed.android
 
-import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
-import androidx.compose.animation.SharedTransitionScope
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -23,37 +20,31 @@ import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.foundation.lazy.staggeredgrid.itemsIndexed
 import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -72,6 +63,9 @@ import coil3.compose.rememberAsyncImagePainter
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.example.imagefeed.android.components.PhotoCard
+import com.example.imagefeed.android.designsystem.ApertureRandomizeButton
+import com.example.imagefeed.android.designsystem.SatinHeaderScaffold
+import com.example.imagefeed.android.designsystem.SatinPullToRefreshBox
 import com.example.imagefeed.android.navigation.AppRoute
 import com.example.imagefeed.android.preview.PreviewScaffold
 import com.example.imagefeed.android.preview.UiPreviewFixtures
@@ -89,12 +83,11 @@ import com.example.imagefeed.presentation.feed.FeedViewModel
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun FeedScreen(
-    sharedTransitionScope: SharedTransitionScope,
-    animatedVisibilityScope: AnimatedVisibilityScope,
     viewModel: FeedViewModel,
     reselectEvents: SharedFlow<NavKey>? = null,
     onPhotoClick: (Photo) -> Unit,
@@ -122,8 +115,6 @@ fun FeedScreen(
     }
 
     FeedScreenContent(
-        sharedTransitionScope = sharedTransitionScope,
-        animatedVisibilityScope = animatedVisibilityScope,
         state = state,
         listState = listState,
         onSelectTopic = { slug -> viewModel.dispatch(FeedIntent.SelectTopic(slug)) },
@@ -138,8 +129,6 @@ fun FeedScreen(
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun FeedScreenContent(
-    sharedTransitionScope: SharedTransitionScope,
-    animatedVisibilityScope: AnimatedVisibilityScope,
     state: FeedState,
     onSelectTopic: (String) -> Unit,
     onRefresh: () -> Unit,
@@ -149,19 +138,7 @@ fun FeedScreenContent(
     onRandomClick: () -> Unit,
     listState: androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridState = rememberLazyStaggeredGridState(),
 ) {
-    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
-    val isScrolled by remember(scrollBehavior) {
-        derivedStateOf { scrollBehavior.state.contentOffset < 0f }
-    }
-    val topicStripBackgroundColor by animateColorAsState(
-        targetValue =
-            if (isScrolled) {
-                MaterialTheme.colorScheme.surfaceContainer
-            } else {
-                MaterialTheme.colorScheme.surface
-            },
-        label = "TopicStripBackgroundColor",
-    )
+    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
     val pullToRefreshState = rememberPullToRefreshState()
     val haptic = LocalHapticFeedback.current
 
@@ -189,7 +166,7 @@ fun FeedScreenContent(
             }
     }
 
-    Scaffold(
+    SatinHeaderScaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             Column {
@@ -202,17 +179,15 @@ fun FeedScreenContent(
                         )
                     },
                     actions = {
-                        IconButton(onClick = onRandomClick) {
-                            Icon(
-                                imageVector = Icons.Default.Lightbulb,
-                                contentDescription = stringResource(R.string.feed_randomize_accessibility),
-                            )
-                        }
+                        ApertureRandomizeButton(
+                            isLoading = false,
+                            onClick = onRandomClick,
+                        )
                     },
                     colors =
                         TopAppBarDefaults.topAppBarColors(
-                            containerColor = MaterialTheme.colorScheme.surface,
-                            scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                            containerColor = Color.Transparent,
+                            scrolledContainerColor = Color.Transparent,
                             titleContentColor = MaterialTheme.colorScheme.onSurface,
                             actionIconContentColor = MaterialTheme.colorScheme.onSurface,
                         ),
@@ -223,8 +198,17 @@ fun FeedScreenContent(
                     modifier =
                         Modifier
                             .fillMaxWidth()
-                            .drawBehind {
-                                drawRect(topicStripBackgroundColor)
+                            .clipToBounds()
+                            .layout { measurable, constraints ->
+                                // Quick-return via layout-phase reads (no recomposition).
+                                val placeable = measurable.measure(constraints)
+                                val visibleHeight =
+                                    (placeable.height + scrollBehavior.state.heightOffset)
+                                        .roundToInt()
+                                        .coerceIn(0, placeable.height)
+                                layout(placeable.width, visibleHeight) {
+                                    placeable.place(0, visibleHeight - placeable.height)
+                                }
                             }.padding(vertical = 8.dp),
                 ) {
                     LazyRow(
@@ -256,7 +240,7 @@ fun FeedScreenContent(
             }
         },
     ) { paddingValues ->
-        PullToRefreshBox(
+        SatinPullToRefreshBox(
             isRefreshing = state.isRefreshing,
             onRefresh = {
                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
@@ -266,12 +250,16 @@ fun FeedScreenContent(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .padding(paddingValues),
+                    .padding(bottom = paddingValues.calculateBottomPadding()),
         ) {
             if (state.photos.isEmpty() && state.isLoading) {
-                PhotoGridSkeleton()
+                Box(modifier = Modifier.padding(top = paddingValues.calculateTopPadding())) {
+                    PhotoGridSkeleton()
+                }
             } else if (state.photos.isEmpty() && state.error != null) {
-                ErrorView(error = state.error?.localizedMessage() ?: stringResource(R.string.feed_error_unknown), onRetry = onRefresh)
+                Box(modifier = Modifier.padding(top = paddingValues.calculateTopPadding())) {
+                    ErrorView(error = state.error?.localizedMessage() ?: stringResource(R.string.feed_error_unknown), onRetry = onRefresh)
+                }
             } else {
                 // Main content: Photo Feed
                 val itemWidthPx = calculatePhotoItemWidthPx()
@@ -286,7 +274,7 @@ fun FeedScreenContent(
                     contentPadding =
                         PaddingValues(
                             start = 8.dp,
-                            top = 8.dp,
+                            top = paddingValues.calculateTopPadding() + 8.dp,
                             end = 8.dp,
                             bottom = calculateBottomContentPadding(8.dp),
                         ),
@@ -299,8 +287,6 @@ fun FeedScreenContent(
                         contentType = { _, _ -> "photo_card" },
                     ) { index, photo ->
                         PhotoCard(
-                            sharedTransitionScope = sharedTransitionScope,
-                            animatedVisibilityScope = animatedVisibilityScope,
                             index = index,
                             photo = photo,
                             itemWidthPx = itemWidthPx,
@@ -310,6 +296,7 @@ fun FeedScreenContent(
                                 onPhotoClick(photo)
                             },
                             onUserClick = {
+                                selectedPhotoId = photo.id
                                 onUserClick(photo.user)
                             },
                         )
@@ -471,10 +458,8 @@ private const val PAGINATION_THRESHOLD = 6
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun FeedScreenPreview() {
-    PreviewScaffold(widthDp = 412, heightDp = 892, darkTheme = false) { sharedScope, visibilityScope ->
+    PreviewScaffold(widthDp = 412, heightDp = 892, darkTheme = false) { _, _ ->
         FeedScreenContent(
-            sharedTransitionScope = sharedScope,
-            animatedVisibilityScope = visibilityScope,
             state = UiPreviewFixtures.feedState,
             onSelectTopic = {},
             onRefresh = {},
@@ -490,10 +475,8 @@ fun FeedScreenPreview() {
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun FeedScreenDarkPreview() {
-    PreviewScaffold(widthDp = 412, heightDp = 892, darkTheme = true) { sharedScope, visibilityScope ->
+    PreviewScaffold(widthDp = 412, heightDp = 892, darkTheme = true) { _, _ ->
         FeedScreenContent(
-            sharedTransitionScope = sharedScope,
-            animatedVisibilityScope = visibilityScope,
             state = UiPreviewFixtures.feedState,
             onSelectTopic = {},
             onRefresh = {},
@@ -509,10 +492,8 @@ fun FeedScreenDarkPreview() {
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun FeedScreenExpandedPreview() {
-    PreviewScaffold(widthDp = 900, heightDp = 700, darkTheme = false) { sharedScope, visibilityScope ->
+    PreviewScaffold(widthDp = 900, heightDp = 700, darkTheme = false) { _, _ ->
         FeedScreenContent(
-            sharedTransitionScope = sharedScope,
-            animatedVisibilityScope = visibilityScope,
             state = UiPreviewFixtures.feedState,
             onSelectTopic = {},
             onRefresh = {},

@@ -1,7 +1,5 @@
 package com.example.imagefeed.android
 
-import androidx.compose.animation.AnimatedVisibilityScope
-import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridState
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.itemsIndexed
 import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
@@ -23,7 +22,6 @@ import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -45,12 +43,17 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavKey
 import com.example.imagefeed.android.components.PhotoCard
+import com.example.imagefeed.android.designsystem.SatinHeaderScaffold
 import com.example.imagefeed.android.navigation.AppRoute
+import com.example.imagefeed.android.preview.PreviewScaffold
+import com.example.imagefeed.android.preview.UiPreviewFixtures
 import com.example.imagefeed.android.theme.ExpressiveLoadingIndicator
+import com.example.imagefeed.android.theme.ExpressiveShapeTokens
 import com.example.imagefeed.android.util.localizedMessage
 import com.example.imagefeed.model.Photo
 import com.example.imagefeed.model.User
@@ -63,8 +66,6 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun FavoritesScreen(
-    sharedTransitionScope: SharedTransitionScope,
-    animatedVisibilityScope: AnimatedVisibilityScope,
     viewModel: FavoritesViewModel,
     reselectEvents: SharedFlow<NavKey>? = null,
     onPhotoClick: (Photo) -> Unit,
@@ -72,7 +73,6 @@ fun FavoritesScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle(initialValue = FavoritesState())
     val listState = rememberLazyStaggeredGridState()
-    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
 
@@ -103,7 +103,27 @@ fun FavoritesScreen(
         }
     }
 
-    Scaffold(
+    FavoritesScreenContent(
+        state = state,
+        listState = listState,
+        snackbarHostState = snackbarHostState,
+        onRemoveFavorite = { viewModel.dispatch(FavoritesIntent.RemoveFavorite(it)) },
+        onPhotoClick = onPhotoClick,
+        onUserClick = onUserClick,
+    )
+}
+
+@Composable
+fun FavoritesScreenContent(
+    state: FavoritesState,
+    onRemoveFavorite: (String) -> Unit,
+    onPhotoClick: (Photo) -> Unit,
+    onUserClick: (User) -> Unit,
+    listState: LazyStaggeredGridState = rememberLazyStaggeredGridState(),
+    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
+) {
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
+    SatinHeaderScaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         snackbarHost = {
             SnackbarHost(
@@ -122,8 +142,8 @@ fun FavoritesScreen(
                 },
                 colors =
                     TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.surface,
-                        scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                        containerColor = Color.Transparent,
+                        scrolledContainerColor = Color.Transparent,
                         titleContentColor = MaterialTheme.colorScheme.onSurface,
                     ),
                 scrollBehavior = scrollBehavior,
@@ -134,7 +154,7 @@ fun FavoritesScreen(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .padding(paddingValues),
+                    .padding(bottom = paddingValues.calculateBottomPadding()),
         ) {
             if (state.isLoading) {
                 ExpressiveLoadingIndicator(modifier = Modifier.align(Alignment.Center))
@@ -143,16 +163,28 @@ fun FavoritesScreen(
                     modifier =
                         Modifier
                             .fillMaxSize()
+                            .padding(top = paddingValues.calculateTopPadding())
                             .padding(horizontal = 32.dp),
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.BookmarkBorder,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(48.dp),
-                    )
+                    Box(
+                        modifier =
+                            Modifier
+                                .size(88.dp)
+                                .background(
+                                    color = MaterialTheme.colorScheme.primaryContainer,
+                                    shape = ExpressiveShapeTokens.SoftScallopShape,
+                                ),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.BookmarkBorder,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.size(40.dp),
+                        )
+                    }
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
                         text = stringResource(R.string.favorites_empty_title),
@@ -180,7 +212,7 @@ fun FavoritesScreen(
                     contentPadding =
                         PaddingValues(
                             start = 8.dp,
-                            top = 8.dp,
+                            top = paddingValues.calculateTopPadding() + 8.dp,
                             end = 8.dp,
                             bottom = calculateBottomContentPadding(8.dp),
                         ),
@@ -194,8 +226,6 @@ fun FavoritesScreen(
                     ) { index, photo ->
                         Box(modifier = Modifier.fillMaxWidth()) {
                             PhotoCard(
-                                sharedTransitionScope = sharedTransitionScope,
-                                animatedVisibilityScope = animatedVisibilityScope,
                                 index = index,
                                 photo = photo,
                                 itemWidthPx = itemWidthPx,
@@ -205,12 +235,13 @@ fun FavoritesScreen(
                                     onPhotoClick(photo)
                                 },
                                 onUserClick = {
+                                    selectedPhotoId = photo.id
                                     onUserClick(photo.user)
                                 },
                             )
                             IconButton(
                                 onClick = {
-                                    viewModel.dispatch(FavoritesIntent.RemoveFavorite(photo.id))
+                                    onRemoveFavorite(photo.id)
                                 },
                                 modifier =
                                     Modifier
@@ -232,5 +263,44 @@ fun FavoritesScreen(
                 }
             }
         }
+    }
+}
+
+@Preview(showBackground = true, widthDp = 412, heightDp = 892, name = "Favorites - Populated Light")
+@Composable
+fun FavoritesScreenPopulatedPreview() {
+    PreviewScaffold(widthDp = 412, heightDp = 892, darkTheme = false) { _, _ ->
+        FavoritesScreenContent(
+            state = UiPreviewFixtures.favoritesState,
+            onRemoveFavorite = {},
+            onPhotoClick = {},
+            onUserClick = {},
+        )
+    }
+}
+
+@Preview(showBackground = true, widthDp = 412, heightDp = 892, name = "Favorites - Empty Light")
+@Composable
+fun FavoritesScreenEmptyPreview() {
+    PreviewScaffold(widthDp = 412, heightDp = 892, darkTheme = false) { _, _ ->
+        FavoritesScreenContent(
+            state = FavoritesState(isLoading = false),
+            onRemoveFavorite = {},
+            onPhotoClick = {},
+            onUserClick = {},
+        )
+    }
+}
+
+@Preview(showBackground = true, widthDp = 412, heightDp = 892, name = "Favorites - Empty Dark")
+@Composable
+fun FavoritesScreenEmptyDarkPreview() {
+    PreviewScaffold(widthDp = 412, heightDp = 892, darkTheme = true) { _, _ ->
+        FavoritesScreenContent(
+            state = FavoritesState(isLoading = false),
+            onRemoveFavorite = {},
+            onPhotoClick = {},
+            onUserClick = {},
+        )
     }
 }

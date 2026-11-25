@@ -2,6 +2,7 @@ package com.example.imagefeed.android.profile
 
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -40,11 +41,14 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.LocalPlatformContext
 import coil3.compose.rememberAsyncImagePainter
 import com.example.imagefeed.android.R
+import com.example.imagefeed.android.designsystem.LocalAppSharedTransition
 import com.example.imagefeed.model.User
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun ProfileHeaderSection(user: User) {
     val context = LocalPlatformContext.current
+    val sharedTransition = LocalAppSharedTransition.current
 
     Column(
         modifier =
@@ -54,12 +58,23 @@ fun ProfileHeaderSection(user: User) {
                 .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        val baseAvatarModifier = Modifier.size(88.dp)
+        val avatarModifier =
+            if (sharedTransition != null) {
+                with(sharedTransition.sharedTransitionScope) {
+                    baseAvatarModifier.sharedElement(
+                        sharedContentState = rememberSharedContentState(key = "avatar_${user.username}"),
+                        animatedVisibilityScope = sharedTransition.animatedVisibilityScope,
+                    )
+                }
+            } else {
+                baseAvatarModifier
+            }
         Image(
             painter = rememberAsyncImagePainter(model = user.profileImage.large),
             contentDescription = user.name,
             modifier =
-                Modifier
-                    .size(88.dp)
+                avatarModifier
                     .clip(CircleShape)
                     .border(2.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape),
             contentScale = ContentScale.Crop,
