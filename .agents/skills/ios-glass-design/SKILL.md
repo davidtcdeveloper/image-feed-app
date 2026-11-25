@@ -63,32 +63,20 @@ Always honor `@Environment(\.accessibilityReduceTransparency)`:
 - Attribution over photos must reside in a compact, floating glass capsule rather than a heavy full-width bottom scrim.
 
 ### A. Retina Display Scale for CDN Imagery
-When computing target photo dimensions for network requests (e.g. in `AdaptiveLayoutHelper`):
+When computing target photo dimensions for network requests (e.g. in [`AdaptiveLayoutHelper.swift`](../../../iosApp/iosApp/AdaptiveLayoutHelper.swift#L41-L51)):
 - Layout calculations in SwiftUI yield logical points, not physical pixels.
-- Always multiply points by the device's display scale to prevent soft/blurry 1x assets on Retina screens:
-  ```swift
-  #if os(iOS)
-  let scale = UIScreen.main.scale
-  #elseif os(macOS)
-  let scale = NSScreen.main?.backingScaleFactor ?? 2.0
-  #endif
-  let pixelWidth = Int(pointWidth * scale)
-  ```
+- Always multiply container points by the device's display scale (`pixelWidth = Int(containerPointWidth * displayScale)` using `UIScreen.main.scale` on iOS and `NSScreen.main?.backingScaleFactor ?? 2.0` on macOS) to prevent soft/blurry 1x assets on Retina screens.
 
 ### B. Zero Token Leakage & Theme Parity
 - **Prohibited**: Hardcoded raw color constants (e.g. `.foregroundColor(.gray)`, `.foregroundColor(.white)`).
-- All views (top bars, search screen, details sheet, user profile) must dynamically adapt to both Light and Dark mode using `GlassTheme.colors` and Apple semantic styles.
+- All views (top bars, search screen, details sheet, user profile) must dynamically adapt to both Light and Dark mode using `GlassTheme` semantic canvas/surface tokens (`canvasBackgroundColor`, `surfaceBackgroundColor`, `fallbackBackgroundColor`) and Apple semantic styles.
 
 ---
 
 ## 4. Modern Navigation Chrome & Translucent Bars
 
 - **Prohibited**: Overriding `UITabBarAppearance` or `UINavigationBarAppearance` with opaque backgrounds (`appearance.configureWithOpaqueBackground()`).
-- **Mandatory**: Use native SwiftUI toolbar background modifiers:
-  ```swift
-  .toolbarBackground(.ultraThinMaterial, for: .navigationBar, .tabBar)
-  .toolbarBackground(.visible, for: .navigationBar, .tabBar)
-  ```
+- **Mandatory**: Use native SwiftUI translucent toolbar background modifiers (`.ultraThinMaterial` for `.navigationBar` and `.tabBar` as configured in [`ContentView.swift`](../../../iosApp/iosApp/ContentView.swift#L476-L481)).
 - Allow imagery and scrollable content to draw edge-to-edge under the navigation and tab chrome.
 
 ---

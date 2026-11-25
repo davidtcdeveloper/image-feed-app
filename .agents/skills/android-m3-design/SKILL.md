@@ -54,8 +54,9 @@ Never hardcode arbitrary radii (e.g., `RoundedCornerShape(16.dp)`). Use semantic
 
 ## 2. Component Guidelines
 
-- **Chips**: Use official Material 3 `FilterChip`, `SuggestionChip`, `AssistChip`, or `InputChip`. Never construct custom clickable `Box` layouts for tags or filter options.
-- **Search**: Use `SearchBar` or `DockedSearchBar` (`androidx.compose.material3.SearchBar`) with search animations and suggestion content.
+- **Chips & Connected Toggles**: Use official Material 3 `FilterChip`, `SuggestionChip`, `AssistChip`, `InputChip`, or M3 1.5.0 `ConnectedToggleGroup` ([`ExpressiveComponents.kt`](../../../androidApp/src/main/java/com/example/imagefeed/android/theme/ExpressiveComponents.kt)) for mutually-exclusive options. Never construct custom clickable `Box` layouts for tags or filter options.
+- **Loading & Progress Indicators**: Use themed M3 1.5.0 `ExpressiveLoadingIndicator` (primary loading states) and `ExpressiveWavyProgressIndicator` (inline/pagination loading) from [`ExpressiveComponents.kt`](../../../androidApp/src/main/java/com/example/imagefeed/android/theme/ExpressiveComponents.kt) instead of generic `CircularProgressIndicator`.
+- **Search**: Use `SearchBar` or `DockedSearchBar` (`androidx.compose.material3.SearchBar`) with `TextFieldState`-backed `SearchBarDefaults.InputField` (Compose 1.13+; value-based `BasicTextField` overloads are deprecated — see [`SearchScreen.kt`](../../../androidApp/src/main/java/com/example/imagefeed/android/SearchScreen.kt)).
 - **Pull-to-Refresh**: Use Material 3 `PullToRefreshBox` with `PullToRefreshDefaults`.
 - **Buttons**: Prefer `FilledTonalButton` or `Button` with theme colors. Avoid hardcoding button background fills.
 - **Cards**: Use `Card`, `ElevatedCard`, or `OutlinedCard` with `CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)`.
@@ -69,7 +70,7 @@ The application uses **Jetpack Navigation 3** (`androidx.navigation3`). Legacy N
 
 ### Key Architectural Patterns
 1. **Immutable Back Stacks**: Navigation state is driven by `NavBackStack<NavKey>`.
-2. **Navigation State Holder**: Manage independent stacks per top-level route (`Feed`, `Collections`, `Search`) with an "Exit Through Home" anchor.
+2. **Navigation State Holder**: Manage independent stacks per top-level route (`Feed`, `Collections`, `Favorites`, `Search` — see [`Navigator.kt`](../../../androidApp/src/main/java/com/example/imagefeed/android/navigation/Navigator.kt)) with an "Exit Through Home" anchor.
 3. **Entry-Scoped Lifecycle**:
    - Equip `NavDisplay` with `rememberViewModelStoreNavEntryDecorator()` and `rememberSaveableStateHolderNavEntryDecorator()`.
    - Scope ViewModels with standard Compose `viewModel(key = ...) { ... }` so ViewModel state survives backgrounding and screen rotations.
@@ -88,7 +89,7 @@ Layouts must adapt dynamically across device form factors:
 - **Window Size Classes**:
   - `Compact` (< 600dp): Bottom `NavigationBar`, single-column or 2-column phone layout.
   - `Medium` (600–839dp) & `Expanded` ($\ge$ 840dp): Start-docked `NavigationRail`, multi-column adaptive grids.
-- **Adaptive Grids**: Use `StaggeredGridCells.Adaptive` and column calculation utilities from `AdaptiveUtils.kt`. Calculate image CDN widths from container column widths instead of screen dimensions.
+- **Adaptive Grids & Non-Lazy Clusters**: Use `StaggeredGridCells.Adaptive` and column calculation utilities from `AdaptiveUtils.kt` (calculating image CDN widths from container column widths rather than screen dimensions). Use stable Compose 1.13 non-lazy `Grid` and `FlexBox` for bounded EXIF bento, topic tile, and tag clusters (see [`PhotoDetailsScreen.kt`](../../../androidApp/src/main/java/com/example/imagefeed/android/PhotoDetailsScreen.kt) and [`SearchScreen.kt`](../../../androidApp/src/main/java/com/example/imagefeed/android/SearchScreen.kt)).
 - **Dual-Pane Detail Views**:
   - Medium/Expanded widths & Book posture: Side-by-side dual-pane layout (Left: Photo Canvas; Right: Inspector sidebar with stats, map, EXIF, tags).
   - TableTop posture: Horizontal split (Top: Photo; Bottom: Controls & metadata).

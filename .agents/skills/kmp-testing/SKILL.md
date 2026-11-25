@@ -27,7 +27,7 @@ Use this skill when:
 - **Prohibited**: Asserting against private implementation details, helper method invocation counts, or intermediate private state transitions.
 
 ### Platform Boundary & Test Targets
-- The platform UI modules (`androidApp`, `iosApp`, `macosApp`) are thin declarative shells (Compose and SwiftUI) without dedicated unit test targets in `project.yml` or Gradle.
+- Shared business and MVI presentation logic is tested via `./gradlew allTests`, while thin platform UI shells (`androidApp`, `iosApp`, `macosApp`) use targeted platform harnesses (`androidApp/src/test`, Compose UI tests in `androidApp/src/androidTest`, and snapshot suites `iosAppTests` / `macosAppTests` / `iosAppUITests` governed by [`ui-visual-review`](../ui-visual-review/SKILL.md)).
 - The shared test suites across `:core:*`, `:feature:*`, and `:shared` (`./gradlew allTests`) serve as the primary automated regression gate for business logic, pagination, filtering, and state management.
 - `allTests` includes `macosArm64Test`; run module-scoped tasks such as `./gradlew :feature:<name>:allTests` or `./gradlew :shared:macosArm64Test` for fast targeted checks.
 

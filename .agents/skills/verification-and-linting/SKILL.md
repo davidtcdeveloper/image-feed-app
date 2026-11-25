@@ -46,10 +46,10 @@ Run the shared test suites across all multiplatform modules (`:core:*`, `:featur
 ```
 For fast targeted checks, run a module-scoped task (for example, `./gradlew :feature:<name>:allTests` or `./gradlew :shared:macosArm64Test`).
 
-### B. Android Debug Application Build
-Verify compilation and packaging for the Android target:
+### B. Android Debug Application & Test Compilation
+Verify compilation, unit tests, Android test compilation, and packaging for the Android target:
 ```bash
-./gradlew :androidApp:assembleDebug
+./gradlew :androidApp:assembleDebug :androidApp:testDebugUnitTest :androidApp:compileDebugAndroidTestKotlin
 ```
 
 ### C. Kotlin Native Apple Framework Compilation
@@ -103,7 +103,7 @@ Run the project linters and formatters to maintain a zero-violation baseline. Ne
   ```
 - **Run SwiftLint static analysis:**
   ```bash
-  swiftlint lint iosApp/iosApp
+  swiftlint lint iosApp/iosApp iosApp/iosAppTests iosApp/iosAppUITests
   ```
 
 ---
@@ -133,7 +133,7 @@ Before staging and committing changes:
 3. **Spec Verification Record, Wiki & Knowledge Capture**:
    - Confirm all acceptance criteria checkboxes in the active `specs/<id>.md` are completed (`- [x]`).
    - Populate `## Verification Record` in `specs/<id>.md` with **Verified** (exact commands and observed outcomes) and **Unverified / Gaps** (what could not be verified locally and why).
-   - Update affected [`wiki/*.md`](../../../wiki/README.md) pages with lasting architectural or business-rule changes.
+   - Update affected [`wiki/*.md`](../../../wiki/README.md) pages and [`.agents/skills/*/SKILL.md`](../../skills) runbooks with lasting architectural, UI craft, or business-rule changes.
    - Log any newly discovered systemic issues, doc drift, recurring verification gaps, or tooling friction in [`wiki/issue-log.md`](../../../wiki/issue-log.md) per [`.agents/skills/session-issue-capture/SKILL.md`](../session-issue-capture/SKILL.md).
    - Mark the spec `**Status:** Implemented (Final)`, archive it to `specs/archive/<id>.md`, and add an entry to [`specs/steps.md`](../../../specs/steps.md).
 4. **Artifact Cleanup**: Remove all temporary review reports, logs, and teammate scratch directories from `.agents/`.

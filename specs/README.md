@@ -20,13 +20,13 @@ This directory is the **active specification work queue** for the Unsplash Image
 
 1. **Draft / Active (`specs/NN_<name>.md`)**:
    * Every new feature, refactoring, or fix starts as an active spec in `specs/`.
-   * Include a **Wiki Impact** section listing which [`wiki/`](../wiki/README.md) pages (if any) will change upon completion.
+   * Include **Wiki Impact** and **Skill & Guideline Impact** notes listing which [`wiki/`](../wiki/README.md) pages and [`.agents/skills/`](../.agents/skills) runbooks (if any) will change upon completion.
 2. **Implement & Verify**:
    * Execute implementation and pass all platform builds, tests, and linters defined in [`.agents/skills/verification-and-linting/SKILL.md`](../.agents/skills/verification-and-linting/SKILL.md).
    * For UI specs, capture ephemeral Before/After snapshots and obtain user approval via the visual review gate in [`.agents/skills/ui-visual-review/SKILL.md`](../.agents/skills/ui-visual-review/SKILL.md).
    * Populate a `## Verification Record` section in the spec listing **Verified** (exact commands and observed outcomes) and **Unverified / Gaps** (anything not locally verified and why).
-3. **Update Living Wiki & Capture Session Issues**:
-   * Update affected [`wiki/*.md`](../wiki/README.md) pages with lasting architectural or business-rule changes.
+3. **Update Living Wiki, Skills & Capture Session Issues**:
+   * Update affected [`wiki/*.md`](../wiki/README.md) pages and [`.agents/skills/*/SKILL.md`](../.agents/skills) runbooks with lasting architectural, UI craft, or business-rule changes (obeying the Living Code Policy and `< 75`-line `AGENTS.md` cap).
    * Log any newly discovered out-of-scope inconsistencies, doc drift, recurring verification gaps, or tooling friction in [`wiki/issue-log.md`](../wiki/issue-log.md) per [`.agents/skills/session-issue-capture/SKILL.md`](../.agents/skills/session-issue-capture/SKILL.md).
 4. **Finalize & Archive**:
    * Confirm all acceptance criteria checkboxes (`- [x]`) and verify `## Verification Record` is complete.

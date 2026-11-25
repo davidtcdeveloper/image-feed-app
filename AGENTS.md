@@ -43,7 +43,7 @@ Agents act as senior project collaborators for this KMP image-feed app. Keep res
    * Hotlink exact Unsplash photo URLs; never cache image files locally or on third-party servers.
    * Preserve the `ixid` parameter on all photo requests.
    * Prominently display photographer attribution on all cards/screens and trigger download tracking on save.
-   * Multiply layout points by display scale (`UIScreen.main.scale` on iOS, `NSScreen.backingScaleFactor` on macOS) for CDN image requests to ensure sharp Retina rendering.
+   * Multiply container layout points by display scale (`UIScreen.main.scale` on iOS, `NSScreen.backingScaleFactor` on macOS) for CDN image requests to ensure sharp Retina rendering.
 
 5. **Platform Localization & Typed Errors**:
    * Zero hardcoded UI strings; externalize to Android XML and Apple String Catalogs.
@@ -62,4 +62,4 @@ Spec: specs/[archive/]<actual-spec-file>.md
 Model: <model name>
 ```
 
-* **Planning, Wiki & Specs**: Active specs live in `specs/`. On completion: verify `- [x]`, update [`wiki/`](wiki/README.md), log systemic/unresolved session issues in [`wiki/issue-log.md`](wiki/issue-log.md), mark spec `Implemented (Final)`, archive to `specs/archive/` (never edit archived specs), and add a row to [`specs/steps.md`](specs/steps.md).
+* **Planning, Wiki & Specs**: Active specs live in `specs/`. On completion: verify `- [x]`, update [`wiki/`](wiki/README.md) and affected [`.agents/skills/`](.agents/skills), log systemic/unresolved session issues in [`wiki/issue-log.md`](wiki/issue-log.md), mark spec `Implemented (Final)`, archive to `specs/archive/` (never edit archived specs), and add a row to [`specs/steps.md`](specs/steps.md).
