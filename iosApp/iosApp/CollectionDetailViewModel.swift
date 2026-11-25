@@ -1,8 +1,9 @@
 import shared
 import SwiftUI
 
+@MainActor
 @Observable
-class CollectionDetailViewModel {
+final class CollectionDetailViewModel {
     var collection: PhotoCollection?
     var photos: [Photo] = []
     var related: [PhotoCollection] = []
@@ -12,8 +13,8 @@ class CollectionDetailViewModel {
     var hasReachedEnd = false
 
     private let viewModel: shared.CollectionDetailViewModel
-    private var stateCloseable: Closeable?
-    private var effectsCloseable: Closeable?
+    @ObservationIgnored private nonisolated(unsafe) var stateCloseable: Closeable?
+    @ObservationIgnored private nonisolated(unsafe) var effectsCloseable: Closeable?
     @ObservationIgnored private var cachedBuckets: [Int: [[AdaptiveLayoutHelper.IndexedItem<Photo>]]] = [:]
 
     init(collectionId: String) {
@@ -21,35 +22,39 @@ class CollectionDetailViewModel {
         self.viewModel = viewModel
 
         self.stateCloseable = viewModel.iosState.watch { [weak self] state in
-            guard let self, let state else { return }
-            if collection != state.collection {
-                self.collection = state.collection
-            }
-            if photos != state.photos {
-                self.photos = state.photos
-                cachedBuckets.removeAll()
-            }
-            if related != state.related {
-                self.related = state.related
-            }
-            if isLoadingPhotos != state.isLoadingPhotos {
-                self.isLoadingPhotos = state.isLoadingPhotos
-            }
-            if isHeaderLoading != state.isHeaderLoading {
-                self.isHeaderLoading = state.isHeaderLoading
-            }
-            let errorMessage = state.error?.localizedMessage
-            if error != errorMessage {
-                self.error = errorMessage
-            }
-            if hasReachedEnd != state.hasReachedEnd {
-                self.hasReachedEnd = state.hasReachedEnd
+            MainActor.assumeIsolated {
+                guard let self, let state else { return }
+                if self.collection != state.collection {
+                    self.collection = state.collection
+                }
+                if self.photos != state.photos {
+                    self.photos = state.photos
+                    self.cachedBuckets.removeAll()
+                }
+                if self.related != state.related {
+                    self.related = state.related
+                }
+                if self.isLoadingPhotos != state.isLoadingPhotos {
+                    self.isLoadingPhotos = state.isLoadingPhotos
+                }
+                if self.isHeaderLoading != state.isHeaderLoading {
+                    self.isHeaderLoading = state.isHeaderLoading
+                }
+                let errorMessage = state.error?.localizedMessage
+                if self.error != errorMessage {
+                    self.error = errorMessage
+                }
+                if self.hasReachedEnd != state.hasReachedEnd {
+                    self.hasReachedEnd = state.hasReachedEnd
+                }
             }
         }
 
         self.effectsCloseable = viewModel.iosEffects.watch { [weak self] effect in
-            guard let self, let effect else { return }
-            handleEffect(effect)
+            MainActor.assumeIsolated {
+                guard let self, let effect else { return }
+                self.handleEffect(effect)
+            }
         }
     }
 

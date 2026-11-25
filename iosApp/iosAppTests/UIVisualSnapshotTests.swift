@@ -55,6 +55,44 @@ final class UIVisualSnapshotTests: XCTestCase {
                 size: CGSize(width: 1024, height: 768),
                 style: .dark,
                 sizeClass: .regular),
+            IOSSnapshotCase(name: "photos_feed_compact_light", screen: .photosFeed, size: CGSize(width: 393, height: 852), style: .light, sizeClass: .compact),
+            IOSSnapshotCase(name: "photos_feed_compact_dark", screen: .photosFeed, size: CGSize(width: 393, height: 852), style: .dark, sizeClass: .compact),
+            IOSSnapshotCase(
+                name: "collections_feed_compact_light",
+                screen: .collectionsFeed,
+                size: CGSize(width: 393, height: 852),
+                style: .light,
+                sizeClass: .compact),
+            IOSSnapshotCase(
+                name: "collections_feed_regular_light",
+                screen: .collectionsFeed,
+                size: CGSize(width: 1024, height: 768),
+                style: .light,
+                sizeClass: .regular),
+            IOSSnapshotCase(
+                name: "search_results_compact_light",
+                screen: .searchResults,
+                size: CGSize(width: 393, height: 852),
+                style: .light,
+                sizeClass: .compact),
+            IOSSnapshotCase(
+                name: "search_filters_compact_light",
+                screen: .searchFilters,
+                size: CGSize(width: 393, height: 520),
+                style: .light,
+                sizeClass: .compact),
+            IOSSnapshotCase(
+                name: "user_profile_insights_light",
+                screen: .userProfileInsights,
+                size: CGSize(width: 393, height: 852),
+                style: .light,
+                sizeClass: .compact),
+            IOSSnapshotCase(
+                name: "user_profile_insights_dark",
+                screen: .userProfileInsights,
+                size: CGSize(width: 393, height: 852),
+                style: .dark,
+                sizeClass: .compact),
         ]
 
         let targetDir = try resolveOutputDirectory()
@@ -111,6 +149,12 @@ final class UIVisualSnapshotTests: XCTestCase {
         let screens = [
             MacOSSnapshotCase(name: "macos_photo_details_light", screen: .photoDetails, size: CGSize(width: 1280, height: 800), dark: false),
             MacOSSnapshotCase(name: "macos_photo_details_dark", screen: .photoDetails, size: CGSize(width: 1280, height: 800), dark: true),
+            MacOSSnapshotCase(name: "macos_photos_feed_light", screen: .photosFeed, size: CGSize(width: 1280, height: 800), dark: false),
+            MacOSSnapshotCase(name: "macos_photos_feed_dark", screen: .photosFeed, size: CGSize(width: 1280, height: 800), dark: true),
+            MacOSSnapshotCase(name: "macos_collections_feed_light", screen: .collectionsFeed, size: CGSize(width: 1280, height: 800), dark: false),
+            MacOSSnapshotCase(name: "macos_search_results_light", screen: .searchResults, size: CGSize(width: 1280, height: 800), dark: false),
+            MacOSSnapshotCase(name: "macos_user_profile_insights_light", screen: .userProfileInsights, size: CGSize(width: 1280, height: 800), dark: false),
+            MacOSSnapshotCase(name: "macos_user_profile_insights_dark", screen: .userProfileInsights, size: CGSize(width: 1280, height: 800), dark: true),
         ]
 
         let targetDir = try resolveOutputDirectory()

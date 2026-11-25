@@ -1,47 +1,65 @@
 import shared
 import SwiftUI
 
+@MainActor
 @Observable
-class CollectionsFeedViewModel {
+final class CollectionsFeedViewModel {
     var collections: [PhotoCollection] = []
     var isLoading = false
     var isRefreshing = false
     var error: String?
     var hasReachedEnd = false
 
-    private let viewModel: shared.CollectionsFeedViewModel
-    private var stateCloseable: Closeable?
-    private var effectsCloseable: Closeable?
+    private let viewModel: shared.CollectionsFeedViewModel?
+    @ObservationIgnored private nonisolated(unsafe) var stateCloseable: Closeable?
+    @ObservationIgnored private nonisolated(unsafe) var effectsCloseable: Closeable?
     @ObservationIgnored private var cachedBuckets: [Int: [[AdaptiveLayoutHelper.IndexedItem<PhotoCollection>]]] = [:]
+
+    #if DEBUG
+    init(
+        previewCollections: [PhotoCollection],
+        isLoading: Bool = false,
+        error: String? = nil)
+    {
+        self.viewModel = nil
+        self.collections = previewCollections
+        self.isLoading = isLoading
+        self.error = error
+    }
+    #endif
 
     init() {
         let viewModel = MetroHelper.shared.getCollectionsFeedViewModel()
         self.viewModel = viewModel
 
         self.stateCloseable = viewModel.iosState.watch { [weak self] state in
-            guard let self, let state else { return }
-            if collections != state.collections {
-                self.collections = state.collections
-                cachedBuckets.removeAll()
-            }
-            if isLoading != state.isLoading {
-                self.isLoading = state.isLoading
-            }
-            if isRefreshing != state.isRefreshing {
-                self.isRefreshing = state.isRefreshing
-            }
-            let errorMessage = state.error?.localizedMessage
-            if error != errorMessage {
-                self.error = errorMessage
-            }
-            if hasReachedEnd != state.hasReachedEnd {
-                self.hasReachedEnd = state.hasReachedEnd
+            MainActor.assumeIsolated {
+                guard let self, let state else { return }
+                if self.collections != state.collections {
+                    self.collections = state.collections
+                    self.cachedBuckets.removeAll()
+                }
+                if self.isLoading != state.isLoading {
+                    self.isLoading = state.isLoading
+                }
+                if self.isRefreshing != state.isRefreshing {
+                    self.isRefreshing = state.isRefreshing
+                }
+                let errorMessage = state.error?.localizedMessage
+                if self.error != errorMessage {
+                    self.error = errorMessage
+                }
+                if self.hasReachedEnd != state.hasReachedEnd {
+                    self.hasReachedEnd = state.hasReachedEnd
+                }
             }
         }
 
         self.effectsCloseable = viewModel.iosEffects.watch { [weak self] effect in
-            guard let self, let effect else { return }
-            handleEffect(effect)
+            MainActor.assumeIsolated {
+                guard let self, let effect else { return }
+                self.handleEffect(effect)
+            }
         }
     }
 
@@ -55,11 +73,11 @@ class CollectionsFeedViewModel {
     }
 
     func loadNextPage() {
-        viewModel.dispatch(intent: CollectionsFeedIntentLoadNextPage.shared)
+        viewModel?.dispatch(intent: CollectionsFeedIntentLoadNextPage.shared)
     }
 
     func refresh() {
-        viewModel.dispatch(intent: CollectionsFeedIntentRefresh.shared)
+        viewModel?.dispatch(intent: CollectionsFeedIntentRefresh.shared)
     }
 
     func columnItems(for columnIndex: Int, totalColumns: Int) -> [AdaptiveLayoutHelper.IndexedItem<PhotoCollection>] {
@@ -75,6 +93,6 @@ class CollectionsFeedViewModel {
     deinit {
         stateCloseable?.close()
         effectsCloseable?.close()
-        viewModel.clear()
+        viewModel?.clear()
     }
 }

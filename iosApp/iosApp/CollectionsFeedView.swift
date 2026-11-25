@@ -5,23 +5,34 @@ struct CollectionsFeedView: View {
     #if os(iOS)
     @Environment(\.horizontalSizeClass) private var sizeClass
     #endif
+    @State private var containerWidth: CGFloat = 0
 
-    @State private var viewModel = CollectionsFeedViewModel()
+    @State private var viewModel: CollectionsFeedViewModel?
     let onCollectionSelect: (String) -> Void
     let onSearchClick: () -> Void
 
+    init(
+        initialViewModel: CollectionsFeedViewModel? = nil,
+        onCollectionSelect: @escaping (String) -> Void,
+        onSearchClick: @escaping () -> Void)
+    {
+        self._viewModel = State(initialValue: initialViewModel)
+        self.onCollectionSelect = onCollectionSelect
+        self.onSearchClick = onSearchClick
+    }
+
     private var columnCount: Int {
         #if os(iOS)
-        AdaptiveLayoutHelper.getCollectionColumnCount(sizeClass: sizeClass)
+        AdaptiveLayoutHelper.getCollectionColumnCount(containerWidth: containerWidth, sizeClass: sizeClass)
         #else
-        AdaptiveLayoutHelper.getCollectionColumnCount()
+        AdaptiveLayoutHelper.getCollectionColumnCount(containerWidth: containerWidth)
         #endif
     }
 
     private var cardWidth: CGFloat {
-        let containerWidth = AdaptiveLayoutHelper.getScreenWidth()
-        let totalSpacing = CGFloat((columnCount - 1) * 16 + 24)
-        return max(200, (containerWidth - totalSpacing) / CGFloat(max(1, columnCount)))
+        AdaptiveLayoutHelper.calculateCollectionCardWidthPt(
+            containerWidth: containerWidth,
+            columnCount: columnCount)
     }
 
     var body: some View {
@@ -29,98 +40,111 @@ struct CollectionsFeedView: View {
             GlassTheme.canvasBackgroundColor
                 .ignoresSafeArea()
 
-            if viewModel.collections.isEmpty, viewModel.isLoading {
-                ScrollView {
-                    if columnCount > 1 {
-                        HStack(alignment: .top, spacing: 16) {
-                            ForEach(0..<columnCount, id: \.self) { _ in
-                                LazyVStack(spacing: 16) {
-                                    ForEach(0..<2, id: \.self) { _ in
-                                        CollectionMosaicCardSkeleton()
-                                    }
-                                }
-                            }
-                        }
-                        .padding(.horizontal, 12)
-                        .padding(.top, 10)
-                    } else {
-                        VStack(spacing: 16) {
-                            ForEach(0..<4, id: \.self) { _ in
-                                CollectionMosaicCardSkeleton()
-                            }
-                        }
-                        .padding(.horizontal, 12)
-                        .padding(.top, 10)
-                    }
-                }
-            } else if viewModel.collections.isEmpty, viewModel.error != nil {
-                ErrorView(error: viewModel.error ?? String(localized: "Failed to load collections"), onRetry: {
-                    viewModel.refresh()
-                })
-            } else {
-                ScrollView {
-                    if columnCount > 1 {
-                        HStack(alignment: .top, spacing: 16) {
-                            ForEach(0..<columnCount, id: \.self) { colIndex in
-                                LazyVStack(spacing: 16) {
-                                    ForEach(viewModel.columnItems(for: colIndex, totalColumns: columnCount)) { indexed in
-                                        Button {
-                                            onCollectionSelect(indexed.item.id)
-                                        } label: {
-                                            CollectionMosaicCard(
-                                                collection: indexed.item,
-                                                viewModel: viewModel,
-                                                cardWidth: cardWidth,
-                                                columnCount: columnCount,
-                                                index: indexed.index)
-                                                .feedScrollTransition()
+            if let viewModel {
+                if viewModel.collections.isEmpty, viewModel.isLoading {
+                    ScrollView {
+                        if columnCount > 1 {
+                            HStack(alignment: .top, spacing: 16) {
+                                ForEach(0..<columnCount, id: \.self) { _ in
+                                    LazyVStack(spacing: 16) {
+                                        ForEach(0..<2, id: \.self) { _ in
+                                            CollectionMosaicCardSkeleton()
                                         }
-                                        .buttonStyle(SpringCardButtonStyle())
                                     }
                                 }
                             }
-                        }
-                        .padding(.horizontal, 12)
-                        .padding(.top, 10)
-                        .padding(.bottom, 80)
-
-                        if viewModel.isLoading {
-                            ProgressView()
-                                .tint(.white)
-                                .padding(.vertical, 16)
-                        }
-                    } else {
-                        LazyVStack(spacing: 16) {
-                            ForEach(viewModel.columnItems(for: 0, totalColumns: 1)) { indexed in
-                                Button {
-                                    onCollectionSelect(indexed.item.id)
-                                } label: {
-                                    CollectionMosaicCard(
-                                        collection: indexed.item,
-                                        viewModel: viewModel,
-                                        cardWidth: cardWidth,
-                                        columnCount: 1,
-                                        index: indexed.index)
-                                        .staggeredReveal(index: indexed.index)
-                                        .feedScrollTransition()
+                            .padding(.horizontal, 12)
+                            .padding(.top, 10)
+                        } else {
+                            VStack(spacing: 16) {
+                                ForEach(0..<4, id: \.self) { _ in
+                                    CollectionMosaicCardSkeleton()
                                 }
-                                .buttonStyle(SpringCardButtonStyle())
                             }
+                            .padding(.horizontal, 12)
+                            .padding(.top, 10)
+                        }
+                    }
+                } else if viewModel.collections.isEmpty, viewModel.error != nil {
+                    ErrorView(error: viewModel.error ?? String(localized: "Failed to load collections"), onRetry: {
+                        viewModel.refresh()
+                    })
+                } else {
+                    ScrollView {
+                        if columnCount > 1 {
+                            HStack(alignment: .top, spacing: 16) {
+                                ForEach(0..<columnCount, id: \.self) { colIndex in
+                                    LazyVStack(spacing: 16) {
+                                        ForEach(viewModel.columnItems(for: colIndex, totalColumns: columnCount)) { indexed in
+                                            Button {
+                                                onCollectionSelect(indexed.item.id)
+                                            } label: {
+                                                CollectionMosaicCard(
+                                                    collection: indexed.item,
+                                                    viewModel: viewModel,
+                                                    cardWidth: cardWidth,
+                                                    columnCount: columnCount,
+                                                    index: indexed.index)
+                                                    .feedScrollTransition()
+                                            }
+                                            .buttonStyle(SpringCardButtonStyle())
+                                        }
+                                    }
+                                    .frame(maxWidth: .infinity, alignment: .top)
+                                }
+                            }
+                            .padding(.horizontal, 12)
+                            .padding(.top, 10)
+                            .padding(.bottom, 80)
 
                             if viewModel.isLoading {
                                 ProgressView()
-                                    .tint(.white)
+                                    .tint(.primary)
                                     .padding(.vertical, 16)
                             }
+                        } else {
+                            LazyVStack(spacing: 16) {
+                                ForEach(viewModel.columnItems(for: 0, totalColumns: 1)) { indexed in
+                                    Button {
+                                        onCollectionSelect(indexed.item.id)
+                                    } label: {
+                                        CollectionMosaicCard(
+                                            collection: indexed.item,
+                                            viewModel: viewModel,
+                                            cardWidth: cardWidth,
+                                            columnCount: 1,
+                                            index: indexed.index)
+                                            .staggeredReveal(index: indexed.index)
+                                            .feedScrollTransition()
+                                    }
+                                    .buttonStyle(SpringCardButtonStyle())
+                                }
+
+                                if viewModel.isLoading {
+                                    ProgressView()
+                                        .tint(.primary)
+                                        .padding(.vertical, 16)
+                                }
+                            }
+                            .padding(.horizontal, 12)
+                            .padding(.top, 10)
+                            .padding(.bottom, 80)
                         }
-                        .padding(.horizontal, 12)
-                        .padding(.top, 10)
-                        .padding(.bottom, 80)
+                    }
+                    .satinScrollEdge()
+                    .refreshable {
+                        viewModel.refresh()
                     }
                 }
-                .refreshable {
-                    viewModel.refresh()
-                }
+            } else {
+                ProgressView()
+                    .tint(.primary)
+            }
+        }
+        .measureContainerWidth($containerWidth)
+        .task {
+            if viewModel == nil {
+                viewModel = CollectionsFeedViewModel()
             }
         }
         .navigationTitle("COLLECTIONS")
@@ -133,13 +157,13 @@ struct CollectionsFeedView: View {
         .toolbar {
             #if os(iOS)
             ToolbarItem(placement: .navigationBarLeading) {
-                GlassToolbarButton(systemName: "magnifyingglass", accessibilityLabel: "Search") {
+                PlatformToolbarButton(systemName: "magnifyingglass", accessibilityLabel: "Search") {
                     onSearchClick()
                 }
             }
             #else
             ToolbarItem(placement: .navigation) {
-                GlassToolbarButton(systemName: "magnifyingglass", accessibilityLabel: "Search") {
+                PlatformToolbarButton(systemName: "magnifyingglass", accessibilityLabel: "Search") {
                     onSearchClick()
                 }
             }
@@ -149,6 +173,8 @@ struct CollectionsFeedView: View {
 }
 
 struct CollectionMosaicCard: View {
+    @Environment(\.containerWidth) private var containerWidth
+
     let collection: PhotoCollection
     let viewModel: CollectionsFeedViewModel
     var cardWidth: CGFloat?
@@ -156,22 +182,22 @@ struct CollectionMosaicCard: View {
     var index: Int = 0
 
     var body: some View {
-        #if os(iOS)
-        let scale = UIScreen.main.scale
-        #elseif os(macOS)
-        let scale = NSScreen.main?.backingScaleFactor ?? 2.0
-        #endif
-        let widthPt = cardWidth ?? max(200, AdaptiveLayoutHelper.getScreenWidth() - 24)
+        let scale = AdaptiveLayoutHelper.displayScale()
+        let widthPt = cardWidth ?? AdaptiveLayoutHelper.calculateCollectionCardWidthPt(
+            containerWidth: containerWidth,
+            columnCount: columnCount)
         let widthPx = Int32(widthPt * scale)
-        let sideWidthPx = widthPx / 3
-        let sideWidthPt = widthPt / 3
+        let sideWidthPt = (widthPt - 4) / 3
+        let coverWidthPt = max(120, widthPt - sideWidthPt - 4)
+        let sideWidthPx = Int32(sideWidthPt * scale)
+        let coverWidthPx = Int32(coverWidthPt * scale)
 
         VStack(alignment: .leading, spacing: 0) {
             // Mosaic previews: Left 2/3 and Right two 1/3s stacked
             HStack(spacing: 4) {
                 // Large Cover Photo (Left)
-                let coverUrl = collection.coverPhoto?.urls.getOptimalUrl(targetWidthPx: widthPx * 2 / 3)
-                    ?? collection.previewPhotos?.first?.urls.getOptimalUrl(targetWidthPx: widthPx * 2 / 3)
+                let coverUrl = collection.coverPhoto?.urls.getOptimalUrl(targetWidthPx: coverWidthPx)
+                    ?? collection.previewPhotos?.first?.urls.getOptimalUrl(targetWidthPx: coverWidthPx)
                     ?? ""
                 KFImage(URL(string: coverUrl))
                     .placeholder {
@@ -185,7 +211,7 @@ struct CollectionMosaicCard: View {
                     .fade(duration: 0.25)
                     .resizable()
                     .scaledToFill()
-                    .frame(height: 180)
+                    .frame(width: coverWidthPt, height: 180)
                     .clipped()
 
                 // Two smaller thumbnails (Right stack)
@@ -197,7 +223,7 @@ struct CollectionMosaicCard: View {
                             .fade(duration: 0.25)
                             .resizable()
                             .scaledToFill()
-                            .frame(height: 88)
+                            .frame(width: sideWidthPt, height: 88)
                             .clipped()
                     } else if let previewPhotos = collection.previewPhotos, previewPhotos.count > 0 {
                         let topPreview = previewPhotos[0]
@@ -205,12 +231,12 @@ struct CollectionMosaicCard: View {
                             .fade(duration: 0.25)
                             .resizable()
                             .scaledToFill()
-                            .frame(height: 88)
+                            .frame(width: sideWidthPt, height: 88)
                             .clipped()
                     } else {
                         Rectangle()
-                            .fill(GlassTheme.surfaceBackgroundColor)
-                            .frame(height: 88)
+                            .fill(GlassTheme.subtleFillColor)
+                            .frame(width: sideWidthPt, height: 88)
                     }
 
                     // Bottom preview
@@ -220,7 +246,7 @@ struct CollectionMosaicCard: View {
                             .fade(duration: 0.25)
                             .resizable()
                             .scaledToFill()
-                            .frame(height: 88)
+                            .frame(width: sideWidthPt, height: 88)
                             .clipped()
                     } else if let previewPhotos = collection.previewPhotos, previewPhotos.count > 1 {
                         let bottomPreview = previewPhotos[1]
@@ -228,18 +254,18 @@ struct CollectionMosaicCard: View {
                             .fade(duration: 0.25)
                             .resizable()
                             .scaledToFill()
-                            .frame(height: 88)
+                            .frame(width: sideWidthPt, height: 88)
                             .clipped()
                     } else {
                         Rectangle()
-                            .fill(GlassTheme.surfaceBackgroundColor)
-                            .frame(height: 88)
+                            .fill(GlassTheme.subtleFillColor)
+                            .frame(width: sideWidthPt, height: 88)
                     }
                 }
-                .frame(width: CGFloat(sideWidthPt))
+                .frame(width: sideWidthPt)
             }
-            .frame(height: 180)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .frame(width: widthPt, height: 180)
+            .clipped()
 
             // Collection Details
             VStack(alignment: .leading, spacing: 6) {
@@ -289,13 +315,16 @@ struct CollectionMosaicCard: View {
                         .glassVibrancy(.primary)
                         .padding(.horizontal, 10)
                         .padding(.vertical, 4)
-                        .glassCapsule(style: .lightweight, showBorder: true, hasShadow: false)
+                        .matteCapsule(fillColor: GlassTheme.subtleFillColor)
                 }
                 .padding(.top, 6)
             }
-            .padding(.vertical, 12)
+            .padding(12)
         }
+        .frame(width: widthPt, alignment: .leading)
+        .matteSurface(cornerRadius: 16)
         .onAppear {
+            _ = widthPx
             if index >= viewModel.collections.count - max(4, columnCount * 2) {
                 viewModel.loadNextPage()
             }

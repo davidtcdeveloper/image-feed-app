@@ -21,24 +21,24 @@ Use this skill when:
 
 ## 1. SwiftUI Materials & Translucency Standards
 
-All Apple UI components MUST adhere to native Human Interface Guidelines (HIG) and the project's `GlassTheme` system.
+All Apple UI components MUST adhere to native Human Interface Guidelines (HIG) and the modular `iosApp/iosApp/DesignSystem/` token system ([`SurfaceTokens.swift`](../../../iosApp/iosApp/DesignSystem/SurfaceTokens.swift), [`PlatformToolbarButton.swift`](../../../iosApp/iosApp/DesignSystem/PlatformToolbarButton.swift), [`PhotoGridCard.swift`](../../../iosApp/iosApp/DesignSystem/PhotoGridCard.swift)).
 
-### A. Tiered Material Selection Policy
+### A. Tiered Material Selection Policy (`Matte → Satin → Float`)
 - **Prohibited**: Hardcoded opaque dark backgrounds for bars, cards, or floating controls (e.g., solid `#0F0F11` or `#1E1E24`).
 - **Prohibited**: Obscuring photos with heavy, opaque linear gradients (e.g. `LinearGradient(colors: [.clear, .black.opacity(0.85)])`).
-- **Prohibited**: Stacking `.ultraThinMaterial` over opaque / solid-color image placeholders (redundant blur passes).
-- **Mandatory**: Use tiered materials based on rendering frequency:
-  - `GlassStyle.lightweight`: High-frequency 120Hz masonry grid cells, attribution pills, and count badges where real-time backdrop blur degrades compositor throughput.
-  - `.ultraThinMaterial`: Persistent floating toolbars, active chips, and inspection sheets over image content.
-  - `.thinMaterial`: Floating category filter bars, secondary inspection cards.
-  - `.regularMaterial`: Modal navigation bars, dialog containers, and context menus.
+- **Prohibited**: Stacking `.ultraThinMaterial` / `.thinMaterial` cards inside already-blurred sheets, over opaque sidebars/canvases, or over solid-color image placeholders (redundant blur passes).
+- **Mandatory**: Use tiered materials based on rendering frequency and layer:
+  - `.matteSurface()` / `.matteCapsule()`: Opaque, zero-blur semantic tonal fill (`GlassTheme.surfaceBackgroundColor`) + 0.5pt hairline border (`GlassTheme.matteBorderColor`) for collection mosaics, search user cards, analytics/insights cards, and interior inspector cards.
+  - `GlassStyle.lightweight`: High-frequency 120Hz masonry grid attribution pills inside `PhotoGridCard` where real-time backdrop blur degrades compositor throughput.
+  - `.ultraThinMaterial` / `.thinMaterial`: Persistent floating toolbars, active category/search bars, and inspection sheets over image content.
+  - `.regularMaterial` / `.floatGlass(shape:)`: Modal navigation bars, dialog containers, context menus, and OS 26+ native Liquid Glass floating controls.
   - `.thickMaterial` / `.ultraThickMaterial`: Base chrome backgrounds where high contrast is required.
 
 ### B. Specular Edge Lighting & Ambient Shadows
 Glass elements feature subtle specular highlights to define boundaries against dynamic photo backdrops:
-- **Mandatory**: Use the centralized convenience modifiers and design tokens defined in [`GlassTheme.swift`](../../../iosApp/iosApp/GlassTheme.swift):
-  - View modifiers: `.glassBackground(...)`, `.glassCapsule()`, `.glassCard()`.
-  - Design tokens: `GlassTheme.specularBorderGradient`, `GlassTheme.specularBorderWidth`, `GlassTheme.fallbackBorderWidth`.
+- **Mandatory**: Use the centralized convenience modifiers and design tokens defined in [`SurfaceTokens.swift`](../../../iosApp/iosApp/DesignSystem/SurfaceTokens.swift):
+  - View modifiers: `.matteSurface(...)`, `.matteCapsule(...)`, `.glassBackground(...)`, `.glassCapsule()`, `.glassCard()`, `.floatGlass(shape:)`.
+  - Design tokens: `GlassTheme.specularBorderGradient`, `GlassTheme.matteBorderColor`, `GlassTheme.specularBorderWidth`, `GlassTheme.fallbackBorderWidth`.
 - **Prohibited**: Inlining raw `.overlay` stroke borders with hardcoded color opacity gradients.
 - **Ambient Shadows**: Standardize drop shadows using `GlassTheme.shadowColor`, `GlassTheme.shadowRadius`, and `GlassTheme.shadowY`.
 
@@ -62,14 +62,15 @@ Always honor `@Environment(\.accessibilityReduceTransparency)`:
   - `.glassVibrancy(.primary)` / `.glassVibrancy(.secondary)`: Semantic vibrancy tokens defined in `GlassTheme.swift`.
 - Attribution over photos must reside in a compact, floating glass capsule rather than a heavy full-width bottom scrim.
 
-### A. Retina Display Scale for CDN Imagery
-When computing target photo dimensions for network requests (e.g. in [`AdaptiveLayoutHelper.swift`](../../../iosApp/iosApp/AdaptiveLayoutHelper.swift#L41-L51)):
+### A. Container-Width Layout & Retina Display Scale for CDN Imagery
+Never read `UIScreen.main.bounds.width` or `NSScreen.main?.frame.width` for grid column counts or CDN image widths:
+- Measure actual container/pane geometry using `.measureContainerWidth($containerWidth)` (backed by `.onGeometryChange` on iOS 18+ / macOS 15+ and `PreferenceKey` fallback on iOS 17 / macOS 14) in [`AdaptiveLayoutHelper.swift`](../../../iosApp/iosApp/AdaptiveLayoutHelper.swift).
 - Layout calculations in SwiftUI yield logical points, not physical pixels.
-- Always multiply container points by the device's display scale (`pixelWidth = Int(containerPointWidth * displayScale)` using `UIScreen.main.scale` on iOS and `NSScreen.main?.backingScaleFactor ?? 2.0` on macOS) to prevent soft/blurry 1x assets on Retina screens.
+- Always multiply container points by the device's display scale (`pixelWidth = Int(containerPointWidth * displayScale)` using `AdaptiveLayoutHelper.displayScale()` — `UIScreen.main.scale` on iOS and `NSScreen.main?.backingScaleFactor ?? 2.0` on macOS) to prevent soft/blurry 1x assets on Retina screens.
 
 ### B. Zero Token Leakage & Theme Parity
-- **Prohibited**: Hardcoded raw color constants (e.g. `.foregroundColor(.gray)`, `.foregroundColor(.white)`).
-- All views (top bars, search screen, details sheet, user profile) must dynamically adapt to both Light and Dark mode using `GlassTheme` semantic canvas/surface tokens (`canvasBackgroundColor`, `surfaceBackgroundColor`, `fallbackBackgroundColor`) and Apple semantic styles.
+- **Prohibited**: Hardcoded raw color constants (e.g. `.foregroundColor(.gray)`, `.foregroundColor(.white)`, `ProgressView().tint(.white)`, or `Color.white.opacity(...)` on light/dark adaptive canvases).
+- All views (top bars, search screen, details sheet, user profile, charts, and skeletons) must dynamically adapt to both Light and Dark mode using `SurfaceTokens.swift` semantic tokens (`canvasBackgroundColor`, `surfaceBackgroundColor`, `subtleFillColor`, `activePillFillColor`, `activePillForegroundColor`, `fallbackBackgroundColor`) and Apple semantic styles (`.primary`, `.secondary`).
 
 ---
 
@@ -117,8 +118,8 @@ Use SwiftUI declarative `.sensoryFeedback` instead of imperative feedback genera
 
 ---
 
-## 7. MVI ViewModel Lifecycle in Swift
+## 7. MVI ViewModel Lifecycle & Swift 6 Concurrency
 
-- Platform wrappers (Swift `@Observable` ViewModels) own shared `MviViewModel` lifecycle.
-- Swift ViewModels MUST invoke `viewModel.clear()` upon dismissal or inside `deinit` to cancel in-flight coroutines and close effect channels.
+- All Swift `@Observable` wrappers MUST be declared `@MainActor @Observable final class` with `@ObservationIgnored private nonisolated(unsafe) var ...Closeable: Closeable?` and `MainActor.assumeIsolated` inside KMP `watch` closures (see [`FavoritesViewModel.swift`](../../../iosApp/iosApp/FavoritesViewModel.swift)).
+- Swift ViewModels MUST cancel closeables and invoke `viewModel.clear()` upon dismissal or inside `deinit` to cancel in-flight coroutines and close effect channels.
 

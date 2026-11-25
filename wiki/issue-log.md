@@ -26,6 +26,12 @@ This file captures systemic issues, documentation drift, skill gaps, build/tooli
 - **Symptom & Evidence**: Running `./gradlew :androidApp:assembleDebug -Dorg.gradle.unsafe.isolated-projects=true` fails during `:core:database:kspAndroidMain` task creation (`Project ':core:database' cannot access task dependencies directly` in `KSP 2.3.6` `KspSubpluginKt.nonSelfDeps`). All 12 non-KSP modules pass strict Isolated Projects with 0 violations, so `org.gradle.unsafe.isolated-projects=true` remains unset in [`gradle.properties`](../gradle.properties) until KSP is upgraded past `2.3.6` and `:androidApp:assembleDebug -Dorg.gradle.unsafe.isolated-projects=true` passes with 0 problems.
 - **Suggested Layer**: `wiki/` | `specs/`
 
+### [OPEN] ISS-007: `.swiftformat` and `.swiftlint.yml` Conflict on Opening Braces and Trailing Commas
+- **Date / Context**: 2026-11-25 (Spec 83 — Apple DesignSystem Modularization & Light-Mode Hygiene)
+- **Category**: `tooling-friction`
+- **Symptom & Evidence**: [`.swiftformat`](../.swiftformat) (`--commas always`, `--wrapparameters before-first`) formats multiline initializers with `{` on a new line and keeps trailing commas in array literals, triggering SwiftLint `opening_brace` and `trailing_comma` warnings under [`.swiftlint.yml`](../.swiftlint.yml) during `swiftlint lint iosApp/iosApp iosApp/iosAppTests iosApp/iosAppUITests`.
+- **Suggested Layer**: `.agents/skills/` | `specs/`
+
 ---
 
 ## Dismissed Issues

@@ -64,6 +64,7 @@ extension View {
 /// A custom `ViewModifier` that overlays an infinite animating linear gradient across views using single-pass sourceAtop blending.
 struct ShimmerModifier: ViewModifier {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.colorScheme) private var colorScheme
     @State private var phase: CGFloat = -1.0
     let duration: Double = 1.4
 
@@ -71,13 +72,14 @@ struct ShimmerModifier: ViewModifier {
         if reduceMotion {
             content
         } else {
+            let highlightOpacity = colorScheme == .dark ? 0.14 : 0.45
             content
                 .overlay(
                     GeometryReader { geo in
                         LinearGradient(
                             stops: [
                                 .init(color: .clear, location: 0.3),
-                                .init(color: .white.opacity(0.12), location: 0.5),
+                                .init(color: .white.opacity(highlightOpacity), location: 0.5),
                                 .init(color: .clear, location: 0.7),
                             ],
                             startPoint: .topLeading,
@@ -118,15 +120,15 @@ struct PhotoCardSkeleton: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             RoundedRectangle(cornerRadius: 12)
-                .fill(Color.white.opacity(0.06))
+                .fill(GlassTheme.surfaceBackgroundColor)
                 .frame(height: height)
 
             HStack(spacing: 6) {
                 Circle()
-                    .fill(Color.white.opacity(0.06))
+                    .fill(GlassTheme.surfaceBackgroundColor)
                     .frame(width: 20, height: 20)
                 RoundedRectangle(cornerRadius: 4)
-                    .fill(Color.white.opacity(0.06))
+                    .fill(GlassTheme.surfaceBackgroundColor)
                     .frame(width: 80, height: 10)
             }
             .padding(.horizontal, 4)
@@ -143,14 +145,14 @@ struct CollectionMosaicCardSkeleton: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 4) {
                 RoundedRectangle(cornerRadius: 0)
-                    .fill(Color.white.opacity(0.06))
+                    .fill(GlassTheme.surfaceBackgroundColor)
                     .frame(height: 180)
                 VStack(spacing: 4) {
                     RoundedRectangle(cornerRadius: 0)
-                        .fill(Color.white.opacity(0.06))
+                        .fill(GlassTheme.surfaceBackgroundColor)
                         .frame(height: 88)
                     RoundedRectangle(cornerRadius: 0)
-                        .fill(Color.white.opacity(0.06))
+                        .fill(GlassTheme.surfaceBackgroundColor)
                         .frame(height: 88)
                 }
                 .frame(width: 110)
@@ -158,11 +160,11 @@ struct CollectionMosaicCardSkeleton: View {
             .clipShape(RoundedRectangle(cornerRadius: 12))
 
             RoundedRectangle(cornerRadius: 4)
-                .fill(Color.white.opacity(0.06))
+                .fill(GlassTheme.surfaceBackgroundColor)
                 .frame(width: 180, height: 16)
 
             RoundedRectangle(cornerRadius: 4)
-                .fill(Color.white.opacity(0.06))
+                .fill(GlassTheme.surfaceBackgroundColor)
                 .frame(width: 260, height: 12)
         }
         .shimmer()
@@ -176,19 +178,19 @@ struct UserProfileHeaderSkeleton: View {
     var body: some View {
         VStack(spacing: 12) {
             Circle()
-                .fill(Color.white.opacity(0.06))
+                .fill(GlassTheme.surfaceBackgroundColor)
                 .frame(width: 88, height: 88)
 
             RoundedRectangle(cornerRadius: 4)
-                .fill(Color.white.opacity(0.06))
+                .fill(GlassTheme.surfaceBackgroundColor)
                 .frame(width: 140, height: 18)
 
             RoundedRectangle(cornerRadius: 4)
-                .fill(Color.white.opacity(0.06))
+                .fill(GlassTheme.surfaceBackgroundColor)
                 .frame(width: 90, height: 12)
 
             RoundedRectangle(cornerRadius: 4)
-                .fill(Color.white.opacity(0.06))
+                .fill(GlassTheme.surfaceBackgroundColor)
                 .frame(width: 240, height: 12)
                 .padding(.top, 4)
         }

@@ -8,6 +8,7 @@ struct CollectionDetailView: View {
     #if os(iOS)
     @Environment(\.horizontalSizeClass) var sizeClass
     #endif
+    @State private var containerWidth: CGFloat = 0
 
     let onPhotoSelect: (String) -> Void
     let onCollectionSelect: (String) -> Void
@@ -28,9 +29,9 @@ struct CollectionDetailView: View {
 
     private var columnCount: Int {
         #if os(iOS)
-        AdaptiveLayoutHelper.getColumnCount(sizeClass: sizeClass)
+        AdaptiveLayoutHelper.getColumnCount(containerWidth: containerWidth, sizeClass: sizeClass)
         #else
-        AdaptiveLayoutHelper.getColumnCount()
+        AdaptiveLayoutHelper.getColumnCount(containerWidth: containerWidth)
         #endif
     }
 
@@ -160,14 +161,17 @@ struct CollectionDetailView: View {
                                             ForEach(viewModel.columnItems(for: colIndex, totalColumns: columnCount)) { indexed in
                                                 let photo = indexed.item
                                                 let flatIndex = indexed.index
-                                                CollectionPhotoGridCard(
+                                                PhotoGridCard(
                                                     photo: photo,
-                                                    viewModel: viewModel,
                                                     columnCount: columnCount,
-                                                    onPhotoSelect: { onPhotoSelect(photo.id) },
-                                                    onUserSelect: onUserSelect)
+                                                    onSelect: { onPhotoSelect(photo.id) },
+                                                    onUserSelect: onUserSelect,
+                                                    onAppear: {
+                                                        if photo.id == viewModel.photos.last?.id {
+                                                            viewModel.loadNextPhotosPage()
+                                                        }
+                                                    })
                                                     .staggeredReveal(index: flatIndex)
-                                                    .feedScrollTransition()
                                             }
                                         }
                                     }
@@ -178,16 +182,18 @@ struct CollectionDetailView: View {
 
                         if viewModel.isLoadingPhotos {
                             ProgressView()
-                                .tint(.white)
+                                .tint(.primary)
                                 .padding(.vertical, 24)
                         }
                     }
                 }
+                .satinScrollEdge()
                 .ignoresSafeArea(edges: .top)
             } else {
                 skeletonView
             }
         }
+        .measureContainerWidth($containerWidth)
         .task(id: collectionId) {
             if viewModel == nil {
                 viewModel = CollectionDetailViewModel(collectionId: collectionId)
@@ -204,13 +210,13 @@ struct CollectionDetailView: View {
         .toolbar {
             #if os(iOS)
             ToolbarItem(placement: .navigationBarLeading) {
-                GlassToolbarButton(systemName: "chevron.backward", accessibilityLabel: "Back") {
+                PlatformToolbarButton(systemName: "chevron.backward", accessibilityLabel: "Back") {
                     dismiss()
                 }
             }
             #else
             ToolbarItem(placement: .navigation) {
-                GlassToolbarButton(systemName: "chevron.backward", accessibilityLabel: "Back") {
+                PlatformToolbarButton(systemName: "chevron.backward", accessibilityLabel: "Back") {
                     dismiss()
                 }
             }
@@ -223,13 +229,13 @@ struct CollectionDetailView: View {
             VStack(alignment: .leading, spacing: 16) {
                 // Header skeleton
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(Color.white.opacity(0.06))
+                    .fill(GlassTheme.surfaceBackgroundColor)
                     .frame(height: 300)
                     .shimmer()
 
                 // Related collections label skeleton
                 RoundedRectangle(cornerRadius: 4)
-                    .fill(Color.white.opacity(0.06))
+                    .fill(GlassTheme.surfaceBackgroundColor)
                     .frame(width: 150, height: 20)
                     .padding(.horizontal, 16)
                     .shimmer()
@@ -239,7 +245,7 @@ struct CollectionDetailView: View {
                     HStack(spacing: 12) {
                         ForEach(0..<3, id: \.self) { _ in
                             RoundedRectangle(cornerRadius: 12)
-                                .fill(Color.white.opacity(0.06))
+                                .fill(GlassTheme.surfaceBackgroundColor)
                                 .frame(width: 160, height: 110)
                                 .shimmer()
                         }
@@ -249,7 +255,7 @@ struct CollectionDetailView: View {
 
                 // Grid photos label skeleton
                 RoundedRectangle(cornerRadius: 4)
-                    .fill(Color.white.opacity(0.06))
+                    .fill(GlassTheme.surfaceBackgroundColor)
                     .frame(width: 100, height: 20)
                     .padding(.horizontal, 16)
                     .shimmer()
@@ -305,76 +311,11 @@ struct RelatedCollectionCard: View {
                         .font(.caption2)
                         .glassVibrancy(.secondary)
                 }
+                .environment(\.colorScheme, .dark)
                 .padding(8)
             }
             .frame(width: 160, height: 110)
         }
         .buttonStyle(SpringCardButtonStyle())
-    }
-}
-
-struct CollectionPhotoGridCard: View {
-    let photo: Photo
-    let viewModel: CollectionDetailViewModel
-    let columnCount: Int
-    let onPhotoSelect: () -> Void
-    let onUserSelect: (String) -> Void
-
-    var body: some View {
-        let screenWidth = AdaptiveLayoutHelper.getScreenWidth()
-        let itemWidth = AdaptiveLayoutHelper.calculateItemWidthPx(screenWidth: screenWidth, columnCount: columnCount)
-        let imageUrl = photo.urls.getOptimalUrl(targetWidthPx: Int32(itemWidth))
-        let aspectRatio = photo.height > 0 ? CGFloat(photo.width) / CGFloat(photo.height) : 1.0
-
-        ZStack(alignment: .bottomLeading) {
-            KFImage(URL(string: imageUrl))
-                .placeholder {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(Color(hex: photo.color ?? "1E1E24"))
-                        ProgressView()
-                            .tint(.primary.opacity(0.6))
-                    }
-                    .aspectRatio(aspectRatio, contentMode: .fit)
-                }
-                .fade(duration: 0.25)
-                .resizable()
-                .aspectRatio(aspectRatio, contentMode: .fit)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    onPhotoSelect()
-                }
-
-            Button {
-                onUserSelect(photo.user.username)
-            } label: {
-                HStack(spacing: 6) {
-                    KFImage(URL(string: photo.user.profileImage.small))
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: 20, height: 20)
-                        .clipShape(Circle())
-
-                    Text(photo.user.name)
-                        .font(.caption2.weight(.semibold))
-                        .glassVibrancy(.primary)
-                        .lineLimit(1)
-                        .truncationMode(.tail)
-                }
-                .padding(.horizontal, 8)
-                .padding(.vertical, 5)
-                .glassCapsule(style: .lightweight, showBorder: true, hasShadow: false)
-                .environment(\.colorScheme, .dark)
-            }
-            .buttonStyle(.plain)
-            .contentShape(Capsule())
-            .padding(8)
-        }
-        .onAppear {
-            if photo.id == viewModel.photos.last?.id {
-                viewModel.loadNextPhotosPage()
-            }
-        }
     }
 }

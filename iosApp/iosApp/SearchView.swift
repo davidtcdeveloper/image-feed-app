@@ -5,6 +5,7 @@ struct SearchView: View {
     #if os(iOS)
     @Environment(\.horizontalSizeClass) var sizeClass
     #endif
+    @State private var containerWidth: CGFloat = 0
     let initialQuery: String
     @State private var viewModel: SearchViewModel?
     @State private var showFilters = false
@@ -18,6 +19,7 @@ struct SearchView: View {
 
     init(
         initialQuery: String = "",
+        initialViewModel: SearchViewModel? = nil,
         onPhotoSelect: @escaping (String) -> Void,
         onUserSelect: @escaping (String) -> Void,
         onCollectionSelect: @escaping (String) -> Void)
@@ -27,14 +29,14 @@ struct SearchView: View {
         self.onUserSelect = onUserSelect
         self.onCollectionSelect = onCollectionSelect
         self._searchText = State(initialValue: initialQuery)
-        self._viewModel = State(initialValue: nil)
+        self._viewModel = State(initialValue: initialViewModel)
     }
 
     private var columnCount: Int {
         #if os(iOS)
-        AdaptiveLayoutHelper.getColumnCount(sizeClass: sizeClass)
+        AdaptiveLayoutHelper.getColumnCount(containerWidth: containerWidth, sizeClass: sizeClass)
         #else
-        AdaptiveLayoutHelper.getColumnCount()
+        AdaptiveLayoutHelper.getColumnCount(containerWidth: containerWidth)
         #endif
     }
 
@@ -88,21 +90,20 @@ struct SearchView: View {
                                         ForEach(0..<4, id: \.self) { _ in
                                             HStack(spacing: 16) {
                                                 Circle()
-                                                    .fill(Color.white.opacity(0.06))
+                                                    .fill(GlassTheme.subtleFillColor)
                                                     .frame(width: 50, height: 50)
                                                 VStack(alignment: .leading, spacing: 4) {
                                                     RoundedRectangle(cornerRadius: 4)
-                                                        .fill(Color.white.opacity(0.06))
+                                                        .fill(GlassTheme.subtleFillColor)
                                                         .frame(width: 120, height: 14)
                                                     RoundedRectangle(cornerRadius: 4)
-                                                        .fill(Color.white.opacity(0.06))
+                                                        .fill(GlassTheme.subtleFillColor)
                                                         .frame(width: 80, height: 10)
                                                 }
                                                 Spacer()
                                             }
                                             .padding(12)
-                                            .background(GlassTheme.surfaceBackgroundColor)
-                                            .cornerRadius(12)
+                                            .matteSurface(cornerRadius: 12)
                                             .shimmer()
                                         }
                                     }
@@ -145,13 +146,13 @@ struct SearchView: View {
                                                     ForEach(viewModel.columnItems(for: colIndex, totalColumns: columnCount)) { indexed in
                                                         let photo = indexed.item
                                                         let flatIndex = indexed.index
-                                                        SearchPhotoGridCard(
+                                                        PhotoGridCard(
                                                             photo: photo,
                                                             columnCount: columnCount,
-                                                            onPhotoSelect: { onPhotoSelect(photo.id) },
+                                                            fadeDuration: 0,
+                                                            onSelect: { onPhotoSelect(photo.id) },
                                                             onUserSelect: onUserSelect)
                                                             .staggeredReveal(index: flatIndex)
-                                                            .feedScrollTransition()
                                                     }
                                                 }
                                             }
@@ -202,7 +203,7 @@ struct SearchView: View {
 
                                 if viewModel.isLoadingMore {
                                     ProgressView()
-                                        .tint(.white)
+                                        .tint(.primary)
                                         .padding(.vertical, 16)
                                 } else if !viewModel.hasReachedEnd, !searchText.isEmpty {
                                     Color.clear
@@ -214,6 +215,7 @@ struct SearchView: View {
                             }
                             .padding(.bottom, 32)
                         }
+                        .satinScrollEdge()
                         .refreshable {
                             viewModel.refresh()
                         }
@@ -225,9 +227,10 @@ struct SearchView: View {
                 .sensoryFeedback(.selection, trigger: viewModel.activeTab)
             } else {
                 ProgressView()
-                    .tint(.white)
+                    .tint(.primary)
             }
         }
+        .measureContainerWidth($containerWidth)
         .task(id: initialQuery) {
             if viewModel == nil {
                 viewModel = SearchViewModel(initialQuery: initialQuery)
@@ -243,13 +246,13 @@ struct SearchView: View {
         .toolbar {
             #if os(iOS)
             ToolbarItem(placement: .navigationBarTrailing) {
-                GlassToolbarButton(systemName: "line.3.horizontal.decrease", accessibilityLabel: "Filters") {
+                PlatformToolbarButton(systemName: "line.3.horizontal.decrease", accessibilityLabel: "Filters") {
                     showFilters = true
                 }
             }
             #else
             ToolbarItem(placement: .primaryAction) {
-                GlassToolbarButton(systemName: "line.3.horizontal.decrease", accessibilityLabel: "Filters") {
+                PlatformToolbarButton(systemName: "line.3.horizontal.decrease", accessibilityLabel: "Filters") {
                     showFilters = true
                 }
             }
@@ -323,66 +326,6 @@ struct SearchTabBar: View {
         .padding(.horizontal, 12)
         .padding(.top, 4)
         .padding(.bottom, 6)
-    }
-}
-
-struct SearchPhotoGridCard: View {
-    let photo: Photo
-    let columnCount: Int
-    let onPhotoSelect: () -> Void
-    let onUserSelect: (String) -> Void
-
-    var body: some View {
-        let screenWidth = AdaptiveLayoutHelper.getScreenWidth()
-        let itemWidth = AdaptiveLayoutHelper.calculateItemWidthPx(screenWidth: screenWidth, columnCount: columnCount)
-        let imageUrl = photo.urls.getOptimalUrl(targetWidthPx: Int32(itemWidth))
-        let aspectRatio = photo.height > 0 ? CGFloat(photo.width) / CGFloat(photo.height) : 1.0
-
-        ZStack(alignment: .bottomLeading) {
-            KFImage(URL(string: imageUrl))
-                .placeholder {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(Color(hex: photo.color ?? "1E1E24"))
-                        ProgressView()
-                            .tint(.primary.opacity(0.6))
-                    }
-                    .aspectRatio(aspectRatio, contentMode: .fit)
-                }
-                .resizable()
-                .aspectRatio(aspectRatio, contentMode: .fit)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    onPhotoSelect()
-                }
-
-            // Inset Floating Glass Attribution Capsule
-            Button {
-                onUserSelect(photo.user.username)
-            } label: {
-                HStack(spacing: 6) {
-                    KFImage(URL(string: photo.user.profileImage.small))
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: 20, height: 20)
-                        .clipShape(Circle())
-
-                    Text(photo.user.name)
-                        .font(.caption2.weight(.semibold))
-                        .glassVibrancy(.primary)
-                        .lineLimit(1)
-                        .truncationMode(.tail)
-                }
-                .padding(.horizontal, 8)
-                .padding(.vertical, 5)
-                .glassCapsule(style: .lightweight, showBorder: true, hasShadow: false)
-                .environment(\.colorScheme, .dark)
-            }
-            .buttonStyle(.plain)
-            .contentShape(Capsule())
-            .padding(8)
-        }
     }
 }
 
@@ -460,15 +403,12 @@ struct SearchSuggestionsView: View {
 }
 
 struct CollectionCardView: View {
+    @Environment(\.containerWidth) private var containerWidth
     let collection: CollectionSummary
 
     var body: some View {
-        #if os(iOS)
-        let scale = UIScreen.main.scale
-        #elseif os(macOS)
-        let scale = NSScreen.main?.backingScaleFactor ?? 2.0
-        #endif
-        let itemWidthPx = Int32(AdaptiveLayoutHelper.getScreenWidth() * scale)
+        let widthPt = AdaptiveLayoutHelper.effectiveWidth(containerWidth: containerWidth)
+        let itemWidthPx = Int32(widthPt * AdaptiveLayoutHelper.displayScale())
         let coverUrl = collection.coverPhoto?.urls.getOptimalUrl(targetWidthPx: itemWidthPx)
 
         ZStack(alignment: .bottomLeading) {
@@ -499,6 +439,7 @@ struct CollectionCardView: View {
                 .font(.caption)
                 .glassVibrancy(.secondary)
             }
+            .environment(\.colorScheme, .dark)
             .padding(16)
         }
         .cornerRadius(12)
@@ -534,7 +475,7 @@ struct UserCardView: View {
                 .accessibilityLabel("View Profile")
         }
         .padding(12)
-        .glassCard(cornerRadius: 12, style: .ultraThin)
+        .matteSurface(cornerRadius: 12)
     }
 }
 
@@ -672,7 +613,7 @@ struct SearchFiltersSheetView: View {
                                             .frame(width: 32, height: 32)
                                             .overlay(
                                                 Circle()
-                                                    .stroke(.white, lineWidth: color == val ? 2 : 0))
+                                                    .stroke(Color.primary, lineWidth: color == val ? 2 : 0.5))
                                             .scaleEffect(color == val ? 1.15 : 1.0)
                                         Text(name)
                                             .font(.caption2)
@@ -715,18 +656,24 @@ struct FilterButtonView: View {
     let isSelected: Bool
     let action: () -> Void
 
+    @Environment(\.colorSchemeContrast) private var colorSchemeContrast
+
     var body: some View {
         Button(action: action) {
             Text(title)
                 .font(.caption.weight(.bold))
-                .foregroundColor(isSelected ? .black : .white)
+                .foregroundStyle(isSelected ? GlassTheme.activePillForegroundColor : Color.primary)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 8)
-                .background(isSelected ? Color.white : GlassTheme.surfaceBackgroundColor)
+                .background(isSelected ? GlassTheme.activePillFillColor : GlassTheme.canvasBackgroundColor)
                 .clipShape(Capsule())
                 .overlay(
                     Capsule()
-                        .stroke(isSelected ? Color.clear : GlassTheme.fallbackBorderColor, lineWidth: 0.5))
+                        .stroke(
+                            isSelected ? Color.clear : (colorSchemeContrast == .increased ? GlassTheme.fallbackBorderColor : GlassTheme.matteBorderColor),
+                            lineWidth: colorSchemeContrast == .increased ? GlassTheme.fallbackBorderWidth : GlassTheme.matteBorderWidth))
         }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? [.isSelected, .isButton] : .isButton)
     }
 }

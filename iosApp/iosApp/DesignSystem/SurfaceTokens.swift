@@ -1,9 +1,11 @@
 import SwiftUI
 #if os(macOS)
 import AppKit
+#elseif os(iOS)
+import UIKit
 #endif
 
-// MARK: - GlassTheme Design Tokens
+// MARK: - GlassTheme & Matte Surface Design Tokens
 
 public enum GlassTheme {
     /// Standard specular edge hairline gradient (top-leading catchlight to bottom-trailing fade)
@@ -14,6 +16,7 @@ public enum GlassTheme {
 
     public static let specularBorderWidth: CGFloat = 0.5
     public static let fallbackBorderWidth: CGFloat = 1.0
+    public static let matteBorderWidth: CGFloat = 0.5
 
     /// Tactile action orb specular rim border width (0.75pt)
     public static let tactileOrbBorderWidth: CGFloat = 0.75
@@ -48,6 +51,17 @@ public enum GlassTheme {
         #endif
     }
 
+    /// Adaptive hairline border for Matte surfaces across Light & Dark mode
+    public static var matteBorderColor: Color {
+        #if os(iOS)
+        Color(uiColor: .separator).opacity(0.55)
+        #elseif os(macOS)
+        Color(nsColor: .separatorColor).opacity(0.55)
+        #else
+        Color.primary.opacity(0.12)
+        #endif
+    }
+
     /// Cross-platform semantic canvas background
     public static var canvasBackgroundColor: Color {
         #if os(iOS)
@@ -70,8 +84,83 @@ public enum GlassTheme {
         #endif
     }
 
+    /// Adaptive subtle pill/chip background across Light & Dark mode
+    public static var subtleFillColor: Color {
+        Color.primary.opacity(0.08)
+    }
+
+    /// Adaptive active selection pill background (high contrast in both Light & Dark mode)
+    public static var activePillFillColor: Color {
+        Color.primary
+    }
+
+    /// Adaptive foreground color for text/icons rendered inside `activePillFillColor`
+    public static var activePillForegroundColor: Color {
+        canvasBackgroundColor
+    }
+
     /// High-contrast dark scrim color (0x0A, 0x0A, 0x0C) for WCAG AAA compliance over bright imagery
     public static let highContrastScrimColor = Color(red: 10 / 255.0, green: 10 / 255.0, blue: 12 / 255.0)
+}
+
+// MARK: - Matte Surface Modifier (Zero Live Blur)
+
+public struct MatteSurfaceModifier<S: InsettableShape>: ViewModifier {
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.colorSchemeContrast) private var colorSchemeContrast
+
+    public let shape: S
+    public let fillColor: Color?
+    public let showBorder: Bool
+
+    public init(shape: S, fillColor: Color? = nil, showBorder: Bool = true) {
+        self.shape = shape
+        self.fillColor = fillColor
+        self.showBorder = showBorder
+    }
+
+    public func body(content: Content) -> some View {
+        let baseFill = fillColor ?? GlassTheme.surfaceBackgroundColor
+        content
+            .clipShape(shape)
+            .contentShape(shape)
+            .background {
+                shape.fill(reduceTransparency ? GlassTheme.fallbackBackgroundColor : baseFill)
+            }
+            .overlay {
+                if showBorder {
+                    if reduceTransparency || colorSchemeContrast == .increased {
+                        shape.strokeBorder(GlassTheme.fallbackBorderColor, lineWidth: GlassTheme.fallbackBorderWidth)
+                            .allowsHitTesting(false)
+                    } else {
+                        shape.strokeBorder(GlassTheme.matteBorderColor, lineWidth: GlassTheme.matteBorderWidth)
+                            .allowsHitTesting(false)
+                    }
+                }
+            }
+    }
+}
+
+// MARK: - Float Glass Modifier (OS 26+ Native Liquid Glass with Material Fallback)
+
+public struct FloatGlassModifier<S: InsettableShape>: ViewModifier {
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+
+    public let shape: S
+
+    public init(shape: S) {
+        self.shape = shape
+    }
+
+    public func body(content: Content) -> some View {
+        if #available(iOS 26.0, macOS 26.0, *), !reduceTransparency {
+            content
+                .glassEffect(.regular.interactive(), in: shape)
+        } else {
+            content
+                .glassBackground(style: .regular, shape: shape, showBorder: true, hasShadow: true)
+        }
+    }
 }
 
 // MARK: - GlassStyle Presets
@@ -270,6 +359,45 @@ public extension GlassContainer where S == RoundedRectangle {
 // MARK: - Semantic View Extensions
 
 public extension View {
+    /// Applies an opaque Matte tonal surface with a crisp semantic hairline border (zero backdrop blur).
+    func matteSurface(
+        shape: some InsettableShape,
+        fillColor: Color? = nil,
+        showBorder: Bool = true) -> some View
+    {
+        modifier(MatteSurfaceModifier(shape: shape, fillColor: fillColor, showBorder: showBorder))
+    }
+
+    /// Convenience Matte rounded card surface (zero backdrop blur).
+    func matteSurface(
+        cornerRadius: CGFloat = 12,
+        fillColor: Color? = nil,
+        showBorder: Bool = true) -> some View
+    {
+        matteSurface(
+            shape: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous),
+            fillColor: fillColor,
+            showBorder: showBorder)
+    }
+
+    /// Convenience Matte capsule surface (zero backdrop blur).
+    func matteCapsule(
+        fillColor: Color? = nil,
+        showBorder: Bool = true) -> some View
+    {
+        matteSurface(shape: Capsule(), fillColor: fillColor, showBorder: showBorder)
+    }
+
+    /// Scaffold modifier for Wave-2 Satin top scroll-edge feathering (Spec 88).
+    func satinScrollEdge() -> some View {
+        self
+    }
+
+    /// Applies native Liquid Glass on iOS 26+ / macOS 26+ with accessible `.regularMaterial` fallback on earlier OSes.
+    func floatGlass(shape: some InsettableShape) -> some View {
+        modifier(FloatGlassModifier(shape: shape))
+    }
+
     /// Applies a glass material background with specular border and accessibility fallbacks.
     func glassBackground(
         material: Material = .ultraThinMaterial,
@@ -356,292 +484,61 @@ public extension View {
     }
 }
 
-// MARK: - Glass Toolbar Controls
+// MARK: - Shared Error State View
 
-public struct GlassToolbarButton: View {
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
-    @Environment(\.colorSchemeContrast) private var colorSchemeContrast
+struct ErrorView: View {
+    let error: String
+    let onRetry: () -> Void
 
-    public let systemName: String
-    public let accessibilityLabel: LocalizedStringKey?
-    public let action: () -> Void
-
-    public init(
-        systemName: String,
-        accessibilityLabel: LocalizedStringKey? = nil,
-        action: @escaping () -> Void)
-    {
-        self.systemName = systemName
-        self.accessibilityLabel = accessibilityLabel
-        self.action = action
-    }
-
-    public var body: some View {
-        Button(action: action) {
-            Image(systemName: systemName)
-                .font(.system(size: 15, weight: .semibold))
-                .symbolRenderingMode(.hierarchical)
-                .glassVibrancy(.primary)
-                .frame(width: GlassTheme.tactileOrbSize, height: GlassTheme.tactileOrbSize)
-                .background {
-                    if reduceTransparency {
-                        Circle().fill(GlassTheme.fallbackBackgroundColor)
-                    } else {
-                        Circle().fill(.thinMaterial)
-                    }
-                }
-                .overlay {
-                    if reduceTransparency || colorSchemeContrast == .increased {
-                        Circle().strokeBorder(GlassTheme.fallbackBorderColor, lineWidth: GlassTheme.fallbackBorderWidth)
-                    } else {
-                        Circle().strokeBorder(GlassTheme.specularBorderGradient, lineWidth: GlassTheme.tactileOrbBorderWidth)
-                    }
-                }
-                .clipShape(Circle())
-                .contentShape(Circle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(Text(accessibilityLabel ?? LocalizedStringKey(systemName)))
-    }
-}
-
-// MARK: - macOS Horizontal Scroll Wheel & Trackpad Bridge
-
-@MainActor
-public final class MacOSHorizontalScrollCoordinator {
-    public var scrollFraction: CGFloat = 0
-    public var stepIndex: Int?
-    #if os(macOS)
-    weak var scrollView: NSScrollView?
-    #endif
-
-    public init() {}
-
-    public func currentFraction() -> CGFloat {
-        #if os(macOS)
-        if let scrollView, let documentView = scrollView.documentView {
-            let clipView = scrollView.contentView
-            let maxOffsetX = max(0, documentView.bounds.width - clipView.bounds.width)
-            if maxOffsetX > 0 {
-                return min(max(0, clipView.bounds.origin.x / maxOffsetX), 1.0)
-            }
-        }
-        #endif
-        return scrollFraction
-    }
-}
-
-#if os(macOS)
-public final class HorizontalScrollInterceptorView: NSView {
-    var isEnabled: Bool = true
-    weak var coordinator: MacOSHorizontalScrollCoordinator?
-    private nonisolated(unsafe) var eventMonitor: Any?
-
-    override public func hitTest(_ point: NSPoint) -> NSView? {
-        nil
-    }
-
-    override public func viewDidMoveToWindow() {
-        super.viewDidMoveToWindow()
-        if window != nil {
-            coordinator?.scrollView = resolveHorizontalScrollView()
-            startMonitoringIfNeeded()
-        } else {
-            stopMonitoring()
-        }
-    }
-
-    func startMonitoringIfNeeded() {
-        guard eventMonitor == nil else { return }
-        eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .scrollWheel) { [weak self] event in
-            guard let self else { return event }
-            return handleScrollWheel(event)
-        }
-    }
-
-    func stopMonitoring() {
-        if let monitor = eventMonitor {
-            NSEvent.removeMonitor(monitor)
-            eventMonitor = nil
-        }
-    }
-
-    private func handleScrollWheel(_ event: NSEvent) -> NSEvent? {
-        guard isEnabled,
-              let window,
-              event.window === window,
-              !isHiddenOrHasHiddenAncestor,
-              let scrollView = resolveHorizontalScrollView(),
-              let documentView = scrollView.documentView
-        else {
-            return event
-        }
-
-        coordinator?.scrollView = scrollView
-
-        let locationInScrollView = scrollView.convert(event.locationInWindow, from: nil)
-        guard scrollView.bounds.contains(locationInScrollView) else {
-            return event
-        }
-
-        let clipView = scrollView.contentView
-        let maxOffsetX = max(0, documentView.bounds.width - clipView.bounds.width)
-        guard maxOffsetX > 0 else {
-            return event
-        }
-
-        let dominantDelta = abs(event.scrollingDeltaX) >= abs(event.scrollingDeltaY)
-            ? event.scrollingDeltaX
-            : event.scrollingDeltaY
-        guard dominantDelta != 0 else {
-            return nil
-        }
-
-        let multiplier: CGFloat = event.hasPreciseScrollingDeltas ? 1.0 : 14.0
-        let deltaX = dominantDelta * multiplier
-        let currentOrigin = clipView.bounds.origin
-        let targetX = min(max(0, currentOrigin.x - deltaX), maxOffsetX)
-
-        if targetX != currentOrigin.x {
-            clipView.scroll(to: NSPoint(x: targetX, y: currentOrigin.y))
-            scrollView.reflectScrolledClipView(clipView)
-            coordinator?.scrollFraction = targetX / maxOffsetX
-            coordinator?.stepIndex = nil
-        }
-
-        return nil
-    }
-
-    private func resolveHorizontalScrollView() -> NSScrollView? {
-        if let enclosing = enclosingScrollView {
-            return enclosing
-        }
-        var current: NSView? = superview
-        while let candidate = current {
-            if let sv = candidate as? NSScrollView {
-                return sv
-            }
-            current = candidate.superview
-        }
-        return nil
-    }
-
-    deinit {
-        if let monitor = eventMonitor {
-            NSEvent.removeMonitor(monitor)
-        }
-    }
-}
-
-public struct MacOSHorizontalScrollBridge: NSViewRepresentable {
-    public var isEnabled: Bool
-    public var coordinator: MacOSHorizontalScrollCoordinator?
-
-    public init(isEnabled: Bool = true, coordinator: MacOSHorizontalScrollCoordinator? = nil) {
-        self.isEnabled = isEnabled
-        self.coordinator = coordinator
-    }
-
-    public func makeNSView(context: Context) -> HorizontalScrollInterceptorView {
-        let view = HorizontalScrollInterceptorView()
-        view.isEnabled = isEnabled
-        view.coordinator = coordinator
-        return view
-    }
-
-    public func updateNSView(_ nsView: HorizontalScrollInterceptorView, context: Context) {
-        nsView.isEnabled = isEnabled
-        nsView.coordinator = coordinator
-    }
-
-    public static func dismantleNSView(_ nsView: HorizontalScrollInterceptorView, coordinator: ()) {
-        nsView.stopMonitoring()
-    }
-}
-#endif
-
-public extension View {
-    /// Enables horizontal scrolling via vertical mouse wheel and trackpad gestures on macOS.
-    func macOSHorizontalScroll(isEnabled: Bool = true, coordinator: MacOSHorizontalScrollCoordinator? = nil) -> some View {
-        #if os(macOS)
-        background(MacOSHorizontalScrollBridge(isEnabled: isEnabled, coordinator: coordinator))
-        #else
-        self
-        #endif
-    }
-}
-
-// MARK: - Previews
-
-#Preview("Glass Design Tokens & Hierarchy") {
-    ZStack {
-        LinearGradient(
-            colors: [.indigo, .purple, .black],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing)
-            .ignoresSafeArea()
-
-        VStack(spacing: 20) {
-            // Capsule Demo
-            HStack(spacing: 8) {
-                Image(systemName: "camera.fill")
-                Text("Photographer Attribution")
-                    .font(.caption.weight(.semibold))
-            }
-            .glassVibrancy(.primary)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
-            .glassCapsule(style: .ultraThin)
-
-            // Card Demo via GlassContainer
-            GlassContainer(cornerRadius: 16, style: .thin) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("EXIF Details")
-                        .font(.headline)
-                        .glassVibrancy(.primary)
-                    Text("ISO 100 • 50mm • f/1.8 • 1/250s")
-                        .font(.subheadline)
-                        .glassVibrancy(.secondary)
-                    Text("Shot on Sony A7 IV")
-                        .font(.caption)
-                        .glassVibrancy(.tertiary)
-                }
-                .padding(16)
-            }
-
-            // Button Demo
-            Button(
-                action: {},
-                label: {
-                    Image(systemName: "magnifyingglass")
-                        .font(.system(size: 16, weight: .semibold))
-                        .glassVibrancy(.primary)
-                        .padding(12)
-                        .glassBackground(style: .ultraThin, shape: Circle())
-                })
-        }
-        .padding()
-    }
-}
-
-#Preview("Glass - Dark Mode") {
-    ZStack {
-        Color.black.ignoresSafeArea()
-        VStack(spacing: 16) {
-            Text("Dark Mode Preview")
+    var body: some View {
+        VStack(spacing: 12) {
+            Text("Error Loading Feed")
                 .font(.headline)
                 .glassVibrancy(.primary)
 
-            HStack {
-                Image(systemName: "photo")
-                Text("Attribution Pill")
+            Text(error)
+                .font(.subheadline)
+                .glassVibrancy(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 24)
+
+            Button(action: onRetry) {
+                Text("Retry")
+                    .font(.subheadline.weight(.semibold))
+                    .glassVibrancy(.primary)
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 10)
+                    .matteCapsule()
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
-            .glassCapsule()
+            .buttonStyle(.plain)
         }
-        .padding(24)
-        .glassCard()
     }
-    .preferredColorScheme(.dark)
+}
+
+// MARK: - Color Hex Parsing Extension
+
+extension Color {
+    init(hex: String) {
+        let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+        var int: UInt64 = 0
+        Scanner(string: hex).scanHexInt64(&int)
+        let a, r, g, b: UInt64
+        switch hex.count {
+        case 3: // RGB (12-bit)
+            (a, r, g, b) = (255, (int >> 8) * 17, (int >> 4 & 0xF) * 17, (int & 0xF) * 17)
+        case 6: // RGB (24-bit)
+            (a, r, g, b) = (255, int >> 16, int >> 8 & 0xFF, int & 0xFF)
+        case 8: // ARGB (32-bit)
+            (a, r, g, b) = (int >> 24, int >> 16 & 0xFF, int >> 8 & 0xFF, int & 0xFF)
+        default:
+            (a, r, g, b) = (255, 30, 30, 36)
+        }
+
+        self.init(
+            .sRGB,
+            red: Double(r) / 255,
+            green: Double(g) / 255,
+            blue: Double(b) / 255,
+            opacity: Double(a) / 255)
+    }
 }

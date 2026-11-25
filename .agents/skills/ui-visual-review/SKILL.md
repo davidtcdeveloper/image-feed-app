@@ -42,7 +42,7 @@ Always run `xcodegen generate --spec iosApp/project.yml` after any `project.yml`
 | Mode | Mechanism | Speed (Post-Build) | When Recommended |
 | :--- | :--- | :--- | :--- |
 | **Mode A: Fast View Hosting *(Default)*** | `iosAppTests` / `macosAppTests` ([`UIVisualSnapshotTests.swift`](../../../iosApp/iosAppTests/UIVisualSnapshotTests.swift)) via `UIHostingController` / `NSHostingView` | ~2–5s | **~85% of UI specs:** Typography, spacing, grid columns, cards/badges, color tokens, Light/Dark mode, Dynamic Type, and empty/error states. |
-| **Mode B: Window-Server Capture** | `iosAppUITests` ([`UIWindowServerSnapshotUITests.swift`](../../../iosApp/iosAppUITests/UIWindowServerSnapshotUITests.swift)) + `Xcode MCP RenderPreview` | ~15–25s | **~15% of UI specs:** `.ultraThinMaterial` backdrop blurs & vibrancy ([`GlassTheme.swift`](../../../iosApp/iosApp/GlassTheme.swift)), floating safe-area bars ([`FloatingTabCapsule.swift`](../../../iosApp/iosApp/FloatingTabCapsule.swift)), detented bottom sheets ([`PhotoInspectorView.swift`](../../../iosApp/iosApp/PhotoInspectorView.swift)), and macOS `NavigationSplitView` chrome ([`MacOSContentView.swift`](../../../iosApp/iosApp/MacOSContentView.swift)). |
+| **Mode B: Window-Server Capture** | `iosAppUITests` ([`UIWindowServerSnapshotUITests.swift`](../../../iosApp/iosAppUITests/UIWindowServerSnapshotUITests.swift)) + `Xcode MCP RenderPreview` | ~15–25s | **~15% of UI specs:** `.ultraThinMaterial` backdrop blurs & vibrancy ([`SurfaceTokens.swift`](../../../iosApp/iosApp/DesignSystem/SurfaceTokens.swift)), floating safe-area bars ([`FloatingTabCapsule.swift`](../../../iosApp/iosApp/FloatingTabCapsule.swift)), detented bottom sheets ([`PhotoInspectorView.swift`](../../../iosApp/iosApp/PhotoInspectorView.swift)), and macOS `NavigationSplitView` chrome ([`MacOSContentView.swift`](../../../iosApp/iosApp/MacOSContentView.swift)). |
 
 * **Mode A Commands (unsandboxed)**:
   ```bash
@@ -86,3 +86,7 @@ Always run `xcodegen generate --spec iosApp/project.yml` after any `project.yml`
   * [`FeedScreen.kt`](../../../androidApp/src/main/java/com/example/imagefeed/android/FeedScreen.kt) (`FeedScreenContent`, Compact Light/Dark + Expanded `900×700`).
   * [`CollectionsFeedScreen.kt`](../../../androidApp/src/main/java/com/example/imagefeed/android/CollectionsFeedScreen.kt) (`CollectionsFeedScreenContent`, Compact Light/Dark + Expanded `900×700`).
   * [`SearchScreen.kt`](../../../androidApp/src/main/java/com/example/imagefeed/android/SearchScreen.kt) (`SearchScreenContent`, Discovery Light/Dark/Expanded `900×700` + Search Results Compact Light).
+  * [`PhotosFeedView.swift`](../../../iosApp/iosApp/PhotosFeedView.swift) (`PhotosFeedTabView`, iOS Compact Light/Dark + macOS `1280×800` Light/Dark).
+  * [`CollectionsFeedView.swift`](../../../iosApp/iosApp/CollectionsFeedView.swift) (`CollectionsFeedView`, iOS Compact/Regular Light + macOS `1280×800` Light).
+  * [`SearchView.swift`](../../../iosApp/iosApp/SearchView.swift) (`SearchView` results & `SearchFiltersSheetView`, iOS Compact Light + macOS `1280×800` Light).
+  * [`UserProfileView.swift`](../../../iosApp/iosApp/UserProfileView.swift) (`UserProfileView` Insights, iOS Compact Light/Dark + macOS `1280×800` Light/Dark).

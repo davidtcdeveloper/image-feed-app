@@ -4,17 +4,23 @@ import SwiftUI
 
 struct UserProfileView: View {
     let username: String
+    @State private var containerWidth: CGFloat = 0
     @State private var viewModel: UserProfileViewModel?
     @Environment(\.dismiss) private var dismiss
 
     let onPhotoSelect: (String) -> Void
     let onCollectionSelect: (String) -> Void
 
-    init(username: String, onPhotoSelect: @escaping (String) -> Void, onCollectionSelect: @escaping (String) -> Void) {
+    init(
+        username: String,
+        initialViewModel: UserProfileViewModel? = nil,
+        onPhotoSelect: @escaping (String) -> Void,
+        onCollectionSelect: @escaping (String) -> Void)
+    {
         self.username = username
         self.onPhotoSelect = onPhotoSelect
         self.onCollectionSelect = onCollectionSelect
-        self._viewModel = State(initialValue: nil)
+        self._viewModel = State(initialValue: initialViewModel)
     }
 
     var body: some View {
@@ -100,6 +106,7 @@ struct UserProfileView: View {
                     .padding(.top, 40)
             }
         }
+        .measureContainerWidth($containerWidth)
         .task(id: username) {
             if viewModel == nil {
                 viewModel = UserProfileViewModel(username: username)
@@ -115,13 +122,13 @@ struct UserProfileView: View {
         .toolbar {
             #if os(iOS)
             ToolbarItem(placement: .navigationBarLeading) {
-                GlassToolbarButton(systemName: "chevron.backward", accessibilityLabel: "Back") {
+                PlatformToolbarButton(systemName: "chevron.backward", accessibilityLabel: "Back") {
                     dismiss()
                 }
             }
             #else
             ToolbarItem(placement: .navigation) {
-                GlassToolbarButton(systemName: "chevron.backward", accessibilityLabel: "Back") {
+                PlatformToolbarButton(systemName: "chevron.backward", accessibilityLabel: "Back") {
                     dismiss()
                 }
             }
@@ -130,7 +137,7 @@ struct UserProfileView: View {
             if let user = viewModel?.user {
                 #if os(iOS)
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    GlassToolbarButton(systemName: "safari", accessibilityLabel: "Open Profile in Browser") {
+                    PlatformToolbarButton(systemName: "safari", accessibilityLabel: "Open Profile in Browser") {
                         let utmProfile = "\(user.links.html)?utm_source=ImageFeedApp&utm_medium=referral"
                         if let url = URL(string: utmProfile) {
                             URLHelper.open(url)
@@ -139,7 +146,7 @@ struct UserProfileView: View {
                 }
                 #else
                 ToolbarItem(placement: .primaryAction) {
-                    GlassToolbarButton(systemName: "safari", accessibilityLabel: "Open Profile in Browser") {
+                    PlatformToolbarButton(systemName: "safari", accessibilityLabel: "Open Profile in Browser") {
                         let utmProfile = "\(user.links.html)?utm_source=ImageFeedApp&utm_medium=referral"
                         if let url = URL(string: utmProfile) {
                             URLHelper.open(url)
@@ -163,7 +170,7 @@ struct ProfileHeaderView: View {
                 .aspectRatio(contentMode: .fill)
                 .frame(width: 88, height: 88)
                 .clipShape(Circle())
-                .overlay(Circle().stroke(.white.opacity(0.4), lineWidth: 2))
+                .overlay(Circle().stroke(GlassTheme.matteBorderColor, lineWidth: 2))
                 .shadow(radius: 4)
 
             VStack(spacing: 4) {
@@ -299,7 +306,7 @@ struct ProfileTabPicker: View {
                             HStack(spacing: 6) {
                                 Text(tabTitle(for: tab))
                                     .font(.caption.weight(isSelected ? .bold : .medium))
-                                    .glassVibrancy(isSelected ? .primary : .secondary)
+                                    .foregroundStyle(isSelected ? GlassTheme.activePillForegroundColor : Color.secondary)
 
                                 if let count = tabCount(for: tab) {
                                     Text("\(count)")
@@ -308,8 +315,8 @@ struct ProfileTabPicker: View {
                                         .padding(.vertical, 2)
                                         .background(
                                             Capsule()
-                                                .fill(isSelected ? Color.white.opacity(0.20) : Color.white.opacity(0.08)))
-                                        .glassVibrancy(isSelected ? .primary : .secondary)
+                                                .fill(isSelected ? GlassTheme.activePillForegroundColor.opacity(0.18) : GlassTheme.subtleFillColor))
+                                        .foregroundStyle(isSelected ? GlassTheme.activePillForegroundColor : Color.secondary)
                                 }
                             }
                             .padding(.horizontal, 14)
@@ -317,20 +324,17 @@ struct ProfileTabPicker: View {
                             .background {
                                 if isSelected {
                                     Capsule()
-                                        .fill(Color.white.opacity(0.14))
-                                        .overlay {
-                                            if reduceTransparency || colorSchemeContrast == .increased {
-                                                Capsule()
-                                                    .strokeBorder(GlassTheme.fallbackBorderColor, lineWidth: GlassTheme.fallbackBorderWidth)
-                                            } else {
-                                                Capsule()
-                                                    .strokeBorder(GlassTheme.specularBorderGradient, lineWidth: GlassTheme.specularBorderWidth)
-                                            }
-                                        }
+                                        .fill(GlassTheme.activePillFillColor)
                                         .matchedGeometryEffect(id: "ActiveProfileTab", in: tabIndicatorNamespace)
                                 } else {
                                     Capsule()
-                                        .fill(Color.white.opacity(0.04))
+                                        .fill(GlassTheme.subtleFillColor)
+                                        .overlay {
+                                            if colorSchemeContrast == .increased {
+                                                Capsule()
+                                                    .strokeBorder(GlassTheme.fallbackBorderColor, lineWidth: GlassTheme.fallbackBorderWidth)
+                                            }
+                                        }
                                 }
                             }
                         }
@@ -344,6 +348,9 @@ struct ProfileTabPicker: View {
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
                 .macOSHorizontalScroll()
+            }
+            .onAppear {
+                proxy.scrollTo(activeTab, anchor: .center)
             }
             .onChange(of: activeTab) { _, newTab in
                 withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
@@ -392,6 +399,7 @@ struct GridPhotosList: View {
     #if os(iOS)
     @Environment(\.horizontalSizeClass) var sizeClass
     #endif
+    @Environment(\.containerWidth) private var containerWidth
     let photos: [Photo]
     var columnItems: ((Int, Int) -> [AdaptiveLayoutHelper.IndexedItem<Photo>])?
     let isLoading: Bool
@@ -400,9 +408,9 @@ struct GridPhotosList: View {
 
     private var columnCount: Int {
         #if os(iOS)
-        AdaptiveLayoutHelper.getColumnCount(sizeClass: sizeClass)
+        AdaptiveLayoutHelper.getColumnCount(containerWidth: containerWidth, sizeClass: sizeClass)
         #else
-        AdaptiveLayoutHelper.getColumnCount()
+        AdaptiveLayoutHelper.getColumnCount(containerWidth: containerWidth)
         #endif
     }
 
@@ -434,34 +442,18 @@ struct GridPhotosList: View {
                             ForEach(items) { indexed in
                                 let photo = indexed.item
                                 let flatIndex = indexed.index
-                                let screenWidth = AdaptiveLayoutHelper.getScreenWidth()
-                                let itemWidth = AdaptiveLayoutHelper.calculateItemWidthPx(screenWidth: screenWidth, columnCount: columnCount)
-                                let imageUrl = photo.urls.getOptimalUrl(targetWidthPx: Int32(itemWidth))
-                                Button(action: {
-                                    onSelect(photo.id)
-                                }) {
-                                    KFImage(URL(string: imageUrl))
-                                        .placeholder {
-                                            ZStack {
-                                                RoundedRectangle(cornerRadius: 12)
-                                                    .fill(Color(hex: photo.color ?? "1E1E24"))
-                                                ProgressView()
-                                                    .tint(.primary.opacity(0.6))
-                                            }
-                                            .aspectRatio(CGFloat(photo.width) / CGFloat(photo.height), contentMode: .fit)
+                                PhotoGridCard(
+                                    photo: photo,
+                                    columnCount: columnCount,
+                                    showAttribution: false,
+                                    fadeDuration: 0,
+                                    onSelect: { onSelect(photo.id) },
+                                    onAppear: {
+                                        if photo.id == photos.last?.id {
+                                            onLoadMore()
                                         }
-                                        .resizable()
-                                        .aspectRatio(CGFloat(photo.width) / CGFloat(photo.height), contentMode: .fit)
-                                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                                        .staggeredReveal(index: flatIndex)
-                                        .feedScrollTransition()
-                                }
-                                .buttonStyle(SpringCardButtonStyle())
-                                .onAppear {
-                                    if photo.id == photos.last?.id {
-                                        onLoadMore()
-                                    }
-                                }
+                                    })
+                                    .staggeredReveal(index: flatIndex)
                             }
                         }
                     }
@@ -470,7 +462,7 @@ struct GridPhotosList: View {
 
                 if isLoading {
                     ProgressView()
-                        .tint(.white)
+                        .tint(.primary)
                         .padding(.vertical, 16)
                 }
             }
@@ -479,6 +471,7 @@ struct GridPhotosList: View {
 }
 
 struct GridCollectionsList: View {
+    @Environment(\.containerWidth) private var containerWidth
     let collections: [PhotoCollection]
     let isLoading: Bool
     let onLoadMore: () -> Void
@@ -507,12 +500,8 @@ struct GridCollectionsList: View {
                         }) {
                             ZStack(alignment: .bottomLeading) {
                                 if let coverPhoto = col.coverPhoto {
-                                    #if os(iOS)
-                                    let scale = UIScreen.main.scale
-                                    #elseif os(macOS)
-                                    let scale = NSScreen.main?.backingScaleFactor ?? 2.0
-                                    #endif
-                                    let itemWidthPx = Int32(AdaptiveLayoutHelper.getScreenWidth() * scale)
+                                    let widthPt = AdaptiveLayoutHelper.effectiveWidth(containerWidth: containerWidth)
+                                    let itemWidthPx = Int32(widthPt * AdaptiveLayoutHelper.displayScale())
                                     KFImage(URL(string: coverPhoto.urls.getOptimalUrl(targetWidthPx: itemWidthPx)))
                                         .resizable()
                                         .aspectRatio(contentMode: .fill)
@@ -541,6 +530,7 @@ struct GridCollectionsList: View {
                                     .font(.caption)
                                     .glassVibrancy(.secondary)
                                 }
+                                .environment(\.colorScheme, .dark)
                                 .padding(16)
                             }
                             .frame(height: 180)
@@ -561,7 +551,7 @@ struct GridCollectionsList: View {
 
                 if isLoading {
                     ProgressView()
-                        .tint(.white)
+                        .tint(.primary)
                         .padding(.vertical, 16)
                 }
             }
@@ -578,7 +568,7 @@ struct InsightsView: View {
         VStack(spacing: 20) {
             if isLoading, stats == nil {
                 ProgressView()
-                    .tint(.white)
+                    .tint(.primary)
                     .padding(.top, 40)
             } else if error != nil, stats == nil {
                 Text("Failed to load insights.")
@@ -597,14 +587,14 @@ struct InsightsView: View {
                     if let viewsHist = stats.views.historical, !viewsHist.values.isEmpty {
                         InteractiveTimelineChart(title: "VIEWS TRENDS (LAST 30 DAYS)", values: viewsHist.values)
                             .padding(16)
-                            .glassCard(cornerRadius: 12, style: .ultraThin)
+                            .matteSurface(cornerRadius: 12)
                     }
 
                     // Interactive Downloads Chart
                     if let downHist = stats.downloads.historical, !downHist.values.isEmpty {
                         InteractiveTimelineChart(title: "DOWNLOADS TRENDS (LAST 30 DAYS)", values: downHist.values)
                             .padding(16)
-                            .glassCard(cornerRadius: 12, style: .ultraThin)
+                            .matteSurface(cornerRadius: 12)
                     }
                 }
                 .padding(.horizontal, 16)
@@ -656,7 +646,7 @@ struct InteractiveTimelineChart: View {
                     LineMark(
                         x: .value("Date", item.date),
                         y: .value("Count", item.value))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Color.primary)
                         .interpolationMethod(.catmullRom)
 
                     AreaMark(
@@ -664,20 +654,20 @@ struct InteractiveTimelineChart: View {
                         y: .value("Count", item.value))
                         .foregroundStyle(
                             LinearGradient(
-                                colors: [.white.opacity(0.2), .clear],
+                                colors: [Color.primary.opacity(0.18), .clear],
                                 startPoint: .top,
                                 endPoint: .bottom))
                         .interpolationMethod(.catmullRom)
 
                     if let selected = rawSelectedDate, item.date == selected {
                         RuleMark(x: .value("Date", selected))
-                            .foregroundStyle(.white.opacity(0.4))
+                            .foregroundStyle(Color.primary.opacity(0.4))
                             .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 4]))
 
                         PointMark(
                             x: .value("Date", selected),
                             y: .value("Count", item.value))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(Color.primary)
                             .symbolSize(100)
                     }
                 }

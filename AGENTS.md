@@ -12,7 +12,7 @@ Agents act as senior project collaborators for this KMP image-feed app. Keep res
 * [UI Visual Review](.agents/skills/ui-visual-review/SKILL.md) — Ephemeral Before/After UI captures (Compose Preview Sidecar, iOS/macOS snapshot suites) and visual review gate.
 * [KMP Testing Strategy](.agents/skills/kmp-testing/SKILL.md) — Shared MVI ViewModel test harness, fake repositories, and coroutine testing.
 * [Android Material 3 & Navigation 3](.agents/skills/android-m3-design/SKILL.md) — Compose M3 tokens, Navigation 3 scenes, predictive back, adaptive layouts.
-* [Apple Glass Design & HIG](.agents/skills/ios-glass-design/SKILL.md) — SwiftUI GlassTheme, materials, detents, dark scrims, sensory feedback.
+* [Apple Glass Design & HIG](.agents/skills/ios-glass-design/SKILL.md) — SwiftUI DesignSystem tokens, materials, detents, dark scrims, sensory feedback.
 * [Localization](.agents/skills/localization/SKILL.md) — Multiplatform string tables, AppError mapping, native formatters, RTL safety.
 
 ## Core Invariants

@@ -1,6 +1,6 @@
 # Specification 83: Apple DesignSystem Modularization, Matte Surfaces, Light-Mode Parity & Swift 6 ViewModels
 
-**Status:** Accepted
+**Status:** Implemented (Final)
 
 * **Wave:** Wave 1 — Disjoint Foundations
 * **Depends On:** None
@@ -81,20 +81,31 @@ Auditing `iosApp/iosApp/` (shared by both `iosApp` and `macosApp`) exposes four 
 
 ## 5. Acceptance Criteria
 
-- [ ] `iosApp/iosApp/DesignSystem/` splits `GlassTheme.swift` into `SurfaceTokens.swift`, `PlatformToolbarButton.swift`, `MacOSHorizontalScrollBridge.swift`, `PhotoGridCard.swift`, and scaffolds `PlatformNavigationShell.swift` / `AppNavigation.swift`.
-- [ ] `iosApp/project.yml` removes duplicated test target blocks and `xcodegen generate --spec iosApp/project.yml` cleanly regenerates `project.pbxproj`.
-- [ ] `AdaptiveLayoutHelper` computes columns and Retina CDN pixel widths from actual container geometry on iOS, iPadOS, and macOS.
-- [ ] All 7 Swift ViewModels conform to `@MainActor @Observable final class` with deterministic `viewModel.clear()` teardown and zero Swift 6 warnings.
-- [ ] Light Mode token leaks (`ProgressView().tint(.white)`, `CategoryTabButton`, `FilterButtonView`, skeleton shimmer, `InsightsView` charts) and `CollectionMosaicCard` / `InsightsView` `.matteSurface()` conversions pass visual review.
-- [ ] `iosApp` and `macosApp` builds, Mode A snapshot tests, `swiftformat --lint .`, and `swiftlint` pass with zero serious violations.
-- [ ] Affected [`wiki/`](../wiki/README.md) pages, [`.agents/skills/ios-glass-design/SKILL.md`](../.agents/skills/ios-glass-design/SKILL.md), [`.agents/skills/ui-visual-review/SKILL.md`](../.agents/skills/ui-visual-review/SKILL.md), and [`AGENTS.md`](../AGENTS.md) (if `GlassTheme.swift` retires) are updated.
+- [x] `iosApp/iosApp/DesignSystem/` splits `GlassTheme.swift` into `SurfaceTokens.swift`, `PlatformToolbarButton.swift`, `MacOSHorizontalScrollBridge.swift`, `PhotoGridCard.swift`, and scaffolds `PlatformNavigationShell.swift` / `AppNavigation.swift`.
+- [x] `iosApp/project.yml` removes duplicated test target blocks and `xcodegen generate --spec iosApp/project.yml` cleanly regenerates `project.pbxproj`.
+- [x] `AdaptiveLayoutHelper` computes columns and Retina CDN pixel widths from actual container geometry on iOS, iPadOS, and macOS.
+- [x] All 7 Swift ViewModels conform to `@MainActor @Observable final class` with deterministic `viewModel.clear()` teardown and zero Swift 6 warnings.
+- [x] Light Mode token leaks (`ProgressView().tint(.white)`, `CategoryTabButton`, `FilterButtonView`, skeleton shimmer, `InsightsView` charts) and `CollectionMosaicCard` / `InsightsView` `.matteSurface()` conversions pass visual review.
+- [x] `iosApp` and `macosApp` builds, Mode A snapshot tests, `swiftformat --lint .`, and `swiftlint` pass with zero serious violations.
+- [x] Affected [`wiki/`](../wiki/README.md) pages, [`.agents/skills/ios-glass-design/SKILL.md`](../.agents/skills/ios-glass-design/SKILL.md), [`.agents/skills/ui-visual-review/SKILL.md`](../.agents/skills/ui-visual-review/SKILL.md), and [`AGENTS.md`](../AGENTS.md) (if `GlassTheme.swift` retires) are updated.
 
 ---
 
 ## 6. Verification Record
 
 ### Verified
-*(Pending implementation)*
+- **User Visual Review**: Approved Before/After Mode A visual diff across iOS, iPadOS, and macOS (`spec_83_visual_review.md`).
+- **XcodeGen & Dual-Target Builds**:
+  - `xcodegen generate --spec iosApp/project.yml` succeeded cleanly after removing duplicated test target blocks in `iosApp/project.yml`.
+  - `xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp -destination 'generic/platform=iOS Simulator' build CODE_SIGNING_ALLOWED=NO` succeeded (`** BUILD SUCCEEDED **`, 0 Swift compiler warnings).
+  - `xcodebuild -project iosApp/iosApp.xcodeproj -scheme macosApp -destination 'platform=macOS,arch=arm64' build CODE_SIGNING_ALLOWED=NO` succeeded (`** BUILD SUCCEEDED **`, 0 Swift compiler warnings).
+- **Formatting & Static Analysis**:
+  - `swiftformat --lint .` passed (`0/34 files require formatting`).
+  - `swiftlint lint iosApp/iosApp iosApp/iosAppTests iosApp/iosAppUITests` passed with 0 errors (pre-existing style warnings only).
+- **Unit & Mode A Snapshot Tests**:
+  - `xcodebuild test -project iosApp/iosApp.xcodeproj -scheme iosApp -destination 'platform=iOS Simulator,name=iPhone 18 Pro' -only-testing:iosAppTests CODE_SIGNING_ALLOWED=NO` passed (`4` tests: `3` `AdaptiveLayoutHelperTests` + `UIVisualSnapshotTests`, `0` failures), generating `11` iOS/iPadOS `after` PNGs.
+  - `xcodebuild test -project iosApp/iosApp.xcodeproj -scheme macosApp -destination 'platform=macOS,arch=arm64' -only-testing:macosAppTests CODE_SIGNING_ALLOWED=NO` passed (`4` tests: `3` `AdaptiveLayoutHelperTests` + `UIVisualSnapshotTests`, `0` failures), generating `8` macOS `after` PNGs.
+- **Visual Pixel Inspection**: Inspected representative `before` and `after` PNGs across iOS, iPadOS, and macOS via `read_file` confirming Matte `CollectionMosaicCard` framing, 3-column iPad/macOS collections, 5-column macOS photos feed, high-contrast Light Mode `CategoryTabButton` / `FilterButtonView` / `ProfileTabPicker` pills, and `.primary` Swift Charts strokes.
 
 ### Unverified / Gaps
-*(Pending implementation)*
+- Interactive live-device/simulator runtime launch (`iosApp` / `macosApp` with live Unsplash API responses) was not executed; verification relies on static offline fixtures, unit tests, and Mode A snapshot rendering.

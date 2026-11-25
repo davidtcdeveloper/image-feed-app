@@ -1,8 +1,9 @@
 import shared
 import SwiftUI
 
+@MainActor
 @Observable
-class SearchViewModel {
+final class SearchViewModel {
     var query = ""
     var activeTab = SearchTab.photos
     var filters = SearchFilters()
@@ -17,10 +18,29 @@ class SearchViewModel {
     var searchHistory: [String] = []
     var hasReachedEnd = false
 
-    private let viewModel: shared.UnifiedSearchViewModel
-    private var stateCloseable: Closeable?
-    private var effectsCloseable: Closeable?
+    private let viewModel: shared.UnifiedSearchViewModel?
+    @ObservationIgnored private nonisolated(unsafe) var stateCloseable: Closeable?
+    @ObservationIgnored private nonisolated(unsafe) var effectsCloseable: Closeable?
     @ObservationIgnored private var cachedBuckets: [Int: [[AdaptiveLayoutHelper.IndexedItem<Photo>]]] = [:]
+
+    #if DEBUG
+    init(
+        previewQuery: String = "",
+        previewTab: SearchTab = .photos,
+        previewPhotos: [Photo] = [],
+        previewHistory: [String] = [],
+        isLoading: Bool = false,
+        error: String? = nil)
+    {
+        self.viewModel = nil
+        self.query = previewQuery
+        self.activeTab = previewTab
+        self.photos = previewPhotos
+        self.searchHistory = previewHistory
+        self.isLoading = isLoading
+        self.error = error
+    }
+    #endif
 
     init(initialQuery: String = "") {
         self.query = initialQuery
@@ -32,53 +52,57 @@ class SearchViewModel {
         }
 
         self.stateCloseable = viewModel.iosState.watch { [weak self] state in
-            guard let self, let state else { return }
-            if query != state.query {
-                self.query = state.query
-            }
-            if isSearchActive != state.isSearchActive {
-                self.isSearchActive = state.isSearchActive
-            }
-            if isRefreshing != state.isRefreshing {
-                self.isRefreshing = state.isRefreshing
-            }
-            if activeTab != state.activeTab {
-                self.activeTab = state.activeTab
-            }
-            if filters != state.filters {
-                self.filters = state.filters
-            }
-            if photos != state.photos {
-                self.photos = state.photos
-                cachedBuckets.removeAll()
-            }
-            if collections != state.collections {
-                self.collections = state.collections
-            }
-            if users != state.users {
-                self.users = state.users
-            }
-            if isLoading != state.isLoading {
-                self.isLoading = state.isLoading
-            }
-            if isLoadingMore != state.isLoadingMore {
-                self.isLoadingMore = state.isLoadingMore
-            }
-            let errorMessage = state.error?.localizedMessage
-            if error != errorMessage {
-                self.error = errorMessage
-            }
-            if searchHistory != state.searchHistory {
-                self.searchHistory = state.searchHistory
-            }
-            if hasReachedEnd != state.hasReachedEnd {
-                self.hasReachedEnd = state.hasReachedEnd
+            MainActor.assumeIsolated {
+                guard let self, let state else { return }
+                if self.query != state.query {
+                    self.query = state.query
+                }
+                if self.isSearchActive != state.isSearchActive {
+                    self.isSearchActive = state.isSearchActive
+                }
+                if self.isRefreshing != state.isRefreshing {
+                    self.isRefreshing = state.isRefreshing
+                }
+                if self.activeTab != state.activeTab {
+                    self.activeTab = state.activeTab
+                }
+                if self.filters != state.filters {
+                    self.filters = state.filters
+                }
+                if self.photos != state.photos {
+                    self.photos = state.photos
+                    self.cachedBuckets.removeAll()
+                }
+                if self.collections != state.collections {
+                    self.collections = state.collections
+                }
+                if self.users != state.users {
+                    self.users = state.users
+                }
+                if self.isLoading != state.isLoading {
+                    self.isLoading = state.isLoading
+                }
+                if self.isLoadingMore != state.isLoadingMore {
+                    self.isLoadingMore = state.isLoadingMore
+                }
+                let errorMessage = state.error?.localizedMessage
+                if self.error != errorMessage {
+                    self.error = errorMessage
+                }
+                if self.searchHistory != state.searchHistory {
+                    self.searchHistory = state.searchHistory
+                }
+                if self.hasReachedEnd != state.hasReachedEnd {
+                    self.hasReachedEnd = state.hasReachedEnd
+                }
             }
         }
 
         self.effectsCloseable = viewModel.iosEffects.watch { [weak self] effect in
-            guard let self, let effect else { return }
-            handleEffect(effect)
+            MainActor.assumeIsolated {
+                guard let self, let effect else { return }
+                self.handleEffect(effect)
+            }
         }
     }
 
@@ -92,23 +116,23 @@ class SearchViewModel {
     }
 
     func updateQuery(newQuery: String) {
-        viewModel.dispatch(intent: UnifiedSearchIntentUpdateQuery(query: newQuery))
+        viewModel?.dispatch(intent: UnifiedSearchIntentUpdateQuery(query: newQuery))
     }
 
     func setSearchActive(active: Bool) {
-        viewModel.dispatch(intent: UnifiedSearchIntentSetSearchActive(active: active))
+        viewModel?.dispatch(intent: UnifiedSearchIntentSetSearchActive(active: active))
     }
 
     func submitSearch(query: String) {
-        viewModel.dispatch(intent: UnifiedSearchIntentSubmitSearch(query: query))
+        viewModel?.dispatch(intent: UnifiedSearchIntentSubmitSearch(query: query))
     }
 
     func refresh() {
-        viewModel.dispatch(intent: UnifiedSearchIntentRefresh.shared)
+        viewModel?.dispatch(intent: UnifiedSearchIntentRefresh.shared)
     }
 
     func setTab(tab: SearchTab) {
-        viewModel.dispatch(intent: UnifiedSearchIntentSelectSearchType(type: tab))
+        viewModel?.dispatch(intent: UnifiedSearchIntentSelectSearchType(type: tab))
     }
 
     func applyFilters(orderBy: String, color: String?, orientation: String?) {
@@ -117,19 +141,19 @@ class SearchViewModel {
             color: color,
             orientation: orientation,
             contentFilter: "low")
-        viewModel.dispatch(intent: UnifiedSearchIntentApplyFilters(filters: newFilters))
+        viewModel?.dispatch(intent: UnifiedSearchIntentApplyFilters(filters: newFilters))
     }
 
     func loadNextPage() {
-        viewModel.dispatch(intent: UnifiedSearchIntentLoadNextPage.shared)
+        viewModel?.dispatch(intent: UnifiedSearchIntentLoadNextPage.shared)
     }
 
     func removeHistoryEntry(entry: String) {
-        viewModel.dispatch(intent: UnifiedSearchIntentRemoveHistoryEntry(entry: entry))
+        viewModel?.dispatch(intent: UnifiedSearchIntentRemoveHistoryEntry(entry: entry))
     }
 
     func clearHistory() {
-        viewModel.dispatch(intent: UnifiedSearchIntentClearHistory.shared)
+        viewModel?.dispatch(intent: UnifiedSearchIntentClearHistory.shared)
     }
 
     func columnItems(for columnIndex: Int, totalColumns: Int) -> [AdaptiveLayoutHelper.IndexedItem<Photo>] {
@@ -145,6 +169,6 @@ class SearchViewModel {
     deinit {
         stateCloseable?.close()
         effectsCloseable?.close()
-        viewModel.clear()
+        viewModel?.clear()
     }
 }

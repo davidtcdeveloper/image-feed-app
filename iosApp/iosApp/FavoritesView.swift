@@ -17,6 +17,7 @@ struct FavoritesTabView: View {
     #if os(iOS)
     @Environment(\.horizontalSizeClass) private var sizeClass
     #endif
+    @State private var containerWidth: CGFloat = 0
     @State private var viewModel = FavoritesViewModel()
 
     private var externalPath: Binding<NavigationPath>?
@@ -49,9 +50,9 @@ struct FavoritesTabView: View {
 
     private var columnCount: Int {
         #if os(iOS)
-        AdaptiveLayoutHelper.getColumnCount(sizeClass: sizeClass)
+        AdaptiveLayoutHelper.getColumnCount(containerWidth: containerWidth, sizeClass: sizeClass)
         #else
-        AdaptiveLayoutHelper.getColumnCount()
+        AdaptiveLayoutHelper.getColumnCount(containerWidth: containerWidth)
         #endif
     }
 
@@ -100,25 +101,26 @@ struct FavoritesTabView: View {
                                     LazyVStack(spacing: 8) {
                                         ForEach(viewModel.columnItems(for: colIndex, totalColumns: columnCount)) { indexed in
                                             let photo = indexed.item
-                                            PhotoCard(
+                                            PhotoGridCard(
                                                 photo: photo,
+                                                columnCount: columnCount,
                                                 heroNamespace: heroNamespace,
                                                 isHeroSource: selectedPhotoForHero?.id != photo.id,
-                                                onSelect: { _ in
+                                                onSelect: {
                                                     withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
                                                         selectedPhotoForHero = photo
                                                     }
                                                 },
                                                 onUserSelect: { username in
                                                     activePath.wrappedValue.append(FavoritesPathItem(id: username, type: .user))
-                                                })
-                                                .contextMenu {
+                                                },
+                                                contextMenu: {
                                                     Button(role: .destructive) {
                                                         viewModel.removeFavorite(photoId: photo.id)
                                                     } label: {
                                                         Label("Remove Bookmark", systemImage: "bookmark.slash")
                                                     }
-                                                }
+                                                })
                                         }
                                     }
                                 }
@@ -172,6 +174,7 @@ struct FavoritesTabView: View {
                 }
             }
             .navigationTitle("FAVORITES")
+            .measureContainerWidth($containerWidth)
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(.ultraThinMaterial, for: .navigationBar)

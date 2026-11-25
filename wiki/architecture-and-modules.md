@@ -74,7 +74,7 @@ graph TD
 * **Lifecycle & Deterministic Teardown**:
   * All async coroutines launch in `viewModelScope` and rethrow `CancellationException` cleanly.
   * **Android**: Navigation 3 entries scope ViewModels via `viewModel(key = ...) { MetroHelper.get...() }` inside `rememberViewModelStoreNavEntryDecorator()`, automatically invoking `onCleared()`.
-  * **Apple (`iosApp` / `macosApp`)**: Views defer KMP ViewModel instantiation out of `View.init` using lazy `@State` initialization (Spec 68); Swift `@Observable` wrappers cancel `Closeable` watchers and invoke `viewModel.clear()` in `deinit` (calling `viewModelScope.cancel()`, `_effects.close()`, and `teardown()`).
+  * **Apple (`iosApp` / `macosApp`)**: Views defer KMP ViewModel instantiation out of `View.init` using lazy `@State` initialization (Spec 68); all 7 Swift wrappers (`FeedViewModel`, `CollectionsFeedViewModel`, `CollectionDetailViewModel`, `FavoritesViewModel`, `SearchViewModel`, `UserProfileViewModel`, `PhotoDetailsViewModel`) conform to `@MainActor @Observable final class` with `MainActor.assumeIsolated` inside KMP `watch` closures and `@ObservationIgnored private nonisolated(unsafe) var ...Closeable: Closeable?`, cancelling watchers and invoking `viewModel.clear()` in `deinit` (calling `viewModelScope.cancel()`, `_effects.close()`, and `teardown()`).
 
 ---
 
