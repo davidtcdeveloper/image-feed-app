@@ -126,13 +126,4 @@ object MetroHelper {
 
     @Suppress("unused") // Invoked on Android & Swift navigation entry points
     fun getUserPreview(username: String): User? = graph.navigationPreviewCache.getUser(username)
-
-    @Deprecated(
-        message =
-            "Use MetroHelper.getRandomPhotoViewModel(autoFetchOnInit = false) instead; " +
-                "pending deletion in Spec 84.",
-    )
-    @OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
-    @kotlin.native.HiddenFromObjC
-    fun getFeedRepository(): FeedRepository = graph.feedRepository
 }

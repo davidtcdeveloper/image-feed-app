@@ -56,11 +56,13 @@ Never hardcode arbitrary radii (e.g., `RoundedCornerShape(16.dp)`). Use semantic
 - `medium` (`12.dp`): Standard photo cards, mosaic items.
 - `large` (`16.dp`): Dialogs, inspector panels, user summary cards.
 - `extraLarge` (`28.dp`): Modal bottom sheets, search bars, pill buttons.
+- **Expressive Polygon Policy**: `PolygonShape` and `MorphPolygonShape` ([`ExpressiveShapes.kt`](../../../androidApp/src/main/java/com/example/imagefeed/android/designsystem/ExpressiveShapes.kt), [`ExpressiveShapeTokens`](../../../androidApp/src/main/java/com/example/imagefeed/android/theme/Shape.kt)) are permitted strictly for micro-controls, badges, and empty-state backdrops (`ApertureRandomizeButton`, `PhotoDetailPlaceholder` soft-scallop container); never clip photographs into polygons.
 
 ---
 
 ## 2. Component Guidelines
 
+- **Theme & Motion**: Wrap root UI in `MaterialExpressiveTheme` ([`Theme.kt`](../../../androidApp/src/main/java/com/example/imagefeed/android/theme/Theme.kt)) with `MotionScheme.expressive()`, and drive navigation and spatial/effects animations via `MaterialTheme.motionScheme` physics springs rather than fixed easing tweens.
 - **Chips & Connected Toggles**: Use official Material 3 `FilterChip`, `SuggestionChip`, `AssistChip`, `InputChip`, or M3 1.5.0 `ConnectedToggleGroup` ([`ExpressiveComponents.kt`](../../../androidApp/src/main/java/com/example/imagefeed/android/theme/ExpressiveComponents.kt)) for mutually-exclusive options. Never construct custom clickable `Box` layouts for tags or filter options.
 - **Loading & Progress Indicators**: Use themed M3 1.5.0 `ExpressiveLoadingIndicator` (primary loading states) and `ExpressiveWavyProgressIndicator` (inline/pagination loading) from [`ExpressiveComponents.kt`](../../../androidApp/src/main/java/com/example/imagefeed/android/theme/ExpressiveComponents.kt) instead of generic `CircularProgressIndicator`.
 - **Search**: Use `SearchBar` or `DockedSearchBar` (`androidx.compose.material3.SearchBar`) with `TextFieldState`-backed `SearchBarDefaults.InputField` (Compose 1.13+; value-based `BasicTextField` overloads are deprecated — see [`SearchScreen.kt`](../../../androidApp/src/main/java/com/example/imagefeed/android/SearchScreen.kt)).
@@ -94,8 +96,8 @@ The application uses **Jetpack Navigation 3** (`androidx.navigation3`). Legacy N
 
 Layouts must adapt dynamically across device form factors:
 - **Window Size Classes**:
-  - `Compact` (< 600dp): Bottom `NavigationBar`, single-column or 2-column phone layout.
-  - `Medium` (600–839dp) & `Expanded` ($\ge$ 840dp): Start-docked `NavigationRail`, multi-column adaptive grids.
+  - `Compact` (< 600dp): Floating tonal `ShortNavigationBar` capsule (`FloatingBottomNavigationBar` in [`FloatNavigationChrome.kt`](../../../androidApp/src/main/java/com/example/imagefeed/android/designsystem/FloatNavigationChrome.kt)), single-column or 2-column phone layout.
+  - `Medium` (600–839dp) & `Expanded` ($\ge$ 840dp): Start-docked collapsible `WideNavigationRail` (`ExpressiveNavigationRail` with safe-drawing insets), multi-column adaptive grids.
 - **Adaptive Grids & Non-Lazy Clusters**: Use `StaggeredGridCells.Adaptive` and column calculation utilities from [`AdaptiveUtils.kt`](../../../androidApp/src/main/java/com/example/imagefeed/android/AdaptiveUtils.kt), which read quantized `LocalPaneWidthDp.current` (provided at Navigation 3 pane boundaries via `ProvidePaneWidth`, falling back to `LocalAdaptiveLayoutInfo.current.screenWidthDp`) so column counts and Retina CDN widths adapt accurately inside `ListDetailSceneStrategy` panes. Use stable Compose 1.13 non-lazy `Grid` and `FlexBox` for bounded EXIF bento, topic tile, and tag clusters (see [`PhotoInspectorPane.kt`](../../../androidApp/src/main/java/com/example/imagefeed/android/details/PhotoInspectorPane.kt) and [`SearchDiscoveryView.kt`](../../../androidApp/src/main/java/com/example/imagefeed/android/search/SearchDiscoveryView.kt)).
 - **Dual-Pane Detail Views**:
   - Medium/Expanded widths & Book posture: Side-by-side dual-pane layout (Left: Photo Canvas; Right: Inspector sidebar with stats, map, EXIF, tags).

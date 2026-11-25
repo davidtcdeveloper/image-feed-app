@@ -17,9 +17,16 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.imagefeed.android.preview.PreviewScaffold
+import com.example.imagefeed.android.theme.ExpressiveShapeTokens
+
+private val PlaceholderBackdropSize = 112.dp
+private val PlaceholderIconSize = 44.dp
 
 @Composable
 fun PhotoDetailPlaceholder(modifier: Modifier = Modifier) {
@@ -35,12 +42,21 @@ fun PhotoDetailPlaceholder(modifier: Modifier = Modifier) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
-            Icon(
-                imageVector = Icons.Outlined.PhotoLibrary,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                modifier = Modifier.size(64.dp),
-            )
+            Box(
+                modifier =
+                    Modifier
+                        .size(PlaceholderBackdropSize)
+                        .clip(ExpressiveShapeTokens.SoftScallopShape)
+                        .background(MaterialTheme.colorScheme.secondaryContainer),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.PhotoLibrary,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                    modifier = Modifier.size(PlaceholderIconSize),
+                )
+            }
             Spacer(modifier = Modifier.height(16.dp))
             Text(
                 text = stringResource(R.string.details_placeholder_prompt),
@@ -49,5 +65,21 @@ fun PhotoDetailPlaceholder(modifier: Modifier = Modifier) {
                 textAlign = TextAlign.Center,
             )
         }
+    }
+}
+
+@Preview(showBackground = true, widthDp = 450, heightDp = 640, name = "Placeholder - Light")
+@Composable
+fun PhotoDetailPlaceholderLightPreview() {
+    PreviewScaffold(widthDp = 450, heightDp = 640, darkTheme = false) { _, _ ->
+        PhotoDetailPlaceholder()
+    }
+}
+
+@Preview(showBackground = true, widthDp = 450, heightDp = 640, name = "Placeholder - Dark")
+@Composable
+fun PhotoDetailPlaceholderDarkPreview() {
+    PreviewScaffold(widthDp = 450, heightDp = 640, darkTheme = true) { _, _ ->
+        PhotoDetailPlaceholder()
     }
 }

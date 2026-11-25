@@ -5,69 +5,62 @@ import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.Bundle
-import android.widget.Toast
+import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.core.FiniteAnimationSpec
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.selection.selectableGroup
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
-import androidx.compose.material3.NavigationRail
-import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.material3.adaptive.layout.calculatePaneScaffoldDirective
 import androidx.compose.material3.adaptive.navigation3.rememberListDetailSceneStrategy
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
 import androidx.navigationevent.NavigationEvent
 import com.example.imagefeed.android.adaptive.LocalAdaptiveLayoutInfo
 import com.example.imagefeed.android.adaptive.ProvideAdaptiveLayoutInfo
+import com.example.imagefeed.android.designsystem.ExpressiveNavigationRail
+import com.example.imagefeed.android.designsystem.FloatingBottomNavigationBar
 import com.example.imagefeed.android.navigation.AppRoute
+import com.example.imagefeed.android.navigation.NavigationState
 import com.example.imagefeed.android.navigation.Navigator
 import com.example.imagefeed.android.navigation.TOP_LEVEL_DESTINATIONS
 import com.example.imagefeed.android.navigation.collectionsSection
@@ -78,287 +71,43 @@ import com.example.imagefeed.android.navigation.rememberAppNavigationState
 import com.example.imagefeed.android.navigation.searchSection
 import com.example.imagefeed.android.navigation.userProfileSection
 import com.example.imagefeed.android.theme.ImageFeedTheme
+import com.example.imagefeed.android.util.localizedMessage
 import com.example.imagefeed.di.MetroHelper
-import com.example.imagefeed.feed.data.FeedRepository
+import com.example.imagefeed.presentation.random.RandomPhotoEffect
+import com.example.imagefeed.presentation.random.RandomPhotoIntent
+import com.example.imagefeed.presentation.random.RandomPhotoViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlin.math.sqrt
 
-class MainActivity : ComponentActivity() {
-    private val repository: FeedRepository by lazy { MetroHelper.getFeedRepository() }
+private const val TRANSITION_SLIDE_FRACTION = 0.15f
+private const val SHAKE_THRESHOLD = 800
+private const val SHAKE_SAMPLE_INTERVAL_MS = 100L
+private const val SHAKE_SPEED_SCALE = 10_000f
 
+class MainActivity : ComponentActivity() {
     private var sensorManager: SensorManager? = null
     private var shakeDetector: ShakeDetector? = null
-    private var onNavigateToRandom: ((AppRoute) -> Unit)? = null
-    private var isFetchingRandom = false
+    private var onShakeDetected: (() -> Unit)? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
-        // Setup shake sensor
         sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
-        shakeDetector =
-            ShakeDetector {
-                handleShake()
-            }
+        shakeDetector = ShakeDetector { onShakeDetected?.invoke() }
 
         setContent {
             ImageFeedTheme {
                 ProvideAdaptiveLayoutInfo(activity = this@MainActivity) {
-                    val adaptiveLayoutInfo = LocalAdaptiveLayoutInfo.current
                     Surface(
                         modifier = Modifier.fillMaxSize(),
                         color = MaterialTheme.colorScheme.background,
                     ) {
-                        val navigationState = rememberAppNavigationState()
-                        val navigator = remember(navigationState) { Navigator(navigationState) }
-                        onNavigateToRandom = { route -> navigator.navigate(route) }
-
-                        val currentStack = navigationState.backStacks[navigationState.topLevelRoute]
-                        val isAtRoot = currentStack?.size == 1
-                        val useRail = adaptiveLayoutInfo.useNavigationRail
-                        val useBottomBar = !adaptiveLayoutInfo.useNavigationRail && isAtRoot
-
-                        Row(modifier = Modifier.fillMaxSize()) {
-                            if (useRail) {
-                                NavigationRail(
-                                    header = {
-                                        IconButton(
-                                            onClick = { handleShake() },
-                                            modifier = Modifier.padding(top = 8.dp),
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Default.Refresh,
-                                                contentDescription = stringResource(R.string.feed_randomize_accessibility),
-                                                tint = MaterialTheme.colorScheme.onSurface,
-                                            )
-                                        }
-                                    },
-                                ) {
-                                    Spacer(modifier = Modifier.height(16.dp))
-                                    TOP_LEVEL_DESTINATIONS.forEach { destination ->
-                                        val isSelected = navigationState.topLevelRoute == destination.route
-                                        NavigationRailItem(
-                                            selected = isSelected,
-                                            onClick = {
-                                                if (isSelected) {
-                                                    navigator.onReselect(destination.route)
-                                                } else {
-                                                    navigator.navigate(destination.route)
-                                                }
-                                            },
-                                            icon = {
-                                                Icon(
-                                                    imageVector = destination.icon,
-                                                    contentDescription = stringResource(destination.labelRes),
-                                                )
-                                            },
-                                            label = { Text(stringResource(destination.labelRes)) },
-                                        )
-                                    }
-                                }
-                            }
-
-                            Scaffold(
-                                modifier = Modifier.weight(1f),
-                                contentWindowInsets = WindowInsets(0, 0, 0, 0),
-                                bottomBar = {
-                                    if (useBottomBar) {
-                                        Box(
-                                            modifier =
-                                                Modifier
-                                                    .fillMaxWidth()
-                                                    .navigationBarsPadding()
-                                                    .padding(bottom = 12.dp, start = 16.dp, end = 16.dp),
-                                            contentAlignment = Alignment.Center,
-                                        ) {
-                                            Surface(
-                                                modifier =
-                                                    Modifier
-                                                        .fillMaxWidth()
-                                                        .height(68.dp),
-                                                shape = CircleShape,
-                                                color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.88f),
-                                                shadowElevation = 8.dp,
-                                                border =
-                                                    BorderStroke(
-                                                        width = 1.dp,
-                                                        brush =
-                                                            Brush.verticalGradient(
-                                                                listOf(
-                                                                    Color.White.copy(alpha = 0.20f),
-                                                                    Color.White.copy(alpha = 0.05f),
-                                                                ),
-                                                            ),
-                                                    ),
-                                            ) {
-                                                Row(
-                                                    modifier =
-                                                        Modifier
-                                                            .fillMaxSize()
-                                                            .selectableGroup(),
-                                                    horizontalArrangement = Arrangement.SpaceEvenly,
-                                                    verticalAlignment = Alignment.CenterVertically,
-                                                ) {
-                                                    TOP_LEVEL_DESTINATIONS.forEach { destination ->
-                                                        val isSelected = navigationState.topLevelRoute == destination.route
-                                                        NavigationBarItem(
-                                                            selected = isSelected,
-                                                            onClick = {
-                                                                if (isSelected) {
-                                                                    navigator.onReselect(destination.route)
-                                                                } else {
-                                                                    navigator.navigate(destination.route)
-                                                                }
-                                                            },
-                                                            icon = {
-                                                                Icon(
-                                                                    imageVector = destination.icon,
-                                                                    contentDescription = null,
-                                                                )
-                                                            },
-                                                            label = {
-                                                                Text(
-                                                                    text = stringResource(destination.labelRes),
-                                                                    maxLines = 1,
-                                                                    overflow = TextOverflow.Ellipsis,
-                                                                )
-                                                            },
-                                                            colors =
-                                                                NavigationBarItemDefaults.colors(
-                                                                    indicatorColor = MaterialTheme.colorScheme.secondaryContainer,
-                                                                    selectedIconColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                                                                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                                    selectedTextColor = MaterialTheme.colorScheme.onSurface,
-                                                                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                                ),
-                                                        )
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                },
-                            ) { innerPadding ->
-                                @OptIn(ExperimentalSharedTransitionApi::class, ExperimentalMaterial3AdaptiveApi::class)
-                                SharedTransitionLayout {
-                                    val sharedTransitionScope = this
-                                    val entries =
-                                        navigationState.toDecoratedEntries(
-                                            entryProvider =
-                                                entryProvider {
-                                                    feedSection(
-                                                        sharedTransitionScope = sharedTransitionScope,
-                                                        navigator = navigator,
-                                                        onRandomClick = { handleShake() },
-                                                    )
-                                                    collectionsSection(
-                                                        sharedTransitionScope = sharedTransitionScope,
-                                                        navigator = navigator,
-                                                    )
-                                                    favoritesSection(
-                                                        sharedTransitionScope = sharedTransitionScope,
-                                                        navigator = navigator,
-                                                    )
-                                                    searchSection(
-                                                        sharedTransitionScope = sharedTransitionScope,
-                                                        navigator = navigator,
-                                                    )
-                                                    photoDetailsSection(
-                                                        sharedTransitionScope = sharedTransitionScope,
-                                                        navigator = navigator,
-                                                    )
-                                                    userProfileSection(
-                                                        sharedTransitionScope = sharedTransitionScope,
-                                                        navigator = navigator,
-                                                    )
-                                                },
-                                        )
-
-                                    val windowAdaptiveInfo = currentWindowAdaptiveInfoV2()
-                                    val directive =
-                                        remember(windowAdaptiveInfo) {
-                                            calculatePaneScaffoldDirective(windowAdaptiveInfo)
-                                                .copy(horizontalPartitionSpacerSize = 0.dp)
-                                        }
-                                    val listDetailStrategy = rememberListDetailSceneStrategy<NavKey>(directive = directive)
-
-                                    val navDisplayPadding =
-                                        if (useBottomBar) {
-                                            PaddingValues(
-                                                start = innerPadding.calculateStartPadding(LocalLayoutDirection.current),
-                                                top = innerPadding.calculateTopPadding(),
-                                                end = innerPadding.calculateEndPadding(LocalLayoutDirection.current),
-                                                bottom = 0.dp,
-                                            )
-                                        } else {
-                                            innerPadding
-                                        }
-
-                                    NavDisplay(
-                                        entries = entries,
-                                        sceneStrategies = listOf(listDetailStrategy),
-                                        onBack = {
-                                            if (!navigator.goBack()) {
-                                                finish()
-                                            }
-                                        },
-                                        sharedTransitionScope = sharedTransitionScope,
-                                        modifier =
-                                            Modifier
-                                                .padding(navDisplayPadding)
-                                                .consumeWindowInsets(navDisplayPadding),
-                                        transitionSpec = {
-                                            (
-                                                slideInHorizontally(
-                                                    initialOffsetX = { fullWidth -> (fullWidth * 0.15f).toInt() },
-                                                    animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing),
-                                                ) + fadeIn(animationSpec = tween(350))
-                                            ) togetherWith
-                                                (
-                                                    slideOutHorizontally(
-                                                        targetOffsetX = { fullWidth -> -(fullWidth * 0.15f).toInt() },
-                                                        animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing),
-                                                    ) + fadeOut(animationSpec = tween(200))
-                                                )
-                                        },
-                                        popTransitionSpec = {
-                                            (
-                                                slideInHorizontally(
-                                                    initialOffsetX = { fullWidth -> -(fullWidth * 0.15f).toInt() },
-                                                    animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing),
-                                                ) + fadeIn(animationSpec = tween(350))
-                                            ) togetherWith
-                                                (
-                                                    slideOutHorizontally(
-                                                        targetOffsetX = { fullWidth -> (fullWidth * 0.15f).toInt() },
-                                                        animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing),
-                                                    ) + fadeOut(animationSpec = tween(200))
-                                                )
-                                        },
-                                        predictivePopTransitionSpec = { swipeEdge ->
-                                            val isEdgeLeft = swipeEdge == NavigationEvent.EDGE_LEFT
-                                            (
-                                                slideInHorizontally(
-                                                    initialOffsetX = { fullWidth ->
-                                                        if (isEdgeLeft) -(fullWidth * 0.15f).toInt() else (fullWidth * 0.15f).toInt()
-                                                    },
-                                                    animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing),
-                                                ) + fadeIn(animationSpec = tween(350))
-                                            ) togetherWith
-                                                (
-                                                    slideOutHorizontally(
-                                                        targetOffsetX = { fullWidth ->
-                                                            if (isEdgeLeft) (fullWidth * 0.15f).toInt() else -(fullWidth * 0.15f).toInt()
-                                                        },
-                                                        animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing),
-                                                    ) + fadeOut(animationSpec = tween(200))
-                                                )
-                                        },
-                                    )
-                                }
-                            }
-                        }
+                        MainAppShell(
+                            onRegisterShake = { handler -> onShakeDetected = handler },
+                            onExitApp = { finish() },
+                        )
                     }
                 }
             }
@@ -376,29 +125,305 @@ class MainActivity : ComponentActivity() {
         sensorManager?.unregisterListener(shakeDetector)
         super.onPause()
     }
+}
 
-    private fun handleShake() {
-        if (isFetchingRandom) return
-        isFetchingRandom = true
-        Toast.makeText(this@MainActivity, getString(R.string.feed_shake_loading), Toast.LENGTH_SHORT).show()
-        lifecycleScope.launch {
-            try {
-                val photos = repository.getRandomPhotos(count = 1)
-                val randomPhoto = photos.firstOrNull() ?: return@launch
-                onNavigateToRandom?.invoke(AppRoute.PhotoDetails(randomPhoto.id))
-            } catch (e: Exception) {
-                Toast
-                    .makeText(
-                        this@MainActivity,
-                        getString(R.string.error_random_photo),
-                        Toast.LENGTH_SHORT,
-                    ).show()
-            } finally {
-                isFetchingRandom = false
+@Composable
+private fun MainAppShell(
+    onRegisterShake: ((() -> Unit)?) -> Unit,
+    onExitApp: () -> Unit,
+) {
+    val adaptiveLayoutInfo = LocalAdaptiveLayoutInfo.current
+    val navigationState = rememberAppNavigationState()
+    val navigator = remember(navigationState) { Navigator(navigationState) }
+    val randomPhotoViewModel: RandomPhotoViewModel =
+        viewModel(key = "random_photo_discovery") {
+            MetroHelper.getRandomPhotoViewModel(autoFetchOnInit = false)
+        }
+    val randomPhotoState by randomPhotoViewModel.state.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    RandomPhotoDiscoveryEffects(
+        randomPhotoViewModel = randomPhotoViewModel,
+        navigator = navigator,
+        snackbarHostState = snackbarHostState,
+        onRegisterShake = onRegisterShake,
+    )
+
+    val currentStack = navigationState.backStacks[navigationState.topLevelRoute]
+    val useRail = adaptiveLayoutInfo.useNavigationRail
+    val useBottomBar = !useRail && currentStack?.size == 1
+    val onDestinationClick: (AppRoute, Boolean) -> Unit = { route, isReselected ->
+        if (isReselected) navigator.onReselect(route) else navigator.navigate(route)
+    }
+    val onRandomClick: () -> Unit = {
+        randomPhotoViewModel.dispatch(RandomPhotoIntent.FetchRandomPhoto())
+    }
+
+    Row(modifier = Modifier.fillMaxSize()) {
+        if (useRail) {
+            ExpressiveNavigationRail(
+                destinations = TOP_LEVEL_DESTINATIONS,
+                selectedRoute = navigationState.topLevelRoute,
+                isRandomLoading = randomPhotoState.isLoading,
+                onRandomClick = onRandomClick,
+                onDestinationClick = onDestinationClick,
+            )
+        }
+        Scaffold(
+            modifier = Modifier.weight(1f),
+            contentWindowInsets = WindowInsets(0, 0, 0, 0),
+            snackbarHost = {
+                SnackbarHost(
+                    hostState = snackbarHostState,
+                    modifier = if (useBottomBar) Modifier else Modifier.navigationBarsPadding(),
+                )
+            },
+            bottomBar = {
+                if (useBottomBar) {
+                    FloatingBottomNavigationBar(
+                        destinations = TOP_LEVEL_DESTINATIONS,
+                        selectedRoute = navigationState.topLevelRoute,
+                        onDestinationClick = onDestinationClick,
+                    )
+                }
+            },
+        ) { innerPadding ->
+            AppNavigationHost(
+                navigationState = navigationState,
+                navigator = navigator,
+                innerPadding = innerPadding,
+                useBottomBar = useBottomBar,
+                onRandomClick = onRandomClick,
+                onExitApp = onExitApp,
+            )
+        }
+    }
+}
+
+@Composable
+private fun RandomPhotoDiscoveryEffects(
+    randomPhotoViewModel: RandomPhotoViewModel,
+    navigator: Navigator,
+    snackbarHostState: SnackbarHostState,
+    onRegisterShake: ((() -> Unit)?) -> Unit,
+) {
+    val context = LocalContext.current
+
+    DisposableEffect(randomPhotoViewModel) {
+        onRegisterShake {
+            if (!randomPhotoViewModel.state.value.isLoading) {
+                randomPhotoViewModel.dispatch(RandomPhotoIntent.FetchRandomPhoto())
+            }
+        }
+        onDispose {
+            onRegisterShake(null)
+        }
+    }
+
+    LaunchedEffect(randomPhotoViewModel, navigator) {
+        var snackbarJob: Job? = null
+        randomPhotoViewModel.effects.collect { effect ->
+            when (effect) {
+                is RandomPhotoEffect.PhotoFetched -> {
+                    randomPhotoViewModel.state.value.photo
+                        ?.takeIf { it.id == effect.photoId }
+                        ?.let { MetroHelper.seedPhotoPreview(it) }
+                    navigator.navigate(AppRoute.PhotoDetails(effect.photoId))
+                }
+                is RandomPhotoEffect.FetchFailed -> {
+                    val message = effect.error.localizedMessage(context)
+                    snackbarJob?.cancel()
+                    snackbarJob =
+                        launch {
+                            snackbarHostState.currentSnackbarData?.dismiss()
+                            snackbarHostState.showSnackbar(message = message)
+                        }
+                }
             }
         }
     }
 }
+
+@OptIn(
+    ExperimentalMaterial3ExpressiveApi::class,
+    ExperimentalSharedTransitionApi::class,
+    ExperimentalMaterial3AdaptiveApi::class,
+)
+@Composable
+private fun AppNavigationHost(
+    navigationState: NavigationState,
+    navigator: Navigator,
+    innerPadding: PaddingValues,
+    useBottomBar: Boolean,
+    onRandomClick: () -> Unit,
+    onExitApp: () -> Unit,
+) {
+    SharedTransitionLayout {
+        val sharedTransitionScope = this
+        val entries =
+            buildNavigationEntries(
+                navigationState = navigationState,
+                sharedTransitionScope = sharedTransitionScope,
+                navigator = navigator,
+                onRandomClick = onRandomClick,
+            )
+
+        val windowAdaptiveInfo = currentWindowAdaptiveInfoV2()
+        val directive =
+            remember(windowAdaptiveInfo) {
+                calculatePaneScaffoldDirective(windowAdaptiveInfo)
+                    .copy(horizontalPartitionSpacerSize = 0.dp)
+            }
+        val listDetailStrategy = rememberListDetailSceneStrategy<NavKey>(directive = directive)
+
+        val layoutDirection = LocalLayoutDirection.current
+        val navDisplayPadding =
+            if (useBottomBar) {
+                PaddingValues(
+                    start = innerPadding.calculateStartPadding(layoutDirection),
+                    top = innerPadding.calculateTopPadding(),
+                    end = innerPadding.calculateEndPadding(layoutDirection),
+                    bottom = 0.dp,
+                )
+            } else {
+                innerPadding
+            }
+
+        val context = LocalContext.current
+        val isReducedMotion =
+            remember(context) {
+                try {
+                    Settings.Global.getFloat(
+                        context.contentResolver,
+                        Settings.Global.ANIMATOR_DURATION_SCALE,
+                        1f,
+                    ) == 0f
+                } catch (_: Exception) {
+                    false
+                }
+            }
+        val motionScheme = MaterialTheme.motionScheme
+        val spatialSpec =
+            remember(motionScheme, isReducedMotion) {
+                if (isReducedMotion) snap() else motionScheme.defaultSpatialSpec<IntOffset>()
+            }
+        val enterEffectsSpec =
+            remember(motionScheme, isReducedMotion) {
+                if (isReducedMotion) snap() else motionScheme.defaultEffectsSpec<Float>()
+            }
+        val exitEffectsSpec =
+            remember(motionScheme, isReducedMotion) {
+                if (isReducedMotion) snap() else motionScheme.fastEffectsSpec<Float>()
+            }
+        val slideFraction = if (isReducedMotion) 0f else TRANSITION_SLIDE_FRACTION
+
+        NavDisplay(
+            entries = entries,
+            sceneStrategies = listOf(listDetailStrategy),
+            onBack = {
+                if (!navigator.goBack()) {
+                    onExitApp()
+                }
+            },
+            sharedTransitionScope = sharedTransitionScope,
+            modifier =
+                Modifier
+                    .padding(navDisplayPadding)
+                    .consumeWindowInsets(navDisplayPadding),
+            transitionSpec = {
+                slideTransform(
+                    forward = true,
+                    slideFraction = slideFraction,
+                    spatialSpec = spatialSpec,
+                    enterEffectsSpec = enterEffectsSpec,
+                    exitEffectsSpec = exitEffectsSpec,
+                )
+            },
+            popTransitionSpec = {
+                slideTransform(
+                    forward = false,
+                    slideFraction = slideFraction,
+                    spatialSpec = spatialSpec,
+                    enterEffectsSpec = enterEffectsSpec,
+                    exitEffectsSpec = exitEffectsSpec,
+                )
+            },
+            predictivePopTransitionSpec = { swipeEdge ->
+                slideTransform(
+                    forward = swipeEdge != NavigationEvent.EDGE_LEFT,
+                    slideFraction = slideFraction,
+                    spatialSpec = spatialSpec,
+                    enterEffectsSpec = enterEffectsSpec,
+                    exitEffectsSpec = exitEffectsSpec,
+                )
+            },
+        )
+    }
+}
+
+private fun slideTransform(
+    forward: Boolean,
+    slideFraction: Float,
+    spatialSpec: FiniteAnimationSpec<IntOffset>,
+    enterEffectsSpec: FiniteAnimationSpec<Float>,
+    exitEffectsSpec: FiniteAnimationSpec<Float>,
+): ContentTransform {
+    val directionSign = if (forward) 1 else -1
+    return (
+        slideInHorizontally(
+            initialOffsetX = { fullWidth ->
+                directionSign * (fullWidth * slideFraction).toInt()
+            },
+            animationSpec = spatialSpec,
+        ) + fadeIn(animationSpec = enterEffectsSpec)
+    ) togetherWith
+        (
+            slideOutHorizontally(
+                targetOffsetX = { fullWidth ->
+                    -directionSign * (fullWidth * slideFraction).toInt()
+                },
+                animationSpec = spatialSpec,
+            ) + fadeOut(animationSpec = exitEffectsSpec)
+        )
+}
+
+@OptIn(ExperimentalSharedTransitionApi::class)
+@Composable
+private fun buildNavigationEntries(
+    navigationState: NavigationState,
+    sharedTransitionScope: SharedTransitionScope,
+    navigator: Navigator,
+    onRandomClick: () -> Unit,
+) = navigationState.toDecoratedEntries(
+    entryProvider =
+        entryProvider {
+            feedSection(
+                sharedTransitionScope = sharedTransitionScope,
+                navigator = navigator,
+                onRandomClick = onRandomClick,
+            )
+            collectionsSection(
+                sharedTransitionScope = sharedTransitionScope,
+                navigator = navigator,
+            )
+            favoritesSection(
+                sharedTransitionScope = sharedTransitionScope,
+                navigator = navigator,
+            )
+            searchSection(
+                sharedTransitionScope = sharedTransitionScope,
+                navigator = navigator,
+            )
+            photoDetailsSection(
+                sharedTransitionScope = sharedTransitionScope,
+                navigator = navigator,
+            )
+            userProfileSection(
+                sharedTransitionScope = sharedTransitionScope,
+                navigator = navigator,
+            )
+        },
+)
 
 class ShakeDetector(
     private val onShake: () -> Unit,
@@ -407,7 +432,6 @@ class ShakeDetector(
     private var lastX = 0f
     private var lastY = 0f
     private var lastZ = 0f
-    private val shakeThreshold = 800 // High sensitivity but comfortable threshold
 
     override fun onSensorChanged(event: SensorEvent) {
         if (event.sensor.type == Sensor.TYPE_ACCELEROMETER) {
@@ -416,14 +440,15 @@ class ShakeDetector(
             val z = event.values[2]
             val curTime = System.currentTimeMillis()
 
-            if (curTime - lastUpdate > 100) {
+            if (curTime - lastUpdate > SHAKE_SAMPLE_INTERVAL_MS) {
                 val diffTime = curTime - lastUpdate
                 lastUpdate = curTime
+                val deltaX = x - lastX
+                val deltaY = y - lastY
+                val deltaZ = z - lastZ
                 val speed =
-                    sqrt(
-                        (x - lastX) * (x - lastX) + (y - lastY) * (y - lastY) + (z - lastZ) * (z - lastZ),
-                    ) / diffTime * 10000
-                if (speed > shakeThreshold) {
+                    sqrt(deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ) / diffTime * SHAKE_SPEED_SCALE
+                if (speed > SHAKE_THRESHOLD) {
                     onShake()
                 }
                 lastX = x
@@ -436,5 +461,7 @@ class ShakeDetector(
     override fun onAccuracyChanged(
         sensor: Sensor,
         accuracy: Int,
-    ) {}
+    ) {
+        // Sensor accuracy changes do not affect shake threshold detection.
+    }
 }

@@ -33,10 +33,6 @@ class ApplicationGraphTest {
         assertNotNull(feedVm, "FeedViewModel should be resolvable")
         feedVm.clear()
 
-        @Suppress("DEPRECATION")
-        val feedRepo = MetroHelper.getFeedRepository()
-        assertNotNull(feedRepo, "FeedRepository should be resolvable via MetroHelper")
-
         val randomVm = MetroHelper.getRandomPhotoViewModel()
         assertNotNull(randomVm, "RandomPhotoViewModel should be resolvable")
         randomVm.clear()

@@ -9,6 +9,10 @@
     <string name="nav_back">Back</string>
     <string name="nav_search_accessibility">Search</string>
     <string name="nav_shuffle_accessibility">Shuffle</string>
+    <string name="nav_rail_expand_accessibility">Expand navigation rail</string>
+    <string name="nav_rail_collapse_accessibility">Collapse navigation rail</string>
+    <string name="nav_rail_state_expanded">Expanded</string>
+    <string name="nav_rail_state_collapsed">Collapsed</string>
     <string name="macos_sidebar_prompt">Select a category from the sidebar</string>
 
     <!-- Feed Screen -->

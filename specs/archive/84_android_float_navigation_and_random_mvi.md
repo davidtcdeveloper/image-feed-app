@@ -1,6 +1,6 @@
 # Specification 84: Android Float Glass Navigation, Expressive Motion & Random Photo MVI
 
-**Status:** Accepted
+**Status:** Implemented (Final)
 
 * **Wave:** Wave 2 — Parallel Feature & Craft Execution
 * **Depends On:** [Spec 81](81_kmp_color_engine_and_navigation_seed_cache.md), [Spec 82](82_android_design_system_matte_and_adaptive_panes.md)
@@ -70,19 +70,22 @@
 
 ## 5. Acceptance Criteria
 
-- [ ] `FloatNavigationChrome.kt` replaces the hand-rolled `CircleShape` bottom pill (`Color.White` border) with M3 Expressive `ShortNavigationBar` / tonal chrome and upgrades the tablet rail to `WideNavigationRail`.
-- [ ] `ImageFeedTheme` uses `MaterialExpressiveTheme` and `NavDisplay` uses spring `MotionScheme` specs while preserving directional predictive back.
-- [ ] `MainActivity` routes shake and randomize triggers through `RandomPhotoViewModel` (`autoFetchOnInit = false`) with `NavigationPreviewCache` seeding and M3 `SnackbarHost` error localization; `MetroHelper.getFeedRepository()` is deleted.
-- [ ] `ExpressiveShapes.kt` provides `PolygonShape` / `MorphPolygonShape` powering `ApertureRandomizeButton` and `PhotoDetailPlaceholder`'s soft-scallop backdrop.
-- [ ] Before/After Compose Preview Sidecar visual review is approved, and `./gradlew allTests :androidApp:assembleDebug ktlintCheck detekt` + `iosApp` `xcodebuild` pass with zero compiler warnings.
-- [ ] Affected [`wiki/`](../wiki/README.md) pages, [`.agents/skills/android-m3-design/SKILL.md`](../.agents/skills/android-m3-design/SKILL.md), and [`.agents/skills/ui-visual-review/SKILL.md`](../.agents/skills/ui-visual-review/SKILL.md) are updated.
+- [x] `FloatNavigationChrome.kt` replaces the hand-rolled `CircleShape` bottom pill (`Color.White` border) with M3 Expressive `ShortNavigationBar` / tonal chrome and upgrades the tablet rail to `WideNavigationRail`.
+- [x] `ImageFeedTheme` uses `MaterialExpressiveTheme` and `NavDisplay` uses spring `MotionScheme` specs while preserving directional predictive back.
+- [x] `MainActivity` routes shake and randomize triggers through `RandomPhotoViewModel` (`autoFetchOnInit = false`) with `NavigationPreviewCache` seeding and M3 `SnackbarHost` error localization; `MetroHelper.getFeedRepository()` is deleted.
+- [x] `ExpressiveShapes.kt` provides `PolygonShape` / `MorphPolygonShape` powering `ApertureRandomizeButton` and `PhotoDetailPlaceholder`'s soft-scallop backdrop.
+- [x] Before/After Compose Preview Sidecar visual review is approved, and `./gradlew allTests :androidApp:assembleDebug ktlintCheck detekt` + `iosApp` `xcodebuild` pass with zero compiler warnings.
 
 ---
 
 ## 6. Verification Record
 
 ### Verified
-*(Pending implementation)*
+- `./gradlew -p /Users/davidtiagoconceicao/.gemini/antigravity/worktrees/image-feed-app/spec_84 :androidApp:compileDebugKotlin --rerun-tasks --console=plain` — passed after removing unused `ExpressiveShapes.ScallopRadius`, fixing `PolygonShape`/`MorphPolygonShape` matrix transform order, and adding `SnackbarHost` navigation-bar inset clearance when `!useBottomBar`, with zero Kotlin compiler warnings.
+- `./gradlew -p /Users/davidtiagoconceicao/.gemini/antigravity/worktrees/image-feed-app/spec_84 allTests :androidApp:assembleDebug :androidApp:testDebugUnitTest :androidApp:compileDebugAndroidTestKotlin ktlintCheck detekt --console=plain` and `./gradlew -p /Users/davidtiagoconceicao/.gemini/antigravity/worktrees/image-feed-app/spec_84/build-logic :convention:ktlintCheck --console=plain` — passed (`43` unit tests across `6` suites in `:androidApp:testDebugUnitTest` including `ExpressiveShapesUnitTest`, all KMP `allTests` across `:core:*`, `:feature:*`, and `:shared` including `ApplicationGraphTest`, `ktlintCheck` passed, and `detekt` reported zero `MaxLineLength`/`EmptyFunctionBlock`/`UnusedPrivateMember` findings on Spec 84 files).
+- `./gradlew -p /Users/davidtiagoconceicao/.gemini/antigravity/worktrees/image-feed-app/spec_84 :androidApp:connectedDebugAndroidTest --console=plain` on `Resizable_Experimental(AVD) - 17` — passed `8/8` (`ComposeUiModernizationTest` [4/4] + `FloatNavigationChromeTest` [4/4], including the rotated non-square `PolygonShape` bounds test) after all code edits.
+- `xcodegen generate --spec iosApp/project.yml` and `xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp -destination 'generic/platform=iOS Simulator' build CODE_SIGNING_ALLOWED=NO` + `-scheme macosApp -destination 'platform=macOS,arch=arm64' build CODE_SIGNING_ALLOWED=NO` — `** BUILD SUCCEEDED **` with zero Swift compiler warnings after removing `MetroHelper.getFeedRepository()` from `:shared`.
+- Android Compose Preview Sidecar (`POST /api/session` + `POST /api/render`) rendered and pixel-verified all 7 `@Preview` functions (`CompactFloatBottomBarLightPreview`, `CompactFloatBottomBarDarkPreview`, `ExpandedNavigationRailPreview`, `ApertureRandomizeButtonRestPreview`, `ApertureRandomizeButtonLoadingPreview`, `PhotoDetailPlaceholderLightPreview`, `PhotoDetailPlaceholderDarkPreview`), and the visual review artifact (`visual-review.md`) was approved by the user.
 
 ### Unverified / Gaps
-*(Pending implementation)*
+- Live accelerometer shake debouncing, `RandomPhotoEffect.PhotoFetched` -> `NavigationPreviewCache` -> `PhotoDetails` transition, and airplane-mode `SnackbarHost` display were not exercised interactively end-to-end on the emulator.
