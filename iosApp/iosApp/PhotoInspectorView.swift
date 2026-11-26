@@ -2,6 +2,11 @@ import Charts
 import MapKit
 import shared
 import SwiftUI
+#if os(iOS)
+import UIKit
+#elseif os(macOS)
+import AppKit
+#endif
 
 struct PhotoInspectorView: View {
     let photo: Photo
@@ -9,49 +14,18 @@ struct PhotoInspectorView: View {
     let onUserSelect: (String) -> Void
     let onTagSelect: (String) -> Void
     var onDownload: (() -> Void)?
+    var heroNamespace: Namespace.ID?
+
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.containerWidth) private var containerWidth
+    @State private var copyFeedbackTrigger = 0
+    @State private var downloadBounceTrigger = 0
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
-            // Photographer Info Row
-            HStack(spacing: 12) {
-                KFImage(URL(string: photo.user.profileImage.medium))
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: 44, height: 44)
-                    .clipShape(Circle())
-                    .overlay(Circle().stroke(.white.opacity(0.4), lineWidth: 1.5))
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(photo.user.name)
-                        .font(.subheadline.weight(.bold))
-                        .glassVibrancy(.primary)
-                    Text("@\(photo.user.username)")
-                        .font(.caption)
-                        .glassVibrancy(.secondary)
-                }
-
-                Spacer()
-
-                Button(action: {
-                    onUserSelect(photo.user.username)
-                }) {
-                    HStack(spacing: 4) {
-                        Text("Profile")
-                            .font(.caption.weight(.semibold))
-                        Image(systemName: "arrow.up.right")
-                            .font(.caption2.weight(.bold))
-                    }
-                    .glassVibrancy(.primary)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .glassCapsule(style: .ultraThin)
-                }
-            }
-            .padding(14)
-            .glassCard(cornerRadius: 12, style: .ultraThin)
+            photographerCard
 
             VStack(alignment: .leading, spacing: 16) {
-                // Title / Description
                 if let description = photo.description_ ?? photo.altDescription {
                     Text(description)
                         .font(.body)
@@ -59,170 +33,401 @@ struct PhotoInspectorView: View {
                         .glassVibrancy(.primary)
                 }
 
-                // Metrics Grid
                 HStack(spacing: 12) {
                     MetricCard(label: "Views", value: formatMetric(viewModel.stats?.views.total), systemImage: "eye.fill")
                     MetricCard(label: "Downloads", value: formatMetric(viewModel.stats?.downloads.total), systemImage: "arrow.down.circle.fill")
                     MetricCard(label: "Likes", value: formatMetric(viewModel.stats?.likes?.total), systemImage: "heart.fill")
                 }
 
-                // Interactive Chart Section
                 if let viewsHist = viewModel.stats?.views.historical, !viewsHist.values.isEmpty {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("HISTORICAL VIEWS (LAST 30 DAYS)")
-                            .font(.caption.weight(.bold))
-                            .glassVibrancy(.secondary)
-                            .tracking(1)
-
-                        HistoricalStatsChart(values: viewsHist.values)
-                            .padding(16)
-                            .glassCard(cornerRadius: 12, style: .ultraThin)
-                    }
+                    historicalViewsSection(values: viewsHist.values)
                 }
 
-                // Action Download & Bookmark buttons
-                HStack(spacing: 12) {
-                    Button(
-                        action: {
-                            onDownload?()
-                            viewModel.trackDownload()
-                            if let url = URL(string: photo.urls.full) {
-                                URLHelper.open(url)
-                            }
-                        },
-                        label: {
-                            HStack(spacing: 8) {
-                                Spacer()
-                                Image(systemName: "arrow.down.doc.fill")
-                                Text("Download High Resolution")
-                                    .font(.subheadline.weight(.bold))
-                                    .lineLimit(1)
-                                    .minimumScaleFactor(0.85)
-                                Spacer()
-                            }
-                            .glassVibrancy(.primary)
-                            .padding(.vertical, 14)
-                            .padding(.horizontal, 12)
-                            .glassBackground(style: .thin, shape: RoundedRectangle(cornerRadius: 12), showBorder: true)
-                        })
-                        .buttonStyle(.plain)
+                splitDownloadAndBookmarkRow
 
-                    Button(
-                        action: {
-                            viewModel.toggleFavorite(fallbackPhoto: photo)
-                        },
-                        label: {
-                            Image(systemName: viewModel.isFavorite ? "bookmark.fill" : "bookmark")
-                                .font(.title3.weight(.semibold))
-                                .foregroundStyle(viewModel.isFavorite ? Color.accentColor : Color.primary)
-                                .frame(width: 50, height: 48)
-                                .glassBackground(style: .thin, shape: RoundedRectangle(cornerRadius: 12), showBorder: true)
-                        })
-                        .buttonStyle(.plain)
-                        .accessibilityLabel(Text(viewModel.isFavorite ? "Remove Bookmark" : "Bookmark"))
-                }
-
-                // EXIF Glassmorphic Card
                 if let exif = photo.exif, hasExif(exif) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("CAMERA & LENS SPECS")
-                            .font(.caption.weight(.bold))
-                            .glassVibrancy(.secondary)
-                            .tracking(1)
-
-                        VStack(spacing: 12) {
-                            ExifRowView(label: "Camera", value: formatCamera(make: exif.make, model: exif.model))
-                            ExifRowView(label: "Aperture", value: exif.aperture != nil ? "f/\(exif.aperture!)" : nil)
-                            ExifRowView(label: "Exposure Time", value: exif.exposureTime != nil ? "\(exif.exposureTime!)s" : nil)
-                            ExifRowView(label: "Focal Length", value: exif.focalLength != nil ? "\(exif.focalLength!)mm" : nil)
-                            ExifRowView(label: "ISO", value: exif.iso != nil ? "\(exif.iso!)" : nil)
-                        }
-                        .padding(16)
-                        .glassCard(cornerRadius: 12, style: .ultraThin)
-                    }
+                    exifBentoSection(exif: exif)
                 }
 
-                // MapKit Coordinates Card
-                if let location = photo.location, hasLocation(location) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("LOCATION")
-                            .font(.caption.weight(.bold))
-                            .glassVibrancy(.secondary)
-                            .tracking(1)
+                if !tonalSwatches.isEmpty {
+                    tonalSwatchesSection
+                }
 
-                        VStack(alignment: .leading, spacing: 10) {
-                            if let name = location.name {
-                                Text(name)
-                                    .font(.subheadline.weight(.bold))
+                if let location = photo.location, hasLocation(location) {
+                    locationSection(location: location)
+                }
+
+                if let tags = photo.tags, !tags.isEmpty {
+                    relatedTagsSection(tags: tags)
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Inspector Sections & Formatting
+
+private extension PhotoInspectorView {
+    var tonalSwatches: [PhotoTonalSwatch] {
+        PhotoColorEngine.shared.deriveTonalSwatches(seedHex: photo.color)
+    }
+
+    var accentHex: String? {
+        PhotoColorEngine.shared.deriveAccentHex(seedHex: photo.color, isDark: colorScheme == .dark)
+    }
+
+    var accentColor: Color? {
+        accentHex.map { Color(hex: $0) }
+    }
+
+    var resolvedAccentColor: Color {
+        accentColor ?? .accentColor
+    }
+
+    var photographerCard: some View {
+        HStack(spacing: 12) {
+            photographerAvatar
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(photo.user.name)
+                    .font(.subheadline.weight(.bold))
+                    .glassVibrancy(.primary)
+                Text("@\(photo.user.username)")
+                    .font(.caption)
+                    .glassVibrancy(.secondary)
+            }
+
+            Spacer()
+
+            Button {
+                onUserSelect(photo.user.username)
+            } label: {
+                HStack(spacing: 4) {
+                    Text("Profile")
+                        .font(.caption.weight(.semibold))
+                    Image(systemName: "arrow.up.right")
+                        .font(.caption2.weight(.bold))
+                }
+                .glassVibrancy(.primary)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .matteCapsule(fillColor: GlassTheme.subtleFillColor)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(14)
+        .matteSurface(cornerRadius: 12)
+    }
+
+    @ViewBuilder
+    var photographerAvatar: some View {
+        let baseAvatar = KFImage(URL(string: photo.user.profileImage.medium))
+            .resizable()
+            .scaledToFill()
+            .frame(width: 44, height: 44)
+            .clipShape(Circle())
+            .overlay(Circle().stroke(GlassTheme.matteBorderColor, lineWidth: 1.5))
+
+        #if os(iOS)
+        if #available(iOS 18.0, *), let heroNamespace {
+            baseAvatar.matchedTransitionSource(
+                id: AppNavigationDefaults.userSourceID(photo.user.username),
+                in: heroNamespace)
+            { source in
+                source.clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+            }
+        } else {
+            baseAvatar
+        }
+        #else
+        baseAvatar
+        #endif
+    }
+
+    func historicalViewsSection(values: [StatsValue]) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("HISTORICAL VIEWS (LAST 30 DAYS)")
+                .font(.caption.weight(.bold))
+                .glassVibrancy(.secondary)
+                .tracking(1)
+
+            HistoricalStatsChart(values: values, accentColor: accentColor)
+                .padding(16)
+                .matteSurface(cornerRadius: 12)
+        }
+    }
+
+    var splitDownloadAndBookmarkRow: some View {
+        HStack(spacing: 12) {
+            HStack(spacing: 0) {
+                Button {
+                    triggerDownload(urlString: photo.urls.full)
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "arrow.down.doc.fill")
+                            .symbolEffect(.bounce, value: downloadBounceTrigger)
+                        Text("Full")
+                            .font(.subheadline.weight(.bold))
+                            .lineLimit(1)
+                    }
+                    .glassVibrancy(.primary)
+                    .frame(maxWidth: .infinity, minHeight: 48)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(Text("Download Full"))
+
+                Rectangle()
+                    .fill(GlassTheme.matteBorderColor)
+                    .frame(width: 1, height: 24)
+
+                Button {
+                    triggerDownload(urlString: photo.urls.raw)
+                } label: {
+                    Text("RAW")
+                        .font(.subheadline.weight(.bold))
+                        .glassVibrancy(.primary)
+                        .padding(.horizontal, 18)
+                        .frame(minHeight: 48)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(Text("Download RAW"))
+            }
+            .matteSurface(cornerRadius: 12)
+
+            Button {
+                viewModel.toggleFavorite(fallbackPhoto: photo)
+            } label: {
+                Image(systemName: viewModel.isFavorite ? "bookmark.fill" : "bookmark")
+                    .font(.title3.weight(.semibold))
+                    .contentTransition(.symbolEffect(.replace))
+                    .foregroundStyle(viewModel.isFavorite ? resolvedAccentColor : Color.primary)
+                    .frame(width: 50, height: 48)
+                    .matteSurface(
+                        cornerRadius: 12,
+                        fillColor: viewModel.isFavorite ? resolvedAccentColor.opacity(0.14) : nil)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(Text(viewModel.isFavorite ? "Remove Bookmark" : "Bookmark"))
+        }
+    }
+
+    func exifBentoSection(exif: Exif) -> some View {
+        let columnCount = containerWidth >= 520 ? 4 : 2
+        let columns = Array(repeating: GridItem(.flexible(), spacing: 10), count: columnCount)
+
+        return VStack(alignment: .leading, spacing: 8) {
+            Text("CAMERA & LENS SPECS")
+                .font(.caption.weight(.bold))
+                .glassVibrancy(.secondary)
+                .tracking(1)
+
+            if let cameraTitle = formatCamera(make: exif.make, model: exif.model) {
+                HStack(spacing: 10) {
+                    Image(systemName: "camera")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(accentColor ?? .secondary)
+                    Text(cameraTitle)
+                        .font(.subheadline.weight(.semibold))
+                        .glassVibrancy(.primary)
+                        .lineLimit(2)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 12)
+                .matteSurface(cornerRadius: 12)
+            }
+
+            LazyVGrid(columns: columns, spacing: 10) {
+                ExifBentoCell(
+                    systemImage: "camera.aperture",
+                    label: "Aperture",
+                    value: formatAperture(exif.aperture),
+                    accentColor: accentColor)
+                ExifBentoCell(
+                    systemImage: "timer",
+                    label: "Exposure Time",
+                    value: formatExposureTime(exif.exposureTime),
+                    accentColor: accentColor)
+                ExifBentoCell(
+                    systemImage: "scope",
+                    label: "Focal Length",
+                    value: formatFocalLength(exif.focalLength),
+                    accentColor: accentColor)
+                ExifBentoCell(
+                    systemImage: "dial.medium",
+                    label: "ISO",
+                    value: exif.iso.map { "\($0)" } ?? "--",
+                    accentColor: accentColor)
+            }
+        }
+    }
+
+    var tonalSwatchesSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("COLOR PALETTE")
+                .font(.caption.weight(.bold))
+                .glassVibrancy(.secondary)
+                .tracking(1)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(tonalSwatches, id: \.hex) { swatch in
+                        Button {
+                            copyHexToClipboard(swatch.hex)
+                            copyFeedbackTrigger += 1
+                            viewModel.showCopiedColorToast(hex: swatch.hex)
+                        } label: {
+                            HStack(spacing: 8) {
+                                Circle()
+                                    .fill(Color(hex: swatch.hex))
+                                    .frame(width: 16, height: 16)
+                                    .overlay(Circle().strokeBorder(GlassTheme.matteBorderColor, lineWidth: 1))
+                                Text(swatch.hex)
+                                    .font(.caption.weight(.semibold).monospaced())
                                     .glassVibrancy(.primary)
                             }
-
-                            if let latValue = location.position?.latitude, let lonValue = location.position?.longitude {
-                                let lat = Double(truncating: latValue)
-                                let lon = Double(truncating: lonValue)
-                                MapCardView(latitude: lat, longitude: lon, name: location.name)
-                                    .onTapGesture {
-                                        let encodedName = location.name?.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-                                        let urlString = "maps://?q=\(encodedName)&ll=\(lat),\(lon)"
-                                        if let url = URL(string: urlString) {
-                                            URLHelper.open(url)
-                                        }
-                                    }
-                            }
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .matteCapsule()
                         }
-                        .padding(16)
-                        .glassCard(cornerRadius: 12, style: .ultraThin)
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(Text("Copy color \(swatch.hex)"))
+                    }
+                }
+            }
+        }
+        .sensoryFeedback(.success, trigger: copyFeedbackTrigger)
+    }
+
+    func locationSection(location: Location) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("LOCATION")
+                .font(.caption.weight(.bold))
+                .glassVibrancy(.secondary)
+                .tracking(1)
+
+            VStack(alignment: .leading, spacing: 10) {
+                if let name = location.name {
+                    HStack(spacing: 8) {
+                        Image(systemName: "mappin.and.ellipse")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(resolvedAccentColor)
+                        Text(name)
+                            .font(.subheadline.weight(.bold))
+                            .glassVibrancy(.primary)
                     }
                 }
 
-                // Related Tags / Badges Flow
-                if let tags = photo.tags, !tags.isEmpty {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("RELATED TAGS")
-                            .font(.caption.weight(.bold))
-                            .glassVibrancy(.secondary)
-                            .tracking(1)
-
-                        FlowLayout(spacing: 8) {
-                            ForEach(tags, id: \.title) { tag in
-                                Button(action: {
-                                    onTagSelect(tag.title)
-                                }) {
-                                    Text(tag.title.uppercased())
-                                        .font(.caption2.weight(.bold))
-                                        .glassVibrancy(.primary)
-                                        .padding(.horizontal, 10)
-                                        .padding(.vertical, 6)
-                                        .glassCapsule(style: .ultraThin)
-                                }
-                                .buttonStyle(PlainButtonStyle())
+                if let latValue = location.position?.latitude, let lonValue = location.position?.longitude {
+                    let lat = Double(truncating: latValue)
+                    let lon = Double(truncating: lonValue)
+                    MapCardView(latitude: lat, longitude: lon, name: location.name, pinColorHex: accentHex)
+                        .onTapGesture {
+                            let encodedName = location.name?.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+                            if let url = URL(string: "maps://?q=\(encodedName)&ll=\(lat),\(lon)") {
+                                URLHelper.open(url)
                             }
                         }
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(16)
+            .matteSurface(cornerRadius: 12)
+        }
+    }
+
+    func relatedTagsSection(tags: [Tag]) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("RELATED TAGS")
+                .font(.caption.weight(.bold))
+                .glassVibrancy(.secondary)
+                .tracking(1)
+
+            FlowLayout(spacing: 8) {
+                ForEach(tags, id: \.title) { tag in
+                    Button {
+                        onTagSelect(tag.title)
+                    } label: {
+                        Text(tag.title.uppercased())
+                            .font(.caption2.weight(.bold))
+                            .glassVibrancy(.primary)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .matteCapsule(fillColor: GlassTheme.subtleFillColor)
                     }
+                    .buttonStyle(.plain)
                 }
             }
         }
     }
 
-    private func formatMetric(_ value: Int32?) -> String {
+    func triggerDownload(urlString: String) {
+        downloadBounceTrigger += 1
+        onDownload?()
+        viewModel.trackDownload(fallbackPhoto: photo)
+        if let url = URL(string: urlString) {
+            URLHelper.open(url)
+        }
+    }
+
+    func copyHexToClipboard(_ hex: String) {
+        #if os(iOS)
+        UIPasteboard.general.string = hex
+        #elseif os(macOS)
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(hex, forType: .string)
+        #endif
+    }
+
+    func formatMetric(_ value: Int32?) -> String {
         guard let value else { return "--" }
         return Int(value).formatted(.number.notation(.compactName))
     }
 
-    private func hasExif(_ exif: Exif) -> Bool {
-        exif.make != nil || exif.model != nil || exif.exposureTime != nil || exif.aperture != nil || exif.iso != nil
+    func hasExif(_ exif: Exif) -> Bool {
+        !(exif.make ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
+            !(exif.model ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
+            !(exif.exposureTime ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
+            !(exif.aperture ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
+            !(exif.focalLength ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
+            exif.iso != nil
     }
 
-    private func formatCamera(make: String?, model: String?) -> String? {
-        guard make != nil || model != nil else { return nil }
-        return "\(make ?? "") \(model ?? "")".trimmingCharacters(in: .whitespacesAndNewlines)
+    func formatCamera(make: String?, model: String?) -> String? {
+        let cleanMake = make?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let cleanModel = model?.trimmingCharacters(in: .whitespacesAndNewlines)
+        switch (cleanMake, cleanModel) {
+        case (.some(let mk), .some(let md)) where !mk.isEmpty && !md.isEmpty:
+            return md.localizedCaseInsensitiveContains(mk) ? md : "\(mk) \(md)"
+        case (_, .some(let md)) where !md.isEmpty:
+            return md
+        case (.some(let mk), _) where !mk.isEmpty:
+            return mk
+        default:
+            return nil
+        }
     }
 
-    private func hasLocation(_ location: Location) -> Bool {
+    func formatAperture(_ raw: String?) -> String {
+        guard let trimmed = raw?.trimmingCharacters(in: .whitespacesAndNewlines), !trimmed.isEmpty else { return "--" }
+        return trimmed.hasPrefix("f/") ? trimmed : "f/\(trimmed)"
+    }
+
+    func formatExposureTime(_ raw: String?) -> String {
+        guard let trimmed = raw?.trimmingCharacters(in: .whitespacesAndNewlines), !trimmed.isEmpty else { return "--" }
+        return trimmed.hasSuffix("s") ? trimmed : "\(trimmed)s"
+    }
+
+    func formatFocalLength(_ raw: String?) -> String {
+        guard let trimmed = raw?.trimmingCharacters(in: .whitespacesAndNewlines), !trimmed.isEmpty else { return "--" }
+        return trimmed.hasSuffix("mm") ? trimmed : "\(trimmed)mm"
+    }
+
+    func hasLocation(_ location: Location) -> Bool {
         if let latValue = location.position?.latitude, let lonValue = location.position?.longitude {
-            let lat = Double(truncating: latValue)
-            let lon = Double(truncating: lonValue)
-            if lat == 0.0, lon == 0.0 {
+            if Double(truncating: latValue) == 0.0, Double(truncating: lonValue) == 0.0 {
                 return false
             }
         }
@@ -249,31 +454,42 @@ struct MetricCard: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 12)
-        .glassCard(cornerRadius: 12, style: .ultraThin)
+        .matteSurface(cornerRadius: 12)
     }
 }
 
-struct ExifRowView: View {
+struct ExifBentoCell: View {
+    let systemImage: String
     let label: LocalizedStringKey
-    let value: String?
+    let value: String
+    let accentColor: Color?
 
     var body: some View {
-        if let value, !value.isEmpty {
-            HStack {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 6) {
+                Image(systemName: systemImage)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(accentColor ?? .secondary)
                 Text(label)
-                    .font(.footnote)
+                    .font(.caption2.weight(.semibold))
                     .glassVibrancy(.secondary)
-                Spacer()
-                Text(value)
-                    .font(.footnote.weight(.semibold))
-                    .glassVibrancy(.primary)
+                    .lineLimit(1)
             }
+            Text(value)
+                .font(.subheadline.weight(.semibold))
+                .glassVibrancy(.primary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .matteSurface(cornerRadius: 12)
     }
 }
 
 struct HistoricalStatsChart: View {
     let values: [StatsValue]
+    var accentColor: Color?
     @State private var selectedIndex: Int?
 
     private static let isoFormatter: ISO8601DateFormatter = {
@@ -287,6 +503,10 @@ struct HistoricalStatsChart: View {
         return values[index]
     }
 
+    private var markColor: Color {
+        accentColor ?? .primary
+    }
+
     var body: some View {
         if values.isEmpty {
             Text("No historical data available")
@@ -295,94 +515,86 @@ struct HistoricalStatsChart: View {
                 .frame(maxWidth: .infinity, minHeight: 120, alignment: .center)
         } else {
             VStack(alignment: .leading, spacing: 8) {
-                // Interactive metric callout banner
-                HStack(alignment: .firstTextBaseline) {
-                    if let selectedItem {
-                        HStack(spacing: 6) {
-                            Text(formatDate(selectedItem.date)).font(.caption.weight(.medium)).glassVibrancy(.secondary)
-                            Text("•").font(.caption2).glassVibrancy(.tertiary)
-                            Text(formatViewsCount(selectedItem.value)).font(.caption.weight(.bold)).glassVibrancy(.primary)
-                        }
-                        .transition(.opacity)
-                    } else {
-                        HStack(spacing: 4) {
-                            Image(systemName: "hand.point.left.and.right").font(.caption2)
-                            Text("Drag curve to inspect daily views").font(.caption2)
-                        }
-                        .glassVibrancy(.secondary)
-                        .transition(.opacity)
-                    }
-                    Spacer()
-                }
-                .frame(height: 20)
-
-                Chart {
-                    ForEach(values, id: \.date) { item in
-                        LineMark(
-                            x: .value("Date", item.date),
-                            y: .value("Views", item.value))
-                            .foregroundStyle(.white)
-                            .interpolationMethod(.catmullRom)
-
-                        AreaMark(
-                            x: .value("Date", item.date),
-                            y: .value("Views", item.value))
-                            .foregroundStyle(
-                                LinearGradient(
-                                    colors: [.white.opacity(0.2), .clear],
-                                    startPoint: .top,
-                                    endPoint: .bottom))
-                            .interpolationMethod(.catmullRom)
-                    }
-
-                    // Single point fallback visibility
-                    if values.count == 1, let singleItem = values.first {
-                        PointMark(
-                            x: .value("Date", singleItem.date),
-                            y: .value("Views", singleItem.value))
-                            .foregroundStyle(.white)
-                            .symbolSize(60)
-                    }
-
-                    // Glowing indicator and inspection rule for scrubbed data point
-                    if let selectedItem {
-                        RuleMark(x: .value("Date", selectedItem.date))
-                            .foregroundStyle(Color.white.opacity(0.35))
-                            .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 4]))
-
-                        PointMark(
-                            x: .value("Date", selectedItem.date),
-                            y: .value("Views", selectedItem.value))
-                            .symbol {
-                                ZStack {
-                                    Circle().fill(Color.white.opacity(0.25)).frame(width: 18, height: 18)
-                                    Circle().fill(Color.white).frame(width: 8, height: 8).shadow(color: .white, radius: 4)
-                                }
-                            }
-                    }
-                }
-                .chartXAxis(.hidden)
-                .chartYAxis(.hidden)
-                .frame(height: 120)
-                .chartOverlay { proxy in
-                    GeometryReader { geometry in
-                        Rectangle()
-                            .fill(Color.clear)
-                            .contentShape(Rectangle())
-                            .gesture(
-                                DragGesture(minimumDistance: 0)
-                                    .onChanged { value in
-                                        updateSelection(at: value.location, proxy: proxy, geometry: geometry)
-                                    }
-                                    .onEnded { _ in
-                                        withAnimation(.easeOut(duration: 0.2)) {
-                                            selectedIndex = nil
-                                        }
-                                    })
-                    }
-                }
+                calloutBanner
+                chartContent
             }
             .sensoryFeedback(.impact(weight: .light), trigger: selectedIndex)
+        }
+    }
+
+    private var calloutBanner: some View {
+        HStack(alignment: .firstTextBaseline) {
+            if let selectedItem {
+                HStack(spacing: 6) {
+                    Text(formatDate(selectedItem.date)).font(.caption.weight(.medium)).glassVibrancy(.secondary)
+                    Text("•").font(.caption2).glassVibrancy(.tertiary)
+                    Text(formatViewsCount(selectedItem.value)).font(.caption.weight(.bold)).glassVibrancy(.primary)
+                }
+                .transition(.opacity)
+            } else {
+                HStack(spacing: 4) {
+                    Image(systemName: "hand.draw").font(.caption2)
+                    Text("Drag curve to inspect daily views").font(.caption2)
+                }
+                .glassVibrancy(.secondary)
+                .transition(.opacity)
+            }
+            Spacer()
+        }
+        .frame(height: 20)
+    }
+
+    private var chartContent: some View {
+        Chart {
+            ForEach(values, id: \.date) { item in
+                LineMark(x: .value("Date", item.date), y: .value("Views", item.value))
+                    .foregroundStyle(markColor)
+                    .interpolationMethod(.catmullRom)
+
+                AreaMark(x: .value("Date", item.date), y: .value("Views", item.value))
+                    .foregroundStyle(LinearGradient(colors: [markColor.opacity(0.22), .clear], startPoint: .top, endPoint: .bottom))
+                    .interpolationMethod(.catmullRom)
+            }
+
+            if values.count == 1, let singleItem = values.first {
+                PointMark(x: .value("Date", singleItem.date), y: .value("Views", singleItem.value))
+                    .foregroundStyle(markColor)
+                    .symbolSize(60)
+            }
+
+            if let selectedItem {
+                RuleMark(x: .value("Date", selectedItem.date))
+                    .foregroundStyle(markColor.opacity(0.35))
+                    .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 4]))
+
+                PointMark(x: .value("Date", selectedItem.date), y: .value("Views", selectedItem.value))
+                    .symbol {
+                        ZStack {
+                            Circle().fill(markColor.opacity(0.25)).frame(width: 18, height: 18)
+                            Circle().fill(markColor).frame(width: 8, height: 8).shadow(color: markColor.opacity(0.6), radius: 4)
+                        }
+                    }
+            }
+        }
+        .chartXAxis(.hidden)
+        .chartYAxis(.hidden)
+        .frame(height: 120)
+        .chartOverlay { proxy in
+            GeometryReader { geometry in
+                Rectangle()
+                    .fill(Color.clear)
+                    .contentShape(Rectangle())
+                    .gesture(
+                        DragGesture(minimumDistance: 0)
+                            .onChanged { value in
+                                updateSelection(at: value.location, proxy: proxy, geometry: geometry)
+                            }
+                            .onEnded { _ in
+                                withAnimation(.easeOut(duration: 0.2)) {
+                                    selectedIndex = nil
+                                }
+                            })
+            }
         }
     }
 
@@ -397,8 +609,6 @@ struct HistoricalStatsChart: View {
         }
 
         let plotArea = proxy.plotFrame.map { geometry[$0] } ?? geometry.frame(in: .local)
-
-        // Attempt exact category coordinate matching via ChartProxy
         var closestIndex = 0
         var minDistance = CGFloat.greatestFiniteMagnitude
         var resolvedFromProxy = false
@@ -419,7 +629,6 @@ struct HistoricalStatsChart: View {
             return
         }
 
-        // Proportional interpolation fallback across plot area width
         let clampedX = min(max(location.x, plotArea.minX), plotArea.maxX)
         let fraction = (clampedX - plotArea.minX) / max(plotArea.width, 1.0)
         let computedIndex = Int(round(fraction * CGFloat(values.count - 1)))
@@ -442,14 +651,16 @@ struct MapCardView: View {
     let latitude: Double
     let longitude: Double
     let name: String?
+    var pinColorHex: String?
 
     @State private var snapshotImage: PlatformImage?
     @Environment(\.colorScheme) private var colorScheme
 
-    init(latitude: Double, longitude: Double, name: String?) {
+    init(latitude: Double, longitude: Double, name: String?, pinColorHex: String? = nil) {
         self.latitude = latitude
         self.longitude = longitude
         self.name = name
+        self.pinColorHex = pinColorHex
     }
 
     var body: some View {
@@ -459,24 +670,24 @@ struct MapCardView: View {
                     #if os(iOS)
                     Image(uiImage: snapshotImage)
                         .resizable()
-                        .aspectRatio(contentMode: .fill)
+                        .scaledToFill()
                     #elseif os(macOS)
                     Image(nsImage: snapshotImage)
                         .resizable()
-                        .aspectRatio(contentMode: .fill)
+                        .scaledToFill()
                     #endif
                 } else {
                     Rectangle()
-                        .fill(Color(white: 0.15))
+                        .fill(GlassTheme.surfaceBackgroundColor)
                         .overlay {
                             ProgressView()
-                                .tint(.white.opacity(0.6))
+                                .tint(.secondary)
                         }
                 }
             }
             .frame(width: geo.size.width, height: 150)
             .clipped()
-            .task(id: "\(latitude)_\(longitude)_\(geo.size.width)_\(colorScheme)") {
+            .task(id: "\(latitude)_\(longitude)_\(geo.size.width)_\(colorScheme)_\(pinColorHex ?? "default")") {
                 await loadSnapshot(width: geo.size.width)
             }
         }
@@ -488,7 +699,8 @@ struct MapCardView: View {
         guard width > 0 else { return }
         let roundedLat = (latitude * 1000).rounded() / 1000
         let roundedLon = (longitude * 1000).rounded() / 1000
-        let cacheKeyString = "map_snapshot_\(roundedLat)_\(roundedLon)_\(Int(width))x150_\(colorScheme == .dark ? "dark" : "light")"
+        let colorKey = pinColorHex ?? "default"
+        let cacheKeyString = "map_snapshot_\(roundedLat)_\(roundedLon)_\(Int(width))x150_\(colorScheme == .dark ? "dark" : "light")_\(colorKey)"
         guard let cacheUrl = URL(string: "https://map.local/\(cacheKeyString)") else { return }
 
         if let cached = ImageMemoryCache.shared.image(for: cacheUrl) {
@@ -497,12 +709,24 @@ struct MapCardView: View {
         }
 
         let coordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
-        let region = MKCoordinateRegion(
+        let options = makeSnapshotOptions(coordinate: coordinate, width: width)
+
+        do {
+            let snapshot = try await renderMapSnapshot(options: options)
+            try Task.checkCancellation()
+            let image = composePinnedImage(snapshot: snapshot, coordinate: coordinate, size: options.size)
+            ImageMemoryCache.shared.insert(image, for: cacheUrl)
+            snapshotImage = image
+        } catch {
+            // Snapshot failed or cancelled
+        }
+    }
+
+    private func makeSnapshotOptions(coordinate: CLLocationCoordinate2D, width: CGFloat) -> MKMapSnapshotter.Options {
+        let options = MKMapSnapshotter.Options()
+        options.region = MKCoordinateRegion(
             center: coordinate,
             span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05))
-
-        let options = MKMapSnapshotter.Options()
-        options.region = region
         options.size = CGSize(width: width, height: 150)
         #if os(iOS)
         options.scale = UIScreen.main.scale
@@ -510,52 +734,57 @@ struct MapCardView: View {
         #elseif os(macOS)
         options.appearance = NSAppearance(named: colorScheme == .dark ? .darkAqua : .aqua)
         #endif
+        return options
+    }
 
+    private func renderMapSnapshot(options: MKMapSnapshotter.Options) async throws -> MKMapSnapshotter.Snapshot {
         let snapshotter = MKMapSnapshotter(options: options)
-
-        do {
-            let snapshot = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<MKMapSnapshotter.Snapshot, Error>) in
-                snapshotter.start { snapshot, error in
-                    if let error {
-                        continuation.resume(throwing: error)
-                    } else if let snapshot {
-                        continuation.resume(returning: snapshot)
-                    } else {
-                        continuation.resume(throwing: URLError(.badServerResponse))
-                    }
+        return try await withCheckedThrowingContinuation { continuation in
+            snapshotter.start { snapshot, error in
+                if let error {
+                    continuation.resume(throwing: error)
+                } else if let snapshot {
+                    continuation.resume(returning: snapshot)
+                } else {
+                    continuation.resume(throwing: URLError(.badServerResponse))
                 }
             }
-            try Task.checkCancellation()
+        }
+    }
 
-            #if os(iOS)
-            let image = UIGraphicsImageRenderer(size: options.size).image { _ in
-                snapshot.image.draw(at: .zero)
-                let point = snapshot.point(for: coordinate)
-                let pinImage = UIImage(systemName: "mappin.circle.fill")?
-                    .withTintColor(.white, renderingMode: .alwaysOriginal)
-                if let pinImage {
-                    let pinRect = CGRect(x: point.x - 12, y: point.y - 24, width: 24, height: 24)
-                    pinImage.draw(in: pinRect)
-                }
-            }
-            ImageMemoryCache.shared.insert(image, for: cacheUrl)
-            snapshotImage = image
-            #elseif os(macOS)
-            let image = NSImage(size: options.size)
-            image.lockFocus()
-            snapshot.image.draw(at: .zero, from: .zero, operation: .copy, fraction: 1.0)
-            if let pinImage = NSImage(systemSymbolName: "mappin.circle.fill", accessibilityDescription: nil) {
-                let point = snapshot.point(for: coordinate)
-                let pinRect = NSRect(x: point.x - 12, y: point.y - 24, width: 24, height: 24)
+    private func composePinnedImage(
+        snapshot: MKMapSnapshotter.Snapshot,
+        coordinate: CLLocationCoordinate2D,
+        size: CGSize) -> PlatformImage
+    {
+        #if os(iOS)
+        let resolvedPinColor = pinColorHex.map { UIColor(Color(hex: $0)) } ?? .tintColor
+        return UIGraphicsImageRenderer(size: size).image { _ in
+            snapshot.image.draw(at: .zero)
+            let point = snapshot.point(for: coordinate)
+            let pinImage = UIImage(systemName: "mappin.circle.fill")?
+                .withTintColor(resolvedPinColor, renderingMode: .alwaysOriginal)
+            if let pinImage {
+                let pinRect = CGRect(x: point.x - 12, y: point.y - 24, width: 24, height: 24)
                 pinImage.draw(in: pinRect)
             }
-            image.unlockFocus()
-            ImageMemoryCache.shared.insert(image, for: cacheUrl)
-            snapshotImage = image
-            #endif
-        } catch {
-            // Snapshot failed or cancelled
         }
+        #elseif os(macOS)
+        let resolvedPinColor = pinColorHex.map { NSColor(Color(hex: $0)) } ?? .controlAccentColor
+        let image = NSImage(size: size)
+        image.lockFocus()
+        snapshot.image.draw(at: .zero, from: .zero, operation: .copy, fraction: 1.0)
+        let symbolConfig = NSImage.SymbolConfiguration(paletteColors: [resolvedPinColor])
+        if let pinImage = NSImage(systemSymbolName: "mappin.circle.fill", accessibilityDescription: nil)?
+            .withSymbolConfiguration(symbolConfig)
+        {
+            let point = snapshot.point(for: coordinate)
+            let pinRect = NSRect(x: point.x - 12, y: point.y - 24, width: 24, height: 24)
+            pinImage.draw(in: pinRect)
+        }
+        image.unlockFocus()
+        return image
+        #endif
     }
 }
 

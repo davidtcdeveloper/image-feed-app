@@ -1,3 +1,4 @@
+import shared
 import SwiftUI
 import XCTest
 #if os(iOS)
@@ -256,5 +257,19 @@ final class UIVisualSnapshotTests: XCTestCase {
     private func writeSnapshot(data: Data, name: String, to directory: URL) throws {
         let fileURL = directory.appendingPathComponent(name)
         try data.write(to: fileURL, options: .atomic)
+    }
+
+    func testPhotoColorEngineAndCopiedToastParity() {
+        let photo = UIPreviewFixtures.samplePhoto
+        let swatches = PhotoColorEngine.shared.deriveTonalSwatches(seedHex: photo.color)
+        XCTAssertEqual(swatches.count, 5)
+        XCTAssertNotNil(PhotoColorEngine.shared.deriveAccentHex(seedHex: photo.color, isDark: false))
+        XCTAssertNotNil(PhotoColorEngine.shared.deriveAccentHex(seedHex: photo.color, isDark: true))
+        XCTAssertNil(PhotoColorEngine.shared.deriveAccentHex(seedHex: "#808080", isDark: false))
+
+        let vm = PhotoDetailsViewModel(previewPhoto: photo, previewStats: UIPreviewFixtures.samplePhotoStats)
+        vm.showCopiedColorToast(hex: swatches[0].hex)
+        XCTAssertEqual(vm.favoriteToastBanner?.systemImage, "checkmark.circle.fill")
+        XCTAssertTrue(vm.favoriteToastBanner?.message.contains(swatches[0].hex) == true)
     }
 }

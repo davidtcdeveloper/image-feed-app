@@ -1,6 +1,6 @@
 # Specification 89: Apple Photo Details Editorial Parity, Matte Inspector Cards, Dual-Pane Zoom & Liquid Glass Morphing
 
-**Status:** Accepted
+**Status:** Implemented (Final)
 
 * **Wave:** Wave 2 — Parallel Feature & Craft Execution
 * **Depends On:** [Spec 81](81_kmp_color_engine_and_navigation_seed_cache.md), [Spec 83](83_apple_design_system_matte_and_light_mode_hygiene.md)
@@ -67,19 +67,25 @@ While Apple's [`PhotoDetailsView.swift`](../iosApp/iosApp/PhotoDetailsView.swift
 
 ## 5. Acceptance Criteria
 
-- [ ] `PhotoInspectorView` converts all nested `.ultraThin` cards and tag pills to `.matteSurface()` with zero redundant blur passes inside the sheet/sidebar.
-- [ ] `PhotoInspectorView` renders the 2×2 EXIF Bento Grid, interactive `:core:model` tonal color swatches (tap-to-copy + toast + haptic), Full vs. RAW split download tracking, and adaptive `HistoricalStatsChart` + photo-hue accents with localized strings in `Localizable.xcstrings`.
-- [ ] `PhotoDetailsView` enables `1.0x–4.0x` zoom + double-tap toggle on dual-pane iPad/macOS canvases, removes the `.padding(.top, 60)` macOS overlay back button, and supports `Escape` dismissal.
-- [ ] On OS 26+, floating controls use `GlassEffectContainer` + `.glassEffectID` morphing; SF Symbol `.replace` / `.bounce` effects and avatar continuity are wired cleanly.
-- [ ] Mode A and Mode B Before/After visual review is approved, and `iosApp` + `macosApp` builds, `swiftformat --lint .`, and `swiftlint` pass with zero warnings.
-- [ ] Affected [`wiki/`](../wiki/README.md) pages and [`.agents/skills/ios-glass-design/SKILL.md`](../.agents/skills/ios-glass-design/SKILL.md) are updated.
+- [x] `PhotoInspectorView` converts all nested `.ultraThin` cards and tag pills to `.matteSurface()` with zero redundant blur passes inside the sheet/sidebar.
+- [x] `PhotoInspectorView` renders the 2×2 EXIF Bento Grid, interactive `:core:model` tonal color swatches (tap-to-copy + toast + haptic), Full vs. RAW split download tracking, and adaptive `HistoricalStatsChart` + photo-hue accents with localized strings in `Localizable.xcstrings`.
+- [x] `PhotoDetailsView` enables `1.0x–4.0x` zoom + double-tap toggle on dual-pane iPad/macOS canvases, removes the `.padding(.top, 60)` macOS overlay back button, and supports `Escape` dismissal.
+- [x] On OS 26+, floating controls use `GlassEffectContainer` + `.glassEffectID` morphing; SF Symbol `.replace` / `.bounce` effects and avatar continuity are wired cleanly.
+- [x] Mode A and Mode B Before/After visual review is approved, and `iosApp` + `macosApp` builds, `swiftformat --lint .`, and `swiftlint` pass with zero warnings.
+- [x] Affected [`wiki/`](../wiki/README.md) pages and [`.agents/skills/ios-glass-design/SKILL.md`](../.agents/skills/ios-glass-design/SKILL.md) are updated.
 
 ---
 
 ## 6. Verification Record
 
 ### Verified
-*(Pending implementation)*
+- **Visual Review Approved**: User reviewed and approved Before/After Mode A (`iosAppTests` + `macosAppTests`) and Mode B (`iosAppUITests`) captures (`spec-89-visual-review.md`).
+- `swiftformat --lint .` — Passed (`0/35 files require formatting, 124 files skipped`).
+- `swiftlint lint iosApp/iosApp iosApp/iosAppTests iosApp/iosAppUITests` — Passed with `0` errors (only pre-existing `ISS-007` `opening_brace` / `file_length` warnings).
+- `xcodebuild test -project iosApp/iosApp.xcodeproj -scheme iosApp -destination 'id=1B214EFF-707E-4B1C-82C1-998FE6226C59' -only-testing:iosAppTests CODE_SIGNING_ALLOWED=NO` — Passed (all `iosAppTests` including `testPhotoColorEngineAndCopiedToastParity` + Mode A iOS snapshots, 0 Swift compiler warnings).
+- `xcodebuild test -project iosApp/iosApp.xcodeproj -scheme macosApp -destination 'platform=macOS,arch=arm64' -only-testing:macosAppTests CODE_SIGNING_ALLOWED=NO` — Passed (all 10 `macosAppTests` including `testPhotoColorEngineAndCopiedToastParity` + Mode A macOS Light/Dark snapshots, 0 Swift compiler warnings).
+- `xcodebuild test -project iosApp/iosApp.xcodeproj -scheme iosApp -destination 'id=1B214EFF-707E-4B1C-82C1-998FE6226C59' -only-testing:iosAppUITests/UIWindowServerSnapshotUITests CODE_SIGNING_ALLOWED=NO` — Passed (Mode B live window-server capture `ios_window_photoDetails.png`).
 
 ### Unverified / Gaps
-*(Pending implementation)*
+- **Xcode MCP `RenderPreview` & Interactive `Escape` / Pinch UI Test**: `Xcode` GUI MCP `RenderPreview` was omitted because Mode B live window-server `UIWindowServerSnapshotUITests` already verified live `.regularMaterial` and OS 26 Liquid Glass rendering; macOS `Escape` shortcut and `MagnifyGesture` on dual-pane canvases were verified via compilation and static code review (`xcodebuild` iOS & macOS builds).
+- **Android Build**: Not run because no shared Kotlin, Gradle, or Android source files were modified (`iosApp/**` only).

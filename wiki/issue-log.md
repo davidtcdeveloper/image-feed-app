@@ -38,6 +38,12 @@ This file captures systemic issues, documentation drift, skill gaps, build/tooli
 - **Symptom & Evidence**: [Spec 87](../specs/archive/87_apple_float_navigation_shell_and_macos_search.md) and [Spec 88](../specs/88_apple_satin_headers_zoom_transitions_and_unified_routes.md) were drafted before Spec 83 extracted `PhotosFeedView.swift`, so Spec 87's Disjoint Ownership note prohibited touching `PhotosFeedView.swift`, `CollectionsFeedView.swift`, `FavoritesView.swift`, and `SearchView.swift` even though Spec 83 had copied unconditional `.toolbar(.hidden, for: .tabBar)` into all four files (hiding the iOS 26+ `TabView` bar) and `.keyboardShortcut("f", modifiers: .command)` into `PhotosFeedView.swift`. Resolved for Spec 87 via `adaptiveTabBarVisibility()` and `openRootSearch` / `searchFocusTrigger`; check [`specs/88_apple_satin_headers_zoom_transitions_and_unified_routes.md`](../specs/88_apple_satin_headers_zoom_transitions_and_unified_routes.md) references (`ContentView.swift` lines vs extracted `PhotosFeedView.swift` / `SearchTabView`) during Spec 88 implementation.
 - **Suggested Layer**: `specs/`
 
+### [OPEN] ISS-009: `ui-visual-review` Apple Snapshot Commands Omit `TEST_RUNNER_SNAPSHOT_OUTPUT_DIR` on macOS & Ambiguous Simulator Name
+- **Date / Context**: 2026-11-26 (Spec 89 — Apple Photo Details Editorial Parity & Glass Morphing)
+- **Category**: `skill-gap`
+- **Symptom & Evidence**: In [`.agents/skills/ui-visual-review/SKILL.md`](../.agents/skills/ui-visual-review/SKILL.md#L47-L55), running `SNAPSHOT_OUTPUT_DIR=... xcodebuild test -scheme macosApp -only-testing:macosAppTests/UIVisualSnapshotTests` without `TEST_RUNNER_SNAPSHOT_OUTPUT_DIR` drops the env var inside `macosApp` test runner (`UIVisualSnapshotTests.swift` falls back to temporary directory and deletes PNGs on teardown), and `-destination 'platform=iOS Simulator,name=iPhone 18 Pro'` becomes ambiguous when multiple iOS runtimes (for example iOS 27.0 and 27.2) have an `iPhone 18 Pro` simulator unless an OS version or device UDID (`id=...`) is specified.
+- **Suggested Layer**: `.agents/skills/`
+
 ---
 
 ## Dismissed Issues

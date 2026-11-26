@@ -493,6 +493,17 @@
         }
       }
     },
+    "Copy color %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy color %@"
+          }
+        }
+      }
+    },
     "Could not open download link" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -867,6 +878,17 @@
         }
       }
     },
+    "Download Full" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Download Full"
+          }
+        }
+      }
+    },
     "Download High Resolution" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -885,6 +907,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Download photo"
+          }
+        }
+      }
+    },
+    "Download RAW" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Download RAW"
           }
         }
       }

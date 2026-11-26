@@ -93,7 +93,9 @@ Never read `UIScreen.main.bounds.width` or `NSScreen.main?.frame.width` for grid
 
 ### Scroll-Driven Transitions & Symbol Effects
 - Apply native iOS 17 scroll transitions for cards and feed items using [`.feedScrollTransition()`](../../../iosApp/iosApp/AnimationPrimitives.swift).
-- Apply `.symbolEffect(.bounce, value:)` on Shuffle triggers in [`PhotosFeedView.swift`](../../../iosApp/iosApp/PhotosFeedView.swift).
+- Apply `.symbolEffect(.bounce, value:)` on Shuffle triggers in [`PhotosFeedView.swift`](../../../iosApp/iosApp/PhotosFeedView.swift) and Full/RAW Download actions in [`PhotoDetailsView.swift`](../../../iosApp/iosApp/PhotoDetailsView.swift) / [`PhotoInspectorView.swift`](../../../iosApp/iosApp/PhotoInspectorView.swift), and `.contentTransition(.symbolEffect(.replace))` on stateful icon toggles (`bookmark` ↔ `bookmark.fill`, `info.circle` ↔ `info.circle.fill`).
+- On iOS 26+ / macOS 26+ (`#available(iOS 26.0, macOS 26.0, *)`), wrap co-located floating detail controls (`compactFloatingBar`, top back/info orbs, `GlassToastPill`) inside `GlassEffectContainer` paired with `.glassEffect(.regular.interactive(), in:)` and `.glassEffectID(_:in:)` when `!accessibilityReduceTransparency`.
+- Wire photographer avatar continuity (`AppNavigationDefaults.userSourceID(username)`) on detail attribution avatars (avoiding duplicate `matchedTransitionSource` IDs in simultaneous dual-pane hierarchies).
 
 ### Declarative Sensory Feedback
 Use SwiftUI declarative `.sensoryFeedback` instead of imperative feedback generators:
@@ -105,15 +107,17 @@ Use SwiftUI declarative `.sensoryFeedback` instead of imperative feedback genera
 ## 6. Full-Canvas Presentation & Interactive Detents
 
 ### Full-Canvas Photo Inspection (iPhone)
-- In detail views, high-resolution imagery takes center stage with full-width canvas presentation, pinch-to-zoom (1.0x to 4.0x), and double-tap toggle.
+- In detail views, high-resolution imagery takes center stage with full-width canvas presentation, `MagnifyGesture` pinch-to-zoom (`1.0x` to `4.0x`), bounded pan, and double-tap toggle (`1.0x` ↔ `2.5x`) via `ZoomablePhotoCanvas` in [`PhotoDetailsView.swift`](../../../iosApp/iosApp/PhotoDetailsView.swift).
 - Non-modal interactive inspector sheets are configured using SwiftUI detents:
   - Reference canonical sheet configuration in [`PhotoDetailsView.swift`](../../../iosApp/iosApp/PhotoDetailsView.swift).
   - Multi-tier detents: `.presentationDetents([.fraction(0.35), .fraction(0.70), .large])` with background interaction enabled via `.presentationBackgroundInteraction(.enabled(upThrough: .fraction(0.70)))`.
   - Contrast & Scrim: In `.presentationBackground`, layer `GlassTheme.highContrastScrimColor.opacity(0.82)` over `.regularMaterial` (or fallback to `GlassTheme.fallbackBackgroundColor` when `accessibilityReduceTransparency` is true) to ensure WCAG AAA ($\ge 7:1$) contrast over bright imagery.
+- Inside [`PhotoInspectorView.swift`](../../../iosApp/iosApp/PhotoInspectorView.swift), style all nested cards, EXIF Bento tiles, tonal swatch pills, split Full/RAW download controls, and tag pills with `.matteSurface()` / `.matteCapsule()` (zero nested blurs), derive tonal swatches and Light/Dark-adaptive chart/bookmark/map-pin accents from shared `:core:model` `PhotoColorEngine`, and copy tapped hex swatches with `GlassToastPill` + `.sensoryFeedback(.success, trigger:)`.
 - Automatically dismiss the inspector sheet prior to navigation push when users tap tags or photographer profiles.
 
 ### Adaptive Split-Pane (iPad & macOS)
-- When `horizontalSizeClass == .regular` (or running on macOS), display photo canvas and inspector side-by-side instead of using a bottom sheet.
+- When `horizontalSizeClass == .regular` (or running on macOS), display `ZoomablePhotoCanvas` (`1.0x–4.0x` pinch/magnify, pan, double-tap toggle) and the Matte [`PhotoInspectorView.swift`](../../../iosApp/iosApp/PhotoInspectorView.swift) side-by-side instead of using a bottom sheet.
+- On macOS pushed inside `NavigationStack`, omit `.padding(.top, 60)` overlay back buttons; use `PlatformToolbarButton` inside `.toolbar` and wire `.keyboardShortcut(.escape, modifiers: [])` to dismiss photo details cleanly.
 - Wrap iOS-specific sheet modifiers and size class queries in `#if os(iOS)` / `#if os(macOS)` compiler guards.
 
 ### macOS Compile-Safety Checklist

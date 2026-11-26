@@ -123,10 +123,17 @@ final class PhotoDetailsViewModel {
         viewModel?.dispatch(intent: PhotoDetailsIntentRetry.shared)
     }
 
-    func trackDownload() {
-        if let photo {
-            viewModel?.dispatch(intent: PhotoDetailsIntentTrackDownload(photo: photo))
+    func trackDownload(fallbackPhoto: Photo? = nil) {
+        if let targetPhoto = photo ?? fallbackPhoto {
+            viewModel?.dispatch(intent: PhotoDetailsIntentTrackDownload(photo: targetPhoto))
         }
+    }
+
+    func showCopiedColorToast(hex: String) {
+        showToast(
+            ToastBanner(
+                message: String(localized: "Copied \(hex) to clipboard"),
+                systemImage: "checkmark.circle.fill"))
     }
 
     func toggleFavorite(fallbackPhoto: Photo? = nil) {
