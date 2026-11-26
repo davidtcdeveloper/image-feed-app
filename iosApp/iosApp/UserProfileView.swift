@@ -97,6 +97,7 @@ struct UserProfileView: View {
                         }
                         .padding(.bottom, 32)
                     }
+                    .satinScrollEdge()
                     .refreshable {
                         viewModel.refresh()
                     }
@@ -114,9 +115,7 @@ struct UserProfileView: View {
         }
         .navigationTitle(viewModel?.user?.name ?? String(localized: "Profile"))
         #if os(iOS)
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
-        .toolbarBackground(.visible, for: .navigationBar)
+        .satinNavigationBar()
         .toolbar(.hidden, for: .tabBar)
         #endif
         .toolbar {
@@ -496,6 +495,7 @@ struct GridCollectionsList: View {
                 LazyVStack(spacing: 16) {
                     ForEach(Array(collections.enumerated()), id: \.element.id) { index, col in
                         Button(action: {
+                            NavigationPreviewSeeder.seedCollection(col)
                             onSelect(col.id)
                         }) {
                             ZStack(alignment: .bottomLeading) {

@@ -5,6 +5,7 @@ struct CollectionDetailView: View {
     let collectionId: String
     @State private var viewModel: CollectionDetailViewModel?
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.heroNamespace) private var heroNamespace
     #if os(iOS)
     @Environment(\.horizontalSizeClass) var sizeClass
     #endif
@@ -16,12 +17,13 @@ struct CollectionDetailView: View {
 
     init(
         collectionId: String,
+        initialViewModel: CollectionDetailViewModel? = nil,
         onPhotoSelect: @escaping (String) -> Void,
         onCollectionSelect: @escaping (String) -> Void,
         onUserSelect: @escaping (String) -> Void)
     {
         self.collectionId = collectionId
-        self._viewModel = State(initialValue: nil)
+        self._viewModel = State(initialValue: initialViewModel)
         self.onPhotoSelect = onPhotoSelect
         self.onCollectionSelect = onCollectionSelect
         self.onUserSelect = onUserSelect
@@ -77,11 +79,7 @@ struct CollectionDetailView: View {
                                     VStack(alignment: .leading, spacing: 6) {
                                         // Curator info
                                         HStack(spacing: 8) {
-                                            KFImage(URL(string: collection.user.profileImage.medium))
-                                                .resizable()
-                                                .scaledToFill()
-                                                .frame(width: 32, height: 32)
-                                                .clipShape(Circle())
+                                            curatorAvatar(user: collection.user)
 
                                             VStack(alignment: .leading, spacing: 1) {
                                                 Text("Curated by")
@@ -95,6 +93,7 @@ struct CollectionDetailView: View {
                                         .padding(.bottom, 6)
                                         .contentShape(Rectangle())
                                         .onTapGesture {
+                                            NavigationPreviewSeeder.seedUser(collection.user)
                                             onUserSelect(collection.user.username)
                                         }
 
@@ -137,6 +136,7 @@ struct CollectionDetailView: View {
                                     HStack(spacing: 12) {
                                         ForEach(viewModel.related, id: \.id) { rel in
                                             RelatedCollectionCard(collection: rel) {
+                                                NavigationPreviewSeeder.seedCollection(rel)
                                                 onCollectionSelect(rel.id)
                                             }
                                         }
@@ -187,7 +187,7 @@ struct CollectionDetailView: View {
                         }
                     }
                 }
-                .satinScrollEdge()
+                .satinScrollEdge(ignoresTopSafeArea: true)
                 .ignoresSafeArea(edges: .top)
             } else {
                 skeletonView
@@ -202,9 +202,7 @@ struct CollectionDetailView: View {
         .navigationTitle(viewModel?.collection?.title ?? String(localized: "Collection"))
         .navigationBarBackButtonHidden(true)
         #if os(iOS)
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
-        .toolbarBackground(.visible, for: .navigationBar)
+        .satinNavigationBar()
         .toolbar(.hidden, for: .tabBar)
         #endif
         .toolbar {
@@ -222,6 +220,30 @@ struct CollectionDetailView: View {
             }
             #endif
         }
+    }
+
+    @ViewBuilder
+    private func curatorAvatar(user: User) -> some View {
+        let avatar = KFImage(URL(string: user.profileImage.medium))
+            .resizable()
+            .scaledToFill()
+            .frame(width: 32, height: 32)
+            .clipShape(Circle())
+
+        #if os(iOS)
+        if #available(iOS 18.0, *), let heroNamespace {
+            avatar.matchedTransitionSource(
+                id: AppNavigationDefaults.userSourceID(user.username),
+                in: heroNamespace)
+            { source in
+                source.clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            }
+        } else {
+            avatar
+        }
+        #else
+        avatar
+        #endif
     }
 
     private var skeletonView: some View {
@@ -273,6 +295,7 @@ struct CollectionDetailView: View {
                 .padding(.horizontal, 8)
             }
         }
+        .satinScrollEdge(ignoresTopSafeArea: true)
         .ignoresSafeArea(edges: .top)
     }
 }

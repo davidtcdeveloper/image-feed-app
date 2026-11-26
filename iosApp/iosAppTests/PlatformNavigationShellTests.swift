@@ -1,3 +1,4 @@
+import shared
 import SwiftUI
 import XCTest
 #if os(iOS)
@@ -15,6 +16,31 @@ final class PlatformNavigationShellTests: XCTestCase {
         XCTAssertEqual(AppRootTab.favorites.rawValue, 2)
         XCTAssertEqual(AppRootTab.search.rawValue, 3)
         XCTAssertEqual(AppRootTab.search.systemImage, "magnifyingglass")
+    }
+
+    func testUnifiedAppRouteEqualityAndSourceIDs() {
+        let photoRoute = AppRoute.photo(id: "p1")
+        let collectionRoute = AppRoute.collection(id: "c1")
+        let userRoute = AppRoute.user(username: "clara")
+        let searchRoute = AppRoute.search(query: "alpine")
+
+        let routes: Set<AppRoute> = [photoRoute, collectionRoute, userRoute, searchRoute, .photo(id: "p1")]
+        XCTAssertEqual(routes.count, 4)
+        XCTAssertEqual(AppNavigationDefaults.photoSourceID("p1"), "photo-p1")
+        XCTAssertEqual(AppNavigationDefaults.userSourceID("clara"), "user-clara")
+        XCTAssertEqual(AppNavigationDefaults.zoomTransitionCornerRadius, 12)
+    }
+
+    func testNavigationPreviewSeederPopulatesMetroCache() {
+        let photo = UIPreviewFixtures.samplePhoto
+        let collection = UIPreviewFixtures.sampleCollections[0]
+
+        NavigationPreviewSeeder.seedPhoto(photo)
+        NavigationPreviewSeeder.seedCollection(collection)
+
+        XCTAssertEqual(MetroHelper.shared.getPhotoPreview(photoId: photo.id)?.id, photo.id)
+        XCTAssertEqual(MetroHelper.shared.getUserPreview(username: photo.user.username)?.username, photo.user.username)
+        XCTAssertEqual(MetroHelper.shared.getCollectionPreview(collectionId: collection.id)?.id, collection.id)
     }
 
     func testCapsuleScrollCoordinatorMinimizesAndExpands() {

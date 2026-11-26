@@ -4,6 +4,7 @@ import SwiftUI
 /// Unified masonry photo grid cell used across Feed, Favorites, Search, Collection Details, and User Profile.
 struct PhotoGridCard<MenuContent: View>: View {
     @Environment(\.containerWidth) private var containerWidth
+    @Environment(\.heroNamespace) private var envHeroNamespace
 
     let photo: Photo
     let columnCount: Int
@@ -16,6 +17,10 @@ struct PhotoGridCard<MenuContent: View>: View {
     var onAppear: (() -> Void)?
     private let hasContextMenu: Bool
     private let contextMenuContent: () -> MenuContent
+
+    private var resolvedNamespace: Namespace.ID? {
+        heroNamespace ?? envHeroNamespace
+    }
 
     init(
         photo: Photo,
@@ -51,22 +56,19 @@ struct PhotoGridCard<MenuContent: View>: View {
 
         let baseCard = ZStack(alignment: .bottomLeading) {
             photoImage(imageUrl: imageUrl, aspectRatio: aspectRatio)
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                 .contentShape(Rectangle())
                 .onTapGesture {
+                    NavigationPreviewSeeder.seedPhoto(photo)
                     onSelect()
                 }
 
             if showAttribution, let onUserSelect {
                 Button {
+                    NavigationPreviewSeeder.seedUser(photo.user)
                     onUserSelect(photo.user.username)
                 } label: {
                     HStack(spacing: 6) {
-                        KFImage(URL(string: photo.user.profileImage.small))
-                            .resizable()
-                            .scaledToFill()
-                            .frame(width: 20, height: 20)
-                            .clipShape(Circle())
+                        avatarImage
 
                         Text(photo.user.name)
                             .font(.caption2.weight(.semibold))
@@ -99,6 +101,30 @@ struct PhotoGridCard<MenuContent: View>: View {
     }
 
     @ViewBuilder
+    private var avatarImage: some View {
+        let baseAvatar = KFImage(URL(string: photo.user.profileImage.small))
+            .resizable()
+            .scaledToFill()
+            .frame(width: 20, height: 20)
+            .clipShape(Circle())
+
+        #if os(iOS)
+        if #available(iOS 18.0, *), let resolvedNamespace {
+            baseAvatar.matchedTransitionSource(
+                id: AppNavigationDefaults.userSourceID(photo.user.username),
+                in: resolvedNamespace)
+            { source in
+                source.clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            }
+        } else {
+            baseAvatar
+        }
+        #else
+        baseAvatar
+        #endif
+    }
+
+    @ViewBuilder
     private func photoImage(imageUrl: String, aspectRatio: CGFloat) -> some View {
         let baseImage = KFImage(URL(string: imageUrl))
             .placeholder {
@@ -113,15 +139,31 @@ struct PhotoGridCard<MenuContent: View>: View {
             .fade(duration: fadeDuration)
             .resizable()
             .aspectRatio(aspectRatio, contentMode: .fit)
+            .clipShape(RoundedRectangle(cornerRadius: AppNavigationDefaults.zoomTransitionCornerRadius, style: .continuous))
 
-        if let heroNamespace {
+        #if os(iOS)
+        if #available(iOS 18.0, *) {
+            if let resolvedNamespace {
+                baseImage.matchedTransitionSource(
+                    id: AppNavigationDefaults.photoSourceID(photo.id),
+                    in: resolvedNamespace)
+                { source in
+                    source.clipShape(RoundedRectangle(cornerRadius: AppNavigationDefaults.zoomTransitionCornerRadius, style: .continuous))
+                }
+            } else {
+                baseImage
+            }
+        } else if let resolvedNamespace {
             baseImage.matchedGeometryEffect(
                 id: "photo-img-\(photo.id)",
-                in: heroNamespace,
+                in: resolvedNamespace,
                 isSource: isHeroSource)
         } else {
             baseImage
         }
+        #else
+        baseImage
+        #endif
     }
 
     private func contentRatio(photoWidth: Int, photoHeight: Int) -> CGFloat {

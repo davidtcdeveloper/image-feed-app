@@ -110,7 +110,7 @@ struct CollectionsFeedTabView: View {
         externalPath ?? $internalPath
     }
 
-    @Namespace private var dummyNamespace
+    @Namespace private var heroNamespace
 
     init(path: Binding<NavigationPath>? = nil) {
         self.externalPath = path
@@ -120,67 +120,16 @@ struct CollectionsFeedTabView: View {
         NavigationStack(path: activePath) {
             CollectionsFeedView(
                 onCollectionSelect: { collectionId in
-                    activePath.wrappedValue.append(CollectionPathItem(id: collectionId, type: .collection))
+                    AppNavigationDefaults.push(.collection(id: collectionId), onto: activePath)
                 },
                 onSearchClick: {
                     if let openRootSearch {
                         openRootSearch()
                     } else {
-                        activePath.wrappedValue.append(CollectionPathItem(id: "", type: .search))
+                        AppNavigationDefaults.push(.search(query: ""), onto: activePath)
                     }
                 })
-                .navigationDestination(for: CollectionPathItem.self) { item in
-                    Group {
-                        switch item.type {
-                        case .collection:
-                            CollectionDetailView(
-                                collectionId: item.id,
-                                onPhotoSelect: { photoId in
-                                    activePath.wrappedValue.append(CollectionPathItem(id: photoId, type: .photo))
-                                },
-                                onCollectionSelect: { relId in
-                                    activePath.wrappedValue.append(CollectionPathItem(id: relId, type: .collection))
-                                },
-                                onUserSelect: { username in
-                                    activePath.wrappedValue.append(CollectionPathItem(id: username, type: .user))
-                                })
-                        case .photo:
-                            PhotoDetailsView(
-                                photoId: item.id,
-                                heroNamespace: dummyNamespace,
-                                onUserSelect: { username in
-                                    activePath.wrappedValue.append(CollectionPathItem(id: username, type: .user))
-                                },
-                                onTagSelect: { tag in
-                                    activePath.wrappedValue.append(CollectionPathItem(id: tag, type: .search))
-                                })
-                        case .user:
-                            UserProfileView(
-                                username: item.id,
-                                onPhotoSelect: { photoId in
-                                    activePath.wrappedValue.append(CollectionPathItem(id: photoId, type: .photo))
-                                },
-                                onCollectionSelect: { colId in
-                                    activePath.wrappedValue.append(CollectionPathItem(id: colId, type: .collection))
-                                })
-                        case .search:
-                            SearchView(
-                                initialQuery: item.id,
-                                onPhotoSelect: { photoId in
-                                    activePath.wrappedValue.append(CollectionPathItem(id: photoId, type: .photo))
-                                },
-                                onUserSelect: { username in
-                                    activePath.wrappedValue.append(CollectionPathItem(id: username, type: .user))
-                                },
-                                onCollectionSelect: { colId in
-                                    activePath.wrappedValue.append(CollectionPathItem(id: colId, type: .collection))
-                                })
-                        }
-                    }
-                    #if os(iOS)
-                    .toolbar(.hidden, for: .tabBar)
-                    #endif
-                }
+                .appNavigationDestinations(path: activePath, heroNamespace: heroNamespace)
         }
     }
 }
@@ -194,7 +143,7 @@ struct SearchTabView: View {
 
     private let initialQuery: String
     private let initialViewModel: SearchViewModel?
-    @Namespace private var dummyNamespace
+    @Namespace private var heroNamespace
 
     init(
         path: Binding<NavigationPath>? = nil,
@@ -212,102 +161,15 @@ struct SearchTabView: View {
                 initialQuery: initialQuery,
                 initialViewModel: initialViewModel,
                 onPhotoSelect: { photoId in
-                    activePath.wrappedValue.append(SearchPathItem(id: photoId, type: .photo))
+                    AppNavigationDefaults.push(.photo(id: photoId), onto: activePath)
                 },
                 onUserSelect: { username in
-                    activePath.wrappedValue.append(SearchPathItem(id: username, type: .user))
+                    AppNavigationDefaults.push(.user(username: username), onto: activePath)
                 },
                 onCollectionSelect: { colId in
-                    activePath.wrappedValue.append(SearchPathItem(id: colId, type: .collection))
+                    AppNavigationDefaults.push(.collection(id: colId), onto: activePath)
                 })
-                .navigationDestination(for: SearchPathItem.self) { item in
-                    Group {
-                        switch item.type {
-                        case .photo:
-                            PhotoDetailsView(
-                                photoId: item.id,
-                                heroNamespace: dummyNamespace,
-                                onUserSelect: { username in
-                                    activePath.wrappedValue.append(SearchPathItem(id: username, type: .user))
-                                },
-                                onTagSelect: { tag in
-                                    activePath.wrappedValue.append(SearchPathItem(id: tag, type: .search))
-                                })
-                        case .user:
-                            UserProfileView(
-                                username: item.id,
-                                onPhotoSelect: { photoId in
-                                    activePath.wrappedValue.append(SearchPathItem(id: photoId, type: .photo))
-                                },
-                                onCollectionSelect: { colId in
-                                    activePath.wrappedValue.append(SearchPathItem(id: colId, type: .collection))
-                                })
-                        case .collection:
-                            CollectionDetailView(
-                                collectionId: item.id,
-                                onPhotoSelect: { photoId in
-                                    activePath.wrappedValue.append(SearchPathItem(id: photoId, type: .photo))
-                                },
-                                onCollectionSelect: { relId in
-                                    activePath.wrappedValue.append(SearchPathItem(id: relId, type: .collection))
-                                },
-                                onUserSelect: { username in
-                                    activePath.wrappedValue.append(SearchPathItem(id: username, type: .user))
-                                })
-                        case .search:
-                            SearchView(
-                                initialQuery: item.id,
-                                onPhotoSelect: { photoId in
-                                    activePath.wrappedValue.append(SearchPathItem(id: photoId, type: .photo))
-                                },
-                                onUserSelect: { username in
-                                    activePath.wrappedValue.append(SearchPathItem(id: username, type: .user))
-                                },
-                                onCollectionSelect: { colId in
-                                    activePath.wrappedValue.append(SearchPathItem(id: colId, type: .collection))
-                                })
-                        }
-                    }
-                    #if os(iOS)
-                    .toolbar(.hidden, for: .tabBar)
-                    #endif
-                }
+                .appNavigationDestinations(path: activePath, heroNamespace: heroNamespace)
         }
-    }
-}
-
-struct SearchPathItem: Hashable {
-    let id: String
-    let type: ItemType
-
-    enum ItemType {
-        case photo
-        case user
-        case collection
-        case search
-    }
-}
-
-struct CollectionPathItem: Hashable {
-    let id: String
-    let type: ItemType
-
-    enum ItemType {
-        case collection
-        case photo
-        case search
-        case user
-    }
-}
-
-struct FeedPathItem: Hashable {
-    let id: String
-    let type: ItemType
-
-    enum ItemType {
-        case photo
-        case user
-        case collection
-        case search
     }
 }

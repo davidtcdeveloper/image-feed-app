@@ -121,6 +121,8 @@ final class FeedViewModel {
             MainActor.assumeIsolated {
                 guard let self else { return }
                 if let photo = state?.photo {
+                    MetroHelper.shared.seedPhotoPreview(photo: photo)
+                    MetroHelper.shared.seedUserPreview(user: photo.user)
                     completion(photo.id)
                     self.randomPhotoCloseable?.close()
                     self.randomPhotoCloseable = nil

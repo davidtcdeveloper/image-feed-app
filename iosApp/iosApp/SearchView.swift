@@ -115,6 +115,7 @@ struct SearchView: View {
                             }
                             .padding(.top, 10)
                         }
+                        .satinScrollEdge()
                         .safeAreaInset(edge: .top, spacing: 0) {
                             searchTabBar(viewModel: viewModel)
                         }
@@ -186,6 +187,7 @@ struct SearchView: View {
                                     } else {
                                         ForEach(Array(viewModel.users.enumerated()), id: \.element.id) { index, user in
                                             Button(action: {
+                                                NavigationPreviewSeeder.seedUser(user)
                                                 onUserSelect(user.username)
                                             }) {
                                                 UserCardView(user: user)
@@ -239,9 +241,7 @@ struct SearchView: View {
         }
         .navigationTitle("SEARCH")
         #if os(iOS)
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
-        .toolbarBackground(.visible, for: .navigationBar)
+        .satinNavigationBar()
         .adaptiveTabBarVisibility()
         #endif
         .toolbar {
@@ -333,7 +333,7 @@ struct SearchTabBar: View {
             .macOSHorizontalScroll()
         }
         .frame(height: 44)
-        .glassBackground(style: .ultraThin, shape: Capsule(), showBorder: true, hasShadow: true)
+        .floatGlass(shape: Capsule())
         .padding(.horizontal, 12)
         .padding(.top, 4)
         .padding(.bottom, 6)
@@ -410,6 +410,7 @@ struct SearchSuggestionsView: View {
             }
             .padding(16)
         }
+        .satinScrollEdge()
     }
 }
 
@@ -459,15 +460,12 @@ struct CollectionCardView: View {
 }
 
 struct UserCardView: View {
+    @Environment(\.heroNamespace) private var heroNamespace
     let user: User
 
     var body: some View {
         HStack(spacing: 16) {
-            KFImage(URL(string: user.profileImage.medium))
-                .resizable()
-                .aspectRatio(contentMode: .fill)
-                .frame(width: 50, height: 50)
-                .clipShape(Circle())
+            userAvatar
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(user.name)
@@ -487,6 +485,30 @@ struct UserCardView: View {
         }
         .padding(12)
         .matteSurface(cornerRadius: 12)
+    }
+
+    @ViewBuilder
+    private var userAvatar: some View {
+        let avatar = KFImage(URL(string: user.profileImage.medium))
+            .resizable()
+            .aspectRatio(contentMode: .fill)
+            .frame(width: 50, height: 50)
+            .clipShape(Circle())
+
+        #if os(iOS)
+        if #available(iOS 18.0, *), let heroNamespace {
+            avatar.matchedTransitionSource(
+                id: AppNavigationDefaults.userSourceID(user.username),
+                in: heroNamespace)
+            { source in
+                source.clipShape(RoundedRectangle(cornerRadius: 25, style: .continuous))
+            }
+        } else {
+            avatar
+        }
+        #else
+        avatar
+        #endif
     }
 }
 

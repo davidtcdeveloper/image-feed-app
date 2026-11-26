@@ -14,6 +14,9 @@ final class UIWindowServerSnapshotUITests: XCTestCase {
             "photoDetails",
             "navigationShell",
             "navigationShellSearch",
+            "collectionsFeed",
+            "collectionDetail",
+            "favorites",
         ]
 
         for screen in screens {

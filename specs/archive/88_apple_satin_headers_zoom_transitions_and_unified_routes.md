@@ -1,6 +1,6 @@
 # Specification 88: Apple Unified AppRoute, Satin Scroll Edges, iOS 18 Zoom Hero Transitions & Avatar Continuity
 
-**Status:** Accepted
+**Status:** Implemented (Final)
 
 * **Wave:** Wave 2 — Parallel Feature & Craft Execution
 * **Depends On:** [Spec 81](81_kmp_color_engine_and_navigation_seed_cache.md), [Spec 83](83_apple_design_system_matte_and_light_mode_hygiene.md)
@@ -71,19 +71,26 @@ After [Spec 83](83_apple_design_system_matte_and_light_mode_hygiene.md) splits `
 
 ## 5. Acceptance Criteria
 
-- [ ] `AppRoute` + `.appNavigationDestinations(...)` unify `FeedPathItem`, `CollectionPathItem`, and `FavoritesPathItem`, seeding `NavigationPreviewCache` across all entry points.
-- [ ] On iOS 18+, `PhotosFeedView` and `FavoritesView` retire `selectedPhotoForHero` `ZStack` overlays and all 5 photo grids use `.matchedTransitionSource` + `.navigationTransition(.zoom)` (with iOS 17 fallback and brisk macOS `NavigationStack` transitions).
-- [ ] All scrollable Apple screens apply `.satinScrollEdge()` (iOS/macOS 26 `.scrollEdgeEffectStyle(.soft, for: .top)` without `.toolbarBackground(.visible)` seam; OS 17–25 / 14–25 top gradient fade; persistent bars on macOS).
-- [ ] Child `.toolbar` buttons use `PlatformToolbarButton`, `FeedCategoryBar`/`SearchTabBar` adopt OS 26 `.glassEffect(.regular.interactive(), in:)`, Shuffle uses `.symbolEffect(.bounce)`, and photographer avatars animate into `UserProfileView`.
-- [ ] Mode A and Mode B Before/After visual review is approved, and `iosApp` + `macosApp` builds, `swiftformat --lint .`, and `swiftlint` pass with zero warnings.
-- [ ] Affected [`wiki/`](../wiki/README.md) pages, [`.agents/skills/ios-glass-design/SKILL.md`](../.agents/skills/ios-glass-design/SKILL.md), and [`.agents/skills/ui-visual-review/SKILL.md`](../.agents/skills/ui-visual-review/SKILL.md) are updated.
+- [x] `AppRoute` + `.appNavigationDestinations(...)` unify `FeedPathItem`, `CollectionPathItem`, and `FavoritesPathItem`, seeding `NavigationPreviewCache` across all entry points.
+- [x] On iOS 18+, `PhotosFeedView` and `FavoritesView` retire `selectedPhotoForHero` `ZStack` overlays and all 5 photo grids use `.matchedTransitionSource` + `.navigationTransition(.zoom)` (with iOS 17 fallback and brisk macOS `NavigationStack` transitions).
+- [x] All scrollable Apple screens apply `.satinScrollEdge()` (iOS/macOS 26 `.scrollEdgeEffectStyle(.soft, for: .top)` without `.toolbarBackground(.visible)` seam; OS 17–25 / 14–25 top gradient fade; persistent bars on macOS).
+- [x] Child `.toolbar` buttons use `PlatformToolbarButton`, `FeedCategoryBar`/`SearchTabBar` adopt OS 26 `.glassEffect(.regular.interactive(), in:)`, Shuffle uses `.symbolEffect(.bounce)`, and photographer avatars animate into `UserProfileView`.
+- [x] Mode A and Mode B Before/After visual review is approved, and `iosApp` + `macosApp` builds, `swiftformat --lint .`, and `swiftlint` pass with zero warnings.
+- [x] Affected [`wiki/`](../wiki/README.md) pages, [`.agents/skills/ios-glass-design/SKILL.md`](../.agents/skills/ios-glass-design/SKILL.md), and [`.agents/skills/ui-visual-review/SKILL.md`](../.agents/skills/ui-visual-review/SKILL.md) are updated.
 
 ---
 
 ## 6. Verification Record
 
 ### Verified
-*(Pending implementation)*
+* `swiftformat --lint .` — Exited `0` (`0/35` files require formatting).
+* `swiftlint lint iosApp/iosApp iosApp/iosAppTests iosApp/iosAppUITests` — Exited `0` (`0` errors; pre-existing repo-wide `opening_brace` / `trailing_comma` / legacy length warnings tracked in [`ISS-007`](../../wiki/issue-log.md)).
+* `xcodegen generate --spec iosApp/project.yml` + `xcodebuild test -project iosApp/iosApp.xcodeproj -scheme macosApp -destination 'platform=macOS,arch=arm64' CODE_SIGNING_ALLOWED=NO` — Exited `0` with **zero Swift compiler warnings**; `macosAppTests` passed **`9/9`** (`AdaptiveLayoutHelperTests` `3/3`, `PlatformNavigationShellTests` `5/5` including `AppRoute` & `NavigationPreviewSeeder` coverage, `UIVisualSnapshotTests` `1/1` rendering 13 macOS PNGs).
+* `xcodebuild test -project iosApp/iosApp.xcodeproj -scheme iosApp -destination 'platform=iOS Simulator,name=iPhone 18 Pro' CODE_SIGNING_ALLOWED=NO` — Exited `0` with **zero Swift compiler warnings**; `iosAppTests` passed **`8/8`** (`AdaptiveLayoutHelperTests` `3/3`, `PlatformNavigationShellTests` `4/4`, `UIVisualSnapshotTests` `1/1` rendering 17 iOS PNGs) and `iosAppUITests` passed **`1/1`** (`UIWindowServerSnapshotUITests` rendering 6 window-server PNGs on iOS 27.2 Simulator).
+* `./gradlew :androidApp:assembleDebug` — Exited `0` (`BUILD SUCCESSFUL`).
+* Before and After Mode A & Mode B snapshots inspected with `read_file` (leading to a background-layer `.glassEffect` fix in `FloatGlassModifier` for crisp Light/Dark pill contrast) and **approved by the user** in session artifact `spec_88_ui_visual_review.md`.
+* Updated [`wiki/design-systems-and-navigation.md`](../../wiki/design-systems-and-navigation.md), [`wiki/performance-and-memory.md`](../../wiki/performance-and-memory.md), [`.agents/skills/ios-glass-design/SKILL.md`](../../.agents/skills/ios-glass-design/SKILL.md), and [`.agents/skills/ui-visual-review/SKILL.md`](../../.agents/skills/ui-visual-review/SKILL.md).
 
 ### Unverified / Gaps
-*(Pending implementation)*
+* Live runtime execution on iOS 17–25 Simulator or macOS 14–15 was not performed on this host (Xcode `27.2` ships `iOS 27.x` / `macOS 27.2`); the `#unavailable(iOS 18)` `selectedPhotoForHero` overlay and OS 17–25 / 14–25 top gradient `.satinScrollEdge()` paths were verified by compilation (`deploymentTarget: "17.0"` / `"14.0"`).
+* Interactive swipe-to-dismiss gesture behavior for `.navigationTransition(.zoom)` and avatar zoom continuity from `PhotoDetailsView` (pending `Spec 89` `user-\(username)` attribution wiring) were verified by compilation and source wiring rather than XCUITest gesture automation.

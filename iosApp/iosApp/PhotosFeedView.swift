@@ -80,6 +80,18 @@ struct PhotosFeedTabView: View {
         #endif
     }
 
+    private var isLegacyHeroOverlayActive: Bool {
+        #if os(iOS)
+        if #available(iOS 18.0, *) {
+            false
+        } else {
+            selectedPhotoForHero != nil
+        }
+        #else
+        false
+        #endif
+    }
+
     var body: some View {
         NavigationStack(path: activePath) {
             ZStack {
@@ -131,12 +143,20 @@ struct PhotosFeedTabView: View {
                                                     heroNamespace: heroNamespace,
                                                     isHeroSource: selectedPhotoForHero?.id != photo.id,
                                                     onSelect: {
-                                                        withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
-                                                            selectedPhotoForHero = photo
+                                                        #if os(iOS)
+                                                        if #available(iOS 18.0, *) {
+                                                            AppNavigationDefaults.push(.photo(id: photo.id), onto: activePath)
+                                                        } else {
+                                                            withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
+                                                                selectedPhotoForHero = photo
+                                                            }
                                                         }
+                                                        #else
+                                                        AppNavigationDefaults.push(.photo(id: photo.id), onto: activePath)
+                                                        #endif
                                                     },
                                                     onUserSelect: { username in
-                                                        activePath.wrappedValue.append(FeedPathItem(id: username, type: .user))
+                                                        AppNavigationDefaults.push(.user(username: username), onto: activePath)
                                                     },
                                                     onAppear: {
                                                         if photo.id == viewModel.photos.last?.id {
@@ -193,7 +213,8 @@ struct PhotosFeedTabView: View {
                         }
                 }
 
-                if let photo = selectedPhotoForHero {
+                #if os(iOS)
+                if #unavailable(iOS 18.0), let photo = selectedPhotoForHero {
                     PhotoDetailsView(
                         photoId: photo.id,
                         initialPhoto: photo,
@@ -207,26 +228,25 @@ struct PhotosFeedTabView: View {
                             withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
                                 selectedPhotoForHero = nil
                             }
-                            activePath.wrappedValue.append(FeedPathItem(id: username, type: .user))
+                            AppNavigationDefaults.push(.user(username: username), onto: activePath)
                         },
                         onTagSelect: { tag in
                             withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
                                 selectedPhotoForHero = nil
                             }
-                            activePath.wrappedValue.append(FeedPathItem(id: tag, type: .search))
+                            AppNavigationDefaults.push(.search(query: tag), onto: activePath)
                         })
                         .transition(.asymmetric(insertion: .identity, removal: .identity))
                         .zIndex(1)
                 }
+                #endif
             }
             .measureContainerWidth($containerWidth)
             .navigationTitle("FEED")
             #if os(iOS)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
-            .toolbarBackground(.visible, for: .navigationBar)
-            .toolbar(selectedPhotoForHero != nil ? .hidden : .visible, for: .navigationBar)
-            .adaptiveTabBarVisibility(hideOnModernOS: selectedPhotoForHero != nil)
+            .satinNavigationBar()
+            .toolbar(isLegacyHeroOverlayActive ? .hidden : .visible, for: .navigationBar)
+            .adaptiveTabBarVisibility(hideOnModernOS: isLegacyHeroOverlayActive)
             #endif
             .toolbar {
                 #if os(iOS)
@@ -234,6 +254,7 @@ struct PhotosFeedTabView: View {
                     PlatformToolbarButton(systemName: "shuffle", accessibilityLabel: "Shuffle") {
                         handleShake()
                     }
+                    .symbolEffect(.bounce, value: shakeFeedbackTrigger)
                     .keyboardShortcut("s", modifiers: .command)
                 }
                 #else
@@ -241,6 +262,7 @@ struct PhotosFeedTabView: View {
                     PlatformToolbarButton(systemName: "shuffle", accessibilityLabel: "Shuffle") {
                         handleShake()
                     }
+                    .symbolEffect(.bounce, value: shakeFeedbackTrigger)
                     .keyboardShortcut("s", modifiers: .command)
                 }
                 #endif
@@ -252,68 +274,11 @@ struct PhotosFeedTabView: View {
             }
             .sensoryFeedback(.selection, trigger: viewModel?.selectedTopicSlug ?? "")
             .sensoryFeedback(.impact(weight: .medium), trigger: shakeFeedbackTrigger)
-            .onChange(of: selectedPhotoForHero) { _, newValue in
-                activeDetailPresented.wrappedValue = (newValue != nil)
-            }
-            .onChange(of: activePath.wrappedValue.count) { _, count in
-                if count > 0, selectedPhotoForHero != nil {
-                    withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
-                        selectedPhotoForHero = nil
-                    }
-                }
-            }
-            .navigationDestination(for: FeedPathItem.self) { item in
-                Group {
-                    switch item.type {
-                    case .photo:
-                        PhotoDetailsView(
-                            photoId: item.id,
-                            heroNamespace: heroNamespace,
-                            onUserSelect: { username in
-                                activePath.wrappedValue.append(FeedPathItem(id: username, type: .user))
-                            },
-                            onTagSelect: { tag in
-                                activePath.wrappedValue.append(FeedPathItem(id: tag, type: .search))
-                            })
-                    case .user:
-                        UserProfileView(
-                            username: item.id,
-                            onPhotoSelect: { photoId in
-                                activePath.wrappedValue.append(FeedPathItem(id: photoId, type: .photo))
-                            },
-                            onCollectionSelect: { colId in
-                                activePath.wrappedValue.append(FeedPathItem(id: colId, type: .collection))
-                            })
-                    case .collection:
-                        CollectionDetailView(
-                            collectionId: item.id,
-                            onPhotoSelect: { photoId in
-                                activePath.wrappedValue.append(FeedPathItem(id: photoId, type: .photo))
-                            },
-                            onCollectionSelect: { colId in
-                                activePath.wrappedValue.append(FeedPathItem(id: colId, type: .collection))
-                            },
-                            onUserSelect: { username in
-                                activePath.wrappedValue.append(FeedPathItem(id: username, type: .user))
-                            })
-                    case .search:
-                        SearchView(
-                            initialQuery: item.id,
-                            onPhotoSelect: { photoId in
-                                activePath.wrappedValue.append(FeedPathItem(id: photoId, type: .photo))
-                            },
-                            onUserSelect: { username in
-                                activePath.wrappedValue.append(FeedPathItem(id: username, type: .user))
-                            },
-                            onCollectionSelect: { colId in
-                                activePath.wrappedValue.append(FeedPathItem(id: colId, type: .collection))
-                            })
-                    }
-                }
-                #if os(iOS)
-                .toolbar(.hidden, for: .tabBar)
-                #endif
-            }
+            .modifier(LegacyHeroOverlaySyncModifier(
+                selectedPhoto: $selectedPhotoForHero,
+                activeDetailPresented: activeDetailPresented,
+                pathCount: activePath.wrappedValue.count))
+            .appNavigationDestinations(path: activePath, heroNamespace: heroNamespace)
             .onShake {
                 handleShake()
             }
@@ -331,27 +296,61 @@ struct PhotosFeedTabView: View {
             selectedTopicSlug: viewModel.selectedTopicSlug,
             isLoadingTopics: viewModel.isLoadingTopics,
             namespace: categoryNamespace,
-            isScrollEnabled: selectedPhotoForHero == nil && !isShaking)
+            isScrollEnabled: !isLegacyHeroOverlayActive && !isShaking)
         { slug in
             withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                 viewModel.selectTopic(slug: slug)
             }
         }
+        .opacity(isLegacyHeroOverlayActive ? 0 : 1)
+        .animation(.easeInOut(duration: 0.2), value: isLegacyHeroOverlayActive)
     }
 
     private func handleShake() {
         guard !isShaking, let viewModel else { return }
         shakeFeedbackTrigger += 1
         isShaking = true
-        withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
-            selectedPhotoForHero = nil
+        #if os(iOS)
+        if #unavailable(iOS 18.0), selectedPhotoForHero != nil {
+            withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
+                selectedPhotoForHero = nil
+            }
         }
+        #endif
         viewModel.fetchRandomPhotoId { photoId in
             isShaking = false
             if let photoId {
-                activePath.wrappedValue.append(FeedPathItem(id: photoId, type: .photo))
+                AppNavigationDefaults.push(.photo(id: photoId), onto: activePath)
             }
         }
+    }
+}
+
+private struct LegacyHeroOverlaySyncModifier: ViewModifier {
+    @Binding var selectedPhoto: Photo?
+    let activeDetailPresented: Binding<Bool>
+    let pathCount: Int
+
+    func body(content: Content) -> some View {
+        #if os(iOS)
+        if #available(iOS 18.0, *) {
+            content
+        } else {
+            content
+                .onChange(of: selectedPhoto) { _, newValue in
+                    activeDetailPresented.wrappedValue = (newValue != nil)
+                }
+                .onChange(of: pathCount) { _, count in
+                    if count > 0, selectedPhoto != nil {
+                        withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
+                            selectedPhoto = nil
+                        }
+                    }
+                }
+        }
+        #else
+        content
+        #endif
     }
 }
 
@@ -430,7 +429,7 @@ struct FeedCategoryBar: View {
                 #endif
             }
             .frame(height: 44)
-            .glassBackground(style: .ultraThin, shape: Capsule(), showBorder: true, hasShadow: true)
+            .floatGlass(shape: Capsule())
             .padding(.horizontal, 12)
             .padding(.top, 4)
             .padding(.bottom, 6)

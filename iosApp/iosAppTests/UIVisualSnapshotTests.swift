@@ -35,80 +35,104 @@ final class UIVisualSnapshotTests: XCTestCase {
     }
 
     #if os(iOS)
-    func testCaptureIOSSnapshots() throws {
-        let screens = [
-            IOSSnapshotCase(
-                name: "photo_details_compact_light",
-                screen: .photoDetails,
-                size: CGSize(width: 393, height: 852),
-                style: .light,
-                sizeClass: .compact),
-            IOSSnapshotCase(
-                name: "photo_details_compact_dark",
-                screen: .photoDetails,
-                size: CGSize(width: 393, height: 852),
-                style: .dark,
-                sizeClass: .compact),
-            IOSSnapshotCase(
-                name: "photo_details_regular_dark",
-                screen: .photoDetails,
-                size: CGSize(width: 1024, height: 768),
-                style: .dark,
-                sizeClass: .regular),
-            IOSSnapshotCase(name: "photos_feed_compact_light", screen: .photosFeed, size: CGSize(width: 393, height: 852), style: .light, sizeClass: .compact),
-            IOSSnapshotCase(name: "photos_feed_compact_dark", screen: .photosFeed, size: CGSize(width: 393, height: 852), style: .dark, sizeClass: .compact),
-            IOSSnapshotCase(
-                name: "collections_feed_compact_light",
-                screen: .collectionsFeed,
-                size: CGSize(width: 393, height: 852),
-                style: .light,
-                sizeClass: .compact),
-            IOSSnapshotCase(
-                name: "collections_feed_regular_light",
-                screen: .collectionsFeed,
-                size: CGSize(width: 1024, height: 768),
-                style: .light,
-                sizeClass: .regular),
-            IOSSnapshotCase(
-                name: "search_results_compact_light",
-                screen: .searchResults,
-                size: CGSize(width: 393, height: 852),
-                style: .light,
-                sizeClass: .compact),
-            IOSSnapshotCase(
-                name: "search_filters_compact_light",
-                screen: .searchFilters,
-                size: CGSize(width: 393, height: 520),
-                style: .light,
-                sizeClass: .compact),
-            IOSSnapshotCase(
-                name: "user_profile_insights_light",
-                screen: .userProfileInsights,
-                size: CGSize(width: 393, height: 852),
-                style: .light,
-                sizeClass: .compact),
-            IOSSnapshotCase(
-                name: "user_profile_insights_dark",
-                screen: .userProfileInsights,
-                size: CGSize(width: 393, height: 852),
-                style: .dark,
-                sizeClass: .compact),
-            IOSSnapshotCase(
-                name: "floating_tab_capsule_light",
-                screen: .floatingTabCapsule,
-                size: CGSize(width: 393, height: 140),
-                style: .light,
-                sizeClass: .compact),
-            IOSSnapshotCase(
-                name: "floating_tab_capsule_dark",
-                screen: .floatingTabCapsule,
-                size: CGSize(width: 393, height: 140),
-                style: .dark,
-                sizeClass: .compact),
-        ]
+    private static let iosSnapshotCases: [IOSSnapshotCase] = [
+        IOSSnapshotCase(
+            name: "photo_details_compact_light",
+            screen: .photoDetails,
+            size: CGSize(width: 393, height: 852),
+            style: .light,
+            sizeClass: .compact),
+        IOSSnapshotCase(
+            name: "photo_details_compact_dark",
+            screen: .photoDetails,
+            size: CGSize(width: 393, height: 852),
+            style: .dark,
+            sizeClass: .compact),
+        IOSSnapshotCase(
+            name: "photo_details_regular_dark",
+            screen: .photoDetails,
+            size: CGSize(width: 1024, height: 768),
+            style: .dark,
+            sizeClass: .regular),
+        IOSSnapshotCase(name: "photos_feed_compact_light", screen: .photosFeed, size: CGSize(width: 393, height: 852), style: .light, sizeClass: .compact),
+        IOSSnapshotCase(name: "photos_feed_compact_dark", screen: .photosFeed, size: CGSize(width: 393, height: 852), style: .dark, sizeClass: .compact),
+        IOSSnapshotCase(
+            name: "collections_feed_compact_light",
+            screen: .collectionsFeed,
+            size: CGSize(width: 393, height: 852),
+            style: .light,
+            sizeClass: .compact),
+        IOSSnapshotCase(
+            name: "collections_feed_regular_light",
+            screen: .collectionsFeed,
+            size: CGSize(width: 1024, height: 768),
+            style: .light,
+            sizeClass: .regular),
+        IOSSnapshotCase(
+            name: "collection_detail_compact_light",
+            screen: .collectionDetail,
+            size: CGSize(width: 393, height: 852),
+            style: .light,
+            sizeClass: .compact),
+        IOSSnapshotCase(
+            name: "collection_detail_compact_dark",
+            screen: .collectionDetail,
+            size: CGSize(width: 393, height: 852),
+            style: .dark,
+            sizeClass: .compact),
+        IOSSnapshotCase(
+            name: "favorites_compact_light",
+            screen: .favorites,
+            size: CGSize(width: 393, height: 852),
+            style: .light,
+            sizeClass: .compact),
+        IOSSnapshotCase(
+            name: "favorites_compact_dark",
+            screen: .favorites,
+            size: CGSize(width: 393, height: 852),
+            style: .dark,
+            sizeClass: .compact),
+        IOSSnapshotCase(
+            name: "search_results_compact_light",
+            screen: .searchResults,
+            size: CGSize(width: 393, height: 852),
+            style: .light,
+            sizeClass: .compact),
+        IOSSnapshotCase(
+            name: "search_filters_compact_light",
+            screen: .searchFilters,
+            size: CGSize(width: 393, height: 520),
+            style: .light,
+            sizeClass: .compact),
+        IOSSnapshotCase(
+            name: "user_profile_insights_light",
+            screen: .userProfileInsights,
+            size: CGSize(width: 393, height: 852),
+            style: .light,
+            sizeClass: .compact),
+        IOSSnapshotCase(
+            name: "user_profile_insights_dark",
+            screen: .userProfileInsights,
+            size: CGSize(width: 393, height: 852),
+            style: .dark,
+            sizeClass: .compact),
+        IOSSnapshotCase(
+            name: "floating_tab_capsule_light",
+            screen: .floatingTabCapsule,
+            size: CGSize(width: 393, height: 140),
+            style: .light,
+            sizeClass: .compact),
+        IOSSnapshotCase(
+            name: "floating_tab_capsule_dark",
+            screen: .floatingTabCapsule,
+            size: CGSize(width: 393, height: 140),
+            style: .dark,
+            sizeClass: .compact),
+    ]
 
+    func testCaptureIOSSnapshots() throws {
         let targetDir = try resolveOutputDirectory()
-        for entry in screens {
+        for entry in Self.iosSnapshotCases {
             let colorScheme: ColorScheme = entry.style == .dark ? .dark : .light
             let view = UIPreviewFixtures.makeView(for: entry.screen)
                 .environment(\.colorScheme, colorScheme)
@@ -164,6 +188,8 @@ final class UIVisualSnapshotTests: XCTestCase {
             MacOSSnapshotCase(name: "macos_photos_feed_light", screen: .photosFeed, size: CGSize(width: 1280, height: 800), dark: false),
             MacOSSnapshotCase(name: "macos_photos_feed_dark", screen: .photosFeed, size: CGSize(width: 1280, height: 800), dark: true),
             MacOSSnapshotCase(name: "macos_collections_feed_light", screen: .collectionsFeed, size: CGSize(width: 1280, height: 800), dark: false),
+            MacOSSnapshotCase(name: "macos_collection_detail_light", screen: .collectionDetail, size: CGSize(width: 1280, height: 800), dark: false),
+            MacOSSnapshotCase(name: "macos_favorites_light", screen: .favorites, size: CGSize(width: 1280, height: 800), dark: false),
             MacOSSnapshotCase(name: "macos_search_results_light", screen: .searchResults, size: CGSize(width: 1280, height: 800), dark: false),
             MacOSSnapshotCase(name: "macos_user_profile_insights_light", screen: .userProfileInsights, size: CGSize(width: 1280, height: 800), dark: false),
             MacOSSnapshotCase(name: "macos_user_profile_insights_dark", screen: .userProfileInsights, size: CGSize(width: 1280, height: 800), dark: true),

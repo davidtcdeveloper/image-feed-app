@@ -65,6 +65,7 @@ struct CollectionsFeedView: View {
                             .padding(.top, 10)
                         }
                     }
+                    .satinScrollEdge()
                 } else if viewModel.collections.isEmpty, viewModel.error != nil {
                     ErrorView(error: viewModel.error ?? String(localized: "Failed to load collections"), onRetry: {
                         viewModel.refresh()
@@ -77,6 +78,7 @@ struct CollectionsFeedView: View {
                                     LazyVStack(spacing: 16) {
                                         ForEach(viewModel.columnItems(for: colIndex, totalColumns: columnCount)) { indexed in
                                             Button {
+                                                NavigationPreviewSeeder.seedCollection(indexed.item)
                                                 onCollectionSelect(indexed.item.id)
                                             } label: {
                                                 CollectionMosaicCard(
@@ -106,6 +108,7 @@ struct CollectionsFeedView: View {
                             LazyVStack(spacing: 16) {
                                 ForEach(viewModel.columnItems(for: 0, totalColumns: 1)) { indexed in
                                     Button {
+                                        NavigationPreviewSeeder.seedCollection(indexed.item)
                                         onCollectionSelect(indexed.item.id)
                                     } label: {
                                         CollectionMosaicCard(
@@ -149,9 +152,7 @@ struct CollectionsFeedView: View {
         }
         .navigationTitle("COLLECTIONS")
         #if os(iOS)
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
-        .toolbarBackground(.visible, for: .navigationBar)
+        .satinNavigationBar()
         .adaptiveTabBarVisibility()
         #endif
         .toolbar {

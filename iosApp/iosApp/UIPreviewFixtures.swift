@@ -6,6 +6,8 @@ enum UIFixtureScreen: String, CaseIterable {
     case photoDetails
     case photosFeed
     case collectionsFeed
+    case collectionDetail
+    case favorites
     case searchResults
     case searchFilters
     case userProfileInsights
@@ -322,6 +324,31 @@ extension UIPreviewFixtures {
                         onSearchClick: {})
                 }
                 .environment(\.isUISnapshotMode, true))
+
+        case .collectionDetail:
+            let collectionDetailVm = CollectionDetailViewModel(
+                previewCollection: sampleCollections[0],
+                previewPhotos: samplePhotos,
+                previewRelated: Array(sampleCollections.dropFirst()),
+                isLoadingPhotos: false)
+            return AnyView(
+                NavigationStack {
+                    CollectionDetailView(
+                        collectionId: sampleCollections[0].id,
+                        initialViewModel: collectionDetailVm,
+                        onPhotoSelect: { _ in },
+                        onCollectionSelect: { _ in },
+                        onUserSelect: { _ in })
+                }
+                .environment(\.isUISnapshotMode, true))
+
+        case .favorites:
+            let favoritesVm = FavoritesViewModel(
+                previewPhotos: samplePhotos,
+                isLoading: false)
+            return AnyView(
+                FavoritesTabView(initialViewModel: favoritesVm)
+                    .environment(\.isUISnapshotMode, true))
 
         case .searchResults:
             let searchVm = SearchViewModel(

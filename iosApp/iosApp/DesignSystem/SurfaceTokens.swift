@@ -141,6 +141,44 @@ public struct MatteSurfaceModifier<S: InsettableShape>: ViewModifier {
     }
 }
 
+// MARK: - Satin Scroll Edge & Navigation Bar Modifiers
+
+public struct SatinScrollEdgeModifier: ViewModifier {
+    public let ignoresTopSafeArea: Bool
+
+    public init(ignoresTopSafeArea: Bool = false) {
+        self.ignoresTopSafeArea = ignoresTopSafeArea
+    }
+
+    public func body(content: Content) -> some View {
+        if #available(iOS 26.0, macOS 26.0, *) {
+            content
+                .scrollEdgeEffectStyle(.soft, for: .top)
+        } else {
+            content
+                .overlay(alignment: .top) {
+                    GeometryReader { geo in
+                        let topHeight = ignoresTopSafeArea
+                            ? max(64, geo.safeAreaInsets.top + 18)
+                            : (geo.safeAreaInsets.top + 18)
+                        LinearGradient(
+                            stops: [
+                                .init(color: GlassTheme.canvasBackgroundColor.opacity(0.95), location: 0.0),
+                                .init(color: GlassTheme.canvasBackgroundColor.opacity(0.75), location: 0.65),
+                                .init(color: GlassTheme.canvasBackgroundColor.opacity(0.0), location: 1.0),
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom)
+                            .frame(height: topHeight)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                            .ignoresSafeArea(edges: .top)
+                    }
+                    .allowsHitTesting(false)
+                }
+        }
+    }
+}
+
 // MARK: - Float Glass Modifier (OS 26+ Native Liquid Glass with Material Fallback)
 
 public struct FloatGlassModifier<S: InsettableShape>: ViewModifier {
@@ -155,7 +193,12 @@ public struct FloatGlassModifier<S: InsettableShape>: ViewModifier {
     public func body(content: Content) -> some View {
         if #available(iOS 26.0, macOS 26.0, *), !reduceTransparency {
             content
-                .glassEffect(.regular.interactive(), in: shape)
+                .clipShape(shape)
+                .contentShape(shape)
+                .background {
+                    Color.clear
+                        .glassEffect(.regular.interactive(), in: shape)
+                }
         } else {
             content
                 .glassBackground(style: .regular, shape: shape, showBorder: true, hasShadow: true)
@@ -388,9 +431,25 @@ public extension View {
         matteSurface(shape: Capsule(), fillColor: fillColor, showBorder: showBorder)
     }
 
-    /// Scaffold modifier for Wave-2 Satin top scroll-edge feathering (Spec 88).
-    func satinScrollEdge() -> some View {
+    /// Applies OS 26+ native `.scrollEdgeEffectStyle(.soft, for: .top)` and a lightweight
+    /// canvas-color top gradient fade on OS 17-25 / macOS 14-25 (zero live blur).
+    func satinScrollEdge(ignoresTopSafeArea: Bool = false) -> some View {
+        modifier(SatinScrollEdgeModifier(ignoresTopSafeArea: ignoresTopSafeArea))
+    }
+
+    /// Configures inline navigation bars without forcing a hard `.toolbarBackground(.visible)` double-bar seam.
+    @ViewBuilder
+    func satinNavigationBar() -> some View {
+        #if os(iOS)
+        if #available(iOS 26.0, *) {
+            navigationBarTitleDisplayMode(.inline)
+        } else {
+            navigationBarTitleDisplayMode(.inline)
+                .toolbarBackground(.hidden, for: .navigationBar)
+        }
+        #else
         self
+        #endif
     }
 
     /// Applies native Liquid Glass on iOS 26+ / macOS 26+ with accessible `.regularMaterial` fallback on earlier OSes.

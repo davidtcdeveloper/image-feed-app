@@ -8,11 +8,24 @@ final class FavoritesViewModel {
     var isLoading = true
     var toastBanner: ToastBanner?
 
-    private let viewModel: shared.FavoritesViewModel
+    private let viewModel: shared.FavoritesViewModel?
     @ObservationIgnored private nonisolated(unsafe) var stateCloseable: Closeable?
     @ObservationIgnored private nonisolated(unsafe) var effectsCloseable: Closeable?
     @ObservationIgnored private nonisolated(unsafe) var toastDismissTask: Task<Void, Never>?
     @ObservationIgnored private var cachedBuckets: [Int: [[AdaptiveLayoutHelper.IndexedItem<Photo>]]] = [:]
+
+    #if DEBUG
+    init(
+        previewPhotos: [Photo],
+        isLoading: Bool = false,
+        toastBanner: ToastBanner? = nil)
+    {
+        self.viewModel = nil
+        self.photos = previewPhotos
+        self.isLoading = isLoading
+        self.toastBanner = toastBanner
+    }
+    #endif
 
     init() {
         let viewModel = MetroHelper.shared.getFavoritesViewModel()
@@ -69,7 +82,7 @@ final class FavoritesViewModel {
     }
 
     func removeFavorite(photoId: String) {
-        viewModel.dispatch(intent: FavoritesIntentRemoveFavorite(photoId: photoId))
+        viewModel?.dispatch(intent: FavoritesIntentRemoveFavorite(photoId: photoId))
     }
 
     func columnItems(for columnIndex: Int, totalColumns: Int) -> [AdaptiveLayoutHelper.IndexedItem<Photo>] {
@@ -86,6 +99,6 @@ final class FavoritesViewModel {
         toastDismissTask?.cancel()
         stateCloseable?.close()
         effectsCloseable?.close()
-        viewModel.clear()
+        viewModel?.clear()
     }
 }

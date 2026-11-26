@@ -12,10 +12,29 @@ final class CollectionDetailViewModel {
     var error: String?
     var hasReachedEnd = false
 
-    private let viewModel: shared.CollectionDetailViewModel
+    private let viewModel: shared.CollectionDetailViewModel?
     @ObservationIgnored private nonisolated(unsafe) var stateCloseable: Closeable?
     @ObservationIgnored private nonisolated(unsafe) var effectsCloseable: Closeable?
     @ObservationIgnored private var cachedBuckets: [Int: [[AdaptiveLayoutHelper.IndexedItem<Photo>]]] = [:]
+
+    #if DEBUG
+    init(
+        previewCollection: PhotoCollection?,
+        previewPhotos: [Photo] = [],
+        previewRelated: [PhotoCollection] = [],
+        isLoadingPhotos: Bool = false,
+        isHeaderLoading: Bool = false,
+        error: String? = nil)
+    {
+        self.viewModel = nil
+        self.collection = previewCollection
+        self.photos = previewPhotos
+        self.related = previewRelated
+        self.isLoadingPhotos = isLoadingPhotos
+        self.isHeaderLoading = isHeaderLoading
+        self.error = error
+    }
+    #endif
 
     init(collectionId: String) {
         let viewModel = MetroHelper.shared.getCollectionDetailViewModel(collectionId: collectionId)
@@ -68,15 +87,15 @@ final class CollectionDetailViewModel {
     }
 
     func loadNextPhotosPage() {
-        viewModel.dispatch(intent: CollectionDetailIntentLoadNextPage.shared)
+        viewModel?.dispatch(intent: CollectionDetailIntentLoadNextPage.shared)
     }
 
     func refresh() {
-        viewModel.dispatch(intent: CollectionDetailIntentRefresh.shared)
+        viewModel?.dispatch(intent: CollectionDetailIntentRefresh.shared)
     }
 
     func trackDownload(photo: Photo) {
-        viewModel.dispatch(intent: CollectionDetailIntentTrackDownload(photo: photo))
+        viewModel?.dispatch(intent: CollectionDetailIntentTrackDownload(photo: photo))
     }
 
     func columnItems(for columnIndex: Int, totalColumns: Int) -> [AdaptiveLayoutHelper.IndexedItem<Photo>] {
@@ -92,6 +111,6 @@ final class CollectionDetailViewModel {
     deinit {
         stateCloseable?.close()
         effectsCloseable?.close()
-        viewModel.clear()
+        viewModel?.clear()
     }
 }
