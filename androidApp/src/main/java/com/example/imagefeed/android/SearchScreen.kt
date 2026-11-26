@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.input.clearText
 import androidx.compose.foundation.text.input.rememberTextFieldState
@@ -53,8 +55,10 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalInspectionMode
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.PopupProperties
@@ -94,6 +98,9 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlin.math.roundToInt
 
 private const val SKELETON_COLLECTION_COUNT = 4
+private val SEARCH_BAR_MAX_WIDTH = 720.dp
+internal const val SEARCH_BAR_TAG = "search_bar"
+internal const val EXPANDED_SEARCH_BAR_TAG = "expanded_search_bar"
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
@@ -243,11 +250,14 @@ fun SearchScreenContent(
             textFieldState = textFieldState,
             searchBarState = searchBarState,
             onSearch = onSearchSubmit,
+            modifier = Modifier.fillMaxWidth(),
             placeholder = {
                 Text(
                     stringResource(R.string.search_input_prompt),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
             },
             leadingIcon = {
@@ -308,22 +318,27 @@ fun SearchScreenContent(
     SatinHeaderScaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
-            Column {
+            Column(
+                modifier = Modifier.windowInsetsPadding(SearchBarDefaults.windowInsets),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
                 SearchBar(
                     state = searchBarState,
                     inputField = searchInputField,
                     modifier =
                         Modifier
-                            .fillMaxWidth()
                             .padding(
                                 horizontal = if (isCompact) 12.dp else 16.dp,
                                 vertical = 8.dp,
-                            ),
+                            ).widthIn(max = SEARCH_BAR_MAX_WIDTH)
+                            .fillMaxWidth()
+                            .testTag(SEARCH_BAR_TAG),
                 )
                 if (isCompact) {
                     ExpandedFullScreenSearchBar(
                         state = searchBarState,
                         inputField = searchInputField,
+                        modifier = Modifier.testTag(EXPANDED_SEARCH_BAR_TAG),
                     ) {
                         SearchSuggestionsAndHistory(
                             history = state.searchHistory,
@@ -336,6 +351,7 @@ fun SearchScreenContent(
                     ExpandedDockedSearchBar(
                         state = searchBarState,
                         inputField = searchInputField,
+                        modifier = Modifier.testTag(EXPANDED_SEARCH_BAR_TAG),
                         properties = PopupProperties(focusable = true, blurBehindRadius = 16.dp),
                     ) {
                         SearchSuggestionsAndHistory(
