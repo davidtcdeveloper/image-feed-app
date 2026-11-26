@@ -35,6 +35,7 @@
 		578E70FD9BF3D49506D0F93F /* AnimationPrimitives.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D64FD58F855E3EB9CE9011 /* AnimationPrimitives.swift */; };
 		598B065C17D40292754A667C /* SearchViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E1949CA4CC0721B37ED3C17 /* SearchViewModel.swift */; };
 		5B583CC50CC494A6C810CBF6 /* CollectionDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 500FCC73158DBC28123C57D0 /* CollectionDetailView.swift */; };
+		5DDB2C050B28687DAD9DB16F /* PlatformNavigationShellTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EF2F2B76938D304029E77B7 /* PlatformNavigationShellTests.swift */; };
 		60B3ECA4C0794DAABD628674 /* AppNavigation.swift in Sources */ = {isa = PBXBuildFile; fileRef = F02EE46E28A0C388B003C6A5 /* AppNavigation.swift */; };
 		60CB1AC2D681625138724B4C /* AdaptiveLayoutHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF61A3F7036F2537D2F8745F /* AdaptiveLayoutHelper.swift */; };
 		61570D134B38C644FF37AB34 /* CollectionsFeedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 298ED366617419B1EFC70A9C /* CollectionsFeedView.swift */; };
@@ -55,6 +56,7 @@
 		99920655AC654813A1D6A1C1 /* UserProfileViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EB1FE8AA5494D00679598F4 /* UserProfileViewModel.swift */; };
 		9DAB73DFA5032976F17A73E1 /* CollectionsFeedViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3172037528BC5F82E8C06F5D /* CollectionsFeedViewModel.swift */; };
 		A4399B24F95BAFCDD6DB5474 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 6A8D1EB5C724332B1C0F728D /* Localizable.xcstrings */; };
+		A8BA8FB85802C6AC9C252B52 /* PlatformNavigationShellTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EF2F2B76938D304029E77B7 /* PlatformNavigationShellTests.swift */; };
 		AC0DEFECF74A9ED7F6CF9317 /* MacOSHorizontalScrollBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = D770038D1F7151BB6C8BCBF3 /* MacOSHorizontalScrollBridge.swift */; };
 		B2D8F8DB7447219BF13F090D /* UserProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4ED0F6995B908ACC1E4D2E55 /* UserProfileView.swift */; };
 		B34E2807677D3669B3707E6C /* PhotoDetailsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBF5C6096F912EC4B7851517 /* PhotoDetailsView.swift */; };
@@ -128,6 +130,7 @@
 		86038AE1032E284E79B32AD6 /* iosApp.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = iosApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		8C936ADD93402EB34AACD70F /* PhotoDetailsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoDetailsViewModel.swift; sourceTree = "<group>"; };
 		8E1949CA4CC0721B37ED3C17 /* SearchViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchViewModel.swift; sourceTree = "<group>"; };
+		8EF2F2B76938D304029E77B7 /* PlatformNavigationShellTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlatformNavigationShellTests.swift; sourceTree = "<group>"; };
 		911DE7850010C7B18EDBBA05 /* PhotosFeedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotosFeedView.swift; sourceTree = "<group>"; };
 		95EF82936F12A315ED9449F2 /* FavoritesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoritesView.swift; sourceTree = "<group>"; };
 		975F199E6542C0F8DCD0A6DC /* PhotoInspectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoInspectorView.swift; sourceTree = "<group>"; };
@@ -198,6 +201,7 @@
 			isa = PBXGroup;
 			children = (
 				6C4DE2C78E94FB1B62ECF8B2 /* AdaptiveLayoutHelperTests.swift */,
+				8EF2F2B76938D304029E77B7 /* PlatformNavigationShellTests.swift */,
 				16DE983CFAE20E2FE08B8ED9 /* UIVisualSnapshotTests.swift */,
 			);
 			path = iosAppTests;
@@ -495,6 +499,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				EF6D5A95A904D2D8CBC02E59 /* AdaptiveLayoutHelperTests.swift in Sources */,
+				5DDB2C050B28687DAD9DB16F /* PlatformNavigationShellTests.swift in Sources */,
 				CB5CD3B3E6D4021464338963 /* UIVisualSnapshotTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -504,6 +509,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				961C21CF9DC612727FA6F52C /* AdaptiveLayoutHelperTests.swift in Sources */,
+				A8BA8FB85802C6AC9C252B52 /* PlatformNavigationShellTests.swift in Sources */,
 				F3182322DDF7DC53829F2FE9 /* UIVisualSnapshotTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

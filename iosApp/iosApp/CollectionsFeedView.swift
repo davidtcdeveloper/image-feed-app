@@ -152,7 +152,7 @@ struct CollectionsFeedView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
-        .toolbar(.hidden, for: .tabBar)
+        .adaptiveTabBarVisibility()
         #endif
         .toolbar {
             #if os(iOS)

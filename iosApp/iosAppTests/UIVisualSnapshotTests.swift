@@ -93,6 +93,18 @@ final class UIVisualSnapshotTests: XCTestCase {
                 size: CGSize(width: 393, height: 852),
                 style: .dark,
                 sizeClass: .compact),
+            IOSSnapshotCase(
+                name: "floating_tab_capsule_light",
+                screen: .floatingTabCapsule,
+                size: CGSize(width: 393, height: 140),
+                style: .light,
+                sizeClass: .compact),
+            IOSSnapshotCase(
+                name: "floating_tab_capsule_dark",
+                screen: .floatingTabCapsule,
+                size: CGSize(width: 393, height: 140),
+                style: .dark,
+                sizeClass: .compact),
         ]
 
         let targetDir = try resolveOutputDirectory()
@@ -155,6 +167,9 @@ final class UIVisualSnapshotTests: XCTestCase {
             MacOSSnapshotCase(name: "macos_search_results_light", screen: .searchResults, size: CGSize(width: 1280, height: 800), dark: false),
             MacOSSnapshotCase(name: "macos_user_profile_insights_light", screen: .userProfileInsights, size: CGSize(width: 1280, height: 800), dark: false),
             MacOSSnapshotCase(name: "macos_user_profile_insights_dark", screen: .userProfileInsights, size: CGSize(width: 1280, height: 800), dark: true),
+            MacOSSnapshotCase(name: "macos_navigation_shell_light", screen: .navigationShell, size: CGSize(width: 1280, height: 800), dark: false),
+            MacOSSnapshotCase(name: "macos_navigation_shell_dark", screen: .navigationShell, size: CGSize(width: 1280, height: 800), dark: true),
+            MacOSSnapshotCase(name: "macos_navigation_shell_search_light", screen: .navigationShellSearch, size: CGSize(width: 1280, height: 800), dark: false),
         ]
 
         let targetDir = try resolveOutputDirectory()

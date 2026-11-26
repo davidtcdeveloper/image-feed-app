@@ -72,14 +72,15 @@ flowchart TD
     subgraph RootShells["Root Navigation Shells"]
         direction TB
         AndroidShell["Android: Jetpack Navigation 3\n(NavigationRail ≥ 600dp | NavigationBar < 600dp)"]
-        iOSShell["iOS: Translucent TabView\n(Photos | Collections)"]
-        MacOSShell["macOS: NavigationSplitView\n(Sidebar Selection)"]
+        iOSShell["iOS: Liquid Glass TabView (iOS 26+) / FloatingTabCapsule (17–25)\n(Photos | Collections | Favorites | Search)"]
+        MacOSShell["macOS: NavigationSplitView\n(Photos | Collections | Favorites | Search)"]
     end
 
     %% Primary Screens
     subgraph PrimaryScreens["Primary Screen Destinations"]
         FeedScreen["📸 Photos Feed Screen\n- Editorial & Topic Feeds\n- Floating Glass Category Strip\n- Shake to Randomize"]
         CollectionsScreen["📁 Collections Feed Screen\n- Curated Mosaic Cards\n- Infinite Collection Grid"]
+        FavoritesScreen["🔖 Favorites Screen\n- Local Room Bookmarks\n- Context Menu Removal"]
         SearchScreen["🔍 Search Screen\n- Tri-Facet: Photos | Collections | Users\n- Filter Sheets & Live Debounce"]
     end
 
@@ -93,17 +94,21 @@ flowchart TD
     %% Root Navigation Links
     RootShells -->|"Tab / Rail / Sidebar"| FeedScreen
     RootShells -->|"Tab / Rail / Sidebar"| CollectionsScreen
-    RootShells -->|"Tab / Rail (Android)"| SearchScreen
+    RootShells -->|"Tab / Rail / Sidebar"| FavoritesScreen
+    RootShells -->|"Tab / Rail / Sidebar (or ⌘F)"| SearchScreen
 
     %% Photos Feed Transitions
     FeedScreen -->|"Tap Photo Card\n(Hero Transition)"| PhotoDetails
     FeedScreen -->|"Tap Photographer\nAttribution Capsule"| UserProfile
-    FeedScreen -->|"Tap Search Icon\n(or ⌘F)"| SearchScreen
     FeedScreen -->|"Shake Device / Shuffle\n(or ⌘S)"| PhotoDetails
 
     %% Collections Feed Transitions
     CollectionsScreen -->|"Tap Collection Card"| CollectionDetails
     CollectionsScreen -->|"Tap Search Icon"| SearchScreen
+
+    %% Favorites Transitions
+    FavoritesScreen -->|"Tap Photo Card"| PhotoDetails
+    FavoritesScreen -->|"Tap Photographer\nAttribution Capsule"| UserProfile
 
     %% Photo Details Transitions
     PhotoDetails -->|"Tap Photographer\nProfile Header"| UserProfile
@@ -130,9 +135,9 @@ flowchart TD
   * Responsive navigation container: Start-docked `NavigationRail` with quick-shuffle access on Medium/Expanded displays ($\ge 600\text{dp}$), switching to a bottom `NavigationBar` on compact screens (< 600dp).
   * Smooth entry transitions wrapped in `SharedTransitionLayout` for hero photo expansion.
 * **iOS & macOS SwiftUI Navigation (`NavigationStack`)**:
-  * Typed path back stacks using `FeedPathItem` and `CollectionPathItem` structs (`type`: photo, user, collection, search).
-  * Translucent glass `TabView` on iOS with `.toolbarBackground(.ultraThinMaterial, for: .tabBar)`.
-  * Native `NavigationSplitView` master-detail sidebar layout on macOS.
+  * Typed path back stacks using `FeedPathItem`, `CollectionPathItem`, `SearchPathItem`, and `FavoritesPathItem` structs (`type`: photo, user, collection, search).
+  * 4-destination parity (`Photos`, `Collections`, `Favorites`, `Search`): native Liquid Glass `TabView` with `.tabBarMinimizeBehavior(.onScrollDown)` and `Tab(role: .search)` on iOS 26+, falling back to `FloatingTabCapsule` on iOS 17–25 via `PlatformNavigationShell`.
+  * Native `NavigationSplitView` master-detail sidebar layout on macOS (`Photos`, `Collections`, `Favorites`, `Search`) with window-level `⌘F` focus routing.
   * Interactive hero card zoom transitions powered by `matchedGeometryEffect`.
 
 ---

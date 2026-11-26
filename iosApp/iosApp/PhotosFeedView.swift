@@ -226,19 +226,10 @@ struct PhotosFeedTabView: View {
             .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
             .toolbar(selectedPhotoForHero != nil ? .hidden : .visible, for: .navigationBar)
-            .toolbar(.hidden, for: .tabBar)
+            .adaptiveTabBarVisibility(hideOnModernOS: selectedPhotoForHero != nil)
             #endif
             .toolbar {
                 #if os(iOS)
-                ToolbarItem(placement: .navigationBarLeading) {
-                    PlatformToolbarButton(systemName: "magnifyingglass", accessibilityLabel: "Search") {
-                        withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
-                            selectedPhotoForHero = nil
-                        }
-                        activePath.wrappedValue.append(FeedPathItem(id: "", type: .search))
-                    }
-                    .keyboardShortcut("f", modifiers: .command)
-                }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     PlatformToolbarButton(systemName: "shuffle", accessibilityLabel: "Shuffle") {
                         handleShake()
@@ -246,15 +237,6 @@ struct PhotosFeedTabView: View {
                     .keyboardShortcut("s", modifiers: .command)
                 }
                 #else
-                ToolbarItem(placement: .navigation) {
-                    PlatformToolbarButton(systemName: "magnifyingglass", accessibilityLabel: "Search") {
-                        withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
-                            selectedPhotoForHero = nil
-                        }
-                        activePath.wrappedValue.append(FeedPathItem(id: "", type: .search))
-                    }
-                    .keyboardShortcut("f", modifiers: .command)
-                }
                 ToolbarItem(placement: .primaryAction) {
                     PlatformToolbarButton(systemName: "shuffle", accessibilityLabel: "Shuffle") {
                         handleShake()

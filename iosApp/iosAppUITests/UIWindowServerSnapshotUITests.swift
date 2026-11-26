@@ -12,6 +12,8 @@ final class UIWindowServerSnapshotUITests: XCTestCase {
     func testCaptureWindowServerGlassScreens() throws {
         let screens = [
             "photoDetails",
+            "navigationShell",
+            "navigationShellSearch",
         ]
 
         for screen in screens {

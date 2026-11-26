@@ -1,6 +1,6 @@
 # Specification 87: Apple Float Glass Navigation Shell, iOS 26 Liquid Glass TabView & macOS Unified Search
 
-**Status:** Accepted
+**Status:** Implemented (Final)
 
 * **Wave:** Wave 2 — Parallel Feature & Craft Execution
 * **Depends On:** [Spec 83](83_apple_design_system_matte_and_light_mode_hygiene.md)
@@ -66,18 +66,24 @@ Following [Spec 83](83_apple_design_system_matte_and_light_mode_hygiene.md)'s ex
 
 ## 5. Acceptance Criteria
 
-- [ ] On iOS 26+, `ContentView` / `PlatformNavigationShell` uses native `TabView` with Liquid Glass, `.tabBarMinimizeBehavior(.onScrollDown)`, and 4 tabs (`Photos`, `Collections`, `Favorites`, `Tab(role: .search)`), retiring `CapsuleScrollCoordinator` on OS 26+.
-- [ ] On iOS 17–25, `FloatingTabCapsule` + `CapsuleScrollCoordinator` remain isolated under `#unavailable(iOS 26)` with full `accessibilityReduceTransparency` and Light/Dark parity.
-- [ ] `MacOSContentView` exposes `.search` in `SidebarSelection` with `⌘F` keyboard activation.
-- [ ] Mode A (`macosAppTests`) and Mode B (`iosAppUITests`) Before/After visual review is approved, and `iosApp` + `macosApp` builds, `swiftformat --lint .`, and `swiftlint` pass with zero warnings.
-- [ ] Affected [`wiki/`](../wiki/README.md) pages, [`.agents/skills/ios-glass-design/SKILL.md`](../.agents/skills/ios-glass-design/SKILL.md), and [`README.md`](../README.md) are updated.
+- [x] On iOS 26+, `ContentView` / `PlatformNavigationShell` uses native `TabView` with Liquid Glass, `.tabBarMinimizeBehavior(.onScrollDown)`, and 4 tabs (`Photos`, `Collections`, `Favorites`, `Tab(role: .search)`), retiring `CapsuleScrollCoordinator` on OS 26+.
+- [x] On iOS 17–25, `FloatingTabCapsule` + `CapsuleScrollCoordinator` remain isolated under `#unavailable(iOS 26)` with full `accessibilityReduceTransparency` and Light/Dark parity.
+- [x] `MacOSContentView` exposes `.search` in `SidebarSelection` with `⌘F` keyboard activation.
+- [x] Mode A (`macosAppTests`) and Mode B (`iosAppUITests`) Before/After visual review is approved, and `iosApp` + `macosApp` builds, `swiftformat --lint .`, and `swiftlint` pass with zero warnings.
+- [x] Affected [`wiki/`](../wiki/README.md) pages, [`.agents/skills/ios-glass-design/SKILL.md`](../.agents/skills/ios-glass-design/SKILL.md), and [`README.md`](../README.md) are updated.
 
 ---
 
 ## 6. Verification Record
 
 ### Verified
-*(Pending implementation)*
+* `swiftformat --lint .` — Exited `0` (`0/35` files require formatting).
+* `swiftlint lint iosApp/iosApp iosApp/iosAppTests iosApp/iosAppUITests` — Exited `0` (`0` errors; pre-existing repo-wide `opening_brace` / `trailing_comma` / legacy length warnings documented in [`ISS-007`](../../wiki/issue-log.md)).
+* `xcodegen generate --spec iosApp/project.yml` + `xcodebuild test -project iosApp/iosApp.xcodeproj -scheme macosApp -destination 'platform=macOS,arch=arm64' CODE_SIGNING_ALLOWED=NO` — Exited `0` with **zero Swift compiler warnings**; `macosAppTests` passed **`7/7`** (`AdaptiveLayoutHelperTests` `3/3`, `PlatformNavigationShellTests` `3/3`, `UIVisualSnapshotTests` `1/1` rendering 11 macOS PNGs including `macos_navigation_shell_light`, `macos_navigation_shell_dark`, and `macos_navigation_shell_search_light`).
+* `xcodebuild test -project iosApp/iosApp.xcodeproj -scheme iosApp -destination 'platform=iOS Simulator,name=iPhone 18 Pro' CODE_SIGNING_ALLOWED=NO` — Exited `0` with **zero Swift compiler warnings**; `iosAppTests` passed **`6/6`** (`AdaptiveLayoutHelperTests` `3/3`, `PlatformNavigationShellTests` `2/2`, `UIVisualSnapshotTests` `1/1` rendering 13 iOS PNGs including `ios_floating_tab_capsule_light` and `ios_floating_tab_capsule_dark`) and `iosAppUITests` passed **`1/1`** (`UIWindowServerSnapshotUITests` rendering `ios_window_photoDetails`, `ios_window_navigationShell`, and `ios_window_navigationShellSearch` on iOS 27.2 Simulator).
+* `./gradlew :androidApp:assembleDebug` — Exited `0` (`BUILD SUCCESSFUL`).
+* Before and After Mode A & Mode B snapshots inspected with `read_file` and **approved by the user** in session artifact `spec_87_ui_visual_review.md`.
+* Updated [`wiki/design-systems-and-navigation.md`](../../wiki/design-systems-and-navigation.md), [`.agents/skills/ios-glass-design/SKILL.md`](../../.agents/skills/ios-glass-design/SKILL.md), [`README.md`](../../README.md), and logged [`ISS-008`](../../wiki/issue-log.md) covering the Spec 83 `adaptiveTabBarVisibility()` / `⌘F` ownership drift.
 
 ### Unverified / Gaps
-*(Pending implementation)*
+* Live runtime execution on an iOS 17–25 Simulator runtime was not performed on this host (Xcode `27.2` ships `iOS 27.x` runtimes); the `#unavailable(iOS 26)` `LegacyFloatingTabShell` code path was verified by compilation (`deploymentTarget: "17.0"`), Mode A Light/Dark `FloatingTabCapsule` snapshots, and `CapsuleScrollCoordinator` unit tests.

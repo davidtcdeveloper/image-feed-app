@@ -77,8 +77,10 @@ Never read `UIScreen.main.bounds.width` or `NSScreen.main?.frame.width` for grid
 ## 4. Modern Navigation Chrome & Translucent Bars
 
 - **Prohibited**: Overriding `UITabBarAppearance` or `UINavigationBarAppearance` with opaque backgrounds (`appearance.configureWithOpaqueBackground()`).
-- **Mandatory**: Use native SwiftUI translucent toolbar background modifiers (`.ultraThinMaterial` for `.navigationBar` and `.tabBar` as configured in [`ContentView.swift`](../../../iosApp/iosApp/ContentView.swift#L476-L481)).
-- Allow imagery and scrollable content to draw edge-to-edge under the navigation and tab chrome.
+- **Mandatory (iOS 26+ Native Liquid Glass `TabView`)**: Under `#available(iOS 26.0, *)` in [`PlatformNavigationShell.swift`](../../../iosApp/iosApp/DesignSystem/PlatformNavigationShell.swift) and [`ContentView.swift`](../../../iosApp/iosApp/ContentView.swift), use Apple's native `TabView` with 4-destination parity (`Photos`, `Collections`, `Favorites`, and `Tab(..., role: .search)` hosting `SearchTabView`) and `.tabBarMinimizeBehavior(.onScrollDown)`. Never suppress `UITabBar` or apply `.toolbar(.hidden, for: .tabBar)` on root tabs on iOS 26+ (gate legacy tab bar hiding via `adaptiveTabBarVisibility()`).
+- **Mandatory (iOS 17–25 Fallback)**: Isolate `UITabBar` suppression, `CapsuleScrollCoordinator`, and [`FloatingTabCapsule.swift`](../../../iosApp/iosApp/FloatingTabCapsule.swift) strictly behind `#unavailable(iOS 26)` inside [`PlatformNavigationShell.swift`](../../../iosApp/iosApp/DesignSystem/PlatformNavigationShell.swift), keeping 4-tab parity and `accessibilityReduceTransparency` / `colorSchemeContrast == .increased` fallbacks intact.
+- **Mandatory (macOS Sidebar & `⌘F` Ergonomics)**: Expose `.search` in [`MacOSContentView.swift`](../../../iosApp/iosApp/MacOSContentView.swift)'s `NavigationSplitView` sidebar rendering `SearchTabView`, and route window-level `⌘F` (and `CollectionsFeedTabView` `onSearchClick`) via `openRootSearch` / `searchFocusTrigger` rather than opening nested search stacks inside feed tabs.
+- Allow imagery and scrollable content to draw edge-to-edge under the navigation and tab chrome (`.ultraThinMaterial` for `.navigationBar` until `.satinScrollEdge()` adoption).
 
 ---
 

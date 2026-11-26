@@ -180,7 +180,7 @@ struct FavoritesTabView: View {
             .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
             .toolbar(selectedPhotoForHero != nil ? .hidden : .visible, for: .navigationBar)
-            .toolbar(.hidden, for: .tabBar)
+            .adaptiveTabBarVisibility(hideOnModernOS: selectedPhotoForHero != nil)
             #endif
             .onChange(of: selectedPhotoForHero) { _, newValue in
                 activeDetailPresented.wrappedValue = (newValue != nil)

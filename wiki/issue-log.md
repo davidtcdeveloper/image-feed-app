@@ -32,6 +32,12 @@ This file captures systemic issues, documentation drift, skill gaps, build/tooli
 - **Symptom & Evidence**: [`.swiftformat`](../.swiftformat) (`--commas always`, `--wrapparameters before-first`) formats multiline initializers with `{` on a new line and keeps trailing commas in array literals, triggering SwiftLint `opening_brace` and `trailing_comma` warnings under [`.swiftlint.yml`](../.swiftlint.yml) during `swiftlint lint iosApp/iosApp iosApp/iosAppTests iosApp/iosAppUITests`.
 - **Suggested Layer**: `.agents/skills/` | `specs/`
 
+### [OPEN] ISS-008: Wave-2 Spec Ownership Lists Drifted After Spec 83 Extraction (`for: .tabBar` & `⌘F`)
+- **Date / Context**: 2026-11-26 (Spec 87 — Apple Float Navigation Shell & macOS Search)
+- **Category**: `wiki-drift`
+- **Symptom & Evidence**: [Spec 87](../specs/archive/87_apple_float_navigation_shell_and_macos_search.md) and [Spec 88](../specs/88_apple_satin_headers_zoom_transitions_and_unified_routes.md) were drafted before Spec 83 extracted `PhotosFeedView.swift`, so Spec 87's Disjoint Ownership note prohibited touching `PhotosFeedView.swift`, `CollectionsFeedView.swift`, `FavoritesView.swift`, and `SearchView.swift` even though Spec 83 had copied unconditional `.toolbar(.hidden, for: .tabBar)` into all four files (hiding the iOS 26+ `TabView` bar) and `.keyboardShortcut("f", modifiers: .command)` into `PhotosFeedView.swift`. Resolved for Spec 87 via `adaptiveTabBarVisibility()` and `openRootSearch` / `searchFocusTrigger`; check [`specs/88_apple_satin_headers_zoom_transitions_and_unified_routes.md`](../specs/88_apple_satin_headers_zoom_transitions_and_unified_routes.md) references (`ContentView.swift` lines vs extracted `PhotosFeedView.swift` / `SearchTabView`) during Spec 88 implementation.
+- **Suggested Layer**: `specs/`
+
 ---
 
 ## Dismissed Issues

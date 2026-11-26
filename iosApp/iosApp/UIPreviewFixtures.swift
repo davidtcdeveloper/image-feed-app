@@ -9,6 +9,9 @@ enum UIFixtureScreen: String, CaseIterable {
     case searchResults
     case searchFilters
     case userProfileInsights
+    case navigationShell
+    case navigationShellSearch
+    case floatingTabCapsule
 }
 
 enum UIPreviewFixtures {
@@ -282,8 +285,10 @@ enum UIPreviewFixtures {
         views: StatMetric(
             total: 3420000,
             historical: HistoricalStats(change: KotlinInt(int: 148000), average: nil, resolution: nil, quantity: nil, values: sampleHistoricalValues)))
+}
 
-    @MainActor
+@MainActor
+extension UIPreviewFixtures {
     static func makeView(for screen: UIFixtureScreen) -> AnyView {
         switch screen {
         case .photoDetails:
@@ -357,6 +362,65 @@ enum UIPreviewFixtures {
                         onCollectionSelect: { _ in })
                 }
                 .environment(\.isUISnapshotMode, true))
+
+        case .navigationShell, .navigationShellSearch, .floatingTabCapsule:
+            return makeNavigationShellView(for: screen)
+        }
+    }
+
+    private static func makeNavigationShellView(for screen: UIFixtureScreen) -> AnyView {
+        let feedVm = FeedViewModel(
+            previewPhotos: samplePhotos,
+            previewTopics: sampleTopics,
+            selectedTopicSlug: "editorial",
+            isLoading: false)
+        let searchVm = SearchViewModel(
+            previewQuery: "alpine",
+            previewTab: .photos,
+            previewPhotos: samplePhotos,
+            previewHistory: ["alpine", "architecture"],
+            isLoading: false)
+
+        switch screen {
+        case .navigationShell:
+            #if os(iOS)
+            return AnyView(
+                ContentView(initialFeedViewModel: feedVm)
+                    .environment(\.isUISnapshotMode, true))
+            #else
+            return AnyView(
+                MacOSContentView(initialFeedViewModel: feedVm)
+                    .environment(\.isUISnapshotMode, true))
+            #endif
+
+        case .navigationShellSearch:
+            #if os(iOS)
+            return AnyView(
+                ContentView(initialFeedViewModel: feedVm, initialSearchViewModel: searchVm, initialTab: .search)
+                    .environment(\.isUISnapshotMode, true))
+            #else
+            return AnyView(
+                MacOSContentView(
+                    initialFeedViewModel: feedVm,
+                    initialSearchViewModel: searchVm,
+                    initialSelection: .search)
+                    .environment(\.isUISnapshotMode, true))
+            #endif
+
+        case .floatingTabCapsule:
+            return AnyView(
+                ZStack(alignment: .bottom) {
+                    LinearGradient(
+                        colors: [Color(hex: "#1F4E78"), Color(hex: "#D4A373")],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing)
+                    FloatingTabCapsule(selectedTab: .constant(0), isMinimized: false)
+                        .padding(.bottom, 16)
+                }
+                .environment(\.isUISnapshotMode, true))
+
+        default:
+            return AnyView(EmptyView())
         }
     }
 }

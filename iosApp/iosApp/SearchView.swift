@@ -5,12 +5,13 @@ struct SearchView: View {
     #if os(iOS)
     @Environment(\.horizontalSizeClass) var sizeClass
     #endif
+    @Environment(\.searchFocusTrigger) private var searchFocusTrigger
     @State private var containerWidth: CGFloat = 0
     let initialQuery: String
     @State private var viewModel: SearchViewModel?
     @State private var showFilters = false
     @State private var searchText: String
-    @FocusState private var isSearchFocused: Bool
+    @State private var isSearchPresented = false
     @Namespace private var searchTabNamespace
 
     let onPhotoSelect: (String) -> Void
@@ -241,7 +242,7 @@ struct SearchView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
-        .toolbar(.hidden, for: .tabBar)
+        .adaptiveTabBarVisibility()
         #endif
         .toolbar {
             #if os(iOS)
@@ -258,7 +259,17 @@ struct SearchView: View {
             }
             #endif
         }
-        .searchable(text: $searchText, prompt: Text("Search Photos, Collections, Users…"))
+        .searchable(text: $searchText, isPresented: $isSearchPresented, prompt: Text("Search Photos, Collections, Users…"))
+        .onAppear {
+            if searchFocusTrigger > 0 {
+                isSearchPresented = true
+            }
+        }
+        .onChange(of: searchFocusTrigger) { _, newValue in
+            if newValue > 0 {
+                isSearchPresented = true
+            }
+        }
         .onSubmit(of: .search) {
             viewModel?.submitSearch(query: searchText)
         }
