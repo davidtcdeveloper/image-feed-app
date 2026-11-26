@@ -120,6 +120,7 @@ struct PlatformNavigationShell<
         if #available(iOS 26.0, *) {
             NativeLiquidGlassTabShell(
                 selectedTab: $selectedTab,
+                isTabBarVisible: isCapsuleVisible,
                 photosContent: photosContent,
                 collectionsContent: collectionsContent,
                 favoritesContent: favoritesContent,
@@ -144,27 +145,33 @@ private struct NativeLiquidGlassTabShell<
     SearchContent: View
 >: View {
     @Binding var selectedTab: AppRootTab
+    let isTabBarVisible: Bool
     @ViewBuilder let photosContent: () -> PhotosContent
     @ViewBuilder let collectionsContent: () -> CollectionsContent
     @ViewBuilder let favoritesContent: () -> FavoritesContent
     @ViewBuilder let searchContent: () -> SearchContent
 
     var body: some View {
+        let visibility: Visibility = isTabBarVisible ? .visible : .hidden
         TabView(selection: $selectedTab) {
             Tab(AppRootTab.photos.titleKey, systemImage: AppRootTab.photos.systemImage, value: AppRootTab.photos) {
                 photosContent()
+                    .toolbarVisibility(visibility, for: .tabBar)
             }
 
             Tab(AppRootTab.collections.titleKey, systemImage: AppRootTab.collections.systemImage, value: AppRootTab.collections) {
                 collectionsContent()
+                    .toolbarVisibility(visibility, for: .tabBar)
             }
 
             Tab(AppRootTab.favorites.titleKey, systemImage: AppRootTab.favorites.systemImage, value: AppRootTab.favorites) {
                 favoritesContent()
+                    .toolbarVisibility(visibility, for: .tabBar)
             }
 
             Tab(AppRootTab.search.titleKey, systemImage: AppRootTab.search.systemImage, value: AppRootTab.search, role: .search) {
                 searchContent()
+                    .toolbarVisibility(visibility, for: .tabBar)
             }
         }
         .tint(Color.primary)
@@ -291,7 +298,11 @@ extension View {
     @ViewBuilder
     func adaptiveTabBarVisibility(hideOnModernOS: Bool = false) -> some View {
         if #available(iOS 26.0, *) {
-            toolbar(hideOnModernOS ? .hidden : .visible, for: .tabBar)
+            if hideOnModernOS {
+                toolbar(.hidden, for: .tabBar)
+            } else {
+                self
+            }
         } else {
             toolbar(.hidden, for: .tabBar)
         }
