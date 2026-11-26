@@ -23,12 +23,15 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -170,7 +173,18 @@ private fun MainAppShell(
             )
         }
         Scaffold(
-            modifier = Modifier.weight(1f),
+            modifier =
+                Modifier
+                    .weight(1f)
+                    .then(
+                        if (useRail) {
+                            Modifier.consumeWindowInsets(
+                                WindowInsets.safeDrawing.only(WindowInsetsSides.Start),
+                            )
+                        } else {
+                            Modifier
+                        },
+                    ),
             contentWindowInsets = WindowInsets(0, 0, 0, 0),
             snackbarHost = {
                 SnackbarHost(

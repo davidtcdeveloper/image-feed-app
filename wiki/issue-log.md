@@ -44,6 +44,12 @@ This file captures systemic issues, documentation drift, skill gaps, build/tooli
 - **Symptom & Evidence**: In [`.agents/skills/ui-visual-review/SKILL.md`](../.agents/skills/ui-visual-review/SKILL.md#L47-L55), running `SNAPSHOT_OUTPUT_DIR=... xcodebuild test -scheme macosApp -only-testing:macosAppTests/UIVisualSnapshotTests` without `TEST_RUNNER_SNAPSHOT_OUTPUT_DIR` drops the env var inside `macosApp` test runner (`UIVisualSnapshotTests.swift` falls back to temporary directory and deletes PNGs on teardown), and `-destination 'platform=iOS Simulator,name=iPhone 18 Pro'` becomes ambiguous when multiple iOS runtimes (for example iOS 27.0 and 27.2) have an `iPhone 18 Pro` simulator unless an OS version or device UDID (`id=...`) is specified.
 - **Suggested Layer**: `.agents/skills/`
 
+### [OPEN] ISS-010: `SearchScreen` `InputField` Acquires Window Focus on Configuration Rotation
+- **Date / Context**: 2026-11-26 (Spec 91 — Android Search Bar Edge-to-Edge Window Insets Fix)
+- **Category**: `code-inconsistency`
+- **Symptom & Evidence**: Rotating [`MainActivity`](../androidApp/src/main/java/com/example/imagefeed/android/MainActivity.kt) from portrait to landscape while on [`SearchScreen`](../androidApp/src/main/java/com/example/imagefeed/android/SearchScreen.kt#L249-L254) can cause `SearchBarDefaults.InputField`'s `BasicTextField` to receive initial window focus on recreation and trigger `ExpandedDockedSearchBar` automatically.
+- **Suggested Layer**: `specs/`
+
 ---
 
 ## Dismissed Issues
