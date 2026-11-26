@@ -2,10 +2,14 @@
 
 package com.example.imagefeed.android.theme
 
+import androidx.compose.ui.graphics.Color
+import com.example.imagefeed.model.color.PhotoColorEngine
 import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class DynamicThemeTest {
@@ -18,19 +22,19 @@ class DynamicThemeTest {
         assertNotEquals(DarkColorScheme.surfaceContainer, scheme.surfaceContainer)
 
         // Verify primary luminance is around 0.70 for dark theme contrast
-        val primaryHsl = rgbToHsl(scheme.primary.red, scheme.primary.green, scheme.primary.blue)
+        val primaryHsl = PhotoColorEngine.rgbToHsl(scheme.primary.red, scheme.primary.green, scheme.primary.blue)
         assertTrue(abs(primaryHsl[2] - 0.70f) < 0.05f, "Primary lightness should be ~0.70, was ${primaryHsl[2]}")
 
         // Verify primaryContainer luminance is around 0.20
         val containerColor = scheme.primaryContainer
-        val containerHsl = rgbToHsl(containerColor.red, containerColor.green, containerColor.blue)
+        val containerHsl = PhotoColorEngine.rgbToHsl(containerColor.red, containerColor.green, containerColor.blue)
         assertTrue(
             abs(containerHsl[2] - 0.20f) < 0.05f,
             "Primary container lightness should be ~0.20, was ${containerHsl[2]}",
         )
 
         // Verify tertiary hue is shifted by ~60 degrees
-        val tertiaryHsl = rgbToHsl(scheme.tertiary.red, scheme.tertiary.green, scheme.tertiary.blue)
+        val tertiaryHsl = PhotoColorEngine.rgbToHsl(scheme.tertiary.red, scheme.tertiary.green, scheme.tertiary.blue)
         val expectedTertiaryHue = (primaryHsl[0] + 60f) % 360f
         assertTrue(
             abs(tertiaryHsl[0] - expectedTertiaryHue) < 5f,
@@ -46,7 +50,7 @@ class DynamicThemeTest {
         assertNotEquals(LightColorScheme.tertiary, scheme.tertiary)
 
         // Verify primary luminance is around 0.35 for high WCAG contrast on light surfaces
-        val primaryHsl = rgbToHsl(scheme.primary.red, scheme.primary.green, scheme.primary.blue)
+        val primaryHsl = PhotoColorEngine.rgbToHsl(scheme.primary.red, scheme.primary.green, scheme.primary.blue)
         assertTrue(abs(primaryHsl[2] - 0.35f) < 0.05f, "Light primary lightness should be ~0.35, was ${primaryHsl[2]}")
     }
 
@@ -86,11 +90,24 @@ class DynamicThemeTest {
             assertTrue(swatch.hex.startsWith("#"), "Swatch hex should start with #: ${swatch.hex}")
             assertEquals(7, swatch.hex.length, "Swatch hex should be 7 characters (#RRGGBB): ${swatch.hex}")
 
-            val hsl = rgbToHsl(swatch.color.red, swatch.color.green, swatch.color.blue)
+            val hsl = PhotoColorEngine.rgbToHsl(swatch.color.red, swatch.color.green, swatch.color.blue)
             assertTrue(
                 abs(hsl[2] - expectedLuminance[i]) < 0.05f,
                 "Step $i expected luminance ~${expectedLuminance[i]} but got ${hsl[2]}",
             )
+        }
+    }
+
+    @Test
+    fun deriveTonalSwatchesDelegatesDirectlyToPhotoColorEngine() {
+        val seed = "#1F4E78"
+        val sharedSwatches = PhotoColorEngine.deriveTonalSwatches(seed)
+        val androidSwatches = deriveTonalSwatches(seed)
+
+        assertEquals(sharedSwatches.size, androidSwatches.size)
+        sharedSwatches.zip(androidSwatches).forEach { (expected, actual) ->
+            assertEquals(expected.hex, actual.hex)
+            assertEquals(Color(expected.rgb.argb), actual.color)
         }
     }
 
@@ -103,20 +120,20 @@ class DynamicThemeTest {
 
     @Test
     fun hslRoundTripConversionPreservesPrimaryHues() {
-        val redHsl = rgbToHsl(1f, 0f, 0f)
+        val redHsl = PhotoColorEngine.rgbToHsl(1f, 0f, 0f)
         assertEquals(0f, redHsl[0], 0.1f)
         assertEquals(1f, redHsl[1], 0.01f)
         assertEquals(0.5f, redHsl[2], 0.01f)
 
-        val redColor = hslToColor(0f, 1f, 0.5f)
+        val redColor = Color(PhotoColorEngine.hslToRgb(0f, 1f, 0.5f).argb)
         assertEquals(1f, redColor.red, 0.01f)
         assertEquals(0f, redColor.green, 0.01f)
         assertEquals(0f, redColor.blue, 0.01f)
 
-        val greenHsl = rgbToHsl(0f, 1f, 0f)
+        val greenHsl = PhotoColorEngine.rgbToHsl(0f, 1f, 0f)
         assertEquals(120f, greenHsl[0], 0.1f)
 
-        val blueHsl = rgbToHsl(0f, 0f, 1f)
+        val blueHsl = PhotoColorEngine.rgbToHsl(0f, 0f, 1f)
         assertEquals(240f, blueHsl[0], 0.1f)
     }
 
@@ -135,7 +152,7 @@ class DynamicThemeTest {
         assertEquals(5, swatches.size)
 
         for (swatch in swatches) {
-            val hsl = rgbToHsl(swatch.color.red, swatch.color.green, swatch.color.blue)
+            val hsl = PhotoColorEngine.rgbToHsl(swatch.color.red, swatch.color.green, swatch.color.blue)
             assertEquals(0f, hsl[1], 0.01f, "Achromatic swatch should have 0 saturation, was ${hsl[1]}")
             assertEquals(swatch.color.red, swatch.color.green, 0.01f)
             assertEquals(swatch.color.green, swatch.color.blue, 0.01f)
@@ -164,5 +181,29 @@ class DynamicThemeTest {
 
         val lightScheme = generatePhotoColorScheme("#EAA83B", isDark = false)
         assertEquals(lightScheme.surface, lightScheme.background)
+    }
+
+    @Test
+    fun derivePhotoAmbientTintHandlesChromaticAndAchromaticSeeds() {
+        val seed = "#1F4E78"
+        val seedRgb = PhotoColorEngine.parseHexRgb(seed)!!
+        val seedHue = PhotoColorEngine.rgbToHsl(seedRgb.r / 255f, seedRgb.g / 255f, seedRgb.b / 255f)[0]
+
+        val darkTint = derivePhotoAmbientTint(seed, isDark = true)
+        val lightTint = derivePhotoAmbientTint(seed, isDark = false)
+        assertNotNull(darkTint)
+        assertNotNull(lightTint)
+
+        val darkHsl = PhotoColorEngine.rgbToHsl(darkTint.red, darkTint.green, darkTint.blue)
+        val lightHsl = PhotoColorEngine.rgbToHsl(lightTint.red, lightTint.green, lightTint.blue)
+        assertTrue(darkHsl[2] < 0.25f, "Dark ambient tint should stay low luminance, was ${darkHsl[2]}")
+        assertTrue(lightHsl[2] > 0.85f, "Light ambient tint should stay high luminance, was ${lightHsl[2]}")
+        assertTrue(abs(darkHsl[0] - seedHue) < 5f, "Dark ambient hue should match seed $seedHue, was ${darkHsl[0]}")
+        assertTrue(abs(lightHsl[0] - seedHue) < 5f, "Light ambient hue should match seed $seedHue, was ${lightHsl[0]}")
+
+        assertNull(derivePhotoAmbientTint("#808080", isDark = true))
+        assertNull(derivePhotoAmbientTint("#FFFFFF", isDark = false))
+        assertNull(derivePhotoAmbientTint(null, isDark = false))
+        assertNull(derivePhotoAmbientTint("invalid", isDark = true))
     }
 }

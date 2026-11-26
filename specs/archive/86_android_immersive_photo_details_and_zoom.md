@@ -1,6 +1,6 @@
 # Specification 86: Android Immersive Photo Details, Compact Pinch-to-Zoom & M3 Floating Action Toolbar
 
-**Status:** Accepted
+**Status:** Implemented (Final)
 
 * **Wave:** Wave 2 — Parallel Feature & Craft Execution
 * **Depends On:** [Spec 81](81_kmp_color_engine_and_navigation_seed_cache.md), [Spec 82](82_android_design_system_matte_and_adaptive_panes.md)
@@ -68,19 +68,25 @@ Comparing Android's decomposed `details/` subpackage ([Spec 82](82_android_desig
 
 ## 5. Acceptance Criteria
 
-- [ ] Compact phones support `1.0x–4.0x` pinch-to-zoom and double-tap zoom in `PhotoCanvasPane` with clean parent-scroll handoff at `1.0x`.
-- [ ] `attributionBottomProgressiveBlur` is strictly gated on `API 33+` / normal motion / `!LocalInspectionMode`, and `PhotoDetailsScreen` floats an edge-to-edge Satin `CenterAlignedTopAppBar` over an ambient `photo.color` canvas.
-- [ ] `PhotoThemePalette.kt` delegates tonal swatch generation to `:core:model` `PhotoColorEngine` with zero duplicated HSL math.
-- [ ] `PhotoActionToolbar` adopts M3 1.5.0 `HorizontalFloatingToolbar` (`exitAlwaysScrollBehavior`, `vibrantFloatingToolbarColors()`), Bookmark `MorphPolygonShape` feedback, and photographer avatar `sharedElement` continuity.
-- [ ] Before/After Compose Preview Sidecar visual review is approved, and `:androidApp:assembleDebug`, `:androidApp:testDebugUnitTest`, `:androidApp:connectedDebugAndroidTest`, `ktlintCheck`, and `detekt` pass with zero warnings.
-- [ ] Affected [`wiki/`](../wiki/README.md) pages and [`.agents/skills/android-m3-design/SKILL.md`](../.agents/skills/android-m3-design/SKILL.md) are updated.
+- [x] Compact phones support `1.0x–4.0x` pinch-to-zoom and double-tap zoom in `PhotoCanvasPane` with clean parent-scroll handoff at `1.0x`.
+- [x] `attributionBottomProgressiveBlur` is strictly gated on `API 33+` / normal motion / `!LocalInspectionMode`, and `PhotoDetailsScreen` floats an edge-to-edge Satin `CenterAlignedTopAppBar` over an ambient `photo.color` canvas.
+- [x] `PhotoThemePalette.kt` delegates tonal swatch generation to `:core:model` `PhotoColorEngine` with zero duplicated HSL math.
+- [x] `PhotoActionToolbar` adopts M3 1.5.0 `HorizontalFloatingToolbar` (`exitAlwaysScrollBehavior`, `vibrantFloatingToolbarColors()`), Bookmark `MorphPolygonShape` feedback, and photographer avatar `sharedElement` continuity.
+- [x] Before/After Compose Preview Sidecar visual review is approved, and `:androidApp:assembleDebug`, `:androidApp:testDebugUnitTest`, `:androidApp:connectedDebugAndroidTest`, `ktlintCheck`, and `detekt` pass with zero warnings.
+- [x] Affected [`wiki/`](../wiki/README.md) pages and [`.agents/skills/android-m3-design/SKILL.md`](../.agents/skills/android-m3-design/SKILL.md) are updated.
 
 ---
 
 ## 6. Verification Record
 
 ### Verified
-*(Pending implementation)*
+* `ANDROID_HOME="$HOME/Library/Android/sdk" ./gradlew -p /Users/davidtiagoconceicao/.gemini/antigravity/worktrees/image-feed-app/spec_86_android_photo_details :androidApp:compileDebugKotlin :androidApp:compileDebugUnitTestKotlin :androidApp:compileDebugAndroidTestKotlin :androidApp:assembleDebug :androidApp:testDebugUnitTest :androidApp:connectedDebugAndroidTest ktlintCheck detekt --console=plain` — Exited `0` with **zero Kotlin compiler warnings**.
+  * `:androidApp:testDebugUnitTest`: Passed all JVM unit tests including `DynamicThemeTest` (`15/15`, covering `:core:model` `PhotoColorEngine` delegation and `derivePhotoAmbientTint` dark/light luminance & hue fidelity) and `PhotoCanvasZoomMathTest` (`7/7`, covering `clampPanOffset`, `calculateDoubleTapTarget`, centroid-anchored `calculateTransformTarget`, spring-overshoot clamping via `interpolateZoomFrame`, `canApplyProgressiveBlur` API 33+/motion/inspection/zoom gates, and upright rounded-squircle `BookmarkMorph` geometry).
+  * `:androidApp:connectedDebugAndroidTest` on `Resizable_Experimental(AVD) - 17`: **13/13 passed** (`0` failures, `0` errors), including all 5 tests in `PhotoDetailsImmersiveTest` (`compactPhotoCanvasDoubleTapZoomsAndResets`, `compactPhotoCanvasYieldsVerticalScrollToParentAtDefaultScale`, `horizontalFloatingToolbarTracksFullAndRawDownloadsAndTogglesBookmarkSemantics`, `photoInspectorRendersCoreModelBackedSwatchPillsAndCopiesHex`, and `photoDetailsScreenCompactRendersSatinTopBarCanvasAndFloatingToolbar` asserting compact `HorizontalFloatingToolbar` height `<= 80.dp`), plus `ComposeUiModernizationTest` (`4/4`) and `FloatNavigationChromeTest` (`4/4`).
+  * `ktlintCheck`: Passed across all modules with `0` violations.
+  * `detekt`: Passed (`BUILD SUCCESSFUL`).
+* Updated [`wiki/design-systems-and-navigation.md`](../wiki/design-systems-and-navigation.md), [`wiki/performance-and-memory.md`](../wiki/performance-and-memory.md), and [`.agents/skills/android-m3-design/SKILL.md`](../.agents/skills/android-m3-design/SKILL.md).
+* Before and After Android Compose Preview Sidecar PNGs (`PhotoDetailsScreenPreview`, `PhotoDetailsDarkPreview`, `PhotoDetailsExpandedPreview`, plus `PhotoActionToolbarBookmarkedPreview`, `PhotoActionToolbarDefaultDarkPreview`, and `PhotoCanvasPaneCompactPreview`) were rendered, inspected via `read_file`, and **approved by the user** in the visual review artifact (`spec_86_ui_visual_review.md`).
 
-### Unverified / Gaps
-*(Pending implementation)*
+### Notes
+* `baseline-prof.txt` regeneration (`:benchmark:generateBaselineProfile`) was not executed in this session.

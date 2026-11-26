@@ -5,6 +5,7 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -52,6 +53,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.stringResource
@@ -65,6 +67,7 @@ import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.example.imagefeed.android.R
 import com.example.imagefeed.android.adaptive.LocalAdaptiveLayoutInfo
+import com.example.imagefeed.android.designsystem.LocalAppSharedTransition
 import com.example.imagefeed.android.theme.PhotoSwatch
 import com.example.imagefeed.android.theme.deriveTonalSwatches
 import com.example.imagefeed.details.model.PhotoStats
@@ -80,18 +83,21 @@ import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun PhotoInspectorPane(
     modifier: Modifier = Modifier,
     photo: Photo,
     stats: PhotoStats?,
     showPhotographerHeader: Boolean = false,
+    enableAvatarSharedElement: Boolean = true,
     onUserClick: (String) -> Unit,
     onTagClick: (String) -> Unit,
     onShowSnackbar: (String) -> Unit,
 ) {
     val context = LocalPlatformContext.current
     val haptic = LocalHapticFeedback.current
+    val sharedTransition = LocalAppSharedTransition.current
 
     Column(
         modifier =
@@ -121,13 +127,28 @@ fun PhotoInspectorPane(
                                     .crossfade(true)
                                     .build(),
                         )
+                    val baseAvatarModifier = Modifier.size(44.dp)
+                    val avatarModifier =
+                        if (enableAvatarSharedElement && photo.user.username.isNotBlank() && sharedTransition != null) {
+                            with(sharedTransition.sharedTransitionScope) {
+                                baseAvatarModifier.sharedElement(
+                                    sharedContentState =
+                                        rememberSharedContentState(
+                                            key = "avatar_${photo.user.username}",
+                                        ),
+                                    animatedVisibilityScope = sharedTransition.animatedVisibilityScope,
+                                )
+                            }
+                        } else {
+                            baseAvatarModifier
+                        }
 
                     Image(
                         painter = avatarPainter,
                         contentDescription = stringResource(R.string.content_desc_photographer_avatar),
+                        contentScale = ContentScale.Crop,
                         modifier =
-                            Modifier
-                                .size(44.dp)
+                            avatarModifier
                                 .clip(CircleShape)
                                 .border(1.5.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape),
                     )

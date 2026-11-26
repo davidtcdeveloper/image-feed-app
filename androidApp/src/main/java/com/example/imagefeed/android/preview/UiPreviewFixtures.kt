@@ -1,14 +1,25 @@
 package com.example.imagefeed.android.preview
 
+import android.content.res.Configuration
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.painter.ColorPainter
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import com.example.imagefeed.android.LocalPaneWidthDp
@@ -16,7 +27,11 @@ import com.example.imagefeed.android.adaptive.AdaptiveLayoutInfo
 import com.example.imagefeed.android.adaptive.DevicePosture
 import com.example.imagefeed.android.adaptive.LocalAdaptiveLayoutInfo
 import com.example.imagefeed.android.designsystem.ProvideAppSharedTransition
+import com.example.imagefeed.android.details.FloatingActionToolbar
+import com.example.imagefeed.android.details.PhotoCanvasPane
 import com.example.imagefeed.android.theme.ImageFeedTheme
+import com.example.imagefeed.android.theme.derivePhotoAmbientTint
+import com.example.imagefeed.android.theme.generatePhotoColorScheme
 import com.example.imagefeed.details.model.PhotoStats
 import com.example.imagefeed.model.CollectionSummary
 import com.example.imagefeed.model.Exif
@@ -350,6 +365,89 @@ fun PreviewScaffold(
                     }
                 }
             }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Preview(showBackground = true, widthDp = 360, heightDp = 120, name = "Photo Action Toolbar - Bookmarked")
+@Composable
+fun PhotoActionToolbarBookmarkedPreview() {
+    PreviewScaffold(widthDp = 360, heightDp = 120, darkTheme = false) { _, _ ->
+        val scheme = generatePhotoColorScheme(UiPreviewFixtures.samplePhoto.color, isDark = false)
+        MaterialTheme(colorScheme = scheme) {
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.surface)
+                        .padding(16.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                FloatingActionToolbar(
+                    photo = UiPreviewFixtures.samplePhoto,
+                    isFavorite = true,
+                    onTrackDownload = {},
+                    onToggleFavorite = {},
+                    onShowSnackbar = {},
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Preview(
+    showBackground = true,
+    widthDp = 360,
+    heightDp = 120,
+    uiMode = Configuration.UI_MODE_NIGHT_YES,
+    name = "Photo Action Toolbar - Default Dark",
+)
+@Composable
+fun PhotoActionToolbarDefaultDarkPreview() {
+    PreviewScaffold(widthDp = 360, heightDp = 120, darkTheme = true) { _, _ ->
+        val scheme = generatePhotoColorScheme(UiPreviewFixtures.samplePhoto.color, isDark = true)
+        MaterialTheme(colorScheme = scheme) {
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.surface)
+                        .padding(16.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                FloatingActionToolbar(
+                    photo = UiPreviewFixtures.samplePhoto,
+                    isFavorite = false,
+                    onTrackDownload = {},
+                    onToggleFavorite = {},
+                    onShowSnackbar = {},
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalSharedTransitionApi::class)
+@Preview(showBackground = true, widthDp = 412, heightDp = 560, name = "Photo Canvas Pane - Compact")
+@Composable
+fun PhotoCanvasPaneCompactPreview() {
+    PreviewScaffold(widthDp = 412, heightDp = 560, darkTheme = false) { sharedScope, visibilityScope ->
+        val photo = UiPreviewFixtures.samplePhoto
+        val scheme = generatePhotoColorScheme(photo.color, isDark = false)
+        val ambientTint = derivePhotoAmbientTint(photo.color, isDark = false)
+        MaterialTheme(colorScheme = scheme) {
+            PhotoCanvasPane(
+                sharedTransitionScope = sharedScope,
+                animatedVisibilityScope = visibilityScope,
+                photo = photo,
+                painter = ColorPainter(ambientTint ?: MaterialTheme.colorScheme.primaryContainer),
+                aspectRatio = photo.width.toFloat() / photo.height.toFloat(),
+                isDualPane = false,
+                ambientTint = ambientTint,
+                onUserClick = {},
+            )
         }
     }
 }

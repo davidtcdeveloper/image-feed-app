@@ -56,7 +56,7 @@ Never hardcode arbitrary radii (e.g., `RoundedCornerShape(16.dp)`). Use semantic
 - `medium` (`12.dp`): Standard photo cards, mosaic items.
 - `large` (`16.dp`): Dialogs, inspector panels, user summary cards.
 - `extraLarge` (`28.dp`): Modal bottom sheets, search bars, pill buttons.
-- **Expressive Polygon Policy**: `PolygonShape` and `MorphPolygonShape` ([`ExpressiveShapes.kt`](../../../androidApp/src/main/java/com/example/imagefeed/android/designsystem/ExpressiveShapes.kt), [`ExpressiveShapeTokens`](../../../androidApp/src/main/java/com/example/imagefeed/android/theme/Shape.kt)) are permitted strictly for micro-controls, badges, and empty-state backdrops (`ApertureRandomizeButton`, `PhotoDetailPlaceholder` soft-scallop container); never clip photographs into polygons.
+- **Expressive Polygon Policy**: `PolygonShape` and `MorphPolygonShape` ([`ExpressiveShapes.kt`](../../../androidApp/src/main/java/com/example/imagefeed/android/designsystem/ExpressiveShapes.kt), [`ExpressiveShapeTokens`](../../../androidApp/src/main/java/com/example/imagefeed/android/theme/Shape.kt)) are permitted strictly for micro-controls, badges, and empty-state backdrops (`ApertureRandomizeButton`, `PhotoDetailPlaceholder` soft-scallop container, `PhotoActionToolbar` bookmark toggle); never clip photographs into polygons.
 
 ---
 
@@ -69,7 +69,8 @@ Never hardcode arbitrary radii (e.g., `RoundedCornerShape(16.dp)`). Use semantic
 - **Pull-to-Refresh**: Use Material 3 `PullToRefreshBox` with `PullToRefreshDefaults`.
 - **Buttons**: Prefer `FilledTonalButton` or `Button` with theme colors. Avoid hardcoding button background fills.
 - **Cards**: Use `Card`, `ElevatedCard`, or `OutlinedCard` with `CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)`.
-- **App Bars**: Use [`SatinHeaderScaffold`](../../../androidApp/src/main/java/com/example/imagefeed/android/designsystem/SatinHeaderScaffold.kt) for edge-to-edge scrollable screens, passing the measured header height into grid `contentPadding` (and `SatinPullToRefreshBox`), driving draw-phase `satinProgressiveBlur` (API 33+ blur / API 29–32 scrim fallback) and `TopAppBarDefaults.enterAlwaysScrollBehavior()` quick-return collapse without scroll recompositions.
+- **App Bars & Progressive Blur Gating**: Use [`SatinHeaderScaffold`](../../../androidApp/src/main/java/com/example/imagefeed/android/designsystem/SatinHeaderScaffold.kt) for edge-to-edge scrollable and detail screens, passing the measured header height into grid/inspector `contentPadding` (and `SatinPullToRefreshBox`), driving draw-phase `satinProgressiveBlur` and `TopAppBarDefaults.enterAlwaysScrollBehavior()` quick-return collapse without scroll recompositions. Strictly gate all Compose 1.13 `BlurRadiusSpec` modifiers (`satinProgressiveBlur`, `attributionBottomProgressiveBlur` in [`PhotoCanvasPane.kt`](../../../androidApp/src/main/java/com/example/imagefeed/android/details/PhotoCanvasPane.kt)) on `Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU` (API 33+), normal motion scale, and `!LocalInspectionMode.current`, degrading cleanly to tonal scrims on API 29–32.
+- **Floating Action Toolbars**: Use Material 3 1.5.0 `HorizontalFloatingToolbar` configured with `FloatingToolbarDefaults.exitAlwaysScrollBehavior` and `FloatingToolbarDefaults.vibrantFloatingToolbarColors()` (see [`PhotoActionToolbar.kt`](../../../androidApp/src/main/java/com/example/imagefeed/android/details/PhotoActionToolbar.kt)) instead of hand-rolled floating pill containers.
 
 ---
 
@@ -100,8 +101,10 @@ Layouts must adapt dynamically across device form factors:
   - `Compact` (< 600dp): Floating tonal `ShortNavigationBar` capsule (`FloatingBottomNavigationBar` in [`FloatNavigationChrome.kt`](../../../androidApp/src/main/java/com/example/imagefeed/android/designsystem/FloatNavigationChrome.kt)), single-column or 2-column phone layout.
   - `Medium` (600–839dp) & `Expanded` ($\ge$ 840dp): Start-docked collapsible `WideNavigationRail` (`ExpressiveNavigationRail` with safe-drawing insets), multi-column adaptive grids.
 - **Adaptive Grids & Non-Lazy Clusters**: Use `StaggeredGridCells.Adaptive` and column calculation utilities from [`AdaptiveUtils.kt`](../../../androidApp/src/main/java/com/example/imagefeed/android/AdaptiveUtils.kt), which read quantized `LocalPaneWidthDp.current` (provided at Navigation 3 pane boundaries via `ProvidePaneWidth`, falling back to `LocalAdaptiveLayoutInfo.current.screenWidthDp`) so column counts and Retina CDN widths adapt accurately inside `ListDetailSceneStrategy` panes. Use stable Compose 1.13 non-lazy `Grid` and `FlexBox` for bounded EXIF bento, topic tile, and tag clusters (see [`PhotoInspectorPane.kt`](../../../androidApp/src/main/java/com/example/imagefeed/android/details/PhotoInspectorPane.kt) and [`SearchDiscoveryView.kt`](../../../androidApp/src/main/java/com/example/imagefeed/android/search/SearchDiscoveryView.kt)).
-- **Dual-Pane Detail Views**:
-  - Medium/Expanded widths & Book posture: Side-by-side dual-pane layout (Left: Photo Canvas; Right: Inspector sidebar with stats, map, EXIF, tags).
+- **Dual-Pane & Full-Canvas Detail Views**:
+  - Edge-to-edge Satin detail top bar (`SatinHeaderScaffold` + transparent `CenterAlignedTopAppBar`) over an ambient `photo.color` canvas (`derivePhotoAmbientTint` in [`PhotoThemePalette.kt`](../../../androidApp/src/main/java/com/example/imagefeed/android/theme/PhotoThemePalette.kt), delegating swatch/HSL math to `:core:model` `PhotoColorEngine`).
+  - Compact & Dual-Pane Zoom: [`PhotoCanvasPane.kt`](../../../androidApp/src/main/java/com/example/imagefeed/android/details/PhotoCanvasPane.kt) supports `1.0x–4.0x` pinch-to-zoom (`transformable` + clamped pan bounds) and double-tap zoom toggle (`1.0x ↔ 2.5x`) across compact phones and dual-pane layouts, yielding vertical scroll cleanly to parent `verticalScroll` at `1.0x` (`canPan = { scale > 1f }`) and disabling `attributionBottomProgressiveBlur` while zoomed.
+  - Medium/Expanded widths & Book posture: Side-by-side dual-pane layout (Left: Photo Canvas; Right: Inspector sidebar with stats, map, EXIF, tags, and top Satin padding).
   - TableTop posture: Horizontal split (Top: Photo; Bottom: Controls & metadata).
   - Hinge avoidance: Check folding features to avoid bisecting content across the physical crease.
 

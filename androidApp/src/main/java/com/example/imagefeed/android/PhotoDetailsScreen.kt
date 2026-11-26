@@ -1,12 +1,12 @@
 package com.example.imagefeed.android
 
 import android.content.Intent
+import android.content.res.Configuration
 import android.net.Uri
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -26,10 +27,12 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material3.Button
 import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.FloatingToolbarDefaults
+import androidx.compose.material3.FloatingToolbarExitDirection
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -41,11 +44,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.LocalPlatformContext
@@ -54,12 +63,14 @@ import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.example.imagefeed.android.adaptive.DevicePosture
 import com.example.imagefeed.android.adaptive.LocalAdaptiveLayoutInfo
+import com.example.imagefeed.android.designsystem.SatinHeaderScaffold
 import com.example.imagefeed.android.details.FloatingActionToolbar
 import com.example.imagefeed.android.details.PhotoCanvasPane
 import com.example.imagefeed.android.details.PhotoInspectorPane
 import com.example.imagefeed.android.preview.PreviewScaffold
 import com.example.imagefeed.android.preview.UiPreviewFixtures
 import com.example.imagefeed.android.theme.ExpressiveLoadingIndicator
+import com.example.imagefeed.android.theme.derivePhotoAmbientTint
 import com.example.imagefeed.android.theme.generatePhotoColorScheme
 import com.example.imagefeed.android.util.BLURHASH_PLACEHOLDER_WIDTH
 import com.example.imagefeed.android.util.BlurHashDecoder
@@ -76,6 +87,11 @@ import kotlinx.coroutines.launch
 
 private const val DUAL_PANE_CANVAS_WEIGHT = 0.58f
 private const val DUAL_PANE_INSPECTOR_WEIGHT = 0.42f
+private const val AMBIENT_CANVAS_TINT_ALPHA = 0.55f
+private const val AMBIENT_CANVAS_FADE_STOP = 0.45f
+private const val DARK_SURFACE_LUMINANCE_THRESHOLD = 0.5f
+private const val DETAIL_IMAGE_QUALITY = 85
+private val FLOATING_TOOLBAR_SNACKBAR_CLEARANCE = 76.dp
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
@@ -129,7 +145,12 @@ fun PhotoDetailsScreen(
         onTrackDownload = { photo -> viewModel.dispatch(PhotoDetailsIntent.TrackDownload(photo)) },
         onToggleFavorite = { viewModel.dispatch(PhotoDetailsIntent.ToggleFavorite()) },
         onBack = onBack,
-        onUserClick = onUserClick,
+        onUserClick = { username ->
+            state.photo?.user?.takeIf { it.username == username }?.let {
+                MetroHelper.seedUserPreview(it)
+            }
+            onUserClick(username)
+        },
         onTagClick = onTagClick,
         snackbarHostState = snackbarHostState,
     )
@@ -150,17 +171,46 @@ fun PhotoDetailsScreen(
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
 ) {
     val context = LocalPlatformContext.current
-    val isDark = isSystemInDarkTheme()
+    val isDark = MaterialTheme.colorScheme.surface.luminance() < DARK_SURFACE_LUMINANCE_THRESHOLD
     val coroutineScope = rememberCoroutineScope()
 
     val dynamicScheme =
         remember(state.photo?.color, isDark) {
             generatePhotoColorScheme(state.photo?.color, isDark)
         }
+    val ambientTint =
+        remember(state.photo?.color, isDark) {
+            derivePhotoAmbientTint(state.photo?.color, isDark)
+        }
 
     MaterialTheme(colorScheme = dynamicScheme) {
-        Scaffold(
-            snackbarHost = { SnackbarHost(snackbarHostState) },
+        val surfaceColor = MaterialTheme.colorScheme.surface
+        val ambientBackdropBrush =
+            remember(ambientTint, surfaceColor) {
+                if (ambientTint != null) {
+                    Brush.verticalGradient(
+                        0f to ambientTint.copy(alpha = AMBIENT_CANVAS_TINT_ALPHA),
+                        AMBIENT_CANVAS_FADE_STOP to surfaceColor,
+                        1f to surfaceColor,
+                    )
+                } else {
+                    Brush.verticalGradient(colors = listOf(surfaceColor, surfaceColor))
+                }
+            }
+
+        SatinHeaderScaffold(
+            snackbarHost = {
+                SnackbarHost(
+                    hostState = snackbarHostState,
+                    modifier =
+                        if (state.photo != null) {
+                            Modifier.padding(bottom = FLOATING_TOOLBAR_SNACKBAR_CLEARANCE)
+                        } else {
+                            Modifier
+                        },
+                )
+            },
+            containerColor = surfaceColor,
             topBar = {
                 CenterAlignedTopAppBar(
                     title = {
@@ -202,7 +252,7 @@ fun PhotoDetailsScreen(
                     },
                     colors =
                         TopAppBarDefaults.topAppBarColors(
-                            containerColor = MaterialTheme.colorScheme.surface,
+                            containerColor = Color.Transparent,
                             titleContentColor = MaterialTheme.colorScheme.onSurface,
                             navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
                             actionIconContentColor = MaterialTheme.colorScheme.onSurface,
@@ -210,15 +260,23 @@ fun PhotoDetailsScreen(
                 )
             },
         ) { paddingValues ->
+            val topHeaderPadding = paddingValues.calculateTopPadding()
+            val bottomInsetPadding = paddingValues.calculateBottomPadding()
+
             Box(
                 modifier =
                     Modifier
                         .fillMaxSize()
-                        .padding(paddingValues)
-                        .background(MaterialTheme.colorScheme.surface),
+                        .background(ambientBackdropBrush),
             ) {
                 if (state.isLoading && state.photo == null) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Box(
+                        modifier =
+                            Modifier
+                                .fillMaxSize()
+                                .padding(top = topHeaderPadding),
+                        contentAlignment = Alignment.Center,
+                    ) {
                         ExpressiveLoadingIndicator()
                     }
                 } else if (state.error != null && state.photo == null) {
@@ -226,6 +284,7 @@ fun PhotoDetailsScreen(
                         modifier =
                             Modifier
                                 .fillMaxSize()
+                                .padding(top = topHeaderPadding)
                                 .padding(24.dp),
                         verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.CenterHorizontally,
@@ -268,6 +327,9 @@ fun PhotoDetailsScreen(
                                     snackbarHostState.showSnackbar(message)
                                 }
                             },
+                            topHeaderPadding = topHeaderPadding,
+                            bottomInsetPadding = bottomInsetPadding,
+                            ambientTint = ambientTint,
                         )
                     }
                 }
@@ -276,7 +338,7 @@ fun PhotoDetailsScreen(
     }
 }
 
-@OptIn(ExperimentalSharedTransitionApi::class)
+@OptIn(ExperimentalSharedTransitionApi::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun PhotoDetailsContent(
     sharedTransitionScope: SharedTransitionScope,
@@ -289,12 +351,32 @@ fun PhotoDetailsContent(
     onUserClick: (String) -> Unit,
     onTagClick: (String) -> Unit,
     onShowSnackbar: (String) -> Unit,
+    topHeaderPadding: Dp = 0.dp,
+    bottomInsetPadding: Dp = 0.dp,
+    ambientTint: Color? = null,
 ) {
     val context = LocalPlatformContext.current
     val density = LocalDensity.current
     val scrollState = rememberScrollState()
     val adaptiveLayoutInfo = LocalAdaptiveLayoutInfo.current
     val posture = adaptiveLayoutInfo.posture
+    val toolbarScrollBehavior =
+        FloatingToolbarDefaults.exitAlwaysScrollBehavior(
+            exitDirection = FloatingToolbarExitDirection.Bottom,
+        )
+    val toolbarExitModifier =
+        Modifier
+            .offset(y = -(bottomInsetPadding + FloatingToolbarDefaults.ScreenOffset))
+            .graphicsLayer {
+                val limit = toolbarScrollBehavior.state.offsetLimit
+                val collapseFraction =
+                    if (limit < 0f) {
+                        (toolbarScrollBehavior.state.offset / limit).coerceIn(0f, 1f)
+                    } else {
+                        0f
+                    }
+                alpha = 1f - collapseFraction
+            }
 
     val aspectRatio =
         if (photo.height > 0) {
@@ -329,7 +411,7 @@ fun PhotoDetailsContent(
 
         val imageUrl =
             remember(photo.id, photo.urls.raw, imageWidthPx) {
-                photo.urls.getOptimalUrl(imageWidthPx, 85)
+                photo.urls.getOptimalUrl(imageWidthPx, DETAIL_IMAGE_QUALITY)
             }
 
         val imageRequest =
@@ -369,6 +451,8 @@ fun PhotoDetailsContent(
                         painter = painter,
                         aspectRatio = aspectRatio,
                         isDualPane = true,
+                        ambientTint = ambientTint,
+                        enableAvatarSharedElement = true,
                         onUserClick = onUserClick,
                     )
                 }
@@ -386,16 +470,19 @@ fun PhotoDetailsContent(
                         Modifier
                             .weight(1f)
                             .fillMaxWidth()
+                            .nestedScroll(toolbarScrollBehavior)
                             .background(MaterialTheme.colorScheme.surface),
                 ) {
                     PhotoInspectorPane(
                         modifier =
                             Modifier
                                 .fillMaxSize()
-                                .verticalScroll(scrollState),
+                                .verticalScroll(scrollState)
+                                .padding(bottom = bottomInsetPadding),
                         photo = photo,
                         stats = stats,
                         showPhotographerHeader = false,
+                        enableAvatarSharedElement = false,
                         onUserClick = onUserClick,
                         onTagClick = onTagClick,
                         onShowSnackbar = onShowSnackbar,
@@ -406,10 +493,11 @@ fun PhotoDetailsContent(
                         onTrackDownload = onTrackDownload,
                         onToggleFavorite = onToggleFavorite,
                         onShowSnackbar = onShowSnackbar,
+                        scrollBehavior = toolbarScrollBehavior,
                         modifier =
                             Modifier
                                 .align(Alignment.BottomCenter)
-                                .padding(bottom = 16.dp),
+                                .then(toolbarExitModifier),
                     )
                 }
             }
@@ -435,6 +523,8 @@ fun PhotoDetailsContent(
                         painter = painter,
                         aspectRatio = aspectRatio,
                         isDualPane = true,
+                        ambientTint = ambientTint,
+                        enableAvatarSharedElement = false,
                         onUserClick = onUserClick,
                     )
                 }
@@ -452,16 +542,19 @@ fun PhotoDetailsContent(
                         Modifier
                             .weight(DUAL_PANE_INSPECTOR_WEIGHT)
                             .fillMaxHeight()
+                            .nestedScroll(toolbarScrollBehavior)
                             .background(MaterialTheme.colorScheme.surface),
                 ) {
                     PhotoInspectorPane(
                         modifier =
                             Modifier
                                 .fillMaxSize()
-                                .verticalScroll(scrollState),
+                                .verticalScroll(scrollState)
+                                .padding(top = topHeaderPadding, bottom = bottomInsetPadding),
                         photo = photo,
                         stats = stats,
                         showPhotographerHeader = true,
+                        enableAvatarSharedElement = true,
                         onUserClick = onUserClick,
                         onTagClick = onTagClick,
                         onShowSnackbar = onShowSnackbar,
@@ -472,16 +565,22 @@ fun PhotoDetailsContent(
                         onTrackDownload = onTrackDownload,
                         onToggleFavorite = onToggleFavorite,
                         onShowSnackbar = onShowSnackbar,
+                        scrollBehavior = toolbarScrollBehavior,
                         modifier =
                             Modifier
                                 .align(Alignment.BottomCenter)
-                                .padding(bottom = 16.dp),
+                                .then(toolbarExitModifier),
                     )
                 }
             }
         } else {
-            // Compact Phones (Single-column vertical scroll with anchored floating action bar)
-            Box(modifier = Modifier.fillMaxSize()) {
+            // Compact Phones (Edge-to-edge canvas beneath floating Satin top bar + exitAlways toolbar)
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .nestedScroll(toolbarScrollBehavior),
+            ) {
                 Column(
                     modifier =
                         Modifier
@@ -495,13 +594,19 @@ fun PhotoDetailsContent(
                         painter = painter,
                         aspectRatio = aspectRatio,
                         isDualPane = false,
+                        ambientTint = ambientTint,
+                        enableAvatarSharedElement = true,
                         onUserClick = onUserClick,
                     )
                     PhotoInspectorPane(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = bottomInsetPadding),
                         photo = photo,
                         stats = stats,
                         showPhotographerHeader = false,
+                        enableAvatarSharedElement = false,
                         onUserClick = onUserClick,
                         onTagClick = onTagClick,
                         onShowSnackbar = onShowSnackbar,
@@ -513,10 +618,11 @@ fun PhotoDetailsContent(
                     onTrackDownload = onTrackDownload,
                     onToggleFavorite = onToggleFavorite,
                     onShowSnackbar = onShowSnackbar,
+                    scrollBehavior = toolbarScrollBehavior,
                     modifier =
                         Modifier
                             .align(Alignment.BottomCenter)
-                            .padding(bottom = 16.dp),
+                            .then(toolbarExitModifier),
                 )
             }
         }
@@ -542,7 +648,13 @@ fun PhotoDetailsScreenPreview() {
     }
 }
 
-@Preview(showBackground = true, widthDp = 412, heightDp = 892, name = "Photo Details - Dark")
+@Preview(
+    showBackground = true,
+    widthDp = 412,
+    heightDp = 892,
+    uiMode = Configuration.UI_MODE_NIGHT_YES,
+    name = "Photo Details - Dark",
+)
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun PhotoDetailsDarkPreview() {
