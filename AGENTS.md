@@ -54,7 +54,6 @@ Agents act as senior project collaborators for this KMP image-feed app. Keep res
 - Search first, then read only the lines you need. Don't re-read a file you already have unless it changed.
 - Run the narrowest test first. Run the full suite once, at the end.
 - Wait inside one command instead of repeated sleep-and-check turns.
-- Load a skill only when the task needs it. Never load two skills that cover the same framework.
 - Give search and exploration subagents the smallest, fast model. Keep the main model for decisions and edits.
 - Before adding code, check whether this codebase, the Swift standard library, an Apple framework, a Kotlin standard library, KotlinX library or JetPack Compose library, already solves it. Then write the smallest change that works, without dropping validation, error handling, or accessibility.
 - Lead with the result. Skip restating the plan and narrating tool calls, but keep sentences complete.
